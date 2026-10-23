@@ -21,14 +21,7 @@
           "offset": 164,
           "original": "?.",
           "replacement": ".",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 13,
@@ -36,14 +29,7 @@
           "offset": 172,
           "original": "??",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 14,
@@ -51,14 +37,7 @@
           "offset": 189,
           "original": "!",
           "replacement": "",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 14,
@@ -66,14 +45,7 @@
           "offset": 234,
           "original": "??",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 17,
@@ -81,14 +53,7 @@
           "offset": 306,
           "original": "??",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 17,
@@ -96,14 +61,7 @@
           "offset": 309,
           "original": "-",
           "replacement": "",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 17,
@@ -111,14 +69,7 @@
           "offset": 310,
           "original": "1",
           "replacement": "0",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 17,
@@ -126,14 +77,7 @@
           "offset": 313,
           "original": "-",
           "replacement": "+",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 17,
@@ -141,14 +85,7 @@
           "offset": 323,
           "original": "??",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 17,
@@ -156,14 +93,7 @@
           "offset": 326,
           "original": "-",
           "replacement": "",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 17,
@@ -171,14 +101,7 @@
           "offset": 327,
           "original": "1",
           "replacement": "0",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 17,
@@ -186,14 +109,7 @@
           "offset": 330,
           "original": "||",
           "replacement": "&&",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 17,
@@ -201,14 +117,7 @@
           "offset": 346,
           "original": "-",
           "replacement": "+",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         }
       ]
     },
@@ -229,14 +138,7 @@
           "offset": 31,
           "original": "===",
           "replacement": "!==",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 20,
@@ -244,14 +146,7 @@
           "offset": 63,
           "original": "0",
           "replacement": "1",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         }
       ]
     },
@@ -272,14 +167,7 @@
           "offset": 31,
           "original": "===",
           "replacement": "!==",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 21,
@@ -287,14 +175,7 @@
           "offset": 60,
           "original": "1",
           "replacement": "0",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         }
       ]
     },
@@ -315,14 +196,7 @@
           "offset": 188,
           "original": "!",
           "replacement": "",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 34,
@@ -330,14 +204,7 @@
           "offset": 442,
           "original": "===",
           "replacement": "!==",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 42,
@@ -345,14 +212,7 @@
           "offset": 655,
           "original": "===",
           "replacement": "!==",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 42,
@@ -360,14 +220,7 @@
           "offset": 702,
           "original": "===",
           "replacement": "!==",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 42,
@@ -375,14 +228,7 @@
           "offset": 706,
           "original": "1",
           "replacement": "0",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 42,
@@ -390,14 +236,7 @@
           "offset": 751,
           "original": "===",
           "replacement": "!==",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 42,
@@ -405,14 +244,7 @@
           "offset": 755,
           "original": "1",
           "replacement": "0",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 43,
@@ -420,14 +252,7 @@
           "offset": 790,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 45,
@@ -435,14 +260,7 @@
           "offset": 872,
           "original": ">",
           "replacement": ">=",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 45,
@@ -450,14 +268,7 @@
           "offset": 874,
           "original": "0",
           "replacement": "1",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 45,
@@ -465,14 +276,7 @@
           "offset": 876,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 56,
@@ -480,14 +284,7 @@
           "offset": 1168,
           "original": "+",
           "replacement": "-",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         }
       ]
     },
@@ -508,14 +305,7 @@
           "offset": 282,
           "original": "??",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 76,
@@ -523,14 +313,7 @@
           "offset": 474,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 78,
@@ -538,14 +321,7 @@
           "offset": 556,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 83,
@@ -553,14 +329,7 @@
           "offset": 709,
           "original": "?.",
           "replacement": ".",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 83,
@@ -568,14 +337,7 @@
           "offset": 719,
           "original": "1",
           "replacement": "0",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 83,
@@ -583,14 +345,7 @@
           "offset": 722,
           "original": "??",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 96,
@@ -598,14 +353,7 @@
           "offset": 1210,
           "original": ">",
           "replacement": ">=",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 96,
@@ -613,14 +361,7 @@
           "offset": 1212,
           "original": "0",
           "replacement": "1",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 96,
@@ -628,14 +369,7 @@
           "offset": 1214,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 108,
@@ -643,14 +377,7 @@
           "offset": 1552,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 108,
@@ -658,14 +385,7 @@
           "offset": 1567,
           "original": ">",
           "replacement": ">=",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 108,
@@ -673,14 +393,7 @@
           "offset": 1569,
           "original": "0",
           "replacement": "1",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 108,
@@ -688,14 +401,7 @@
           "offset": 1571,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 109,
@@ -703,14 +409,7 @@
           "offset": 1632,
           "original": "?.",
           "replacement": ".",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 109,
@@ -718,14 +417,7 @@
           "offset": 1641,
           "original": "??",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 109,
@@ -733,14 +425,7 @@
           "offset": 1644,
           "original": "0",
           "replacement": "1",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 109,
@@ -748,14 +433,7 @@
           "offset": 1647,
           "original": ">",
           "replacement": ">=",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 109,
@@ -763,14 +441,7 @@
           "offset": 1649,
           "original": "0",
           "replacement": "1",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 109,
@@ -778,14 +449,7 @@
           "offset": 1651,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 110,
@@ -793,14 +457,7 @@
           "offset": 1731,
           "original": "?.",
           "replacement": ".",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 110,
@@ -808,14 +465,7 @@
           "offset": 1740,
           "original": "??",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 110,
@@ -823,14 +473,7 @@
           "offset": 1743,
           "original": "0",
           "replacement": "1",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 110,
@@ -838,14 +481,7 @@
           "offset": 1746,
           "original": ">",
           "replacement": ">=",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 110,
@@ -853,14 +489,7 @@
           "offset": 1748,
           "original": "0",
           "replacement": "1",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 110,
@@ -868,14 +497,7 @@
           "offset": 1750,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 111,
@@ -883,14 +505,7 @@
           "offset": 1828,
           "original": ">",
           "replacement": ">=",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 111,
@@ -898,14 +513,7 @@
           "offset": 1830,
           "original": "0",
           "replacement": "1",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 111,
@@ -913,14 +521,7 @@
           "offset": 1832,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 116,
@@ -928,14 +529,7 @@
           "offset": 1975,
           "original": ">",
           "replacement": ">=",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 116,
@@ -943,14 +537,7 @@
           "offset": 1977,
           "original": "0",
           "replacement": "1",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 116,
@@ -958,14 +545,7 @@
           "offset": 1979,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 128,
@@ -973,14 +553,7 @@
           "offset": 2349,
           "original": "0",
           "replacement": "1",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 129,
@@ -988,14 +561,7 @@
           "offset": 2400,
           "original": "+",
           "replacement": "-",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 129,
@@ -1003,14 +569,7 @@
           "offset": 2452,
           "original": "===",
           "replacement": "!==",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 132,
@@ -1018,14 +577,7 @@
           "offset": 2586,
           "original": ">",
           "replacement": ">=",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 132,
@@ -1033,14 +585,7 @@
           "offset": 2588,
           "original": "0",
           "replacement": "1",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 132,
@@ -1048,14 +593,7 @@
           "offset": 2590,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 136,
@@ -1063,14 +601,7 @@
           "offset": 2778,
           "original": "!==",
           "replacement": "===",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 136,
@@ -1078,14 +609,7 @@
           "offset": 2787,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 136,
@@ -1093,14 +617,7 @@
           "offset": 2797,
           "original": ">=",
           "replacement": ">",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 137,
@@ -1108,14 +625,7 @@
           "offset": 2878,
           "original": ">",
           "replacement": ">=",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 137,
@@ -1123,14 +633,7 @@
           "offset": 2880,
           "original": "0",
           "replacement": "1",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 139,
@@ -1138,14 +641,7 @@
           "offset": 3007,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 146,
@@ -1153,14 +649,7 @@
           "offset": 3169,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         }
       ]
     },
@@ -1193,14 +682,7 @@
           "offset": 409,
           "original": "===",
           "replacement": "!==",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 173,
@@ -1208,14 +690,7 @@
           "offset": 532,
           "original": "1",
           "replacement": "0",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 173,
@@ -1223,14 +698,7 @@
           "offset": 545,
           "original": "-",
           "replacement": "+",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 174,
@@ -1238,14 +706,7 @@
           "offset": 601,
           "original": "+",
           "replacement": "-",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 181,
@@ -1253,14 +714,7 @@
           "offset": 776,
           "original": "-",
           "replacement": "+",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 181,
@@ -1268,14 +722,7 @@
           "offset": 778,
           "original": "1",
           "replacement": "0",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 182,
@@ -1283,14 +730,7 @@
           "offset": 826,
           "original": "+",
           "replacement": "-",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 183,
@@ -1298,14 +738,7 @@
           "offset": 858,
           "original": ">=",
           "replacement": ">",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 183,
@@ -1313,14 +746,7 @@
           "offset": 871,
           "original": "&&",
           "replacement": "||",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 183,
@@ -1328,14 +754,7 @@
           "offset": 876,
           "original": "<=",
           "replacement": "<",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 187,
@@ -1343,14 +762,7 @@
           "offset": 1036,
           "original": "||",
           "replacement": "&&",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         }
       ]
     },
@@ -1371,14 +783,7 @@
           "offset": 88,
           "original": "1",
           "replacement": "0",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         },
         {
           "line": 197,
@@ -1386,14 +791,7 @@
           "offset": 101,
           "original": "||",
           "replacement": "&&",
-          "outcome": "uncovered",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "uncovered"
         }
       ]
     }

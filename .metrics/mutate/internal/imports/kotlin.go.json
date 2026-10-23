@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "file": "internal/imports/kotlin.go",
+  "language": "go",
+  "tests": {
+    "graph/graph_test.go": "20eff165a896a65949430b535ee1a899a5552af8b410e18a6bfcb11dcf747e53",
+    "graph/lookup_test.go": "2b22bf106fa9ea83db6546b6f65dc576a9c7e056558cbe2340cf9f6f665b21f3",
+    "graph/mutation_binding_test.go": "2eefa15bd174b584a19777360766b56f40539b147d6f07ac65bc90f8b25e7f32",
+    "graph/mutation_fixtures_test.go": "2f429d05e64ff7b4a18b4b4d9c9790ebc18400338893c52797d70eda30d7c177",
+    "graph/stale_test.go": "4bd4838d6a877d269f6cd119fc3b841dd0fe107f82dde9d1fb7d9436747b47d8",
+    "internal/imports/reach_test.go": "1abe6440175361a322a36eddb3b2f64424b12203ef5fbcf3646439ecbc2d9bc5",
+    "internal/imports/tsconfig_test.go": "72f0e589691b2457498bbd2294e19c77eae8fbd015b34f94389c0b69a5372492",
+    "internal/slices/mutation/adapters/importgraph/reach_test.go": "2edc63ea914953e407f1879aeb18c0571cf7a7bf420eefa463b778b35e240a9b"
+  },
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/imports.kotlin",
+      "name": "facts",
+      "hash": "f408f0649739a374",
+      "start_line": 15,
+      "end_line": 18,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/imports.kotlin",
+      "name": "index",
+      "hash": "53de3213cc5bb549",
+      "start_line": 20,
+      "end_line": 30,
+      "killed": 2,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 26,
+          "column": 22,
+          "offset": 313,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 26,
+          "column": 26,
+          "offset": 317,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/imports.kotlinResolver",
+      "name": "resolve",
+      "hash": "4fe6e4e30eea6879",
+      "start_line": 37,
+      "end_line": 54,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 1,
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 44,
+          "column": 29,
+          "offset": 214,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 50,
+          "column": 16,
+          "offset": 371,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/imports.kotlinResolver",
+      "name": "unimported",
+      "hash": "204c72f7d6230aaf",
+      "start_line": 58,
+      "end_line": 66,
+      "killed": 2,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 61,
+          "column": 34,
+          "offset": 137,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 61,
+          "column": 38,
+          "offset": 141,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        }
+      ]
+    }
+  ]
+}

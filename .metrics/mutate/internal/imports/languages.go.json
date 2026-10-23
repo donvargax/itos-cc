@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "file": "internal/imports/languages.go",
+  "language": "go",
+  "tests": {
+    "graph/graph_test.go": "20eff165a896a65949430b535ee1a899a5552af8b410e18a6bfcb11dcf747e53",
+    "graph/lookup_test.go": "2b22bf106fa9ea83db6546b6f65dc576a9c7e056558cbe2340cf9f6f665b21f3",
+    "graph/mutation_binding_test.go": "2eefa15bd174b584a19777360766b56f40539b147d6f07ac65bc90f8b25e7f32",
+    "graph/mutation_fixtures_test.go": "2f429d05e64ff7b4a18b4b4d9c9790ebc18400338893c52797d70eda30d7c177",
+    "graph/stale_test.go": "4bd4838d6a877d269f6cd119fc3b841dd0fe107f82dde9d1fb7d9436747b47d8",
+    "internal/imports/reach_test.go": "1abe6440175361a322a36eddb3b2f64424b12203ef5fbcf3646439ecbc2d9bc5",
+    "internal/imports/tsconfig_test.go": "72f0e589691b2457498bbd2294e19c77eae8fbd015b34f94389c0b69a5372492",
+    "internal/slices/mutation/adapters/importgraph/reach_test.go": "2edc63ea914953e407f1879aeb18c0571cf7a7bf420eefa463b778b35e240a9b"
+  },
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/imports",
+      "name": "languageOf",
+      "hash": "221e24b035ebd3e2",
+      "start_line": 23,
+      "end_line": 28,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/imports.plain",
+      "name": "facts",
+      "hash": "72ff58c959b0653f",
+      "start_line": 67,
+      "end_line": 67,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/imports.plain",
+      "name": "module",
+      "hash": "fb2965e30f8473bf",
+      "start_line": 69,
+      "end_line": 69,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/imports.plain",
+      "name": "index",
+      "hash": "e200de2bb84c5720",
+      "start_line": 71,
+      "end_line": 71,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/imports.plain",
+      "name": "oneHop",
+      "hash": "b0cdfb7d10e3ff9a",
+      "start_line": 73,
+      "end_line": 73,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 73,
+          "column": 37,
+          "offset": 36,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/imports.plain",
+      "name": "support",
+      "hash": "c4e949279bf28027",
+      "start_line": 75,
+      "end_line": 75,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/imports.unresolved",
+      "name": "resolve",
+      "hash": "b2dedd8231799ffd",
+      "start_line": 80,
+      "end_line": 80,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/imports.unresolved",
+      "name": "unimported",
+      "hash": "8fc640dcce97ec9b",
+      "start_line": 82,
+      "end_line": 82,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/imports",
+      "name": "fileModule",
+      "hash": "fac4c22c5f865bee",
+      "start_line": 85,
+      "end_line": 85,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/imports",
+      "name": "dirModule",
+      "hash": "9ddb0742130fb804",
+      "start_line": 88,
+      "end_line": 94,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 90,
+          "column": 9,
+          "offset": 64,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        }
+      ]
+    }
+  ]
+}
