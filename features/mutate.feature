@@ -1083,6 +1083,126 @@ Feature: Mutation testing
       But with a.feature unchanged, mutation check runs no list command and the exit code is 0
       And when every recorded listed kill was listed without a fingerprint, mutation check runs no list command
 
+  # q-84, decided with the person on 2026-10-22: a file's snapshot records the
+  # tests that import it, own package and one hop (ID-MUT-65, ID-MUT-70), and
+  # any change among them staled every outcome of the file. That included
+  # kills the listed tests made, which rest on those tests and the support
+  # files (ADR-0011, ADR-0013, slice-39), not on the importing tests. For
+  # itos-cc, 97 of the 186 test files a domain file records are cmd/itos-cc's,
+  # so one edit there staled every listed kill of every package it imports.
+  # A kill, timeout or over-limit decided by listed tests now holds while the
+  # tests it rests on (their files' hashes, or their fingerprints) and the
+  # support files do. Own-scope outcomes, survivors and uncovered mutants
+  # still rest on the importing tests. A function holding any of them is
+  # stale as before, and mutation run re-judges only those, reusing its
+  # listed kills. Check, run (--since included), sample, except and the graph
+  # share the verdict, FreshnessOf's.
+  # The person (2026-10-23): build it now, though T-46's measured nightly
+  # (run 39930716718) bounds the saving at some 62 minutes a night, paid only
+  # on nights the support files are unchanged; narrowing support (the ideas
+  # listed-suites, listed-support-doublestar) is queued after it. And a
+  # listed kill is exempt only when every test it rests on is dated, by a
+  # recorded non-empty file hash or by a fingerprint: one whose test has no
+  # recorded file, or an unreadable one, and no fingerprint keeps resting on
+  # the importing tests (ID-MUT-317), so support is never its only date.
+  # The coordinator's calls: run reuses per mutant (each listed kill on its
+  # own), check judges per function (any outcome resting on a changed input
+  # stales it); FreshnessOf keeps its order, the importing-test reason first
+  # when any outcome rests on it, so no label changes; no snapshot change
+  # and no version bump, so records written before benefit at once, an entry
+  # already marked stale staying so until judged and a snapshot with
+  # unrecorded tests staling everything as before; --since marks an entry it
+  # does not judge stale only when it holds an outcome resting on the
+  # importing tests; --all-tests and --test-command keep resting on both, as
+  # they do.
+  Rule: A listed kill does not rest on the tests that import its file
+
+    @slice-40 @ID-MUT-308 @wip
+    Scenario: A listed kill stays fresh when only a test importing its file changed
+      Given a run recorded a mutant ID-A-02 kills, ID-A-02 defined in a.feature
+      And main_test.go, a test of main.go's own package, has changed since
+      When I run "itos-cc mutation check"
+      Then "greet" and "main", whose kills were all by listed tests, are fresh, and "half", killed by its own test, is "mutation.stale", its message naming main_test.go
+      And "itos-cc mutation run" reuses that kill
+      And that run judges the mutant of "half" again
+
+    @slice-40 @ID-MUT-309 @wip
+    Scenario: mutation sample still samples a listed kill after a test importing its file changed
+      Given a run recorded a mutant ID-A-02 kills, ID-A-02 defined in a.feature
+      And main_test.go, a test of main.go's own package, has changed since
+      When I run "itos-cc mutation sample --count 100"
+      Then that mutant runs the run command selecting ID-A-02, after its own tests survive it
+      And no "mutation.mismatch" is reported
+
+    @slice-40 @ID-MUT-310 @wip
+    Scenario: The file of a covering test still stales its kill, named, when an importing test changed too
+      Given a run recorded a mutant ID-A-02 kills, ID-A-02 defined in a.feature
+      And main_test.go, a test of main.go's own package, has changed since
+      And a.feature has changed since
+      When I run "itos-cc mutation check"
+      Then the problem is "mutation.stale" for that mutant's function, and its message names a.feature
+      And "itos-cc mutation run" runs that mutant again, its own tests first
+
+    @slice-40 @ID-MUT-311 @wip
+    Scenario: A support file still stales every listed kill, named, when an importing test changed too
+      Given itos-cc.yaml lists features/*_test.go under mutation.tests.support
+      And a run recorded listed kills and kills by own tests
+      And main_test.go, a test of main.go's own package, has changed since
+      And features/steps_test.go has changed since
+      When I run "itos-cc mutation check"
+      Then each function holding a listed kill is "mutation.stale", its message naming features/steps_test.go
+      And "half", killed by its own test, is "mutation.stale", its message naming main_test.go
+
+    @slice-40 @ID-MUT-312 @wip
+    Scenario: A fingerprinted listed kill stays fresh when its file and an importing test changed elsewhere
+      Given mutation.tests.list prints "ID-A-02", "a.feature" and the fingerprint "f1" for ID-A-02, and a run recorded a mutant ID-A-02 kills
+      And a.feature has changed since, in a comment and in another scenario, and the list still prints "f1" for ID-A-02
+      And main_test.go, a test of main.go's own package, has changed since
+      When I run "itos-cc mutation check"
+      Then "greet", whose kills were all by listed tests, is fresh
+      And "itos-cc mutation run" reuses that kill
+
+    @slice-40 @ID-MUT-313 @wip
+    Scenario: A changed fingerprint still stales its kill, named, when an importing test changed too
+      Given mutation.tests.list prints the fingerprint "f1" for ID-A-02, and a run recorded a mutant ID-A-02 kills
+      And main_test.go, a test of main.go's own package, has changed since
+      And the list now prints "f2" for ID-A-02
+      When I run "itos-cc mutation check"
+      Then the problem is "mutation.stale" for that mutant's function, and its message names ID-A-02
+
+    # A guardrail: it passes before the change and must still pass after.
+    @slice-40 @ID-MUT-314 @wip
+    Scenario: Survivors, uncovered mutants and own kills still rest on the tests that import their file
+      Given a fresh outcome recorded with scope "listed" and tests ["ID-A-02"]
+      And main_test.go, a test of main.go's own package, has changed since
+      When I run "itos-cc mutation check"
+      Then "main", holding a survivor of the listed tests, "half", killed by its own test, and "twice", uncovered, are each "mutation.stale", naming main_test.go
+      And "itos-cc mutation run" judges the survivor of "main" and the mutant of "half" again
+
+    @slice-40 @ID-MUT-315 @wip
+    Scenario: --since keeps a function it does not judge fresh when its kills were all by listed tests
+      Given a run recorded a mutant ID-A-02 kills, ID-A-02 defined in a.feature
+      And a commit after "base" changed main_test.go and "twice", and nothing else of main.go
+      When I run "itos-cc mutation run --since base"
+      Then "itos-cc mutation check" calls "greet" and "main" fresh, and "half" "mutation.stale", kept by a mutation run that did not judge it
+
+    @slice-40 @ID-MUT-316 @wip
+    Scenario: The graph agrees
+      Given main_test.go has changed since a run recorded a kill by ID-A-02
+      When the graph is built
+      Then the function holding that kill is not marked stale and "half" is, as mutation check calls them
+
+    # A guardrail (the person, 2026-10-23): ID-A-02 has no recorded file in
+    # this fixture and no fingerprint, so its kill of "greet" is not dated by
+    # anything but the support files, and keeps resting on the importing
+    # tests. It passes before the change and must still pass after.
+    @slice-40 @ID-MUT-317 @wip
+    Scenario: A listed kill whose test has no recorded file still rests on the tests that import its file
+      Given a fresh outcome recorded with scope "listed" and tests ["ID-A-02"]
+      And main_test.go, a test of main.go's own package, has changed since
+      When I run "itos-cc mutation check"
+      Then "greet" is "mutation.stale", its message naming main_test.go
+
   # listed-tests timed every run of listed tests from one run of all of
   # them: the coverage run (or the sum of the per-test runs), times the
   # timeout factor. For itos, about 3 minutes times 10, so a mutant that
