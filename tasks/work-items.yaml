@@ -13,7 +13,7 @@ phases:
 queue:
   - worker-copies-skip-ignored
   - listed-kills-importer-tests
-  - p1-itos-proof-code
+  - T-187
   - T-102
   - T-103
   - T-104
@@ -1667,29 +1667,13 @@ items:
     status: done
     depends_on: [T-25]
     kind: task
-  - id: p1-itos-proof-code
-    title: Decide whether itos-cc sets itos 7's proof.code
+  - id: T-187
+    title: Each push judges one fresh mutation site of its changed code, and cd.yml samples ten recorded ones
     phase: 1
     owner: null
     status: todo
     depends_on: [T-46]
-    kind: idea
-    why: >
-      itos 7.0.0 added the optional proof.code key (371596c, 31df605): paths that count as code and
-      a check taking {base}, which itos ci run runs over a push's range. T-25 moved the pin to 7.5.0
-      without it, since the move takes no decision; whether itos-cc's CI should run a code proof
-      (for example its own mutation or coverage check over the changed functions) is the person's
-      call.
-
-      2026-10-17 (decision 48 and the mutation explainer's review): the cache does not key a kill on
-      the code its function calls, so a callee change can leave a stale kill. When the proof turns
-      back on, run itos-cc mutation sample (the template's plan has --count 10) in cd.yml on every
-      source push beside the check proof, so a stale kill is caught within a push. ci.yml stays
-      fast; cd.yml is where the full suite and this sample belong.
-
-      The person (2026-10-18): yes, as planned. After T-46, mutation proof turns back on: set itos's
-      proof.code and run itos-cc mutation sample --count 10 in cd.yml on every source push beside
-      the check proof; ci.yml stays fast. Specify it as a task once T-46 is done.
+    kind: task
   - id: T-27
     title: Every feat and fix says what a user must change, in an Upgrading footer
     phase: 1
