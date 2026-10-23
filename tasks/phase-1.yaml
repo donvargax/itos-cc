@@ -6536,3 +6536,17 @@
     workflow, never silenced. Keep the third-party notices and the license checks whole for the new
     modules. The push that lands this is green only if T-3's checks pass in CI; read its run, not
     only the local checks.
+- id: T-186
+  type: chore
+  title: Upgrade the repository pin to itos 8.7.5
+  why: >
+    The person chose on 2026-10-23 to move to the newest itos (8.5.2 to 8.7.5) before the next
+    agents start. itos upgrade edited the pin and dropped the line 'Start with itos go unless your
+    brief names another guide.' from AGENTS.md's itos block (8.7.4, generated agent rules no longer
+    route to a guide). Nothing was asked by hand: 8.6.0's tests list --json fingerprint key is
+    optional (idea for mutation.tests.list), and no script here matches queue removals (8.7.2's
+    docs: dequeue).
+  done_when:
+    - run: test "$(itos version)" = 'itos 8.7.5'
+    - run: itos version --check
+    - run: itos config check

@@ -5378,3 +5378,10 @@ items:
       binary through -exec, not the env-var argv pattern fixed in worktrees (fc50634a), so the cause
       is still unknown; it may need the same kind of guard.
     refs: [T-46]
+  - id: T-186
+    title: Upgrade the repository pin to itos 8.7.5
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
