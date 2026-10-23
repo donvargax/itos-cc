@@ -5270,8 +5270,8 @@ items:
   - id: slice-40
     title: A listed kill rests on its listed tests and support, not on the tests importing its file
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-46]
     kind: slice
     why: >
