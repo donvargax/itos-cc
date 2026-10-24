@@ -21,7 +21,7 @@ queue:
   - slice-50
   - flaky-kills-record
   - sample-repeat
-  - graph-snapshot
+  - T-208
   - T-102
   - T-103
   - T-104
@@ -5394,39 +5394,13 @@ items:
     status: done
     depends_on: []
     kind: slice
-  - id: graph-snapshot
-    title: A command writes the architecture graph as a .metrics snapshot, the viewer reading files alone
+  - id: T-208
+    title: graph moves into internal/slices/graph, reaching mutation freshness through a port it owns
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      The person (2026-10-24, q-86): serve's move to a web app of its own follows Uncle Bob's
-      uml-viewer, whose tools write files the viewer only reads (mutator and crapper write 'the
-      snapshot uml-viewer reads'; a parser and a policy write the topology). itos-cc gains a command
-      writing the graph, the tree of repositories, directories, modules and functions with their
-      import edges and metrics, as .metrics/graph.json, what /api/graph returns today; the web app
-      reads .metrics/ and needs none of itos-cc's code, as crap, dry and mutation's snapshots
-      already work, so the UI stays simple. T-190's nightly commits it beside the others. The
-      deferred serve tasks (T-102 to T-113) are re-cut against this when serve's move is specified.
-
-      The person (2026-10-24): graph stays in this repository and follows the pattern every other
-      command does, a vertical slice (internal/slices/graph, its domain and ports, ADR-0051) whose
-      command writes .metrics/graph.json through the snapshot store; the server package and serve's
-      HTTP handler go once the web app reads the files, and with them top-level-libraries-internal's
-      exemption for graph and server. graph's use of mutation freshness (FreshnessOf) reaches the
-      mutation domain only as ADR-0051 lets slices share an engine, decided in the spec.
-
-      q-95 answered 2026-10-24 (draft .git/itos/draft-graph-snapshot.md on the coordinator's
-      machine): items 1 move to internal/slices/graph, 2 itos-cc graph writes .metrics/graph.json, 3
-      nightly commits it, 4 viewer reads the file and serve serves files only; item 5 is
-      serve-static-on-kong, deferred. D7: the repo node is the git remote's repository name
-      (origin's URL, its last path segment without .git); coordinator's routine call: with no
-      remote, the folder name, as today.
-
-      Item 4 parked with item 5 in serve-static-on-kong (the person 2026-10-24); graph-snapshot is
-      items 1 to 3.
+    kind: task
   - id: viewer-dependency-rule
     title: The viewer colours a dependency that points from a higher level to a lower one
     phase: 1
