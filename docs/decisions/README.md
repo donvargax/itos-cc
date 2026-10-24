@@ -57,5 +57,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0053: The in-process driver's adapters are hand-written per port and held complete by a test, amending decision 51](0053-the-in-process-driver-s-adapters-are-hand-written-per-port-and-held-complete-by-a-test-amending-decision-51.md)
 - [ADR-0054: Dart support starts with Flutter apps and packages run by flutter test](0054-dart-support-starts-with-flutter-apps-and-packages-run-by-flutter-test.md)
 - [ADR-0055: Flutter tests count in phases, unit and widget tests under test/ first](0055-flutter-tests-count-in-phases-unit-and-widget-tests-under-test-first.md)
+- [ADR-0056: itos-cc.yaml's include brings back only what itos-cc leaves out by default](0056-itos-cc-yaml-s-include-brings-back-only-what-itos-cc-leaves-out-by-default.md)
 
 <!-- itos:decisions:end -->
