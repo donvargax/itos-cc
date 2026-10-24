@@ -557,7 +557,7 @@ linters:
             - github.com/donvargax/itos-cc/internal/selection/port$
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/internal/lang/port$
-            - github.com/donvargax/itos-cc/config$
+            - github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings$
             - github.com/donvargax/itos-cc/internal/project$
             - github.com/donvargax/itos-cc/internal/covrun$
           deny:
@@ -597,9 +597,9 @@ linters:
             - pkg: github.com/donvargax/itos-cc
               desc: "the snapshots adapter imports only the mutation domain and the snapshot port it reads and writes through (T-161); no other adapters, libraries, UI or fakes"
         # exceptions writes itos-cc.yaml's mutation.exceptions (T-161), which
-        # was config's: it wraps config, the one reading codec, for the
-        # file's name, Parse and InvalidError, and keeps the rest of the
-        # document with yaml.v3.
+        # was config's: it wraps the settings adapter, the one reading codec,
+        # for the file's name, Parse and InvalidError, and keeps the rest of
+        # the document with yaml.v3.
         exceptions:
           list-mode: lax
           files:
@@ -607,10 +607,31 @@ linters:
             - "!$test"
           allow:
             - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
-            - github.com/donvargax/itos-cc/config$
+            - github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings$
           deny:
             - pkg: github.com/donvargax/itos-cc
-              desc: "the exceptions adapter imports only the mutation domain and config, the reading codec it wraps (T-161); no other adapters, libraries, UI or fakes"
+              desc: "the exceptions adapter imports only the mutation domain and the settings adapter, the reading codec it wraps (T-161, T-197); no other adapters, libraries, UI or fakes"
+        # settings is mutation's settings adapter (ADR-0061, T-197), the
+        # top-level config until then: it reads itos-cc.yaml, the one reading
+        # codec, into the domain's Config, and its Reader implements
+        # mutation's SettingsReader and selection's, which cmd gives every
+        # slice; no slice imports it. It imports the mutation domain it serves
+        # (decision 47), selection's port, whose SettingsReader it implements
+        # too, and internal/project, for the project root, and nothing else
+        # of ours; of the other adapters only exceptions and freshenv, which
+        # wrap it, allow it.
+        settings:
+          list-mode: lax
+          files:
+            - "**/internal/slices/mutation/adapters/settings/**"
+            - "!$test"
+          allow:
+            - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
+            - github.com/donvargax/itos-cc/internal/selection/port$
+            - github.com/donvargax/itos-cc/internal/project$
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "the settings adapter imports only the mutation domain, selection's port and internal/project (ADR-0061, T-197): no other domain or port, slice, adapter, UI or fake; extend the rules as docs/go.md's Adding a package says, never loosen this one"
         # sources is the domain's SourceEdits, SourcePresence and SourceStatus
         # over the disk (T-161), which were internal/workdir's: the standard
         # library is all it wraps.

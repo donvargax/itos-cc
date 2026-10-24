@@ -8,19 +8,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	aggregate "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
 	seltest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 func decodeFreshSettings(data []byte) ([]string, *mutants.Tests, []mutants.Exception, *mutants.FreshInvalid) {
-	c, err := config.Parse(data)
+	c, err := settings.Parse(data)
 	if err != nil {
-		invalid := err.(*config.InvalidError)
+		invalid := err.(*settings.InvalidError)
 		return nil, nil, nil, &mutants.FreshInvalid{Reason: invalid.Reason, Key: invalid.Key}
 	}
 	return c.Selection.Exclude, c.Tests, c.Exceptions, nil
@@ -91,9 +91,9 @@ func TestMemoryFreshPreparationContract(t *testing.T) {
 }
 
 // The settings a counted run names when uncommitted are the file the plan
-// reads at the commit, which the domain names without importing config.
+// reads at the commit, which the domain names without importing the settings adapter.
 func TestFreshSettingsIsTheSettingsFile(t *testing.T) {
-	if mutants.FreshSettings != config.File {
-		t.Fatalf("mutants.FreshSettings = %q, config.File = %q", mutants.FreshSettings, config.File)
+	if mutants.FreshSettings != settings.File {
+		t.Fatalf("mutants.FreshSettings = %q, settings.File = %q", mutants.FreshSettings, settings.File)
 	}
 }

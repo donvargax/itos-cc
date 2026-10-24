@@ -10,7 +10,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/features"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
@@ -18,6 +17,7 @@ import (
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
 	"github.com/donvargax/itos-cc/internal/covrun"
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
@@ -374,7 +374,7 @@ func measurementOf(c features.Coverage) covtest.Measurement {
 // configured command. It never infers inventory from command-keyed outcomes.
 func (m *memory) lister(root string, text []byte, log io.Writer) *mutantstest.Lister {
 	facts := map[string]map[string]mutantstest.Listing{}
-	cfg, err := config.Parse(text)
+	cfg, err := settings.Parse(text)
 	if err == nil && cfg.Tests != nil {
 		if setup, ok := m.listed[root]; ok && setup != nil {
 			value := mutantstest.Listing{Stdout: setup.ListOutput}

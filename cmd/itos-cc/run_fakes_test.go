@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/config"
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
 	selporttest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 )
 
@@ -46,7 +46,7 @@ func fakes(text []byte) adapters {
 		}, nil),
 		Surroundings: langporttest.Surroundings{Dir: "/work"},
 		Store:        &snapporttest.Store{RootDir: work},
-		Selection:    config.Reader{Source: heldConfig{root: work, text: text}},
+		Selection:    settings.Reader{Source: heldConfig{root: work, text: text}},
 	}
 }
 

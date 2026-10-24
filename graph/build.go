@@ -11,10 +11,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/imports"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/internal/project"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -478,7 +478,7 @@ func (o overlay) apply(ctx context.Context, info *fileInfo, tests map[string]str
 // itos-cc.yaml at root lists, hashed as a snapshot records them; nil when
 // it lists none or cannot be read.
 func supportHashes(ctx context.Context, inputs mutants.Fingerprints, root string) map[string]string {
-	cfg, err := config.LoadFrom(root)
+	cfg, err := settings.LoadFrom(root)
 	if err != nil || cfg.Tests == nil {
 		return nil
 	}

@@ -10,7 +10,7 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	"github.com/donvargax/itos-cc/config"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -41,7 +41,7 @@ func (l listEdit) result(entries []mutants.Exception) []mutants.Exception {
 
 func (l listEdit) empty() bool { return len(l.replace) == 0 && len(l.remove) == 0 && len(l.add) == 0 }
 
-// writeList writes edit into data, whose list config.Parse read as entries
+// writeList writes edit into data, whose list settings.Parse read as entries
 // and doc is the node tree of. It splices text at the places yaml.v3 gives
 // the list and its entries, so every byte but the lines of the entries it
 // adds, replaces or removes is kept (splice); a layout it cannot splice, such
@@ -62,7 +62,7 @@ func writeList(data []byte, doc *yaml.Node, entries []mutants.Exception, edit li
 // readsAs says whether out reads as want under mutation.exceptions, and as
 // data everywhere else.
 func readsAs(out, data []byte, want []mutants.Exception) bool {
-	c, err := config.Parse(out)
+	c, err := settings.Parse(out)
 	if err != nil || !slices.Equal(c.Exceptions, want) {
 		return false
 	}

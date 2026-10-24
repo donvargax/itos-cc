@@ -13,10 +13,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/project"
 	fileselection "github.com/donvargax/itos-cc/internal/selection"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -61,7 +61,7 @@ func releasePlan(p *FreshPlan) error {
 // paths; since, when non-empty, further restricts candidates to changed
 // functions. The sources the committed itos-cc.yaml excludes are no
 // candidates, whatever paths name; a committed itos-cc.yaml that cannot be
-// read is its *config.InvalidError.
+// read is its *settings.InvalidError.
 func (e Environment) plan(ctx context.Context, repoRoot string, paths []string, since string, count int, seed string) (*FreshPlan, error) {
 	if count <= 0 {
 		return nil, errors.New("fresh plan count must be positive")
@@ -151,7 +151,7 @@ func (e Environment) plan(ctx context.Context, repoRoot string, paths []string, 
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := config.LoadFrom(frozen)
+	cfg, err := settings.LoadFrom(frozen)
 	if err != nil {
 		return nil, err
 	}

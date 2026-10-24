@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	"github.com/donvargax/itos-cc/internal/version"
 )
 
@@ -78,7 +78,7 @@ func (unreadable) Read(context.Context) (string, []byte, error) {
 // and version never read it, so it breaks none of them.
 func TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead(t *testing.T) {
 	failing := fakes(nil)
-	failing.Selection = config.Reader{Source: unreadable{}}
+	failing.Selection = settings.Reader{Source: unreadable{}}
 	for _, name := range []string{"crap", "dry", "units"} {
 		code, stdout, stderr := runFaked(t, failing, name, "--json")
 		if code != cli.CodeUsage || !strings.Contains(stdout, `"rule": "config.invalid"`) || !strings.Contains(stdout, `"file": "itos-cc.yaml"`) || !strings.Contains(stdout, "itos-cc.yaml: cannot be read: permission denied") || stderr != "" {

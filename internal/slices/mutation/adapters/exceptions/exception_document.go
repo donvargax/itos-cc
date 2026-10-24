@@ -7,7 +7,7 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	"github.com/donvargax/itos-cc/config"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -38,14 +38,14 @@ func RenewDocument(data []byte, renewals []mutants.Renewal) ([]byte, error) {
 		return nil, err
 	}
 	if len(doc.Content) == 0 || doc.Content[0].Kind != yaml.MappingNode {
-		return nil, &config.InvalidError{Reason: "its top level is not a mapping"}
+		return nil, &settings.InvalidError{Reason: "its top level is not a mapping"}
 	}
 	edit := listEdit{n: len(c.Exceptions), replace: map[int]mutants.Exception{}}
 	done := make([]bool, len(c.Exceptions))
 	for _, r := range renewals {
 		i := entryOf(c.Exceptions, done, r.Old)
 		if i < 0 {
-			return nil, fmt.Errorf("%s: no entry for %s in %s to renew", config.File, r.Old.Function, r.Old.File)
+			return nil, fmt.Errorf("%s: no entry for %s in %s to renew", settings.File, r.Old.Function, r.Old.File)
 		}
 		edit.replace[i] = r.New
 	}
@@ -65,7 +65,7 @@ func PruneDocument(data []byte, entries []mutants.Exception) ([]byte, error) {
 	for _, e := range entries {
 		i := entryOf(c.Exceptions, done, e)
 		if i < 0 {
-			return nil, fmt.Errorf("%s: no entry for %s in %s to remove", config.File, e.Function, e.File)
+			return nil, fmt.Errorf("%s: no entry for %s in %s to remove", settings.File, e.Function, e.File)
 		}
 		edit.remove[i] = true
 	}
@@ -84,26 +84,26 @@ func entryOf(entries []mutants.Exception, done []bool, e mutants.Exception) int 
 	return -1
 }
 
-// read is data as config.Parse reads it, and its node tree, whose top
+// read is data as settings.Parse reads it, and its node tree, whose top
 // level, when it has one, is a mapping holding mutation.exceptions as
-// config.Parse read it.
-func read(data []byte) (*config.Config, *yaml.Node, error) {
-	c, err := config.Parse(data)
+// settings.Parse read it.
+func read(data []byte) (*settings.Config, *yaml.Node, error) {
+	c, err := settings.Parse(data)
 	if err != nil {
 		return nil, nil, err
 	}
 	var doc yaml.Node
 	if err := yaml.Unmarshal(data, &doc); err != nil {
-		return nil, nil, &config.InvalidError{Reason: err.Error()}
+		return nil, nil, &settings.InvalidError{Reason: err.Error()}
 	}
 	if len(doc.Content) > 0 && !isNull(doc.Content[0]) {
 		root := doc.Content[0]
 		if root.Kind != yaml.MappingNode {
-			return nil, nil, &config.InvalidError{Reason: "its top level is not a mapping"}
+			return nil, nil, &settings.InvalidError{Reason: "its top level is not a mapping"}
 		}
 		if _, m := key(root, "mutation"); m != nil && m.Kind == yaml.MappingNode {
 			if _, list := key(m, "exceptions"); list != nil && list.Kind == yaml.SequenceNode && len(list.Content) != len(c.Exceptions) {
-				return nil, nil, fmt.Errorf("%s: mutation.exceptions changed while it was read", config.File)
+				return nil, nil, fmt.Errorf("%s: mutation.exceptions changed while it was read", settings.File)
 			}
 		}
 	}

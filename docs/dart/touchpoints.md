@@ -344,7 +344,7 @@ Scenario: `@ID-MUT-209` Examples (`:1972-1976`, "the pub cache, run with --no-pu
 
 ### 2.10 Settings / config
 
-`config/` and `itos-cc.yaml` hold no language tables (grep finds none). `exclude` (decision 45) is the existing
+`internal/slices/mutation/adapters/settings` and `itos-cc.yaml` hold no language tables (grep finds none). `exclude` (decision 45) is the existing
 tool for generated files and platform folders. If the spec wants defaults, they go either in `lang.Detect`
 (generated suffixes) or in discovery (platform folders), not in config [decision]. `docs/CONFIG.md` changes only
 if a Dart-specific setting is added.

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/workdir"
 )
@@ -40,7 +40,7 @@ func TestAnEntryWhoseFileIsGoneHasMovedToTheOneFileHoldingItsFunction(t *testing
 		{"in two files", []string{one, two}, mutation.ExceptionGone},
 		{"changed", []string{changed}, mutation.ExceptionGone},
 	} {
-		stale, moved, err := mutation.Elsewhere(t.Context(), []config.Exception{e}, c.sources, all, nothing, opt)
+		stale, moved, err := mutation.Elsewhere(t.Context(), []settings.Exception{e}, c.sources, all, nothing, opt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -64,16 +64,16 @@ func TestAnEntryWhoseFileIsGoneHasMovedToTheOneFileHoldingItsFunction(t *testing
 
 	// An entry for a file that is still selected, or one judge leaves out,
 	// is not judged here.
-	if stale, _, _ := mutation.Elsewhere(t.Context(), []config.Exception{e}, []string{write("x.py", b)}, all, nothing, opt); len(stale) != 0 {
+	if stale, _, _ := mutation.Elsewhere(t.Context(), []settings.Exception{e}, []string{write("x.py", b)}, all, nothing, opt); len(stale) != 0 {
 		t.Errorf("an entry of a selected file: %+v, want none", stale)
 	}
-	if stale, _, _ := mutation.Elsewhere(t.Context(), []config.Exception{e}, []string{one}, nothing, all, opt); len(stale) != 0 {
+	if stale, _, _ := mutation.Elsewhere(t.Context(), []settings.Exception{e}, []string{one}, nothing, all, opt); len(stale) != 0 {
 		t.Errorf("an entry judge leaves out: %+v, want none", stale)
 	}
 
 	// An entry for a file itos-cc.yaml excludes is stale as excluded, even
 	// where its function is in one of sources, and never moves.
-	stale, moved, err := mutation.Elsewhere(t.Context(), []config.Exception{e}, []string{one}, all, func(file string) bool { return file == e.File }, opt)
+	stale, moved, err := mutation.Elsewhere(t.Context(), []settings.Exception{e}, []string{one}, all, func(file string) bool { return file == e.File }, opt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,15 +82,15 @@ func TestAnEntryWhoseFileIsGoneHasMovedToTheOneFileHoldingItsFunction(t *testing
 	}
 }
 
-func retainedExceptionAt(t *testing.T, f *lang.File, line, column int, original string) config.Exception {
+func retainedExceptionAt(t *testing.T, f *lang.File, line, column int, original string) settings.Exception {
 	t.Helper()
 	for _, s := range mutation.Sites(f) {
 		if s.Line == line && s.Column == column && s.Original == original {
 			u := f.Units[s.Unit]
-			return config.Exception{File: "x.py", Function: mutation.UnitID(u.Namespace, u.Name), Hash: mutation.UnitHash(f, u),
+			return settings.Exception{File: "x.py", Function: mutation.UnitID(u.Namespace, u.Name), Hash: mutation.UnitHash(f, u),
 				LineInFunction: s.Line - u.StartLine + 1, Column: s.Column, Original: s.Original, Replacement: s.Replacement, Reason: "r"}
 		}
 	}
 	t.Fatalf("no site %d:%d %s", line, column, original)
-	return config.Exception{}
+	return settings.Exception{}
 }

@@ -62,10 +62,9 @@ siblings() {
 # and server, features and tools/ have no rule,
 # so this holds it over the same go list fields as siblings. graph, the
 # legacy serve consumer, its fixture subpackages with it, reads the
-# mutation domain's judgment in its code, and its tests build fixtures with
-# anything under internal/slices/mutation/; config, the one settings codec,
-# decodes into the mutation domain's Config, and its tests use that
-# domain's porttest.
+# mutation domain's judgment and, through mutation's settings adapter, the
+# project's settings in its code, and its tests build fixtures with
+# anything under internal/slices/mutation/, until graph-snapshot (ADR-0060).
 outside() {
 	module=$(go list -m)
 	listed=$(go list -f '{{$p := .ImportPath}}{{range .Imports}}{{$p}} code {{.}}{{"\n"}}{{end}}{{range .TestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}{{range .XTestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}' "$@")
@@ -77,12 +76,8 @@ outside() {
 			if (index(importer, module "/cmd/") == 1) return 1
 			domain = module "/internal/slices/mutation/domain"
 			if (under(importer, "graph")) {
-				if (imported == domain) return 1
+				if (imported == domain || imported == module "/internal/slices/mutation/adapters/settings") return 1
 				return kind == "tests" && index(imported, module "/internal/slices/mutation/") == 1
-			}
-			if (under(importer, "config")) {
-				if (imported == domain) return 1
-				return kind == "tests" && imported == domain "/porttest"
 			}
 			return 0
 		}
@@ -94,7 +89,7 @@ outside() {
 		}')
 	[ -z "$refused" ] && return 0
 	printf '%s\n' "$refused" | while IFS= read -r line; do
-		echo "architecture-check: $line; only cmd imports any package under internal/slices, graph and config only what their rows in docs/go.md allow (ADR-0051)" >&2
+		echo "architecture-check: $line; only cmd imports any package under internal/slices, graph only what its row in docs/go.md allows (ADR-0051)" >&2
 	done
 	return 1
 }
@@ -108,11 +103,10 @@ outside() {
 # release-version import internal/release alone, its releasetest with it,
 # as the template lays the release tools out. Until graph-snapshot
 # (ADR-0060), graph and server, the legacy serve consumer, import what they
-# need, outside holding what they import under internal/slices; until its
-# move (T-197), config too, its move deleting its row, as project's,
-# metrics' and coverage's went with them under internal/ (T-194 to T-196).
-# depguard covers internal/** only, so this holds it over the same go list
-# fields as outside.
+# need, outside holding what they import under internal/slices; project's,
+# metrics', coverage's and config's rows went with them under internal/
+# (T-194 to T-197). depguard covers internal/** only, so this holds it over
+# the same go list fields as outside.
 toplevel() {
 	module=$(go list -m)
 	listed=$(go list -f '{{$p := .ImportPath}}{{range .Imports}}{{$p}} code {{.}}{{"\n"}}{{end}}{{range .TestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}{{range .XTestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}' "$@")
@@ -126,8 +120,6 @@ toplevel() {
 			if (under(importer, "tools/bin/release-notes") || under(importer, "tools/bin/release-version")) return under(imported, "internal/release")
 			# Until graph-snapshot (ADR-0060).
 			if (under(importer, "graph") || under(importer, "server")) return 1
-			# Until its move under internal/ (T-197).
-			if (under(importer, "config")) return 1
 			return 0
 		}
 		NF == 3 && under($3, "internal") && !allowed($1, $3) {

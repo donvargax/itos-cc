@@ -18,11 +18,11 @@ import (
 	"testing"
 
 	"github.com/cucumber/godog"
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/features"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	selporttest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
@@ -537,7 +537,7 @@ func (m *memory) inProcessAdapters(r features.Run, stderr io.Writer) (adapters, 
 		store.Snapshots[rel] = text
 	}
 	file := heldConfig{root: root}
-	if text, err := m.Read(filepath.Join(root, config.File)); err == nil {
+	if text, err := m.Read(filepath.Join(root, settings.File)); err == nil {
 		file.text = text
 	} else if !errors.Is(err, fs.ErrNotExist) {
 		file.err = err
@@ -554,7 +554,7 @@ func (m *memory) inProcessAdapters(r features.Run, stderr io.Writer) (adapters, 
 	lister := m.lister(root, file.text, stderr)
 	c := m.counted(dir, &tree, input, measurer.base, workers, lister)
 	a := adapters{
-		Settings:   config.Reader{Source: memoryConfig{memory: m, root: root}},
+		Settings:   settings.Reader{Source: memoryConfig{memory: m, root: root}},
 		Exceptions: func(root string) mutation.Exceptions { return memoryExceptions{memory: m, root: root} }, SourceStatus: source,
 		SnapshotReader: snapshots.Mutations{Store: observed}, Catalog: snapshots.Mutations{Store: observed}, Presence: source, Snapshots: snapshots.Mutations{Store: observed}, SourceEdits: source, TestLister: lister,
 		Toolchain: input, Fingerprints: input, Reach: input, History: m.history(dir),
@@ -564,7 +564,7 @@ func (m *memory) inProcessAdapters(r features.Run, stderr io.Writer) (adapters, 
 		Surroundings: input,
 		Store:        observedStore{Store: store, memory: m, dir: metricsDir},
 		Coverage:     measurer, MutationCoverage: measurer,
-		Selection: config.Reader{Source: file},
+		Selection: settings.Reader{Source: file},
 		Fresh:     c.Fresh, FreshWorkers: c.FreshWorkers, Repository: c.Repository, PhysicalDir: c.PhysicalDir, Platform: c.Platform,
 	}
 	finish := func() error {

@@ -27,16 +27,14 @@ flowchart TD
   dom["shared domains + port + porttest<br/>selection, lang, snapshot, coverage"]
   adp["shared adapters<br/>workdir, metricsdir, coveragetools"]
   eng["adapter-side engines<br/>processes, imports, project, covrun"]
-  lib["libraries<br/>config"]
   main --> ui & slice & sadp & adp & eng & dom
   slice --> ui & sdom & dom
   sdom --> dom
-  sadp --> sdom & dom & eng & lib
-  adp --> dom & eng & lib
+  sadp --> sdom & dom & eng
+  sadp -.->|"exceptions, freshenv: mutation's settings"| sadp
+  adp --> dom & eng
   adp -.->|"coveragetools: metricsdir's Dir"| adp
-  eng --> dom & lib
-  lib --> eng
-  lib -.->|"config only"| sdom
+  eng --> dom
 ```
 
 An arrow is an import the rules allow. Every arrow not drawn is refused.
@@ -47,21 +45,19 @@ An arrow is an import the rules allow. Every arrow not drawn is refused.
 | UI | `internal/cli` | nothing of ours | `ui` |
 | Slice | `internal/slices/<x>` | the shared domains and ports, `internal/cli`, its own subpackages | `slice-packages`, `slice-adapters`, `slice-fakes`, `architecture-check --siblings` |
 | Slice's domain | `internal/slices/<x>/domain` | shared domains and their ports; no I/O, no kong | `domain`, `domain-io` |
-| Slice's adapters | `internal/slices/<x>/adapters/<name>` | its slice's domain, the pure shared domains, the libraries it wraps | one rule each (`testtools`, `worktrees`, …) |
+| Slice's adapters | `internal/slices/<x>/adapters/<name>` | its slice's domain, the pure shared domains, the libraries it wraps; mutation's `exceptions` and `freshenv` its `settings` adapter, the `config` package until T-197 | one rule each (`testtools`, `worktrees`, `settings`, …) |
 | Shared domains | `internal/selection`, `internal/lang`, `internal/snapshot`, `internal/coverage`, each with `port` and `porttest` | one another and their ports; nothing under `internal/slices` | `domain`, `domain-io`, `shared-domains` |
 | Shared adapters | `internal/workdir`, `internal/metricsdir`, `internal/coveragetools` | the port they implement, the domain it belongs to, the libraries they wrap | `workdir`, `metricsdir`, `coveragetools` |
 | Adapter-side engines | `internal/processes` (process ownership), `internal/imports` (import resolution), `internal/project` (project and git history), `internal/covrun` (the coverage runner) | `processes` nothing of ours; `imports` lang, `internal/project` and `internal/covrun`; `project` lang with its port, selection and snapshot; `covrun` the coverage domain with its port, lang and `internal/project` | `processes`, `imports`, `project`, `covrun` |
-| Libraries | `config` | what they wrap; nothing under `internal/slices`, but `config`'s settings codec imports the mutation domain; it moves under `internal/` (T-197) | `architecture-check --outside` and `--toplevel` |
 
 The rules are depguard's, in `.golangci.yml`, and `tools/bin/architecture-check`, which runs the
 pinned golangci-lint over compile-valid fixtures in `tools/testdata/architecture` that each rule
 must accept and refuse. depguard matches a prefix and covers `internal/` alone, so four arrows
 it cannot hold are checks of their own over `go list ./...`: no slice imports a sibling slice
-(`--siblings`), nothing outside `internal/slices` imports a slice but `cmd`, graph and `config`
+(`--siblings`), nothing outside `internal/slices` imports a slice but `cmd` and graph
 (`--outside`), nothing outside `internal/` and `cmd/` imports a package under `internal/` but
 the rows `docs/go.md` names, `features` importing `internal/project` and the release tools
-`internal/release`, graph and `server` until graph-snapshot, the libraries until their moves
-(`--toplevel`, ADR-0061), and the binary links no `porttest` (`--linked`). Further rules: `mocks`
+`internal/release`, and graph and `server` until graph-snapshot (`--toplevel`, ADR-0061), and the binary links no `porttest` (`--linked`). Further rules: `mocks`
 (no mocking library anywhere), `rapid` (the property library only in a domain's tests) and
 `kong`.
 

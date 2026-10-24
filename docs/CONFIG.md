@@ -18,9 +18,10 @@ The rules are adapted from [itos-template](https://github.com/donvargax/itos-tem
 
 ## itos-cc.yaml as implemented
 
-The `config` package reads `itos-cc.yaml` (`config.Parse`), and the mutation slice's exceptions
-adapter writes it (`mutation except`, `mutation except --renew` and `mutation except --prune`),
-reading it with `config.Parse` first. Its keys are `exclude`, `mutation.exceptions` and
+The mutation slice's settings adapter, `internal/slices/mutation/adapters/settings` (the
+top-level `config` package until T-197), reads `itos-cc.yaml` (`settings.Parse`) for every
+command, and the slice's exceptions adapter writes it (`mutation except`, `mutation except
+--renew` and `mutation except --prune`), reading it with `settings.Parse` first. Its keys are `exclude`, `mutation.exceptions` and
 `mutation.tests` (`docs/CLI.md`, rule 38). Against the rules below, the loader as it stands:
 
 | Rule | What the loader does now |

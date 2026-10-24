@@ -39,7 +39,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   directory it names and never touches, and `TreeOf`, which lays one out from files' text,
   classified by `internal/lang` as `internal/workdir` classifies them, and `TreeContract`, the
   contract it and `internal/workdir`'s `Tree` both pass (Tests, below), and the fake
-  `Settings` with `SettingsContract`, which it and `config.Reader` pass.
+  `Settings` with `SettingsContract`, which it and mutation's `settings.Reader` pass.
 - `internal/snapshot` is the domain of the snapshots under `.metrics/` that the commands
   share and projects commit (decision 41): the `Folder` they live in, the format `Version`
   every snapshot records, and `Key(root, abs)`, an absolute path named as a snapshot records
@@ -164,16 +164,16 @@ a `context.Context` first (decision 30); pure logic takes none.
   parse supplied source through lang's surroundings fake. Ordinary and counted scheduling,
   check/list/sample/exception policy and fresh admission live here over model-bearing ports.
   The slice's `snapshots` adapter owns the concrete snapshot codec, including legacy evidence
-  keys and line precision, and its `exceptions` adapter the exception YAML writer over config's
-  reading codec (T-161). `CoverageEvidence`, `CoverageBlock` and `SuiteEvidence` carry the
+  keys and line precision, and its `exceptions` adapter the exception YAML writer over its
+  `settings` adapter's reading codec (T-161, T-197). `CoverageEvidence`, `CoverageBlock` and `SuiteEvidence` carry the
   snapshot's json keys, and `Exception` itos-cc.yaml's as json and yaml tags, so the snapshots
-  adapter, the mutation slice's `--json`, config's reads and the exceptions adapter's writes
+  adapter, the mutation slice's `--json`, the settings adapter's reads and the exceptions adapter's writes
   encode them with no mirror (T-136). It has no `port` subpackage: its model-bearing ports
   are declared beside their values (below), and `internal/slices/mutation/domain/porttest` holds their fakes and
   contract suites. The `domain`, `domain-io`, `mutant-fakes` and `coverage-fakes` rules hold it,
   and `tools/bin/domain-coverage` measures it. Unlike dry's, scrap's and crap's domains it is on
   the `domain` rule's allow list, since its external tests and porttest import it, and the
-  slice's adapters, `config` and `graph` import it too; the shared
+  slice's adapters, its `settings` adapter among them, and `graph` import it too; the shared
   domains may not (`shared-domains`), nor another slice (the sibling rule). The legacy
   `mutate` package is retired.
 - `internal/slices/mutation/adapters` holds the mutation slice's own adapters (ADR-0051), each
@@ -195,12 +195,18 @@ a `context.Context` first (decision 30); pure logic takes none.
   this one by a test, as it keeps crap's formula, so no slice's code is reachable from it
   (ADR-0051). `exceptions`, config's writer until then, is the domain's `Exceptions` at the
   root cmd selects: `ExceptDocument` and `RenewDocument` rewrite itos-cc.yaml's
-  `mutation.exceptions` through config's `Parse`, keeping its other keys, comments and file
-  mode, and config's `File` and `InvalidError` name the file and its refusal. `sources`,
+  `mutation.exceptions` through the `settings` adapter's `Parse`, keeping its other keys,
+  comments and file mode, and that adapter's `File` and `InvalidError` name the file and its
+  refusal. `sources`,
   `internal/workdir`'s until then, is the domain's `SourceEdits`, `SourcePresence` and
   `SourceStatus` over the disk: follow-rename absence uses Stat, while annotation rereads
   current bytes, skips identical content before stat/write, and preserves the current
-  permissions. They import the slice's domain, whose model-bearing ports they
+  permissions. `settings`, the top-level `config` until T-197 (ADR-0061), reads itos-cc.yaml,
+  the one reading codec: `Parse` decodes `exclude`, `mutation.exceptions` and `mutation.tests`
+  into the domain's `Config`, which its `Config` aliases, and its `Reader` implements the
+  domain's `SettingsReader` and selection's over the bytes cmd selects, from the disk or
+  memory. cmd gives that `Reader` to every slice, as mutation's settings or selection's, and
+  `exceptions` and `freshenv` wrap it. They import the slice's domain, whose model-bearing ports they
   implement, and the libraries they wrap; cmd wires them in through the slice's `Ports`, and
   no slice imports them, the mutation slice's code neither (`slice-adapters`). `importgraph`
   is a thin adapter of its own over `internal/imports` (T-162): its `Reach` calls the engine's
@@ -276,7 +282,8 @@ a `context.Context` first (decision 30); pure logic takes none.
   Pure planning uses committed settings; trials reread actual frozen bytes after preparation.
   Release retains historical best-effort scratch cleanup; checked worker Close retains
   lifetime failures and partial trial results. Its depguard rule permits only the served
-  domain and the actual config/project/coverage/language/selection libraries it wraps.
+  domain, the slice's `settings` adapter and the actual project/coverage/language/selection
+  libraries it wraps.
 - `internal/slices/mutation` declares the whole mutation group and its five child command
   structs and help contracts (T-96), the sixth slice under `internal/slices` and the first that
   is a group (T-157); it was `internal/mutation`. `Command` declares the group, its `New` a fresh
@@ -342,15 +349,15 @@ a `context.Context` first (decision 30); pure logic takes none.
   help and the flattened top-level rows come from the same model. Leading group `--json`
   affects group errors but is stripped before a known child's dispatch, as before;
   top-level and child-level JSON still reach that child.
-  `mutants.Config` is the existing semantic settings value; `config.Config` aliases it.
+  `mutants.Config` is the existing semantic settings value; `settings.Config` aliases it.
   It carries the selection engine's `Settings`, root and `exclude`, beside mutation's
   exceptions and tests, so each admission point reads all four from one observation.
   The model-bearing `SettingsReader` rereads actual current settings at the preserved
-  admission points. `config.Reader` uses the one existing codec over cmd-selected disk
+  admission points. `settings.Reader` uses the one existing codec over cmd-selected disk
   or memory bytes. A file the bytes' source cannot read is invalid settings, a reason
   with no key, as a file that does not parse is (bug-4); only a cancelled read, or a
   missing binding, stays apart. `crap`, `dry` and `units` read only the selection
-  settings, through selection's `SettingsReader`, which `config.Reader` implements over
+  settings, through selection's `SettingsReader`, which `settings.Reader` implements over
   the same read and codec (`ReadSelection`), so every command classifies the file alike. The
   unit fake owns only semantic values. The memory driver runs all five children over its
   fakes (T-125), binding a counted run as the disk adapters bind it: porttest's `Fresh`
@@ -565,9 +572,10 @@ context-as-argument a context after any other parameter, tests included.
   `internal/slices/scrap/domain`, `internal/slices/crap/domain` and
   `internal/slices/mutation/domain`, is held as the others are, and left out of what a domain may
   import, since it is no shared one, but for mutation's and its `porttest`, which its own
-  external tests and porttest import. `config` imports `internal/slices/mutation/domain`, whose `Config`
-  it aliases and whose `SettingsReader` its `Reader` implements, and `internal/selection/port`,
-  whose `SettingsReader` it implements too, never the reverse.
+  external tests and porttest import. Mutation's `settings` adapter imports
+  `internal/slices/mutation/domain`, whose `Config` it aliases and whose `SettingsReader` its
+  `Reader` implements, and `internal/selection/port`, whose `SettingsReader` it implements too,
+  never the reverse.
 - `shared-domains`: the shared domains, `internal/selection`, `internal/lang`,
   `internal/snapshot` and `internal/coverage`, their ports, fakes and tests, import nothing under
   `internal/slices`, so mutation's domain on `domain`'s allow list is open to no shared domain
@@ -577,9 +585,10 @@ context-as-argument a context after any other parameter, tests included.
 - `slices`: a package under `internal/` that no rule names, held as a slice now that every
   command's slice is under `internal/slices` (T-157), imports nothing of ours but the domains, `internal/cli` and
   `internal/lang`, the domain library naming a source's units that every command measures by,
-  with its port and, in its tests, the port's fake, so never another slice, an adapter, the `internal/project`
-  engine an adapter wraps and lang's disk side, the `config` codec (mutation reads settings
-  through mutants' `SettingsReader`, T-97), a slice's domain, or `cmd`. Its files are every package under `internal/`
+  with its port and, in its tests, the port's fake, so never another slice, an adapter,
+  mutation's `settings` among them (a slice reads settings through a `SettingsReader`, T-97),
+  the `internal/project` engine an adapter wraps and lang's disk side, a slice's domain, or
+  `cmd`. Its files are every package under `internal/`
   outside `internal/slices` except the ones the rule lists as something else, so a package no
   rule names is held as a slice, and it refuses each of them importing a slice under
   `internal/slices`. A slice's tests are in its own package, since the rule cannot tell a
@@ -615,13 +624,13 @@ context-as-argument a context after any other parameter, tests included.
   subpackages and any engine.
 - Outside: engines stay behind stable APIs the slices import, never the reverse (ADR-0051,
   T-167), so a package outside `internal/slices` imports none under it, from its code or its
-  tests, but three. `cmd`, which assembles them, imports every slice, its domains and adapters.
+  tests, but two. `cmd`, which assembles them, imports every slice, its domains and adapters.
   graph, the legacy serve consumer, with any subpackage under `graph/`, imports
-  `internal/slices/mutation/domain` from its code, whose judgment it reads, and anything under
-  `internal/slices/mutation/` from its tests, the domain's `porttest` and the adapters it builds
-  fixtures with. `config`, the one settings codec, with any subpackage under `config/`, imports
-  that domain from its code, decoding `mutation.exceptions` and `mutation.tests` into its
-  `Config`, and the domain and its `porttest` from its tests. depguard's `slices` rule covers
+  `internal/slices/mutation/domain` from its code, whose judgment it reads, and mutation's
+  `settings` adapter, through which it reads the project's settings, until graph-snapshot
+  (ADR-0060), and anything under `internal/slices/mutation/` from its tests, the domain's
+  `porttest` and the adapters it builds fixtures with. `config`'s row went when it became
+  that settings adapter (T-197). depguard's `slices` rule covers
   `internal/` alone, and `server`, `features` and `tools` have
   no rule, so `tools/bin/architecture-check` holds it over the same `go list` fields as the
   sibling rule and names both packages.
@@ -632,18 +641,18 @@ context-as-argument a context after any other parameter, tests included.
   `tools/bin/release-version` `internal/release` alone, its `releasetest` with it, the
   template's layout. Until graph-snapshot (ADR-0060), graph and `server`, the legacy serve
   consumer, import what they need, the outside check holding what they import under
-  `internal/slices`; until its move under `internal/` (T-197), `config` too, its move
-  deleting its row, as `project`'s went when it became `internal/project` (T-194), `metrics`'
-  when it folded into `internal/metricsdir` (T-195) and `coverage`'s when it became
-  `internal/covrun` (T-196). A new package goes under
+  `internal/slices`. Each move under `internal/` deleted its row: `project`'s when it became
+  `internal/project` (T-194), `metrics`' when it folded into `internal/metricsdir` (T-195),
+  `coverage`'s when it became `internal/covrun` (T-196) and `config`'s when it became
+  `internal/slices/mutation/adapters/settings` (T-197). A new package goes under
   `internal/`, never at the top level. depguard covers `internal/` alone, so
   `tools/bin/architecture-check`'s toplevel holds it over the outside check's `go list` fields
   and names both packages, and whether from the importer's tests.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
 - `workdir`, `metricsdir`, `coveragetools`, and the mutation adapters' `worktrees`,
-  `testtools`, `testinputs`, `githistory`, `freshenv`, `importgraph`, `snapshots`, `exceptions`
-  and `sources` (the mutation slice's own, under `internal/slices/mutation/adapters`): an
+  `testtools`, `testinputs`, `githistory`, `freshenv`, `importgraph`, `snapshots`, `exceptions`,
+  `sources` and `settings` (the mutation slice's own, under `internal/slices/mutation/adapters`): an
   adapter imports
   nothing of ours but the port it implements and the libraries it wraps, `internal/workdir`
   the two ports it implements, selection's and `internal/lang`'s, and `internal/project`,
@@ -658,7 +667,10 @@ context-as-argument a context after any other parameter, tests included.
   which the sibling rule lets them import, the slice's own adapters being the slice's;
   `workdir`'s and `metricsdir`'s no longer do, since mutation's source edits and snapshot codec
   left them for `sources` and `snapshots` (T-161). `snapshots`' allows the snapshot port it
-  reads and writes through, and `exceptions`' config, the reading codec it wraps. `freshenv`
+  reads and writes through, and `exceptions`' the `settings` adapter, the reading codec it
+  wraps, which `freshenv`'s allows too (T-197). `settings`' allows selection's port, whose
+  `SettingsReader` its `Reader` implements beside the domain's, and `internal/project`, for
+  the project root. `freshenv`
   serves mutants, yet its rule allows `internal/coverage` and its port too, since it reads Go coverage blocks (`coverage.GoBlock`) through that domain.
   `internal/coveragetools`' allows the coverage domain, whose `Report` it returns, beside its
   port, the `internal/covrun` runner it wraps and `internal/metricsdir`, whose `Dir` names its run
@@ -674,7 +686,7 @@ context-as-argument a context after any other parameter, tests included.
   `internal/slices`.
 - `imports`: the import-resolution engine, code and tests, imports nothing of ours but
   `internal/lang`, whose parsed files it resolves, `internal/project` and the `internal/covrun` runner (T-162):
-  no other domain or port, slice, adapter, fake, UI or `cmd`, nor graph or `config`. It is an adapter-side engine like `processes`: the `domain` and `slices` rules
+  no other domain or port, slice, adapter, fake, UI or `cmd`, nor graph. It is an adapter-side engine like `processes`: the `domain` and `slices` rules
   refuse it, of the adapters only `importgraph`'s allows it, and graph, which no rule holds,
   imports it. `slices` and `slice-fakes` leave it out. Its rule has one deny entry, the
   module, since depguard looks a deny up as the one entry sorting just before the import

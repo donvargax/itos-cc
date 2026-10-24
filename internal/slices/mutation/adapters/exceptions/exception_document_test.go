@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/exceptions"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -28,7 +28,7 @@ func TestExceptDocumentAddsEntriesThatParseReads(t *testing.T) {
 		}
 		data = updated
 	}
-	c, err := config.Parse(data)
+	c, err := settings.Parse(data)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestExceptDocumentReplacesTheSameSiteAndKeepsTheRest(t *testing.T) {
 	if err != nil || !replaced {
 		t.Fatalf("replaced %v, error %v, want the first entry replaced", replaced, err)
 	}
-	c, err := config.Parse(data)
+	c, err := settings.Parse(data)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestRenewDocumentRewritesOnlyItsEntriesAndKeepsTheRest(t *testing.T) {
 	text := "# Settings.\nother: [1, 2] # kept\nmutation:\n  exceptions:\n" +
 		"    # The first.\n    - {file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: old}\n" +
 		"    - {file: src/a.go, function: m/src#g, hash: 0123456789abcdef, line_in_function: 2, column: 20, original: '<', replacement: '!=', reason: kept, line_text: 'if a < b {'}\n"
-	before, err := config.Parse([]byte(text))
+	before, err := settings.Parse([]byte(text))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestRenewDocumentRewritesOnlyItsEntriesAndKeepsTheRest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	after, err := config.Parse(data)
+	after, err := settings.Parse(data)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +103,7 @@ func TestExceptDocumentFillsAnEmptyOrNullSetting(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if c, err := config.Parse(data); err != nil || !slices.Equal(c.Exceptions, []mutants.Exception{entry}) {
+			if c, err := settings.Parse(data); err != nil || !slices.Equal(c.Exceptions, []mutants.Exception{entry}) {
 				t.Errorf("exceptions %+v, error %v, want the entry", c, err)
 			}
 		})
@@ -123,7 +123,7 @@ func TestExceptDocumentRefusesAnInvalidDocument(t *testing.T) {
 		"mutation:\n  exceptions:\n    - {file: a.go, function: f, hash: h, line_in_function: 1, column: 1, original: '<', reason: r}\n",
 	} {
 		data, _, err := exceptions.ExceptDocument([]byte(text), entry)
-		var invalid *config.InvalidError
+		var invalid *settings.InvalidError
 		if !errors.As(err, &invalid) {
 			t.Errorf("%q: ExceptDocument: %v, want it to refuse with an InvalidError", text, err)
 		}
@@ -194,7 +194,7 @@ func TestExceptDocumentReencodesAFlowMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c, err := config.Parse(data); err != nil || !slices.Equal(c.Exceptions, []mutants.Exception{entry}) {
+	if c, err := settings.Parse(data); err != nil || !slices.Equal(c.Exceptions, []mutants.Exception{entry}) {
 		t.Errorf("exceptions %+v, error %v, want the entry", c, err)
 	}
 }
@@ -203,7 +203,7 @@ func TestRenewDocumentChangesOnlyTheLinesOfItsEntries(t *testing.T) {
 	text := "---\n# Settings.\n\nother: { each: \"{id}\", sep: \"|\" }\nlimit: 30  # kept\n\nmutation:\n  exceptions:\n" +
 		"    - {file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: kept}\n\n" +
 		"    - file: src/a.go\n      function: m/src#g\n      hash: 0123456789abcdef\n      line_in_function: 2\n      column: 20\n      original: '<'\n      replacement: '!='\n      reason: >-\n        folded\n        reason\n"
-	before, err := config.Parse([]byte(text))
+	before, err := settings.Parse([]byte(text))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +231,7 @@ func TestPruneDocumentRemovesOnlyItsEntriesAndTheCommentsAboveThem(t *testing.T)
 	head := "---\n# Settings.\n\nother: { each: \"{id}\", sep: \"|\" }\nmutation:\n  exceptions:\n"
 	tail := "\n  # after the list\nnext: 1   # kept\n"
 	text := head + first + "\n" + second + third + tail
-	c, err := config.Parse([]byte(text))
+	c, err := settings.Parse([]byte(text))
 	if err != nil {
 		t.Fatal(err)
 	}

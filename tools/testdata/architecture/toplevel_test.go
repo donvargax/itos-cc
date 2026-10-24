@@ -18,9 +18,9 @@ type toplevelFixture struct {
 // outside internal/ and cmd/ imports none under it, from its code or its
 // tests, but the rows docs/go.md names: features internal/project alone,
 // tools/bin/release-notes and release-version internal/release alone, its
-// releasetest with it, and, until graph-snapshot and its move, graph,
-// server and config whatever they import; metrics' and coverage's rows
-// went when they moved under internal/.
+// releasetest with it, and, until graph-snapshot, graph and server
+// whatever they import; metrics', coverage's and config's rows went when
+// they moved under internal/.
 var toplevelFixtures = []toplevelFixture{
 	{"features", "toplevel_project_code", "internal/project", false, false},
 	{"features", "toplevel_project_test", "internal/project", true, false},
@@ -37,6 +37,7 @@ var toplevelFixtures = []toplevelFixture{
 	{"tools/bin/other", "toplevel_release_code", "internal/release", false, true},
 	{"metrics", "toplevel_snapshot_code", "internal/snapshot", false, true},
 	{"coverage", "toplevel_coverage_code", "internal/coverage", false, true},
+	{"config", "toplevel_mutation_code", "internal/slices/mutation/domain", false, true},
 }
 
 // addToplevel writes toplevelFixtures through TestArchitecture's add, each
@@ -52,8 +53,8 @@ func addToplevel(module string, add func(name, layer, imported, symbol, rule str
 // what is under internal/ and each named row accepted, the rest refused,
 // naming both packages and whether from the importer's tests. Beside
 // toplevelFixtures it runs over the fixtures the other checks wrote:
-// cmd/probe importing every package under internal/, graph's and config's
-// rows, and features importing dry's domain.
+// cmd/probe importing every package under internal/, graph's row, and
+// features importing dry's domain.
 func checkToplevel(t *testing.T, check, dir string, env []string, module string) {
 	t.Helper()
 	type run struct{ pkg, imported, from string }
@@ -61,7 +62,6 @@ func checkToplevel(t *testing.T, check, dir string, env []string, module string)
 		{"./cmd/probe/...", "", ""},
 		{"./internal/slices/units/...", "", ""},
 		{"./graph/...", "", ""},
-		{"./config/...", "", ""},
 		{"./features/dry_domain", "internal/slices/dry/domain", ""},
 	}
 	for _, fixture := range toplevelFixtures {

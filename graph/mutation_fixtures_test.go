@@ -4,9 +4,9 @@ import (
 	"context"
 	"os"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/internal/project"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
@@ -16,7 +16,7 @@ import (
 )
 
 // Retained graph/check parity guards compose the real observations explicitly.
-func checkGraphSnapshot(ctx context.Context, store snapport.Store, files []string, judge func(string, string, string) bool, tests func(string) []string, support map[string]string, exceptions []config.Exception) ([]mutants.FileCheck, error) {
+func checkGraphSnapshot(ctx context.Context, store snapport.Store, files []string, judge func(string, string, string) bool, tests func(string) []string, support map[string]string, exceptions []settings.Exception) ([]mutants.FileCheck, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return nil, err

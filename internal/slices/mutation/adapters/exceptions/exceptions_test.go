@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/exceptions"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
@@ -17,7 +17,7 @@ import (
 func TestRealExceptionsContract(t *testing.T) {
 	porttest.ExceptionsContract(t, func(t *testing.T, entries []mutants.Exception, missing bool) porttest.ExceptionFixture {
 		root := t.TempDir()
-		path := filepath.Join(root, config.File)
+		path := filepath.Join(root, settings.File)
 		put := func(entries []mutants.Exception) {
 			t.Helper()
 			data := []byte("# independently changed setting\nexclude: [vendor/**]\n")
@@ -52,11 +52,11 @@ func TestRealExceptionsContract(t *testing.T) {
 			put(entries)
 		}
 		return porttest.ExceptionFixture{Store: exceptions.Exceptions{RootDir: root}, Replace: put, Entries: func() []mutants.Exception {
-			data, err := config.Read(root)
+			data, err := settings.Read(root)
 			if err != nil {
 				t.Fatal(err)
 			}
-			c, err := config.Parse(data)
+			c, err := settings.Parse(data)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -66,7 +66,7 @@ func TestRealExceptionsContract(t *testing.T) {
 }
 func TestExceptionsPreserveCurrentDocumentModeAndInvalidFacts(t *testing.T) {
 	root := t.TempDir()
-	path := filepath.Join(root, config.File)
+	path := filepath.Join(root, settings.File)
 	store := exceptions.Exceptions{RootDir: root}
 	if err := os.WriteFile(path, []byte("# current setting\nexclude: [vendor/**]\n"), 0600); err != nil {
 		t.Fatal(err)

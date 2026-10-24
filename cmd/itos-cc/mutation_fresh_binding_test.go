@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	aggregate "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
 	seltest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
@@ -47,9 +47,9 @@ func TestMutationCountedUsesActualFreshAndTrialBindings(t *testing.T) {
 			fresh := &porttest.Fresh{History: porttest.History{Root: root, Dir: root, Repository: repository, Working: files}, Inputs: inputs, Tree: &tree, Commands: workers, Tools: []mutants.PreparationTool{{Name: "go", Path: "independent-installed-go"}},
 				Coverage: &covtest.Measurer{Aggregate: aggregate.Measurer{Dir: root, Files: files}, Declarations: map[coverage.Unloaded]covtest.Measurement{{Language: "go", Dir: root}: {Language: "go", Report: "mode: set\nboard.go:2.1,2.44 1 1\n"}}},
 				DecodeConfig: func(data []byte) ([]string, *mutants.Tests, []mutants.Exception, *mutants.FreshInvalid) {
-					c, err := config.Parse(data)
+					c, err := settings.Parse(data)
 					if err != nil {
-						invalid := err.(*config.InvalidError)
+						invalid := err.(*settings.InvalidError)
 						return nil, nil, nil, &mutants.FreshInvalid{Reason: invalid.Reason, Key: invalid.Key}
 					}
 					return c.Selection.Exclude, c.Tests, c.Exceptions, nil

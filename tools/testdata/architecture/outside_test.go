@@ -8,22 +8,21 @@ import (
 
 // checkOutside runs architecture-check --outside over TestArchitecture's
 // fixtures in dir, the temporary module, with env, its environment: cmd
-// and graph's and config's rows accepted, every other import refused.
+// and graph's row accepted, every other import refused. config's row went
+// when it became mutation's settings adapter under internal/slices.
 func checkOutside(t *testing.T, check, dir string, env []string, module string) {
 	t.Helper()
 	outsideCases := []struct{ pkg, imported, from string }{
 		{"./cmd/probe/...", "", ""},
 		{"./cmd/slices", "", ""},
 		{"./graph/mutation", "", ""},
-		{"./config/mutation", "", ""},
+		{"./graph/settings", "", ""},
 		{"./graph/testtools", "", ""},
-		{"./config/fake", "", ""},
 		{"./internal/project/units", "units", ""},
 		{"./internal/covrun/mutation_domain", "mutation/domain", " from its tests"},
 		{"./features/dry_domain", "dry/domain", ""},
 		{"./graph/crap_domain", "crap/domain", ""},
 		{"./graph/snapshots", "mutation/adapters/snapshots", ""},
-		{"./config/units", "units", ""},
 	}
 	for _, c := range outsideCases {
 		t.Run("outside "+c.pkg, func(t *testing.T) {

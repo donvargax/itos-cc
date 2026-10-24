@@ -6,8 +6,8 @@ import (
 	"io/fs"
 	"path/filepath"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/exceptions"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -22,7 +22,7 @@ func (s memoryExceptions) Except(ctx context.Context, e mutation.Exception) (boo
 	if ctx.Err() != nil {
 		return false, mutation.ExceptionCancelled{Cause: context.Cause(ctx)}
 	}
-	path := filepath.Join(s.root, config.File)
+	path := filepath.Join(s.root, settings.File)
 	data, err := s.memory.Read(path)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return false, memoryExceptionFailure(err)
@@ -43,7 +43,7 @@ func (s memoryExceptions) Renew(ctx context.Context, renewals []mutation.Renewal
 	if len(renewals) == 0 {
 		return nil
 	}
-	path := filepath.Join(s.root, config.File)
+	path := filepath.Join(s.root, settings.File)
 	data, err := s.memory.Read(path)
 	if err != nil {
 		return memoryExceptionFailure(err)
@@ -64,7 +64,7 @@ func (s memoryExceptions) Prune(ctx context.Context, entries []mutation.Exceptio
 	if len(entries) == 0 {
 		return nil
 	}
-	path := filepath.Join(s.root, config.File)
+	path := filepath.Join(s.root, settings.File)
 	data, err := s.memory.Read(path)
 	if err != nil {
 		return memoryExceptionFailure(err)
@@ -82,7 +82,7 @@ func memoryExceptionFailure(err error) mutation.ExceptionFailure {
 	if err == nil {
 		return nil
 	}
-	var invalid *config.InvalidError
+	var invalid *settings.InvalidError
 	if errors.As(err, &invalid) {
 		return mutation.ExceptionInvalid{Reason: invalid.Reason, Key: invalid.Key}
 	}

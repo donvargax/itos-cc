@@ -44,6 +44,9 @@ A slice `<x>`, `internal/slices/<x>`, owns:
   `scenarios_listed_setup_test.go` (listed tests on `Workers`), `scenarios_settings_test.go`
   (mutation's `SettingsReader` and `SourceEdits`) and `scenarios_workers_test.go`. The other
   `scenarios_*_test.go` are assembly's: they serve every command's ports or the driver itself.
+  Its settings adapter, `internal/slices/mutation/adapters/settings`, the top-level `config`
+  until T-197, is its by the rule above, though cmd gives its `Reader` to every slice:
+  `itos-cc.yaml`'s reading codec changes in a mutation task.
 - `crap` owns `features/crap.feature` and its steps, `features/crap*.go`, and cmd's crap tests,
   `cmd/itos-cc/crap_*_test.go`. `complexity.feature`, `coverage.feature` and
   `file_selection.feature`, which crap's command drives, are the specs of the lang, coverage
@@ -58,7 +61,7 @@ Each change to one is a task the coordinator assigns.
 - **Engines**: `internal/selection`, `internal/lang`, `internal/snapshot` and `internal/coverage`
   with their ports and porttests; `internal/processes`, `internal/imports`, `internal/project`,
   `internal/cli`, `internal/version`, `internal/release`, `internal/workdir`,
-  `internal/metricsdir`, `internal/coveragetools` and `internal/covrun`; the top-level `config`.
+  `internal/metricsdir`, `internal/coveragetools` and `internal/covrun`.
   Their feature files, above, are theirs.
 - **Assembly**: `cmd/itos-cc`'s hand-written `main.go`, `dispatch.go` and `adapters.go` with
   their tests, `diskAdapters` and `inProcessAdapters` (decision 53); `scenarios_test.go`,

@@ -14,10 +14,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/covrun"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/project"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -90,7 +90,7 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 	stage("runtime-git", "complete", nil)
 
 	root := plan.FrozenRoot
-	cfg, err := config.LoadFrom(root)
+	cfg, err := settings.LoadFrom(root)
 	if err != nil {
 		stage("admission", "failed", err)
 		return prep, fmt.Errorf("read frozen committed config: %w", err)

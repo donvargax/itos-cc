@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/config"
 	seltest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/exceptions"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
@@ -59,7 +59,7 @@ func TestMutationExceptionConsumersRequireActualBindings(t *testing.T) {
 	if code, out := invoke(base, except...); code != 0 || !reflect.DeepEqual(store.Entries, []mutation.Exception{entry}) {
 		t.Fatalf("bound except: %d %s %+v", code, out, store.Entries)
 	}
-	if _, err := os.Stat(filepath.Join(f.root, config.File)); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(f.root, settings.File)); !os.IsNotExist(err) {
 		t.Fatalf("except fell back to host: %v", err)
 	}
 	// Initial selected entries live on the disposable legacy admission boundary.
@@ -70,7 +70,7 @@ func TestMutationExceptionConsumersRequireActualBindings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(f.root, config.File), data, 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(f.root, settings.File), data, 0600); err != nil {
 		t.Fatal(err)
 	}
 	store.Entries = []mutation.Exception{old}
@@ -78,7 +78,7 @@ func TestMutationExceptionConsumersRequireActualBindings(t *testing.T) {
 	if code, out := invoke(base, renew...); code != 0 || len(store.Entries) != 1 || store.Entries[0] != entry {
 		t.Fatalf("bound renew: %d %s %+v", code, out, store.Entries)
 	}
-	disk, err := os.ReadFile(filepath.Join(f.root, config.File))
+	disk, err := os.ReadFile(filepath.Join(f.root, settings.File))
 	if err != nil || !bytes.Equal(disk, data) {
 		t.Fatalf("renew fell back to host: %v", err)
 	}
@@ -176,7 +176,7 @@ func TestMutationSampleUsesActualReadAndExecutionBindings(t *testing.T) {
 func TestMemoryExceptionWriterUsesCurrentDocumentBytes(t *testing.T) {
 	m := newMemory(t)
 	root := t.TempDir()
-	path := filepath.Join(root, config.File)
+	path := filepath.Join(root, settings.File)
 	old := mutation.Exception{File: "a.go", Function: "p#F", Hash: "old", LineInFunction: 1, Column: 2, Original: ">", Replacement: ">=", Reason: "reviewed"}
 	original, _, err := exceptions.ExceptDocument(nil, old)
 	if err != nil {
@@ -199,7 +199,7 @@ func TestMemoryExceptionWriterUsesCurrentDocumentBytes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg, err := config.Parse(actual)
+	cfg, err := settings.Parse(actual)
 	if err != nil || !reflect.DeepEqual(cfg.Exceptions, []mutation.Exception{next}) || !strings.Contains(string(actual), "AFTER initial selection") || !reflect.DeepEqual(cfg.Selection.Exclude, []string{"vendor/**"}) {
 		t.Fatalf("current memory document lost: %s %v", actual, err)
 	}
@@ -217,17 +217,17 @@ func TestMemoryExceptionWriterUsesCurrentDocumentBytes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg, err = config.Parse(actual)
+	cfg, err = settings.Parse(actual)
 	if failure != nil || !replaced || err != nil || !reflect.DeepEqual(cfg.Exceptions, []mutation.Exception{updated}) || !strings.Contains(string(actual), "AFTER initial selection") {
 		t.Fatalf("current memory replacement: %s %v %v", actual, failure, err)
 	}
 	missing := memoryExceptions{memory: m, root: filepath.Join(root, "new-project")}
 	replaced, failure = missing.Except(t.Context(), old)
-	actual, err = m.Read(filepath.Join(missing.root, config.File))
+	actual, err = m.Read(filepath.Join(missing.root, settings.File))
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg, err = config.Parse(actual)
+	cfg, err = settings.Parse(actual)
 	if failure != nil || replaced || err != nil || !reflect.DeepEqual(cfg.Exceptions, []mutation.Exception{old}) {
 		t.Fatalf("missing memory creation: %s %v %v", actual, failure, err)
 	}

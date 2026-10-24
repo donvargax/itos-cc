@@ -9,12 +9,12 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/covrun"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/selection"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -74,7 +74,7 @@ func failure(ctx context.Context, stage string, err error) mutants.FreshFailure 
 	if errors.As(err, &fresh) {
 		return fresh
 	}
-	var invalid *config.InvalidError
+	var invalid *settings.InvalidError
 	if errors.As(err, &invalid) {
 		return mutants.FreshInvalid{Reason: invalid.Reason, Key: invalid.Key}
 	}

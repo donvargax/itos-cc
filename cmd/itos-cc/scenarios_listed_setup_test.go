@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/features"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
@@ -171,7 +171,7 @@ func TestListedSetupCopyPreservesNilAndEmptyCollections(t *testing.T) {
 // lines its tests reach, where the first of them, in order, to notice it
 // kills it, to hang on it times it out, and none leaves it surviving.
 func (m *memory) listedSelections(w *mutantstest.Workers, text []byte) {
-	cfg, err := config.Parse(text)
+	cfg, err := settings.Parse(text)
 	if err != nil || cfg.Tests == nil {
 		return
 	}

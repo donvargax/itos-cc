@@ -14,19 +14,19 @@ import (
 	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 	"maps"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/exceptions"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 )
 
 // memoryConfig observes the actual current backing document on every read.
-// The same config.Reader/Parse codec serves this source and the disk source.
+// The same settings.Reader/Parse codec serves this source and the disk source.
 type memoryConfig struct {
 	memory *memory
 	root   string
 }
 
 func (s memoryConfig) Read(context.Context) (string, []byte, error) {
-	path := filepath.Join(s.root, config.File)
+	path := filepath.Join(s.root, settings.File)
 	data, err := s.memory.Read(path)
 	if errors.Is(err, fs.ErrNotExist) {
 		return s.root, nil, nil
@@ -44,7 +44,7 @@ func (s memoryConfig) Read(context.Context) (string, []byte, error) {
 func TestMemoryMutationListCheckSampleAndExceptUseCurrentIndependentBytes(t *testing.T) {
 	m := newMemory(t)
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, config.File), []byte("exclude: [\"\"]\n"), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(root, settings.File), []byte("exclude: [\"\"]\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(root)
@@ -108,7 +108,7 @@ func TestMemoryMutationListCheckSampleAndExceptUseCurrentIndependentBytes(t *tes
 	if got := invoke("sample"); got.Exit != 0 || !strings.Contains(compactRead(got.Stdout), `"seed":"`+head+`"`) {
 		t.Fatalf("memory sample did not seed with the bound HEAD %s: %+v", head, got)
 	}
-	path := filepath.Join(root, config.File)
+	path := filepath.Join(root, settings.File)
 	if err := m.Write(path, []byte("exclude: [board.go]\n")); err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +196,7 @@ func TestMemorySourceStatusIncludesActualImplicitDirectories(t *testing.T) {
 func TestMemoryRunsMutationRunInProcess(t *testing.T) {
 	m := newMemory(t)
 	root := t.TempDir()
-	physical := filepath.Join(root, config.File)
+	physical := filepath.Join(root, settings.File)
 	physicalBytes := []byte("exclude: [\"\"]\n")
 	if err := os.WriteFile(physical, physicalBytes, 0600); err != nil {
 		t.Fatal(err)

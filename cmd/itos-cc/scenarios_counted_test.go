@@ -12,10 +12,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
 	selporttest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
@@ -114,9 +114,9 @@ func (m *memory) freshMeasured(_ context.Context, p *mutation.FreshPlan, listed 
 
 // decodeFreshSettings is the one settings codec over committed bytes.
 func decodeFreshSettings(data []byte) ([]string, *mutation.Tests, []mutation.Exception, *mutation.FreshInvalid) {
-	c, err := config.Parse(data)
+	c, err := settings.Parse(data)
 	if err != nil {
-		var invalid *config.InvalidError
+		var invalid *settings.InvalidError
 		if !errors.As(err, &invalid) {
 			return nil, nil, nil, &mutation.FreshInvalid{Reason: err.Error()}
 		}

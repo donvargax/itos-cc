@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"runtime"
 
-	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/coveragetools"
@@ -22,6 +21,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/freshenv"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/githistory"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/importgraph"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/sources"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
@@ -236,22 +236,22 @@ func diskAdapters(log io.Writer, hold func() (release func())) adapters {
 	tools := testtools.Toolchain{Dir: dir, Env: os.Environ()}
 	fingerprints := testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}
 	fresh := freshenv.Environment{Platform: runtime.GOOS, Log: log, Execute: owner.Run, Command: ownedCommand(owner), Measure: ownedCommand(owner), Toolchain: tools, Fingerprints: fingerprints, Reach: importgraph.Reach{}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}}
-	settings := config.Reader{Source: diskConfig{}}
-	return adapters{Settings: settings, SnapshotReaders: func(root string) mutation.MutationSnapshotReader {
+	reader := settings.Reader{Source: diskConfig{}}
+	return adapters{Settings: reader, SnapshotReaders: func(root string) mutation.MutationSnapshotReader {
 		return snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}
 	}, Fresh: fresh, FreshWorkers: worktrees.Workers{Platform: runtime.GOOS, Owner: owner, Prepare: freshenv.CommandEnvironment}, Exceptions: func(root string) mutation.Exceptions { return exceptions.Exceptions{RootDir: root} }, SourceStatus: sources.SourceEdits{}, SnapshotReader: snapshots.Mutations{Store: metricsdir.Store{}}, Catalog: snapshots.Mutations{Store: metricsdir.Store{}}, Presence: sources.SourceEdits{}, Snapshots: snapshots.Mutations{Store: metricsdir.Store{}}, SourceEdits: sources.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS, Hold: hold, Dir: dir}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
-		Coverage: measurer, MutationCoverage: measurer, Selection: settings,
+		Coverage: measurer, MutationCoverage: measurer, Selection: reader,
 		Repository: countedRoot, PhysicalDir: physicalDir, Platform: countedPlatform}
 }
 
 // diskConfig is itos-cc.yaml at the project root of the working directory.
 type diskConfig struct{}
 
-// Read is config.Read at project.Root. Neither asks anything a context
+// Read is settings.Read at project.Root. Neither asks anything a context
 // could cancel.
 func (diskConfig) Read(context.Context) (string, []byte, error) {
 	root := project.Root()
-	text, err := config.Read(root)
+	text, err := settings.Read(root)
 	return root, text, err
 }
 
@@ -276,8 +276,8 @@ func exclusion(ctx context.Context, reader selport.SettingsReader) (selection.Ex
 func settingsError(failure selport.SettingsFailure) error {
 	switch failure := failure.(type) {
 	case *selport.SettingsInvalid:
-		p := cli.NewProblem(cli.CodeUsage, "config.invalid", config.File+": "+failure.Reason,
-			"Fix it: exclude lists globs of sources from the project root, such as **/porttest/**; each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep.").With("file", config.File)
+		p := cli.NewProblem(cli.CodeUsage, "config.invalid", settings.File+": "+failure.Reason,
+			"Fix it: exclude lists globs of sources from the project root, such as **/porttest/**; each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep.").With("file", settings.File)
 		if failure.Key != "" {
 			p = p.With("key", failure.Key)
 		}
