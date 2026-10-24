@@ -5658,3 +5658,19 @@ items:
       change included, and itos-cc.yaml can except only an equivalent mutant, not an uncovered
       statement. Either an exception for an unreachable statement, reviewed like a mutant's, or a
       rule that a move's qualifier-only change is not a changed line.
+  - id: bug-8
+    title: mutation except reports success but writes nothing when mutation.exceptions is a YAML alias
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: bug
+    why: >
+      Found in T-197. With itos-cc.yaml holding x: &e [<an entry>] and mutation: {exceptions: *e},
+      which settings.Parse reads as that entry, the exceptions adapter's ExceptDocument returns the
+      text unchanged with no error and replaced false, so Exceptions.Except writes the same bytes
+      back and mutation except says it added the exception; RenewDocument renewing the aliased entry
+      returns no error too. read skips its list-length check for an alias node, and writeList
+      splices nothing into one. Either refuse an aliased list as an InvalidError (as anchors are
+      refused nowhere else, docs/CONFIG.md rule 1 says aliases are expanded) or write through it; a
+      scenario first.
