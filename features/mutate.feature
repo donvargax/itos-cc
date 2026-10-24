@@ -2191,6 +2191,88 @@ Feature: Mutation testing
       And each file has "mutants", each sampled one with line, column, function, original, replacement, recorded, outcome, and scope
       And the problems are those the plain output prints
 
+    # slice-50, flaky-kills' first item (q-93, the person 2026-10-24): a
+    # test with unseeded randomness can kill a mutant in one run and miss it
+    # in the next, so cd.yml's sample went red as mutation.mismatch with a
+    # fix (re-run the cache) that could not help. Decided:
+    # 1. A sampled mutant whose outcome disagrees with the one recorded runs
+    #    twice more, in the same scope; a mutant that agrees runs once, as
+    #    before. Flaky means both outcomes seen within this one invocation,
+    #    on one tree: if a re-run agrees with the recording, neither outcome
+    #    is trusted. If both re-runs repeat the new outcome, it is a
+    #    mismatch, as before.
+    # 2. Its own rule, mutation.flaky, exit 1, with the mismatch's fields and
+    #    "outcomes", every outcome seen in run order; its fix says to make
+    #    the tests deterministic (seed their randomness, settle their timing)
+    #    and commit, naming no mutation run. Moving a confirmed flake off
+    #    mutation.mismatch changes a rule value, so the feat is a
+    #    BREAKING-CHANGE in a minor release.
+    # 3. Killed, timeout and over-limit still agree with each other; a
+    #    timeout against a survivor counts as a disagreement, so it can be
+    #    flaky.
+    # 4. No exception for a flaky mutant: mutation except already takes
+    #    only a survivor. sample writes nothing, as before.
+    # 5. Later items: run records a flaky key and check fails on it
+    #    (flaky-kills-record); --repeat N (sample-repeat).
+    # Tests flip on purpose through the harness, never through anything the
+    # tests hash: in process, the declared Tests gain outcomes per trial,
+    # cycled; through the binary, the fixture's control file outside the
+    # project counts runs per mutant. Before this item MUT-337, MUT-338,
+    # MUT-341 and MUT-342 fail at the mutation.flaky step, MUT-339 at the
+    # ran-3-times step and MUT-340 at the ran-once step; MUT-72 and MUT-73
+    # stay guardrails.
+    @slice-50 @ID-MUT-337 @wip
+    Scenario: A recorded kill its tests decide differently each run is flaky, not a mismatch
+      Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
+      But the tests miss it on one run and kill it on the next, with nothing they hash changed
+      When I run "itos-cc mutation sample src/board.ts"
+      Then the problem is "mutation.flaky", with file, line, column, function, original, replacement, recorded "killed" and outcomes "survived", "killed"
+      And no problem is "mutation.mismatch"
+      And .metrics/mutate/src/board.ts.json and src/board.ts are unchanged
+      And the exit code is 1
+
+    @slice-50 @ID-MUT-338 @wip
+    Scenario: A recorded survivor its tests decide differently each run is flaky too
+      Given the snapshot records a mutant of "Board#place" as survived
+      But the tests kill it on one run and miss it on the next, with nothing they hash changed
+      When I run "itos-cc mutation sample src/board.ts"
+      Then the problem is "mutation.flaky", with recorded "survived" and outcomes "killed", "survived"
+      And the exit code is 1
+
+    @slice-50 @ID-MUT-339 @wip
+    Scenario: A mismatch its re-runs repeat stays a mismatch
+      Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
+      But the tests no longer kill it
+      When I run "itos-cc mutation sample src/board.ts"
+      Then the problem is "mutation.mismatch", with file, line, column, function, original, replacement, recorded "killed" and outcome "survived"
+      And that mutant ran 3 times
+      And the exit code is 1
+
+    @slice-50 @ID-MUT-340 @wip
+    Scenario: An outcome that agrees runs once
+      Given fresh results for every function of src/board.ts, with killed mutants and one survivor
+      And the tests still kill and miss the same mutants
+      When I run "itos-cc mutation sample src/board.ts"
+      Then each sampled mutant ran once
+      And the exit code is 0
+
+    @slice-50 @ID-MUT-341 @wip
+    Scenario: A survivor that runs past its timeout on one run and survives the next is flaky
+      Given the snapshot records a mutant of "Board#place" as survived
+      But it runs past its timeout on one run and survives the next
+      When I run "itos-cc mutation sample src/board.ts"
+      Then the problem is "mutation.flaky", with recorded "survived" and outcomes "timeout", "survived"
+      And the exit code is 1
+
+    @slice-50 @ID-MUT-342 @wip
+    Scenario: A flaky mutant in the plain output and as JSON
+      Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
+      But the tests miss it on one run and kill it on the next, with nothing they hash changed
+      When I run "itos-cc mutation sample src/board.ts"
+      Then stdout says "1 sampled, 0 mismatched, 1 flaky" and "flaky" with src/board.ts:5:9, Board#place and "recorded killed, now survived, killed"
+      And with --json the sampled mutant has "outcomes": ["survived", "killed"]
+      And the problem's fix says to make the tests deterministic and names no mutation run
+
     # A snapshot did not record which tests decided its outcomes, so
     # mutation sample, re-running with the file's own tests unless told
     # otherwise, read a kill only an end-to-end test makes under --all-tests
