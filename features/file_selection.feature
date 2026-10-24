@@ -281,3 +281,50 @@ Feature: Choosing which files a command looks at
     Given itos-cc.yaml is a directory, so it cannot be read
     When I run "itos-cc scrap"
     Then the exit code is 0
+
+  # bug-8, q-90 and docs/CONFIG.md rule 1: itos-cc.yaml is read in the
+  # subset of YAML that JSON can express, so an anchor, an alias or a merge
+  # key (&x, *x, <<) is config.invalid, exit 80, naming the key at fault for
+  # the first of them in document order: the key whose value carries the
+  # anchor, or the merge key itself. An alias always follows its anchor, so
+  # a file holding an alias is refused at its anchor's key. An alias can
+  # expand without bound (CVE-2019-11253), and mutation except, --renew and
+  # --prune spliced nothing into an aliased mutation.exceptions yet said
+  # they had written it.
+  # Only these three are refused now: custom tags and a second document stay
+  # as docs/CONFIG.md's table says (the person, 2026-10-24).
+  @bug-8 @ID-SEL-24 @wip
+  Scenario Outline: An anchor, an alias or a merge key in itos-cc.yaml is a config error
+    Given itos-cc.yaml holds '<yaml>'
+    When I run "itos-cc crap --no-coverage"
+    Then the problem is "config.invalid", with key "<key>"
+    And the exit code is 80
+
+    Examples:
+      | yaml                                     | key           |
+      | exclude: &e ["**/porttest/**"]           | exclude       |
+      | exclude: [&g "**/porttest/**", *g]       | exclude[0]    |
+      | {x: &e ["**/porttest/**"], exclude: *e}  | x             |
+      | mutation: {<<: {exceptions: []}}         | mutation.<<   |
+
+  # Every command reads the file before anything else, the writers of
+  # mutation.exceptions included, so none writes it.
+  @bug-8 @ID-SEL-25 @wip
+  Scenario Outline: An aliased mutation.exceptions is refused by every command, and nothing writes the file
+    Given itos-cc.yaml holds '{x: &e [], mutation: {exceptions: *e}}'
+    When I run "itos-cc <command>"
+    Then the problem is "config.invalid", with key "x"
+    And the exit code is 80
+    And itos-cc.yaml is byte for byte as it was
+
+    Examples:
+      | command                 |
+      | crap --no-coverage      |
+      | dry                     |
+      | units                   |
+      | mutation list           |
+      | mutation run            |
+      | mutation check          |
+      | mutation sample         |
+      | mutation except --renew |
+      | mutation except --prune |
