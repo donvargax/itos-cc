@@ -59,5 +59,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0055: Flutter tests count in phases, unit and widget tests under test/ first](0055-flutter-tests-count-in-phases-unit-and-widget-tests-under-test-first.md)
 - [ADR-0056: itos-cc.yaml's include brings back only what itos-cc leaves out by default](0056-itos-cc-yaml-s-include-brings-back-only-what-itos-cc-leaves-out-by-default.md)
 - [ADR-0057: The Linux release links statically against musl](0057-the-linux-release-links-statically-against-musl.md)
+- [ADR-0058: A mutant that does not compile counts as killed in every language](0058-a-mutant-that-does-not-compile-counts-as-killed-in-every-language.md)
 
 <!-- itos:decisions:end -->
