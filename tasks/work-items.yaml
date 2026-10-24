@@ -3619,25 +3619,9 @@ items:
     title: Worker copies leave out files git ignores, apart from the dependency folders they link
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [slice-13]
     kind: slice
-    why: >
-      Was worker-copies-skip-ignored.
-      q-69, answered 2026-10-18: with coverage on, the coverage run executes in the project's own
-      folder, so a file a test leaves behind (such as an ignored testdata/left-behind) lands in the
-      live tree and every worker copy carries it, failing the baseline; slice-13's pristine copy
-      still holds it. Worker copies leave out files git ignores, apart from the dependency folders
-      the copies already link (node_modules, a virtualenv, Gradle's caches), so a test's leftovers
-      and stray build output never reach a copy. Its own slice, after slice-13.
-
-      Open before specifying (2026-10-18): some projects keep files their tests need in places git
-      ignores (generated sources, a TypeScript dist/ the tests import, compiled Python extensions),
-      so leaving every ignored file out could fail the baseline in each copy. The slice's scenarios
-      must say how such a project names the ignored paths its copies need (recommended: a list of
-      globs in itos-cc.yaml, doublestar like exclude, copied after the dependency links), and what a
-      baseline that fails for a missing ignored file reports, so the person can confirm it with the
-      spec.
   - id: ambiguous-steps-upfront
     title: The scenario suite refuses an ambiguous step before any scenario runs
     phase: 1
