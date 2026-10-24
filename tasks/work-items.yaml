@@ -5619,8 +5619,8 @@ items:
   - id: bug-6
     title: "Excepting from an identity fails on Windows: the identity mis-parses and paths print with backslashes"
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: bug
     why: >
