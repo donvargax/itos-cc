@@ -1,3 +1,11 @@
+# Every scenario here is @wip (T-189): this file describes serve, the one
+# command still on its legacy handler, and was never converted to godog
+# steps, its conversion (T-102 to T-105) deferred with serve's move
+# (T-106 to T-108, T-112, T-113) on 2026-10-17 while serve leaves for a web
+# app of its own. Neither driver runs it; the Go tests of graph/ and server/
+# and the viewer's Vitest hold its behaviour. The text stays as the spec
+# that work starts from, and the task converting this file drops the tag.
+@wip
 Feature: Architecture graph
   "What depends on what, and where is it risky?" The graph is a tree of
   repositories, directories, modules, and functions, with import and HTTP

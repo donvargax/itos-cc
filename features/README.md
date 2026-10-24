@@ -163,12 +163,13 @@ yet, and passes; a tag other scenarios carry too selects those others alone; and
 lists that no scenario of a converted file carries fails every selection. The files without
 steps are `serve.feature`, `viewer.feature` and `architecture_graph.feature`, whose command,
 `serve`, keeps its legacy handler, and `completion.feature`, every scenario of it `@wip`, since
-itos-cc has no completion command. A file converts to godog before or with the command that
-moves onto kong (q-52), its scenarios' text unchanged; until then the Go tests hold its
-scenarios. A
-selection that names a scenario of such a file, as the smoke set does for every file, logs it as
-not run here and runs the rest; one that names nothing a converted file holds fails, as one
-matching no tag does.
+itos-cc has no completion command. The three of serve are `@wip` too, at their Feature line
+(T-189), since neither driver runs them: their conversion (T-102 to T-105) waits with serve's
+move on its own web app, the task converting each drops the tag, and the smoke set leaves them
+out until then. A file converts to godog before or with the command that moves onto kong (q-52),
+its scenarios' text unchanged; until then the Go tests hold its scenarios. A selection that names
+a scenario of such a file logs it as not run here and runs the rest; one that names nothing a
+converted file holds fails, as one matching no tag does.
 
 The in-process driver runs every one of them too. `mutate.feature` joined it when the mutation
 group moved (T-125), `metrics_snapshots.feature` once the mutation commands it runs had moved

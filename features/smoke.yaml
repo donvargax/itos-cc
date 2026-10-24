@@ -1,10 +1,6 @@
 # The smoke set: one live scenario of each feature file, which a push's CI can
 # run in place of every one; itos tests smoke check scenario holds it to that.
 # Each is a fast one, central to its file.
-- file: architecture_graph.feature
-  scenarios:
-    - id: "@ID-GRAPH-07"
-      why: the import edges of all four languages resolved to modules, the graph's point
 - file: cli.feature
   scenarios:
     - id: "@ID-CLI-01"
@@ -41,15 +37,7 @@
   scenarios:
     - id: "@ID-SCRAP-11"
       why: an example scored from its lines, branches, mocks and assertions, the measure every action rests on
-- file: serve.feature
-  scenarios:
-    - id: "@ID-SERVE-03"
-      why: GET /api/graph answered with the graph as JSON, what the viewer reads
 - file: units.feature
   scenarios:
     - id: "@ID-UNIT-01"
       why: the production units listed as namespace#name, the key every tool joins on
-- file: viewer.feature
-  scenarios:
-    - id: "@ID-VIEW-04"
-      why: dependencies rolled up to the boxes of the current level, how the viewer draws every level
