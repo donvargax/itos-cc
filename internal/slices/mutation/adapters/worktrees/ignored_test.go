@@ -111,7 +111,8 @@ func ignoredCommand(t *testing.T, root string) mutants.Command {
 // the ignored node_modules, and copies no folder git does not track that
 // holds its own .git, a folder or a file, but the files of one
 // mutation.copy names; a submodule's files are copied, never its .git.
-// The run in the project names what the copy left out.
+// The run in the project names what the copy left out, a folder git names
+// with what it holds (logs/ and logs/a.log) once.
 func TestACopyLeavesOutWhatGitIgnores(t *testing.T) {
 	root, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {
@@ -119,7 +120,7 @@ func TestACopyLeavesOutWhatGitIgnores(t *testing.T) {
 	}
 	writeTree(t, root, map[string]string{
 		"package.json": "{}\n", "source.txt": "source\n",
-		".gitignore":          "testdata/\ngen/\ntmp/\nnode_modules/\n",
+		".gitignore":          "testdata/\ngen/\ntmp/\nnode_modules/\n*.log\n",
 		"testdata/keep.txt":   "kept\n",
 		"node_modules/dep.js": "dep\n",
 	})
@@ -135,7 +136,7 @@ func TestACopyLeavesOutWhatGitIgnores(t *testing.T) {
 	gitIn(t, root, "-c", "protocol.file.allow=always", "submodule", "add", "-q", source, "sub")
 	gitIn(t, root, "commit", "-qm", "submodule")
 	writeTree(t, root, map[string]string{
-		"testdata/left-behind": "left\n", "gen/table.txt": "table\n", "gen/sub/more.txt": "more\n", "tmp/stray.log": "stray\n",
+		"testdata/left-behind": "left\n", "gen/table.txt": "table\n", "gen/sub/more.txt": "more\n", "tmp/stray.log": "stray\n", "logs/a.log": "a\n",
 		"dist/types/index.d.ts": "types\n", "dist/out.js": "out\n", "dist/chunks/a.js": "a\n", "dist/node_modules/x.js": "x\n",
 		"coverage/lcov.info": "lcov\n", "nested/marker.txt": "nested\n", "linked/marker.txt": "linked\n", "linked/.git": "gitdir: elsewhere\n",
 		"brought/x.txt": "x\n",
@@ -179,7 +180,7 @@ func TestACopyLeavesOutWhatGitIgnores(t *testing.T) {
 	if failure != nil || !run.Result.Passed {
 		t.Fatalf("the run in the project: %+v %v", run, failure)
 	}
-	if want := []string{"linked/", "nested/", "testdata/left-behind", "tmp/"}; !slices.Equal(run.LeftOut, want) {
+	if want := []string{"linked/", "logs/", "nested/", "testdata/left-behind", "tmp/"}; !slices.Equal(run.LeftOut, want) {
 		t.Errorf("the copy left out %q, not %q", run.LeftOut, want)
 	}
 }

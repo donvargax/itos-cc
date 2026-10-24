@@ -73,10 +73,8 @@ func gitIgnored(ctx context.Context, tree string) ignoredPaths {
 	if !ok {
 		return nil
 	}
-	untracked, ok := gitListed(ctx, tree)
-	if !ok {
-		return nil
-	}
+	// Where git cannot list them, no checkout is known: copied as before.
+	untracked, _ := gitListed(ctx, tree)
 	for rel := range untracked {
 		if dir, found := outerCheckout(tree, rel); found {
 			paths[dir] = true
