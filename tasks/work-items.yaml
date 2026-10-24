@@ -19,7 +19,7 @@ queue:
   - slice-46
   - features-coverage-gocoverdir-leak
   - slice-47
-  - plain-output-wording
+  - slice-48
   - viewer-ci-tests
   - refactor-proof-dart
   - itos-cc-yaml-version
@@ -3362,14 +3362,15 @@ items:
     depends_on: []
     kind: slice
     refs: ["#19"]
-  - id: plain-output-wording
-    title: Plain per-file lines avoid CI problem matchers, and an all-reused run says so
+  - id: slice-48
+    title: A run with every mutant reused says so, not "no mutations to test"
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was plain-output-wording.
       Issues #21 and #49. Lines shaped <file>.go: ... match setup-go's problem matcher and become
       error annotations (internal/mutation/sample_ui.go:127, check_ui.go:92, run_ui.go:284,
       sample_ui.go:110). A rerun with every mutant reused prints no mutations to test
