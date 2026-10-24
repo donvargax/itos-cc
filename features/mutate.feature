@@ -3691,6 +3691,109 @@ Feature: Mutation testing
       And "itos-cc mutation except --prune --reason x" is "flags.conflict", with flag "--reason", exit 80
       And "itos-cc mutation except --prune --renew" is "flags.conflict", exit 80
 
+  # except-from-identity, issue #66: a survivor a CI mutation run reports
+  # (the per-push code proof's mutation run --count ... --json) could be
+  # excepted only by hand: mutation except needs a fresh snapshot of its
+  # function, from a local mutation run, which agents may not run here.
+  # mutation except now also takes the survivor's identity as --count's JSON
+  # prints it, matches it against the source as it is, by file, function name,
+  # hash and site, and writes the entry a cached except writes, running
+  # nothing. The reviewer's judgement that it is equivalent is the gate, as
+  # before. A fresh snapshot that records the mutant killed or uncovered
+  # still refuses it. Both drivers run every scenario except MUT-318, whose
+  # Given runs a counted run and a complete run (Go). Before
+  # except-from-identity the identity is args.invalid, exit 80, failing at
+  # the first Then that reads itos-cc.yaml or the problem's rule.
+  # The person (2026-10-24): one identity at a time, never a whole report,
+  # each exception with its own reason; a counted run's survivor line names
+  # its identity and the mutation.survived problem's fix spells out the
+  # except command, since itos ci run prints a problem's rule and message,
+  # never the --json, so the log is all an agent has (ID-MUT-324); and an
+  # identity does not say the mutant survived, a killed one printing the
+  # same, so the reviewer's approval is the gate (the coordinator, the person
+  # reviewing the list weekly), the next complete run marking a wrong entry
+  # stale as killed. The coordinator's calls: the function's hash is the one
+  # checked, the site matched by its whole key; a missing or stale snapshot
+  # is ignored and a fresh one recording the mutant killed or uncovered
+  # refuses; the entry is the cached except's, field for field; output,
+  # --json and exits are unchanged; the identity's file is read from the
+  # project root; exception.identity-stale, exit 80, names why, changed or
+  # gone.
+  Rule: A survivor a CI report names is excepted from its identity, with no mutation run
+
+    @slice-41 @ID-MUT-318 @wip
+    Scenario Outline: An identity from a counted run is excepted with <snapshot>
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And <snapshot>
+      And "itos-cc mutation run --count 5 --json" reported the survivor `<` → `<=` at board/board.go:5:11 with its identity
+      When I except that identity with --reason 'x is never 5'
+      Then itos-cc.yaml has one entry under mutation.exceptions
+      And it records board/board.go, "example.com/fx/board#Count", the identity's hash, line_in_function 2, column 11, `<`, `<=`, the reason and line_text "return x < 5"
+      And the exit code is 0
+      And once "itos-cc mutation run board/board.go" has recorded the survivor, "itos-cc mutation except board/board.go:5:11 --reason 'x is never 5'" says "excepted again" and leaves itos-cc.yaml byte for byte as it was
+      Examples:
+        | snapshot                                                                         |
+        | .metrics/mutate holds no snapshot of board/board.go                              |
+        | a snapshot of board/board.go is stale, a later commit having changed board/board_test.go |
+
+    @slice-41 @ID-MUT-319 @wip
+    Scenario: Excepting from an identity runs no command
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And .metrics/mutate holds no snapshot of board/board.go
+      When I run "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason 'x is never 5'" with no Go toolchain on the PATH
+      Then its standard output says "excepted board/board.go:5:11 `<` → `<=` in example.com/fx/board#Count in itos-cc.yaml"
+      And the exit code is 0
+      And no test or coverage command ran, and .metrics/mutate was not written
+      And with --json it prints {"exception": the entry itos-cc.yaml holds, "replaced": true}
+    @slice-41 @ID-MUT-320 @wip
+    Scenario: An identity whose function only moved since the report is still excepted
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And a blank line was added above Count's comment since the report
+      When I run "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason 'x is never 5'"
+      Then its standard output says "excepted board/board.go:6:11 `<` → `<=` in example.com/fx/board#Count in itos-cc.yaml"
+      And it records board/board.go, "example.com/fx/board#Count", the identity's hash, line_in_function 2, column 11, `<`, `<=`, the reason and line_text "return x < 5"
+      And the exit code is 0
+
+    @slice-41 @ID-MUT-321 @wip
+    Scenario Outline: An identity the source no longer has is refused, naming why
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And <change>
+      When I run "itos-cc mutation except '<identity>' --reason 'x is never 5' --json"
+      Then the problem is "exception.identity-stale", with file "<file>"
+      And its "why" is "<why>", its "identity" the argument, and its fix names a report of the code as it is now
+      And the exit code is 80
+      And itos-cc.yaml was not written
+      Examples:
+        | change                             | identity                                                                 | file           | why     |
+        | Count's "x < 5" became "x < 6"     | board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=   | board/board.go | changed |
+        | Count was renamed Below            | board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=   | board/board.go | gone    |
+        | nothing changed                    | board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:36:<><=   | board/board.go | gone    |
+        | nothing changed                    | board/gone.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=    | board/gone.go  | gone    |
+
+    @slice-41 @ID-MUT-322 @wip
+    Scenario: An identity needs a reason, as a site does
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      When I run "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --json"
+      Then the problem is "flags.value-missing", with flag "--reason"
+      And the exit code is 80
+      And given "--reason ''" it is "flags.value-invalid", exit 80, and given --renew "args.unexpected", exit 80
+      But given "--reason 'x is never 5'" it writes the entry, exit 0
+    @slice-41 @ID-MUT-323 @wip
+    Scenario: A fresh snapshot that records the mutant killed still refuses its identity
+      Given a committed Go module whose test also checks Count(5), so `<` → `<=` is killed
+      And "itos-cc mutation run board/board.go" recorded it killed
+      When I run "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason 'x is never 5' --json"
+      Then the problem is "exception.no-survivor", with file "board/board.go"
+      And its message says the mutant is recorded killed, at board/board.go:5:11
+      And the exit code is 80
+
+    @slice-41 @ID-MUT-324 @wip
+    Scenario: A counted run's survivor names its identity and the except command that takes it
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      When I run "itos-cc mutation run --count 5"
+      Then its standard error names the survivor `<` → `<=` at board/board.go:5:11 with its identity "board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><="
+      And with --json, the "mutation.survived" problem's fix names "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason"
+
   # integration-coverage-python, integration-coverage-typescript and
   # integration-coverage-kotlin, q-41 (answered 2026-10-10): issue #14's
   # two parts, integration coverage (ID-MUT-117 to 120) and per-test
