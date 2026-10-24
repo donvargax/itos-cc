@@ -14,7 +14,7 @@ queue:
   - listed-support-per-test
   - listed-suites
   - features-coverage-gocoverdir-leak
-  - plain-output-matcher
+  - slice-51
   - slice-49
   - itos-cc-yaml-unknown-keys
   - itos-cc-yaml-version-key
@@ -5677,14 +5677,15 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: plain-output-matcher
+  - id: slice-51
     title: Plain per-file lines that no CI problem matcher reads as errors
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was plain-output-matcher.
       Split from plain-output-wording (2026-10-24), issue #21: mutation sample, run and check print
       per-file summaries shaped <file>.go: <counts>, and mismatch/survivor lines holding
       <file>.go:<line>:<col>, which setup-go's problem matcher turns into ##[error] annotations on a
