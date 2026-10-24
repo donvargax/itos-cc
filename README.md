@@ -1315,10 +1315,11 @@ paragraph. The repository does not allow GitHub's auto-merge, so Renovate's own 
 an update lands at the first run of the Renovate workflow in donvargax/github-admin after its
 checks pass, hourly on Mondays and every four hours the rest of the week.
 
-No workflow runs mutation proof yet. `itos.yaml`'s plan has no `proof.code` step and no mutation
-sample, and [`nightly.yml`](.github/workflows/nightly.yml), the nightly mutation run, does not yet
-finish over the whole repository; both wait on T-46 alone, the refactor's final comparison (T-132)
-being done.
+No workflow runs mutation proof of a push's changed code yet: `itos.yaml`'s plan has no
+`proof.code` step, which returns with T-187. `cd.yml`'s sample job re-runs ten recorded mutation
+results on every push that is not prose alone (T-188), and
+[`nightly.yml`](.github/workflows/nightly.yml), the nightly mutation run, judges the whole
+repository and commits `.metrics/mutate/`.
 CI's golangci-lint covers the whole module, `./...`.
 [docs/go.md](docs/go.md) lists every configured check.
 

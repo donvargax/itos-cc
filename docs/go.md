@@ -1189,10 +1189,12 @@ these checks in cost order, the first failure stopping the run:
 The Go tests of every package are not a plan step: `ci.yml`'s test job runs them on Linux and
 `cd.yml`'s platform jobs on Linux, macOS and Windows (decision 48).
 
-Mutation proof is off, and nothing here claims a mutation result for a push. The plan has no
-`proof.code` step and no `itos-cc mutation sample` (q-53): whether itos-cc sets itos's
-`proof.code` is the idea p1-itos-proof-code, waiting on T-46 alone now that the refactor's
-final proof (T-132) is done. The nightly mutation workflow, `nightly.yml`, runs again since
+Mutation proof of a push's changed code is off: the plan has no `proof.code` step (q-53), which
+returns with T-187. `cd.yml`'s sample job runs on every push that is not prose alone, on Linux
+(q-85, T-188): `mutation sample --count 10` re-runs ten recorded kills or survivors of
+`.metrics/mutate/`, seeded by the HEAD commit, and fails when an outcome differs from the one
+recorded, so a kill gone stale while its function stayed unchanged is caught. `ci.yml` runs no
+sample, to stay fast. The nightly mutation workflow, `nightly.yml`, runs again since
 2026-10-21, but no run finishes over the whole repository within a job's time limit yet (T-46):
 it interrupts the run at 330 minutes and commits what it judged as "chore: record partial nightly
 mutation results", keeping "chore: record the nightly mutation results" for a run that finished.
