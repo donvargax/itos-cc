@@ -22,6 +22,8 @@ queue:
   - flaky-kills-record
   - sample-repeat
   - T-208
+  - graph-command
+  - graph-nightly
   - T-102
   - T-103
   - T-104
