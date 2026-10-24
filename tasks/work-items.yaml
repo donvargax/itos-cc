@@ -5525,8 +5525,8 @@ items:
   - id: T-193
     title: architecture-check refuses a package outside internal/ but cmd importing internal/, naming the few that may
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: serve-port-zero-announce
