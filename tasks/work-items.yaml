@@ -5395,6 +5395,6 @@ items:
     title: The scenarios no driver runs are @wip until serve's own work
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task

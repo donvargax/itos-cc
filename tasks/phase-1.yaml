@@ -6627,7 +6627,3 @@
     why and what lifts it, the text kept as the spec serve's own work starts from; their three smoke
     entries go, and features/README.md says so. T-102 to T-105 drop the tag as they convert each
     file.
-  done_when:
-    - run: itos config check
-    - run: itos tests smoke check scenario
-    - run: test -z "$(itos tests list scenario --tsv | grep -E 'architecture_graph|serve\.feature|viewer')"
