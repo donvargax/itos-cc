@@ -8,7 +8,7 @@ import (
 
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // python resolves Python's imports: a module is a file, or a package's

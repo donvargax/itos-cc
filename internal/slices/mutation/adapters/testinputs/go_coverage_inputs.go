@@ -16,8 +16,8 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/project"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // goEnvKeys are the build environment strict Go evidence records, as go env

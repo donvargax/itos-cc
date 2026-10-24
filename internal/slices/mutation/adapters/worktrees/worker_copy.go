@@ -9,7 +9,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // Each run in a worker starts from its copy as it was made (slice-13,

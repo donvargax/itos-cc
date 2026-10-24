@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // Tools verifies independent fixture facts with the same caller cwd and

@@ -128,13 +128,13 @@ Flutter apps rarely need them, takes out ~15%.
     with them (slice-35, `worktrees/dart.go`). `android/.gradle` is already skipped, and `android/app/build` is already
     build output (beside `build.gradle`).
   - ~~`build/` beside `pubspec.yaml` is skipped only through `git check-ignore` today
-    (`project/project.go:60-69`), because `pubspec.yaml` is not in `buildManifests` (`:33-36`).~~
+    (`internal/project/project.go:60-69`), because `pubspec.yaml` is not in `buildManifests` (`:33-36`).~~
     **[now]** `pubspec.yaml` is a build manifest (slice-30), so `build/` and `coverage/` beside it are build output.
 - Generated Dart (`*.g.dart`, `*.freezed.dart`, `*.mocks.dart`, `*.gr.dart`, `*.config.dart`,
   `lib/generated_plugin_registrant.dart`, `firebase_options.dart`, l10n output) would be measured and mutated
   unless excluded. `lang.Detect` already hard-codes `.d.ts`/`.min.js` (`internal/lang/lang.go:275-281`).
   **[now]** q-77 (slice-30): discovery takes none of build_runner's and protoc's suffixes, the plugin registrant,
-  a file carrying source_gen's marker or gen-l10n's output (`project/flutter.go`); `firebase_options.dart`
+  a file carrying source_gen's marker or gen-l10n's output (`internal/project/flutter.go`); `firebase_options.dart`
   is not among them. Worker copies keep generated Dart, and no key brings it back while q-80 is open.
 - Tests: `test/**/*_test.dart` (widget and unit tests), `integration_test/` (needs a device or desktop
   embedder: never a mutation's own tests, [guess]), `test_driver/`. **[now]** q-76: neither ever runs
@@ -212,8 +212,8 @@ and a **[Flutter]** `StatelessWidget.build`/`State.build` class; `features/compl
 
 | where | what | owner after |
 |---|---|---|
-| `project/project.go:19-24` `skipDirs` | `.dart_tool` is already skipped by the dot rule in discovery (`:108`). Decide on `android`/`ios`/... (§1). **[now]** q-75: `project/flutter.go`'s platform rule, not `skipDirs` | project engine |
-| `project/project.go:33-36` `buildManifests` | add `pubspec.yaml`, so `build/` and `coverage/` beside it are build output | project engine |
+| `internal/project/project.go:19-24` `skipDirs` | `.dart_tool` is already skipped by the dot rule in discovery (`:108`). Decide on `android`/`ios`/... (§1). **[now]** q-75: `internal/project/flutter.go`'s platform rule, not `skipDirs` | project engine |
+| `internal/project/project.go:33-36` `buildManifests` | add `pubspec.yaml`, so `build/` and `coverage/` beside it are build output | project engine |
 | `internal/selection/port/porttest/tree.go:75-90` | the fake's copy of the same lists, which `TreeContract` keeps honest. **It must change in the same commit** as project.go. **[now]** the Flutter rules' copy is `porttest/flutter.go` | selection engine |
 | `IsTest` in `dart.go` | `test/`, `integration_test/`, `test_driver/` dirs and the `_test.dart` suffix | lang engine |
 
@@ -399,7 +399,7 @@ collisions).
 | `go.mod`, `go.sum` | grammar dependency | the lang item only |
 | `internal/lang/lang.go` | engine changes (unit span, Syntax callee, Detect) | the lang item only |
 | `internal/lang/dart.go` | the whole Spec: units, decisions, syntax, mutations, imports | the lang item (later items read it; a follow-up edit waits) |
-| `project/project.go:19-36` + `internal/selection/port/porttest/tree.go:75-90` | twin tables under one contract | the selection item, one commit |
+| `internal/project/project.go:19-36` + `internal/selection/port/porttest/tree.go:75-90` | twin tables under one contract | the selection item, one commit |
 | `coverage/run.go` (markers + `buildPlans` switch) | every coverage change | the coverage item only; it also exports `DartTests` for mutation |
 | `internal/slices/mutation/domain/coverage.go`, `command_policy.go`, `inputs.go` | mutation domain tables | split: commands/toolchain item gets `command_policy.go`/`inputs.go`; strict item gets `coverage.go`/`run_coverage.go` |
 | `internal/slices/mutation/domain/porttest/*.go` (tools, fingerprints, scope, reach, workers, input_contract) | fakes mirroring every adapter | per file: tools/workers → commands item; fingerprints/scope/input_contract → strict item; reach → reach item |
@@ -439,7 +439,7 @@ q-numbers and scenarios hold the decisions.
   `Sites`, which runs without tools), and the `features/complexity.go` regexes. Unblocks everything.
 
 **Wave 2 (parallel after D1; disjoint files):**
-- **D2 selection**: `project/project.go` + selection porttest twin, `IsTest` rows (SEL-15), the platform-folder
+- **D2 selection**: `internal/project/project.go` + selection porttest twin, `IsTest` rows (SEL-15), the platform-folder
   rule if decided in discovery. (Touches `dart.go` only if IsTest is adjusted: keep IsTest in D1.)
 - **D3 dry**: DRY-02 row + `features/dry.go` regexes (likely no product change; it can fold into D1 if small).
 - **D4 scrap**: `internal/slices/scrap/domain/{extract,measure,analyze}.go`, scrap.feature rows and widget-test scenario,

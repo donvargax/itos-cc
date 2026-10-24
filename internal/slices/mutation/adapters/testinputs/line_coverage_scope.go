@@ -14,7 +14,7 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // LineCoverageUnsupported names the scope of source, a file of a

@@ -12,8 +12,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/donvargax/itos-cc/internal/project"
 	"github.com/donvargax/itos-cc/internal/snapshot"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // Name is the directory snapshots live in, at the project root, the

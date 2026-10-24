@@ -12,7 +12,7 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage/port"
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // Run executes each plan and returns the coverage of sources. A plan whose

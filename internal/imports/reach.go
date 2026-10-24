@@ -5,7 +5,7 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // TestsImporting finds the tests of each source file of sources, as the graph

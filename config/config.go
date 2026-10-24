@@ -18,8 +18,8 @@ import (
 	"github.com/bmatcuk/doublestar/v4"
 	"go.yaml.in/yaml/v3"
 
+	"github.com/donvargax/itos-cc/internal/project"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // File is the settings file's name, at the project root.

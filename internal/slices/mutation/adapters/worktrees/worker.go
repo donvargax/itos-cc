@@ -15,8 +15,8 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/processes"
+	"github.com/donvargax/itos-cc/internal/project"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // linkDirs hold dependencies: a worker links them instead of copying.

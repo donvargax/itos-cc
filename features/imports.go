@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // sourceExtensions are the extensions of the files itos-cc reads as a

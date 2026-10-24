@@ -59,7 +59,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   `metrics` library writes and giving a plain reason for a snapshot that does not decode, and
   `StoreContract`, the contract it and `internal/metricsdir`'s `Store` both pass (Tests, below).
 - `internal/workdir` is the selection port's adapter: the working directory as the disk and git
-  hold it. It wraps the top-level `project` library's discovery and git query, stats paths and
+  hold it. It wraps `internal/project`'s discovery and git query, stats paths and
   reads files, translating their errors into the port's failures. Beside `Tree` it implements
   `internal/lang`'s port as `Surroundings`, answering from `project.Surroundings`, the disk.
   Mutation's `SourceEdits` was its until it moved to the mutation slice's `sources` adapter
@@ -68,7 +68,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   project root of the working directory, or at the root its `RootDir` names, so one `Store` for
   each root serves several projects (graph's, in S8) with no change to the port. It wraps the
   top-level `metrics` library, which writes them as indented JSON renamed into place, removes
-  and lists them, and `project`, which finds the root, so
+  and lists them, and `internal/project`, which finds the root, so
   every byte and every atomic write stays the library's, translating their errors into the
   port's failures. It alone decodes snapshot files, so a snapshot that did not decode is
   worded by its `Undecodable`, in the snapshot's own terms rather than the Go types a reader
@@ -89,8 +89,8 @@ a `context.Context` first (decision 30); pure logic takes none.
   the context's error once it is done. `internal/lang/port/porttest` holds the in-memory fake its
   tests parse through, at an absolute `Dir` a relative path is from, a path rooted with no
   volume such as `/work` on `Dir`'s volume so a test reads the same on every system, and
-  `SurroundingsContract`, the contract it and both adapters, `project`'s and
-  `internal/workdir`'s, pass (Tests, below). The top-level `project` library is its disk side: `project.Surroundings`,
+  `SurroundingsContract`, the contract it and both adapters, `internal/project`'s and
+  `internal/workdir`'s, pass (Tests, below). `internal/project` is its disk side: `project.Surroundings`,
   making the calls lang once made itself, and `ParseFile` and `FindUp`, which the packages not
   yet refactored call with the context their caller gives them. It also compares a unit's
   structure, the engine `dry`'s and `scrap`'s domains share (T-148): `Fingerprint(f, n,
@@ -202,8 +202,19 @@ a `context.Context` first (decision 30); pure logic takes none.
   is a thin adapter of its own over `internal/imports` (T-162): its `Reach` calls the engine's
   `TestsImporting` and turns the context's cause into `InputCancelled` and the engine's error
   into `InputFailed`, since an engine imports no slice and cannot return the domain's
-  failures. It imports neither graph nor `project`, so no slice reaches graph, whose import of
+  failures. It imports neither graph nor `internal/project`, so no slice reaches graph, whose import of
   the mutation domain, for serve's staleness, is the one arrow left between them.
+- `internal/project` is the project and git history engine (ADR-0051, ADR-0061), the top-level
+  `project` until T-194, an adapter-side engine as `internal/processes` and `internal/imports`
+  are rather than a domain: it discovers a tree's sources and tests (`Discover`, `WalkDir`),
+  asks git what changed, was renamed or deleted since a ref (`ChangedSince`, `RenamesSince`,
+  `DeletedSince` and their `At` forms), finds the project root and the markers above a file
+  (`Root`, `FindUp`), parses a file (`ParseFile`) and answers lang's port from the disk
+  (`Surroundings`). It is not split: its pure helpers serve only its own I/O. It imports
+  `internal/lang` with its port, `internal/selection` and `internal/snapshot`, and nothing else
+  of ours. `internal/workdir`, `internal/metricsdir`, `internal/imports` and the mutation
+  adapters that wrap it import it, and `features`, from outside `internal/`, so the harness asks
+  discovery's own rules, never a copy (ADR-0061); no domain or slice does.
 - `internal/processes` is the process-ownership engine (ADR-0021, T-151), an adapter-side
   engine rather than a domain: it starts and kills processes and imports nothing of ours.
   `OwnedExecutor` runs an already configured command in a process group it owns on Linux and
@@ -384,7 +395,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   `internal/lang` parsed, `Forms(f, name, opt)` a file's functions large enough to compare,
   with the name its caller gives the file, since a side's file is the key its pairs and groups
   are sorted and paired by, compared by lang's `Fingerprint` and `Jaccard`. It reads nothing
-  and imports neither `project` nor any disk code, so it has no port; its tests parse in
+  and imports neither `internal/project` nor any disk code, so it has no port; its tests parse in
   memory through lang's fake. The `domain` and `domain-io` rules hold it as they hold the
   shared domains, and `tools/bin/domain-coverage` measures it.
 - `internal/slices/scrap` is the `scrap` command's slice (T-43), laid out as `dry`'s, and the
@@ -562,8 +573,8 @@ context-as-argument a context after any other parameter, tests included.
 - `slices`: a package under `internal/` that no rule names, held as a slice now that every
   command's slice is under `internal/slices` (T-157), imports nothing of ours but the domains, `internal/cli` and
   `internal/lang`, the domain library naming a source's units that every command measures by,
-  with its port and, in its tests, the port's fake, so never another slice, an adapter, the `project` library
-  an adapter wraps and lang's disk side, the `config` codec (mutation reads settings
+  with its port and, in its tests, the port's fake, so never another slice, an adapter, the `internal/project`
+  engine an adapter wraps and lang's disk side, the `config` codec (mutation reads settings
   through mutants' `SettingsReader`, T-97), a slice's domain, or `cmd`. Its files are every package under `internal/`
   outside `internal/slices` except the ones the rule lists as something else, so a package no
   rule names is held as a slice, and it refuses each of them importing a slice under
@@ -607,7 +618,7 @@ context-as-argument a context after any other parameter, tests included.
   fixtures with. `config`, the one settings codec, with any subpackage under `config/`, imports
   that domain from its code, decoding `mutation.exceptions` and `mutation.tests` into its
   `Config`, and the domain and its `porttest` from its tests. depguard's `slices` rule covers
-  `internal/` alone, and `project`, `coverage`, `metrics`, `server`, `features` and `tools` have
+  `internal/` alone, and `coverage`, `metrics`, `server`, `features` and `tools` have
   no rule, so `tools/bin/architecture-check` holds it over the same `go list` fields as the
   sibling rule and names both packages.
 - Top level: every package but `cmd` lives under `internal/` (ADR-0061), so a package outside
@@ -617,8 +628,9 @@ context-as-argument a context after any other parameter, tests included.
   `tools/bin/release-version` `internal/release` alone, its `releasetest` with it, the
   template's layout. Until graph-snapshot (ADR-0060), graph and `server`, the legacy serve
   consumer, import what they need, the outside check holding what they import under
-  `internal/slices`; until their moves under `internal/` (T-194 to T-197), `project`,
-  `metrics`, `coverage` and `config` too, each move deleting its row. A new package goes under
+  `internal/slices`; until their moves under `internal/` (T-195 to T-197), `metrics`,
+  `coverage` and `config` too, each move deleting its row, as `project`'s went when it became
+  `internal/project` (T-194). A new package goes under
   `internal/`, never at the top level. depguard covers `internal/` alone, so
   `tools/bin/architecture-check`'s toplevel holds it over the outside check's `go list` fields
   and names both packages, and whether from the importer's tests.
@@ -629,8 +641,8 @@ context-as-argument a context after any other parameter, tests included.
   and `sources` (the mutation slice's own, under `internal/slices/mutation/adapters`): an
   adapter imports
   nothing of ours but the port it implements and the libraries it wraps, `internal/workdir`
-  the two ports it implements, selection's and `internal/lang`'s, and the `project` library,
-  and `internal/metricsdir` the snapshot port and the `metrics` and `project` libraries; only
+  the two ports it implements, selection's and `internal/lang`'s, and `internal/project`,
+  and `internal/metricsdir` the snapshot port, the `metrics` library and `internal/project`; only
   its tests may use `porttest`. Each port's adapters have a rule of their own, so none is allowed another's port
   or library. An adapter may also import the domain it serves, and a port the domain it
   belongs to, to build or return the domain's own types with no mapper between them (decision
@@ -645,8 +657,8 @@ context-as-argument a context after any other parameter, tests included.
   serves mutants, yet its rule allows `internal/coverage` and its port too, since it reads Go coverage blocks (`coverage.GoBlock`) through that domain.
   `internal/coveragetools`' allows the coverage domain, whose `Report` it returns, beside its
   port and the `coverage` runner and `metrics` it wraps. `importgraph`'s allows the
-  import-resolution engine it adapts, `internal/imports`, and neither graph nor `project`
-  (T-162). Nothing leaks the other way: the
+  import-resolution engine it adapts, `internal/imports`, and neither graph nor
+  `internal/project` (T-162). Nothing leaks the other way: the
   `domain` and `domain-io` rules still refuse every adapter and I/O package in a domain.
 - `processes`: the process-ownership engine, code and tests, imports nothing of ours (T-151).
   It is an adapter-side engine, not a domain: the `domain` and `slices` rules refuse it, so no
@@ -655,13 +667,21 @@ context-as-argument a context after any other parameter, tests included.
   command. `slices` and `slice-fakes` leave it out, as they leave out the adapters outside
   `internal/slices`.
 - `imports`: the import-resolution engine, code and tests, imports nothing of ours but
-  `internal/lang`, whose parsed files it resolves, `project` and the `coverage` runner (T-162):
+  `internal/lang`, whose parsed files it resolves, `internal/project` and the `coverage` runner (T-162):
   no other domain or port, slice, adapter, fake, UI or `cmd`, nor graph, `config` or
   `metrics`. It is an adapter-side engine like `processes`: the `domain` and `slices` rules
   refuse it, of the adapters only `importgraph`'s allows it, and graph, which no rule holds,
   imports it. `slices` and `slice-fakes` leave it out. Its rule has one deny entry, the
   module, since depguard looks a deny up as the one entry sorting just before the import
   (T-159).
+- `project`: the project and git history engine's code imports nothing of ours but
+  `internal/lang` with its port, `internal/selection` and `internal/snapshot` (ADR-0061,
+  T-194); its tests may use lang's fake too. It is an adapter-side engine like `processes`:
+  the `domain` and `slices` rules refuse it, so no domain or slice imports it, and of the
+  adapters only those wrapping it (`workdir`, `metricsdir`, `worktrees`, `testtools`,
+  `testinputs`, `githistory`, `freshenv`) and the `imports` engine allow it; `cmd`, graph and
+  the libraries still outside `internal/`, which no rule holds, import it too, and `features`
+  by its row in the top-level check. `slices` and `slice-fakes` leave it out.
 - `mocks`: no mocking library anywhere. Fakes live in `porttest`.
 - `rapid`: the property library only in the domains' own tests.
 - `kong`: kong only in `cmd` and `internal/cli`. A slice's struct tags need no import.
@@ -912,7 +932,7 @@ follows the same steps for a command it wrote before it had the template's desig
 10. **Boundaries.** The `slice-packages` rule holds the new package with no edit. A top-level library
     it imports that the rule refuses is either a domain library every command measures by,
     allowed in `slices` with a comment saying why (`lang` was, until T-36 made it the domain
-    `internal/lang`), or one an adapter wraps, which stays refused (`project`). Add the slice to the fixture lists of
+    `internal/lang`), or one an adapter wraps, which stays refused (`internal/project`). Add the slice to the fixture lists of
     `tools/testdata/architecture/check_test.go`, with every library you allowed or refused,
     and run `tools/bin/architecture-check` and `tools/bin/pinned golangci-lint run ./...`.
 11. **Then the old tests.** Once CI has run the converted scenarios green, remove only the Go
@@ -1069,7 +1089,7 @@ directory with `t.Chdir`, so no case runs in parallel. A failure the fake is con
 stays in the fake's own tests, and what only a disk can do (symlinks, permissions, OS error
 texts, what git ignores) in the adapter's. A difference the suite finds is fixed in whichever
 side is wrong, never by leaving the case out; the fake's lists of skipped directories and
-build output are copies of `project`'s, which the suite keeps honest.
+build output are copies of `internal/project`'s, which the suite keeps honest.
 
 The scenarios in `features/` run through godog with two drivers (decision 44), the same steps
 of package `features` behind its `Driver`. A converted file is one whose steps declare it

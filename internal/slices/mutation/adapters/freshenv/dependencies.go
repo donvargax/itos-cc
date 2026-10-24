@@ -9,7 +9,7 @@ import (
 	"sort"
 
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // LinkInstalledDependencies links into the frozen export the dependencies

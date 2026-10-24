@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // typescript resolves TypeScript's and JavaScript's imports: a module is a

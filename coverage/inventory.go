@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/coverage"
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // inventories is, by language, the command that lists the executable lines

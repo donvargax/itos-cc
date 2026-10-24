@@ -9,9 +9,9 @@ package metricsdir
 import (
 	"context"
 
+	"github.com/donvargax/itos-cc/internal/project"
 	"github.com/donvargax/itos-cc/internal/snapshot/port"
 	"github.com/donvargax/itos-cc/metrics"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // Store is the snapshots of the project whose root is RootDir, or, its zero

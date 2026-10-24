@@ -13,9 +13,9 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/imports"
+	"github.com/donvargax/itos-cc/internal/project"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/metrics"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // Builder rebuilds the graph of some repositories, reparsing only files that

@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/project"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // The scenario outline of "Rule: Strict runs prove executable line coverage

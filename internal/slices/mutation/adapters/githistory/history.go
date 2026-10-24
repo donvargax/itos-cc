@@ -5,8 +5,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/donvargax/itos-cc/internal/project"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // History observes one actual caller directory without changing process cwd.

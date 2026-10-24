@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // A Go file's tests are those of its own package and of the packages that

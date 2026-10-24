@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/project"
 	"github.com/donvargax/itos-cc/metrics"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // The scenario of "Rule: Coverage from tests that start other processes, in

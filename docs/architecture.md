@@ -26,14 +26,15 @@ flowchart TD
   sadp["internal/slices/&lt;command&gt;/adapters/&lt;name&gt;"]
   dom["shared domains + port + porttest<br/>selection, lang, snapshot, coverage"]
   adp["shared adapters<br/>workdir, metricsdir, coveragetools"]
-  eng["adapter-side engines<br/>processes, imports"]
-  lib["libraries<br/>project, coverage runner, metrics, config"]
+  eng["adapter-side engines<br/>processes, imports, project"]
+  lib["libraries<br/>coverage runner, metrics, config"]
   main --> ui & slice & sadp & adp & eng & dom
   slice --> ui & sdom & dom
   sdom --> dom
-  sadp --> sdom & dom & lib
-  adp --> dom & lib
-  eng --> lib
+  sadp --> sdom & dom & eng & lib
+  adp --> dom & eng & lib
+  eng --> dom & lib
+  lib --> eng
   lib -.->|"config only"| sdom
 ```
 
@@ -48,8 +49,8 @@ An arrow is an import the rules allow. Every arrow not drawn is refused.
 | Slice's adapters | `internal/slices/<x>/adapters/<name>` | its slice's domain, the pure shared domains, the libraries it wraps | one rule each (`testtools`, `worktrees`, …) |
 | Shared domains | `internal/selection`, `internal/lang`, `internal/snapshot`, `internal/coverage`, each with `port` and `porttest` | one another and their ports; nothing under `internal/slices` | `domain`, `domain-io`, `shared-domains` |
 | Shared adapters | `internal/workdir`, `internal/metricsdir`, `internal/coveragetools` | the port they implement, the domain it belongs to, the libraries they wrap | `workdir`, `metricsdir`, `coveragetools` |
-| Adapter-side engines | `internal/processes` (process ownership), `internal/imports` (import resolution) | `processes` nothing of ours; `imports` lang, `project` and the coverage runner | `processes`, `imports` |
-| Libraries | `project`, `coverage`, `metrics`, `config` | what they wrap; nothing under `internal/slices`, but `config`'s settings codec imports the mutation domain; each moves under `internal/` (T-194 to T-197) | `architecture-check --outside` and `--toplevel` |
+| Adapter-side engines | `internal/processes` (process ownership), `internal/imports` (import resolution), `internal/project` (project and git history) | `processes` nothing of ours; `imports` lang, `internal/project` and the coverage runner; `project` lang with its port, selection and snapshot | `processes`, `imports`, `project` |
+| Libraries | `coverage`, `metrics`, `config` | what they wrap; nothing under `internal/slices`, but `config`'s settings codec imports the mutation domain; each moves under `internal/` (T-195 to T-197) | `architecture-check --outside` and `--toplevel` |
 
 The rules are depguard's, in `.golangci.yml`, and `tools/bin/architecture-check`, which runs the
 pinned golangci-lint over compile-valid fixtures in `tools/testdata/architecture` that each rule
@@ -220,8 +221,8 @@ before the work, and its status line says what changed since.
    from every other the engine grows a hook in `internal/lang/lang.go`, not a special case:
    `Spec.Body` for a signature and body that are siblings, `Syntax.Links` for selector chains
    with no call node.
-2. **Selection**, `project/project.go` (`pubspec.yaml` as a build manifest) and
-   `project/flutter.go` (platform folders and generated Dart never walked), with the fake's copy in
+2. **Selection**, `internal/project/project.go` (`pubspec.yaml` as a build manifest) and
+   `internal/project/flutter.go` (platform folders and generated Dart never walked), with the fake's copy in
    `internal/selection/port/porttest/flutter.go`, which `TreeContract` keeps honest. Its steps are
    `features/selection_flutter.go`.
 3. **Coverage plan**, `coverage/dart.go` (`dartPlan`, `DartTests`, `FlutterFor`) and its marker

@@ -15,9 +15,9 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/project"
 	fileselection "github.com/donvargax/itos-cc/internal/selection"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // FreshPlanVersion names the stable static selection algorithm. It changes

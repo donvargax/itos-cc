@@ -18,7 +18,7 @@ func checkOutside(t *testing.T, check, dir string, env []string, module string) 
 		{"./config/mutation", "", ""},
 		{"./graph/testtools", "", ""},
 		{"./config/fake", "", ""},
-		{"./project/units", "units", ""},
+		{"./internal/project/units", "units", ""},
 		{"./coverage/mutation_domain", "mutation/domain", " from its tests"},
 		{"./features/dry_domain", "dry/domain", ""},
 		{"./graph/crap_domain", "crap/domain", ""},

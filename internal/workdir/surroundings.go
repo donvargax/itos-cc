@@ -4,7 +4,7 @@ import (
 	"context"
 
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // Surroundings are what surrounds the files of this process's working

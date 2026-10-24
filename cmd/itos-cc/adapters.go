@@ -15,6 +15,7 @@ import (
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/internal/processes"
+	"github.com/donvargax/itos-cc/internal/project"
 	"github.com/donvargax/itos-cc/internal/selection"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/exceptions"
@@ -30,7 +31,6 @@ import (
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	"github.com/donvargax/itos-cc/internal/version"
 	"github.com/donvargax/itos-cc/internal/workdir"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // adapters are what the moved commands reach the world through, which main

@@ -159,6 +159,7 @@ linters:
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/processes/**" # the process-ownership engine, held by processes
             - "!**/internal/imports/**" # the import-resolution engine, held by imports
+            - "!**/internal/project/**" # the project and git history engine, held by project
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # the build's version, which cmd gives the version slice
             - "!**/internal/release/**" # the release tools' library
@@ -265,6 +266,7 @@ linters:
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/processes/**" # the process-ownership engine, held by processes
             - "!**/internal/imports/**" # the import-resolution engine, held by imports
+            - "!**/internal/project/**" # the project and git history engine, held by project
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # the build's version, which cmd gives the version slice
             - "!**/internal/release/**" # the release tools' library
@@ -332,10 +334,10 @@ linters:
         # internal/slices/<name>/adapters/<adapter>, from slice-packages,
         # slice-adapters and slice-fakes. Each port's adapters have a rule of
         # their own, so no adapter is allowed another's port or library.
-        # internal/workdir implements the selection port over project, the
-        # top-level library that walks a tree and asks git, and lang's port
+        # internal/workdir implements the selection port over internal/project,
+        # the engine that walks a tree and asks git, and lang's port
         # over project's answers from the disk (T-35): both ports and project
-        # are allowed here, and no other top-level library is. Mutation's
+        # are allowed here, and no other library is. Mutation's
         # SourceEdits moved to the slice's sources adapter (T-161), so it
         # imports no domain.
         workdir:
@@ -346,7 +348,7 @@ linters:
           allow:
             - github.com/donvargax/itos-cc/internal/selection/port$
             - github.com/donvargax/itos-cc/internal/lang/port$
-            - github.com/donvargax/itos-cc/project$
+            - github.com/donvargax/itos-cc/internal/project$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the workdir adapter imports only the selection/lang ports and project, which it wraps (T-92, T-161); extend the rules as docs/go.md's Adding a package says, never loosen this one"
@@ -364,7 +366,7 @@ linters:
           allow:
             - github.com/donvargax/itos-cc/internal/snapshot/port$
             - github.com/donvargax/itos-cc/metrics$
-            - github.com/donvargax/itos-cc/project$
+            - github.com/donvargax/itos-cc/internal/project$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the metricsdir adapter imports only the snapshot port, metrics and project, which it wraps (T-92, T-161); extend the rules as docs/go.md's Adding a package says, never loosen this one"
@@ -403,7 +405,7 @@ linters:
           allow:
             - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
             - github.com/donvargax/itos-cc/internal/processes$
-            - github.com/donvargax/itos-cc/project$
+            - github.com/donvargax/itos-cc/internal/project$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the worktrees adapter imports only the mutation domain, the process-ownership engine its workers run through and project tree operations it wraps (T-88, T-151); no UI, other adapters or fakes"
@@ -440,11 +442,34 @@ linters:
             - "**/internal/imports/**"
           allow:
             - github.com/donvargax/itos-cc/internal/lang$
-            - github.com/donvargax/itos-cc/project$
+            - github.com/donvargax/itos-cc/internal/project$
             - github.com/donvargax/itos-cc/coverage$
           deny:
             - pkg: github.com/donvargax/itos-cc
-              desc: "the import-resolution engine imports nothing of ours but internal/lang, project and the coverage runner (T-162): no other domain, slice, adapter, UI or fake; a caller converts its results into its own terms"
+              desc: "the import-resolution engine imports nothing of ours but internal/lang, internal/project and the coverage runner (T-162): no other domain, slice, adapter, UI or fake; a caller converts its results into its own terms"
+        # internal/project is the project and git history engine (ADR-0051,
+        # ADR-0061, T-194), the top-level project until then: it discovers a
+        # tree's sources and tests, asks git what changed and answers
+        # internal/lang's port from the disk (project.Surroundings). It is an
+        # adapter-side engine, not a domain: it reads the disk and runs git,
+        # so no domain or slice imports it (their rules leave it out), and of
+        # the adapters only those wrapping it allow it. Its code imports
+        # internal/lang and its port, whose Surroundings it answers, and
+        # internal/selection and internal/snapshot, whose values it names
+        # paths by, and nothing else of ours; its tests may use lang's fake.
+        project:
+          list-mode: lax
+          files:
+            - "**/internal/project/**"
+            - "!$test"
+          allow:
+            - github.com/donvargax/itos-cc/internal/lang$
+            - github.com/donvargax/itos-cc/internal/lang/port$
+            - github.com/donvargax/itos-cc/internal/selection$
+            - github.com/donvargax/itos-cc/internal/snapshot$
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "the project engine imports nothing of ours but internal/lang with its port, internal/selection and internal/snapshot (ADR-0061, T-194): no other domain or port, slice, adapter, UI or fake; extend the rules as docs/go.md's Adding a package says, never loosen this one"
         # T-89: each concrete observation adapter owns only its declared I/O.
         # testtools and testinputs (T-159), githistory, freshenv and
         # importgraph (T-160), snapshots, exceptions and sources (T-161), like
@@ -459,7 +484,7 @@ linters:
           allow:
             - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
             - github.com/donvargax/itos-cc/internal/lang$
-            - github.com/donvargax/itos-cc/project$
+            - github.com/donvargax/itos-cc/internal/project$
             - github.com/donvargax/itos-cc/coverage$
           deny:
             - pkg: github.com/donvargax/itos-cc
@@ -472,7 +497,7 @@ linters:
           allow:
             - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
             - github.com/donvargax/itos-cc/internal/lang$
-            - github.com/donvargax/itos-cc/project$
+            - github.com/donvargax/itos-cc/internal/project$
             - github.com/donvargax/itos-cc/coverage$
           deny:
             - pkg: github.com/donvargax/itos-cc
@@ -484,7 +509,7 @@ linters:
             - "!$test"
           allow:
             - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
-            - github.com/donvargax/itos-cc/project$
+            - github.com/donvargax/itos-cc/internal/project$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the githistory adapter imports only mutation's History values and the Git library it wraps (T-91); no UI, other adapters or fakes"
@@ -502,7 +527,7 @@ linters:
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/internal/lang/port$
             - github.com/donvargax/itos-cc/config$
-            - github.com/donvargax/itos-cc/project$
+            - github.com/donvargax/itos-cc/internal/project$
             - github.com/donvargax/itos-cc/coverage$
           deny:
             - pkg: github.com/donvargax/itos-cc

@@ -8,8 +8,8 @@ import (
 	"context"
 	"os"
 
+	"github.com/donvargax/itos-cc/internal/project"
 	"github.com/donvargax/itos-cc/internal/selection/port"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // Tree is the working directory of this process.

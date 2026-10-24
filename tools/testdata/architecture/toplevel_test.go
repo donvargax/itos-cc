@@ -19,7 +19,7 @@ type toplevelFixture struct {
 // tests, but the rows docs/go.md names: features internal/project alone,
 // tools/bin/release-notes and release-version internal/release alone, its
 // releasetest with it, and, until graph-snapshot and their moves, graph,
-// server, project, metrics, coverage and config whatever they import.
+// server, metrics, coverage and config whatever they import.
 var toplevelFixtures = []toplevelFixture{
 	{"features", "toplevel_project_code", "internal/project", false, false},
 	{"features", "toplevel_project_test", "internal/project", true, false},
@@ -50,8 +50,8 @@ func addToplevel(module string, add func(name, layer, imported, symbol, rule str
 // what is under internal/ and each named row accepted, the rest refused,
 // naming both packages and whether from the importer's tests. Beside
 // toplevelFixtures it runs over the fixtures the other checks wrote:
-// cmd/probe importing every package under internal/, graph's, project's,
-// coverage's and config's rows, and features importing dry's domain.
+// cmd/probe importing every package under internal/, graph's, coverage's
+// and config's rows, and features importing dry's domain.
 func checkToplevel(t *testing.T, check, dir string, env []string, module string) {
 	t.Helper()
 	type run struct{ pkg, imported, from string }
@@ -59,7 +59,6 @@ func checkToplevel(t *testing.T, check, dir string, env []string, module string)
 		{"./cmd/probe/...", "", ""},
 		{"./internal/slices/units/...", "", ""},
 		{"./graph/...", "", ""},
-		{"./project/...", "", ""},
 		{"./coverage/...", "", ""},
 		{"./config/...", "", ""},
 		{"./features/dry_domain", "internal/slices/dry/domain", ""},

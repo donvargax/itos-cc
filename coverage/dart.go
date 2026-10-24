@@ -15,7 +15,7 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	"github.com/donvargax/itos-cc/internal/coverage"
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // FlutterQuiet are the global flags every flutter command itos-cc starts
