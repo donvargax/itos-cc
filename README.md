@@ -1126,7 +1126,9 @@ so its survivors run them (T-46). Raw coverage under
 Results go to `.metrics/mutate/<file>.json`, and a summary comment is kept at
 the end of each source file (`--no-annotate` turns it off): its counts, each
 survivor, and each survivor `itos-cc.yaml` excepts, counted and listed apart
-with its reason, whichever functions the run judged. A surviving
+with its reason, whichever functions the run judged. Each line names its
+function, a method with its class (`Board#count`) and a function at the
+file's top level by its bare name. A surviving
 mutant, an uncovered one with `--fail-uncovered`, or tests that fail before
 any mutant, exits 1. `--json` lists each file's `mutants` in site order,
 each with the keys `mutation list` gives a site, its `outcome` (`killed`,
