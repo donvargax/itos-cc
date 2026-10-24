@@ -2253,6 +2253,23 @@ Feature: Mutation testing
       Then the problem is "mutation.mismatch", with scope "all-tests"
       And its fix says to run "itos-cc mutation run --mutate-all --all-tests src/board.ts"
 
+    # slice-45, mismatch-fix-quotes (2026-10-24, a coordinator's call inside
+    # the item): the fix wrapped its command in single quotes, so with a
+    # --test-command scope it read "run 'itos-cc mutation run --mutate-all
+    # --test-command 'make test' src/board.ts'", which no one can paste.
+    # The fix now ends with the command after a colon, for every scope, with
+    # no quotes of its own: "The cached results are not what the tests do:
+    # commit .metrics/mutate/ with the code after running: <command>". The
+    # step "its fix says to run" of MUT-147 and MUT-148 checks that ending in
+    # the feat, its sentence unchanged. Before this item the fix's command
+    # sat inside quotes, failing at the ending step.
+    @slice-45 @ID-MUT-334 @wip
+    Scenario: A mismatch's fix ends with its command, which pastes as written
+      Given a run with --test-command 'make test' recorded a kill in src/board.ts that those tests no longer make
+      When I run "itos-cc mutation sample --count 100 src/board.ts"
+      Then the problem's fix ends with ": itos-cc mutation run --mutate-all --test-command 'make test' src/board.ts"
+      And the fix holds no quote but the two around make test
+
   Rule: Results
 
     @ID-MUT-28
