@@ -23,12 +23,15 @@ type ExceptQuery struct {
 
 // ExceptFound is the entry except wrote, and whether it replaced one, and
 // the site excepted, as the source is now: the path of its file, its line
-// and column.
+// and column. File is the identity's file, slash-separated from the project root on
+// every system as the identity names it, which names the file in place of
+// Path when an identity named the site, "" when a site did.
 type ExceptFound struct {
 	Exception    mutants.Exception
 	Replaced     bool
 	Path         string
 	Line, Column int
+	File         string
 }
 
 // RenewFound is what --renew renewed and left, the settings' root naming
@@ -64,22 +67,22 @@ func (h Handler) Except(ctx context.Context, q ExceptQuery) (ExceptFound, error)
 	if err != nil {
 		return ExceptFound{}, err
 	}
-	path, identity := sourcePath(h.Dir, q.Path), ""
+	path, identity, file := sourcePath(h.Dir, q.Path), "", ""
 	if q.Identity != nil {
-		path, identity = sourcePath(root, filepath.FromSlash(q.Identity.File)), q.Identity.String()
+		path, identity, file = sourcePath(root, filepath.FromSlash(q.Identity.File)), q.Identity.String(), q.Identity.File
 	}
 	if selection.Exclusion(cfg.Selection).Excludes(path) {
 		if q.Reason == nil {
 			return ExceptFound{}, ReasonMissing{}
 		}
-		return ExceptFound{}, SiteExcluded{Path: path, Line: q.Line, Column: q.Column, Identity: identity}
+		return ExceptFound{}, SiteExcluded{Path: path, Line: q.Line, Column: q.Column, Identity: identity, File: file}
 	}
 	support, tests, err := h.judging(ctx, root, cfg)
 	if err != nil {
 		return ExceptFound{}, err
 	}
 	opt := h.options(root, nil, tests, support, nil, h.listing(root, cfg))
-	found := ExceptFound{Path: path, Line: q.Line, Column: q.Column}
+	found := ExceptFound{Path: path, Line: q.Line, Column: q.Column, File: file}
 	var e mutants.Exception
 	if q.Identity != nil {
 		e, found.Line, err = mutants.IdentifiedSurvivor(ctx, *q.Identity, opt, h.Status)
@@ -140,9 +143,9 @@ func survivorRefused(err error, q ExceptQuery, path string) Failure {
 	case q.Reason == nil:
 		return ReasonMissing{}
 	case stale != nil:
-		return IdentityStale{Path: path, Identity: q.Identity.String(), Function: q.Identity.Function(), Why: stale.Why, Hash: stale.Hash}
+		return IdentityStale{Path: path, Identity: q.Identity.String(), Function: q.Identity.Function(), Why: stale.Why, Hash: stale.Hash, File: q.Identity.File}
 	case q.Identity != nil:
-		return NoSurvivor{Path: path, Line: none.Line, Column: none.Column, Reason: none.Reason, Uncovered: none.Uncovered}
+		return NoSurvivor{Path: path, Line: none.Line, Column: none.Column, Reason: none.Reason, Uncovered: none.Uncovered, File: q.Identity.File}
 	}
 	return NoSurvivor{Path: path, Line: q.Line, Column: q.Column, Reason: none.Reason, Uncovered: none.Uncovered}
 }

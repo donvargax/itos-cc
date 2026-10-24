@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -38,7 +39,10 @@ func IsIdentity(arg string) bool { return identityUnit.MatchString(arg) }
 // replacement may hold (`>` → `>=` is >>>=). The function's part is read
 // from the last such part's @, its name after its last #, and the file
 // before the last : that precedes it, which no namespace and no name holds;
-// a file that is not local to the project root is none.
+// a file that is not local to the project root is none. The identity is
+// text, its file slash-separated on every system, so the file is judged by
+// the slash rules of path, never by the system's (filepath), whose Windows
+// rules refuse a : that a file elsewhere may hold.
 func ParseIdentity(arg string) (Identity, bool) {
 	all := identityUnit.FindAllStringSubmatchIndex(arg, -1)
 	if len(all) == 0 {
@@ -56,10 +60,18 @@ func ParseIdentity(arg string) (Identity, bool) {
 	end, err2 := strconv.Atoi(arg[m[4]:m[5]])
 	id := Identity{File: function[:colon], Namespace: function[colon+1 : hash], Name: function[hash+1:],
 		StartLine: start, EndLine: end, Hash: arg[m[6]:m[7]], Key: arg[m[8]:]}
-	if id.Name == "" || err1 != nil || err2 != nil || !filepath.IsLocal(filepath.FromSlash(id.File)) {
+	if id.Name == "" || err1 != nil || err2 != nil || !local(id.File) {
 		return Identity{}, false
 	}
 	return id, true
+}
+
+// local is whether file, slash-separated, names a path within the
+// directory it is read from, neither absolute nor climbing out of it;
+// ParseIdentity has refused an empty one.
+func local(file string) bool {
+	clean := path.Clean(file)
+	return !path.IsAbs(file) && clean != ".." && !strings.HasPrefix(clean, "../")
 }
 
 // String is the identity as a counted run names it.
@@ -93,7 +105,10 @@ func (e *IdentityStaleError) Error() string {
 // committed tree, stableFunction), its lines choosing among several such,
 // then the site of its key. A function that only moved is found. One
 // that changed, or a file, function or site that is gone, is an
-// *IdentityStaleError. A missing or stale snapshot of the function is no
+// *IdentityStaleError, and so is a file the system cannot name within
+// opt.Root (filepath.Localize), such as one holding a : on Windows: the
+// identity's slash-separated file becomes the system's path only here,
+// where it is read. A missing or stale snapshot of the function is no
 // refusal: the identity is the evidence that it survived. A fresh one that
 // records the mutant killed, timed out, over the limit or uncovered is a
 // *NoSurvivorError, as Survivor's, at the site.
@@ -101,15 +116,19 @@ func IdentifiedSurvivor(ctx context.Context, id Identity, opt CheckOptions, stat
 	if ctx.Err() != nil {
 		return Exception{}, 0, context.Cause(ctx)
 	}
-	path := filepath.Join(opt.Root, filepath.FromSlash(id.File))
 	gone := &IdentityStaleError{Why: ExceptionGone}
-	if lang.Detect(path) == nil {
+	file, err := filepath.Localize(path.Clean(id.File))
+	if err != nil {
+		return Exception{}, 0, gone
+	}
+	source := filepath.Join(opt.Root, file)
+	if lang.Detect(source) == nil {
 		return Exception{}, 0, gone
 	}
 	if status == nil {
 		return Exception{}, 0, errors.New("mutation source status binding is missing")
 	}
-	kind, failure := status.Kind(ctx, path)
+	kind, failure := status.Kind(ctx, source)
 	var canceled InputCancelled
 	if errors.As(failure, &canceled) {
 		return Exception{}, 0, failure
@@ -117,7 +136,7 @@ func IdentifiedSurvivor(ctx context.Context, id Identity, opt CheckOptions, stat
 	if failure != nil || kind != SourceNonDirectory {
 		return Exception{}, 0, gone
 	}
-	f, err := parseExceptionSource(ctx, path, opt)
+	f, err := parseExceptionSource(ctx, source, opt)
 	if err != nil {
 		return Exception{}, 0, err
 	}
@@ -131,10 +150,10 @@ func IdentifiedSurvivor(ctx context.Context, id Identity, opt CheckOptions, stat
 		if s.Unit != unit || s.Key() != id.Key {
 			continue
 		}
-		if err := recordedSurvivor(ctx, f, path, unit, s, opt); err != nil {
+		if err := recordedSurvivor(ctx, f, source, unit, s, opt); err != nil {
 			return Exception{}, 0, err
 		}
-		return Exception{File: snapshot.Key(opt.Root, path), Function: UnitID(u.Namespace, u.Name), Hash: UnitHash(f, u),
+		return Exception{File: snapshot.Key(opt.Root, source), Function: UnitID(u.Namespace, u.Name), Hash: UnitHash(f, u),
 			LineInFunction: s.Line - u.StartLine + 1, Column: s.Column, Original: s.Original, Replacement: s.Replacement,
 			LineText: LineText(f.Src, s.Line)}, s.Line, nil
 	}

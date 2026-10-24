@@ -31,29 +31,38 @@ type SeedUnavailable struct {
 
 // SiteExcluded is except's site, at Path, in a source the settings'
 // exclude leaves out; Identity is the identity that named it, "" for a
-// site named by its line and column.
+// site named by its line and column, and File is the identity's file, slash-separated from the project root on
+// every system as the identity names it, which names the file in place of
+// Path when an identity named the site, "" when a site did.
 type SiteExcluded struct {
 	Path         string
 	Line, Column int
 	Identity     string
+	File         string
 }
 
 // IdentityStale is except's Identity, of Function in the file at Path,
 // which names no site of the source as it is now: Why is changed, the
-// function's hash now Hash, or gone.
+// function's hash now Hash, or gone. File is the identity's file, slash-separated from the project root on
+// every system as the identity names it, which names the file in place of
+// Path when an identity named the site, "" when a site did.
 type IdentityStale struct {
 	Path, Identity, Function string
 	Why, Hash                string
+	File                     string
 }
 
 // NoSurvivor is except's site, at Path, which no fresh snapshot records as
 // a survivor: Reason says why, and Uncovered is true when its mutant is
-// recorded uncovered.
+// recorded uncovered. File is the identity's file, slash-separated from the project root on
+// every system as the identity names it, which names the file in place of
+// Path when an identity named the site, "" when a site did.
 type NoSurvivor struct {
 	Path         string
 	Line, Column int
 	Reason       string
 	Uncovered    bool
+	File         string
 }
 
 // ReasonMissing is except's site given with no --reason, when it re-points

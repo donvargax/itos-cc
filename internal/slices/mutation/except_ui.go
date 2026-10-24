@@ -104,7 +104,7 @@ func (c Except) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		if found.Replaced {
 			what = "excepted again"
 		}
-		_, _ = fmt.Fprintf(ui.Stdout, "%s %s:%d:%d %s → %s in %s in %s\n", what, ui.Rel(found.Path), found.Line, found.Column,
+		_, _ = fmt.Fprintf(ui.Stdout, "%s %s:%d:%d %s → %s in %s in %s\n", what, named(found.File, found.Path, ui.Rel), found.Line, found.Column,
 			Quote(e.Original), Quote(e.Replacement), e.Function, "itos-cc.yaml")
 	}
 	return ui.Emit(c.JSON, result, nil)

@@ -37,6 +37,8 @@ func TestAnIdentityKeepsItsSiteKeyWhole(t *testing.T) {
 		"a.go:p#@1:2:ab:3:<><=",     // no name
 		"a.go:p#F@1:2:ab:3:",        // no change
 		"../a.go:p#F@1:2:ab:3:<><=", // outside the project root
+		"..:p#F@1:2:ab:3:<><=",
+		"x/../../a.go:p#F@1:2:ab:3:<><=",
 		"/a.go:p#F@1:2:ab:3:<><=",
 		"a.go:p#F@99999999999999999999:2:ab:3:<><=", // no line
 		"src/board.go:7:19",
@@ -111,7 +113,14 @@ func TestDomainIdentifiedSurvivorIsTheSiteOfTheSourceAsItIsNow(t *testing.T) {
 		stale.Error() != "its function changed, its hash now "+stale.Hash {
 		t.Fatalf("changed: %v", err)
 	}
-	for name, gone := range map[string]mutants.Identity{"key": withKey(id, "99:>>="), "name": withName(id, "Other"), "namespace": withNamespace(id, "other"), "file": withFile(id, "gone.go"), "language": withFile(id, "board.txt")} {
+	// The file is the system's path only where it is read: one that climbs
+	// out of the root, even back to its board.go, is gone; one that only
+	// needs cleaning is found.
+	if got, _, err = mutants.IdentifiedSurvivor(t.Context(), withFile(id, "./x/../board.go"), opt, f.edits); err != nil || got != want {
+		t.Fatalf("a file to clean: %+v %v", got, err)
+	}
+	outside := withFile(id, "../"+filepath.Base(f.root)+"/board.go")
+	for name, gone := range map[string]mutants.Identity{"key": withKey(id, "99:>>="), "name": withName(id, "Other"), "namespace": withNamespace(id, "other"), "file": withFile(id, "gone.go"), "language": withFile(id, "board.txt"), "outside": outside} {
 		if _, _, err = mutants.IdentifiedSurvivor(t.Context(), gone, opt, f.edits); !errors.As(err, &stale) || stale.Why != mutants.ExceptionGone || stale.Error() != "its file, function or site is gone" {
 			t.Errorf("gone %s: %v", name, err)
 		}

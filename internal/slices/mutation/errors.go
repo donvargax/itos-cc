@@ -49,7 +49,7 @@ func failureError(failure Failure, rel func(string) string) error {
 	case SeedUnavailable:
 		return seedError(failure.Failure)
 	case SiteExcluded:
-		file := rel(failure.Path)
+		file := named(failure.File, failure.Path, rel)
 		at := fmt.Sprintf("%s:%d:%d", file, failure.Line, failure.Column)
 		if failure.Identity != "" {
 			at = failure.Identity
@@ -59,7 +59,7 @@ func failureError(failure Failure, rel func(string) string) error {
 			fmt.Sprintf("Except a survivor of a source mutation run judges, or take %s out of exclude in %s first.", file, "itos-cc.yaml")).
 			With("file", file)
 	case NoSurvivor:
-		file := rel(failure.Path)
+		file := named(failure.File, failure.Path, rel)
 		message := fmt.Sprintf("%s:%d:%d is no survivor to except: %s", file, failure.Line, failure.Column, failure.Reason)
 		fix := fmt.Sprintf("Except a site that mutation run lists as survived; run 'itos-cc mutation run %s' first when its results are stale or missing.", file)
 		if failure.Uncovered {
@@ -70,7 +70,7 @@ func failureError(failure Failure, rel func(string) string) error {
 		return cli.NewProblem(cli.CodeUsage, "exception.no-survivor", message, fix).
 			With("file", file).With("line", failure.Line).With("column", failure.Column)
 	case IdentityStale:
-		return identityStale(failure, rel(failure.Path))
+		return identityStale(failure, named(failure.File, failure.Path, rel))
 	case ReasonMissing:
 		return reasonMissing()
 	case StrictCoverageFlag:
@@ -84,6 +84,16 @@ func failureError(failure Failure, rel func(string) string) error {
 		return countedPlanError(failure.Failure, failure.Since)
 	}
 	return failure
+}
+
+// named is the file of a site except names for a person: file, the
+// identity's own, slash-separated from the project root on every system,
+// when an identity named the site, else path as rel names it.
+func named(file, path string, rel func(string) string) string {
+	if file != "" {
+		return file
+	}
+	return rel(path)
 }
 
 // identityStale is exception.identity-stale: the identity names no site
