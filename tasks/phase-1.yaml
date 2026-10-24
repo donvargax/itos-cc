@@ -6806,3 +6806,18 @@
     - run: test ! -d config
     - run: "! grep -rn --include='*.go' 'itos-cc/config\"' ."
     - run: tools/bin/architecture-check
+- id: T-198
+  type: chore
+  title: One refactor-proof.yml run proves the move under internal/ changed no behaviour
+  why: >
+    ADR-0061, the last of six, as docs/go.md's rule 9 asks: once T-193 to T-197 are done,
+    refactor-proof.yml is dispatched once with baseline the parent of T-193's first commit (recorded
+    here at T-193's close), building that baseline and the refactored binary and comparing both over
+    today's whole binary-driver suite and the listed edge cases; every difference is classified (a
+    deliberate change a commit made, the run's own noise, or a bug, a bug fixed before closing), and
+    the run is recorded in rule 9 beside 39101044040 and 39622138010. The dispatch is a GitHub write
+    the person's standing rules allow an agent (agents may dispatch workflow_dispatch experiments).
+    Expected: no difference. The plan is scratchpad/plan-top-level-libraries-internal.md of the
+    coordinator's session, its decisions now ADR-0061 (q-89).
+  done_when:
+    - run: grep -qF 'top-level-libraries-internal' docs/go.md || grep -qF 'ADR-0061' docs/go.md
