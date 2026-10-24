@@ -11,7 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
-  - except-from-identity
+  - slice-41
   - listed-support-doublestar
   - listed-suites
   - worker-copies-skip-ignored
@@ -5397,14 +5397,15 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: except-from-identity
+  - id: slice-41
     title: mutation except takes a CI report's mutant identity, with no local mutation run
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was except-from-identity.
       GitHub #66: a survivor a CI run reports (the code proof, the nightly, sample) carries its
       identity, e.g.
       internal/tests/tsv.go:internal/tests#projectFile@84:103:b7aae01f28c3e046:517:||>&&, but
