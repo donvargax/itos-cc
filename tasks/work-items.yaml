@@ -13,7 +13,6 @@ phases:
 queue:
   - listed-support-per-test
   - listed-suites
-  - slice-43
   - cd-finish-on-busy-main
   - pinned-curl-timeout
   - counted-config-own-fix
