@@ -5388,3 +5388,22 @@ items:
       workflow_dispatch input to nightly.yml naming the files to re-judge with --mutate-all, or the
       nightly re-judging the files a failed sample named, would give the repair agent a path, its
       result committed to .metrics/mutate/ as the nightly's are.
+  - id: proof-code-unrun-listed
+    title: Keep proof.code's counted run from failing on listed scenarios no in-process run executes
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-40's push (CI run 40042092414) was the first Go push to reach proof.code, and its
+      counted run failed before judging any mutant: count.preparation-failed at listed-coverage,
+      'listed test ID-GRAPH-01 produced no per-ID coverage data'. mutation.tests.list in
+      itos-cc.yaml lists every live scenario (itos tests list scenario, select(.live)), 75 of them
+      in architecture_graph.feature, serve.feature and viewer.feature, which features/steps_gen.go's
+      stepped list does not convert, plus the Deferred and @binary-only ones, so cmd/itos-cc's
+      TestScenarios, the listed run command, never runs them and writes no coverage under their ID;
+      the counted preparation (coverage/supervised.go) requires data for every listed ID. Either
+      list only the scenarios the in-process driver runs, or let a counted run treat a listed test
+      with no data as reaching nothing, as a plain run may. Until then every Go push's ci.yml is
+      red.
