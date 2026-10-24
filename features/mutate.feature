@@ -2643,6 +2643,27 @@ Feature: Mutation testing
         // end itos-cc mutation
         """
 
+    # slice-46, annotate-function-name (issue #10; 2026-10-24, a
+    # coordinator's call inside the item): the summary comment named a
+    # function by its bare name, so a method count of class Board read "in
+    # count" and two classes' count methods read alike, while mutation run's
+    # output, itos-cc.yaml and the scenarios name it Board#count. The
+    # comment's survived and excepted lines now name a function as mutation
+    # run's output does (namespace#name for a method, the bare name for a
+    # function with none). The feat changes MUT-138's expected line to "in
+    # Board#count", saying so; MUT-32's "in a" stays, a top-level function.
+    # Before this item the line read "in count", failing at the Then.
+    @slice-46 @ID-MUT-335 @wip
+    Scenario: The summary comment names a method with its class
+      Given the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count", and every other mutant of src/board.ts is killed
+      When I run "itos-cc mutation run src/board.ts"
+      Then src/board.ts ends with:
+        """
+        // itos-cc mutation: 14 killed, 1 survived, 0 uncovered
+        // survived: line 7 `<` → `<=` in Board#count
+        // end itos-cc mutation
+        """
+
     @annotate-excepted @ID-MUT-139
     Scenario: A stale entry's survivor is listed as survived
       Given itos-cc.yaml excepts a survivor of "Board#count"
