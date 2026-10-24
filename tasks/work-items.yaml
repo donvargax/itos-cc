@@ -5549,3 +5549,8 @@ items:
       package outside internal/ but cmd/ importing internal/, so the crossing cannot come back. Also
       top-level graph and server, which serve owns (ADR-0060 re-cuts them), stay as they are. Size
       the moves and split them into tasks when specifying.
+
+      The gate exempts graph and server, serve's packages, by name until ADR-0060's re-cut moves or
+      replaces them: graph imports internal/slices/mutation/domain (FreshnessOf) on purpose, so its
+      stale marks agree with mutation check. The exemption is listed in architecture-check with that
+      reason and goes when serve's move does.
