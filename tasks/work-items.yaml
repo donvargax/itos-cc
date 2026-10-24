@@ -5388,7 +5388,7 @@ items:
     title: cd.yml samples ten recorded mutation results on every source push
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-189

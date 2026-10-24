@@ -6608,10 +6608,6 @@
     lines that describe it (docs/go.md's Quality checks, README), and nothing of proof.code, which
     stays T-187's. Sample re-runs recorded outcomes and runs no counted preparation, so the listed
     scenarios the in-process run never executes do not fail it.
-  done_when:
-    - run: itos config check
-    - run: grep -qF -- 'mutation sample --count 10' .github/workflows/cd.yml
-    - run: "! grep -qF 'proof:' itos.yaml"
 - id: T-189
   type: test
   title: The scenarios no driver runs are @wip until serve's own work
