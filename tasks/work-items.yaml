@@ -1672,7 +1672,7 @@ items:
     title: Each push judges one fresh mutation site of its changed code, and cd.yml samples ten recorded ones
     phase: 1
     owner: donvargax
-    status: doing
+    status: todo
     depends_on: [T-46]
     kind: task
   - id: T-27
