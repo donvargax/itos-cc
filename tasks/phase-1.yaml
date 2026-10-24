@@ -6960,6 +6960,25 @@
     the repo node is the git remote's repository name (origin's URL, its last path segment without
     .git); coordinator's routine call: with no remote, the folder name, as today. Item 4 parked with
     item 5 in serve-static-on-kong (the person 2026-10-24); graph-snapshot is items 1 to 3.
+
+    Decided (q-95, the person 2026-10-24; first of graph-snapshot's items, a refactor: no behaviour
+    change, no scenario change). graph/ moves whole with git mv to internal/slices/graph, its
+    tests with it and its .metrics/mutate snapshots under the new path, keeping file names; the
+    application keeps Builder's cache, the domain its tree, metrics and http edges. Mutation
+    freshness reaches it through a port graph owns (D1): per unit of a file {mutated, killed,
+    survived, uncovered, stale}, which cmd binds to a function the mutation slice exports holding
+    what graph/build.go does today (FreshnessOf, OnSites, EntriesOf, the listed and broad inputs,
+    the support hashes), so mutation check's rule stays mutation's (GRAPH-38) and graph imports no
+    package of the mutation slice. server takes a builder interface it owns, which cmd binds, so
+    server imports nothing under internal/. graph gets its own depguard rule and the slices and
+    slice-fakes exclusions like every slice; architecture-check drops graph's outside row and
+    graph's and server's toplevel rows (tools/bin/architecture-check:63-122, docs/go.md
+    boundary rows), and its fixtures follow. docs/go.md (slices list, boundary rows),
+    docs/architecture.md, docs/ownership.md and ADR-0061's graph row say where it is now; ADR-0051
+    gains a note. The @wip architecture_graph, serve and viewer scenarios are untouched. It
+    replaces T-106 and T-107. Proof: the moved Go tests and serve's existing Go tests pass
+    unchanged; the per-push code proof judges a site of changed code as usual; no refactor-proof
+    dispatch (serve is parked and its scenarios are @wip).
   done_when:
     - run: test -d internal/slices/graph
     - run: "! test -d graph"
