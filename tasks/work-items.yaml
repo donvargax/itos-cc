@@ -3603,8 +3603,8 @@ items:
   - id: slice-43
     title: Worker copies leave out files git ignores, apart from the dependency folders they link
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [slice-13]
     kind: slice
     why: >
