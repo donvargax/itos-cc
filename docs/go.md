@@ -945,7 +945,8 @@ follows the same steps for a command it wrote before it had the template's desig
    its own: its scenarios and tests hold it. Once a refactor's moves are done, one run of
    `refactor-proof.yml`, dispatched by hand, builds the binary of the refactor's baseline and
    the refactored one, runs today's whole binary-driver suite against each (the refactored
-   side the control) and compares both, through `tools/bin/refactor-proof`, over the edge
+   side the control), with every language tool and the root `.fvmrc`'s Flutter, so the Dart
+   scenarios are compared too (T-206), and compares both, through `tools/bin/refactor-proof`, over the edge
    cases the moves listed in `tools/testdata/refactor-proof/cases` that no scenario holds:
    stdout, stderr, the exit code and the files a case names, after the rules its header
    lists. Every difference is a deliberate change a commit made, its note in the case list,

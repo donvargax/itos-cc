@@ -7,8 +7,10 @@ name: Refactor proof
 # the commit the run is on, both stamped alike by STAMP below (T-166),
 # which serves either baseline. Each runs today's whole binary-driver
 # suite through ITOS_CC_FEATURES_BINARY with every language tool installed
-# as cd.yml's languages job installs them, under ITOS_CC_LANGUAGE_TOOLS, so
-# the scenarios other jobs skip run here too; the refactored side is the
+# as cd.yml's languages job installs them, under ITOS_CC_LANGUAGE_TOOLS,
+# and the Flutter cd.yml's dart job sets up from the root .fvmrc, under
+# ITOS_CC_FLUTTER_TOOLS, so the scenarios other jobs skip run here too, the
+# Dart scenarios compared on both sides (T-206); the refactored side is the
 # control, telling a scenario this runner cannot pass from one only the old
 # binary fails. The edges job compares both binaries over
 # tools/bin/refactor-proof's cases. A scenario failing on the old binary
@@ -92,6 +94,17 @@ jobs:
           echo "$MAVEN_SHA512  $archive" | sha512sum -c -
           tar -xzf "$archive" -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/apache-maven-$MAVEN_VERSION/bin" >> "$GITHUB_PATH"
+      # The Flutter as cd.yml's dart job sets it up (T-206): the root
+      # .fvmrc's pin, read by flutter-fvm-config-action into flutter-action,
+      # with the same pins, so the Dart scenarios run on both sides.
+      - uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3.3
+        id: fvm
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ steps.fvm.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.fvm.outputs.FLUTTER_CHANNEL }}
+          cache: true
+      - run: flutter --version
       - name: Build the binary
         env:
           SIDE: ${{ matrix.side }}
@@ -108,6 +121,7 @@ jobs:
       - name: Run the whole suite
         env:
           ITOS_CC_LANGUAGE_TOOLS: "1"
+          ITOS_CC_FLUTTER_TOOLS: "1"
           ITOS_CC_NODE_MODULES: ${{ github.workspace }}/testdata/tools/node/node_modules
         run: |
           set +e
