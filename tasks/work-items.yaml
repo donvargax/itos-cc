@@ -15,7 +15,7 @@ queue:
   - listed-suites
   - slice-44
   - slice-45
-  - coverage-line-stderr
+  - T-203
   - annotate-function-name
   - serve-port-zero-announce
   - features-coverage-gocoverdir-leak
@@ -1055,32 +1055,13 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: coverage-line-stderr
+  - id: T-203
     title: go test -cover's summary of internal/freshenv reads a coverage command's error as its percentage
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Under go test -coverprofile, the ok line of cmd/itos-cc ends 'coverage: go: exec:
-      "legacy-helper": executable file not found in $PATH' instead of the percentage (found
-      2026-10-10 under T-17; the profile itself holds 82.1%).
-      TestFreshPreparationPreservesCompleteDefaults runs coverage.Run in process with os.Stderr,
-      which prints 'itos-cc: coverage: go: exec: ...', and go test takes the last line holding
-      'coverage: ' as the package's summary. A tool that reads the ok line, as the nightly might,
-      gets no number. Giving coverage.Run a buffer the test logs on failure, instead of os.Stderr,
-      would keep the summary line go test's own.
-
-      The package above is out of date. TestFreshPreparationPreservesCompleteDefaults moved to
-      internal/freshenv/preparation_test.go:471 and still hands coverage.Run and
-      coverage.RunSupervised os.Stderr (lines 481 and 485), so it is internal/freshenv's ok line
-      that reads the error now. On 2026-10-18, go test -cover -run
-      TestFreshPreparationPreservesCompleteDefaults ./internal/freshenv/ ended that line with
-      'coverage: go: exec: "legacy-helper": executable file not found in $PATH'.
-
-      Seen again 2026-10-24 in T-197's code proof (ci 40110520591): internal/freshenv's ok line read
-      "coverage: typescript: helper exited nonzero".
+    kind: task
   - id: transitive-test-reach
     title: TypeScript, Python and Kotlin tests reach what they import transitively
     phase: 1

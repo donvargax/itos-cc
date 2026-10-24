@@ -6850,3 +6850,24 @@
     minutes at worst instead of never, usually far sooner; die's message keeps naming the URL and
     adds that it timed out or failed and can be run again. The script stays POSIX sh, as it
     runs under sh on ubuntu, and keeps its checksum check unchanged. No product change.
+- id: T-203
+  type: test
+  title: go test -cover's summary of internal/freshenv reads a coverage command's error as its percentage
+  why: >
+    Under go test -coverprofile, the ok line of cmd/itos-cc ends 'coverage: go: exec:
+    "legacy-helper": executable file not found in $PATH' instead of the percentage (found 2026-10-10
+    under T-17; the profile itself holds 82.1%). TestFreshPreparationPreservesCompleteDefaults runs
+    coverage.Run in process with os.Stderr, which prints 'itos-cc: coverage: go: exec: ...', and go
+    test takes the last line holding 'coverage: ' as the package's summary. A tool that reads the ok
+    line, as the nightly might, gets no number. Giving coverage.Run a buffer the test logs on
+    failure, instead of os.Stderr, would keep the summary line go test's own. The package above is
+    out of date. TestFreshPreparationPreservesCompleteDefaults moved to
+    internal/freshenv/preparation_test.go:471 and still hands coverage.Run and
+    coverage.RunSupervised os.Stderr (lines 481 and 485), so it is internal/freshenv's ok line that
+    reads the error now. On 2026-10-18, go test -cover -run
+    TestFreshPreparationPreservesCompleteDefaults ./internal/freshenv/ ended that line with
+    'coverage: go: exec: "legacy-helper": executable file not found in $PATH'. Seen again 2026-10-24
+    in T-197's code proof (ci 40110520591): internal/freshenv's ok line read "coverage: typescript:
+    helper exited nonzero".
+  done_when:
+    - run: test $(grep -c 'os.Stderr' internal/slices/mutation/adapters/freshenv/preparation_test.go) -eq 0
