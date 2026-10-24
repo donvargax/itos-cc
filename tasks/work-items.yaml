@@ -5736,6 +5736,10 @@ items:
       only, dropping /api/graph, /api/events, /api/source's handlers, the watch loop and --interval)
       is parked here with item 5, at the same lowest priority. graph-snapshot keeps items 1 to 3
       (the slice move, the itos-cc graph command, the nightly commit).
+
+      Folded in 2026-10-24, serve-port-zero-announce (coordinator's call: serve.feature is @wip as a
+      whole since T-189, so it has no live scenario to specify it in): with --port 0 serve should
+      print the listener's address, not :0.
     deferred: >
       q-95: lowest priority, after everything else, and only if the web app has not moved to its own
       project by then.
