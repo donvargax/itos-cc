@@ -12,6 +12,11 @@ phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
   - T-193
+  - T-194
+  - T-195
+  - T-196
+  - T-197
+  - T-198
   - listed-support-per-test
   - listed-suites
   - worker-copies-skip-ignored
