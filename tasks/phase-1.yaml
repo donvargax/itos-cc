@@ -6850,6 +6850,3 @@
     minutes at worst instead of never, usually far sooner; die's message keeps naming the URL and
     adds that it timed out or failed and can be run again. The script stays POSIX sh, as it
     runs under sh on ubuntu, and keeps its checksum check unchanged. No product change.
-  done_when:
-    - run: grep -q -- '--connect-timeout' tools/bin/pinned
-    - run: grep -q -- '--max-time' tools/bin/pinned

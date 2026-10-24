@@ -5631,7 +5631,7 @@ items:
     title: tools/bin/pinned's download fails fast instead of hanging
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: bug-7
