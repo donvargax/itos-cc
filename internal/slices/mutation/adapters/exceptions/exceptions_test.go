@@ -106,4 +106,17 @@ func TestExceptionsPreserveCurrentDocumentModeAndInvalidFacts(t *testing.T) {
 	if string(current) != string(bad) {
 		t.Fatal("invalid document overwritten")
 	}
+	// An aliased mutation.exceptions is refused at its anchor's key, with
+	// the anchor's own fix, and nothing is written (bug-8).
+	aliased := []byte("{x: &e [], mutation: {exceptions: *e}}\n")
+	if err := os.WriteFile(path, aliased, 0600); err != nil {
+		t.Fatal(err)
+	}
+	_, failure = store.Except(t.Context(), e)
+	if !errors.As(failure, &invalid) || invalid.Key != "x" || !strings.Contains(invalid.Fix, "in place") {
+		t.Fatalf("aliased facts: %+v", failure)
+	}
+	if current, err = os.ReadFile(path); err != nil || string(current) != string(aliased) {
+		t.Fatalf("aliased document written: %q, %v", current, err)
+	}
 }

@@ -39,12 +39,15 @@ func Path() string {
 type Config = mutants.Config
 
 // InvalidError is an itos-cc.yaml that cannot be read: not YAML, a key of
-// the wrong type, an exclude glob that is no pattern, or an exception that
-// lacks a key. Key is the path from the top of the key at fault, such as
-// exclude[1], where one key is; empty otherwise.
+// the wrong type, an anchor, an alias or a merge key, an exclude glob that
+// is no pattern, or an exception that lacks a key. Key is the path from the
+// top of the key at fault, such as exclude[1], where one key is; empty
+// otherwise. Fix is how to mend a refusal that has its own mending; empty
+// where saying what each key holds mends it.
 type InvalidError struct {
 	Reason string
 	Key    string
+	Fix    string
 }
 
 func (e *InvalidError) Error() string { return File + ": " + e.Reason }
@@ -115,14 +118,26 @@ func Read(root string) ([]byte, error) {
 
 // Parse reads data, the text of an itos-cc.yaml, as a config: no text at
 // all is an empty one, and text that cannot be read as a config is an
-// *InvalidError. The text names no root, so its selection settings have
-// none: the caller that found the file gives it.
+// *InvalidError, as is text holding an anchor, an alias or a merge key
+// (docs/CONFIG.md rule 1), before anything else is read. The text names no
+// root, so its selection settings have none: the caller that found the
+// file gives it.
 func Parse(data []byte) (*Config, error) {
-	var r raw
-	if err := yaml.Unmarshal(data, &r); err != nil {
-		return nil, &InvalidError{Reason: strings.TrimPrefix(err.Error(), "yaml: ")}
+	var doc yaml.Node
+	if err := yaml.Unmarshal(data, &doc); err != nil {
+		return nil, invalidYAML(err)
 	}
 	c := &Config{}
+	if len(doc.Content) == 0 {
+		return c, nil
+	}
+	if err := spelled(doc.Content[0], ""); err != nil {
+		return nil, err
+	}
+	var r raw
+	if err := doc.Decode(&r); err != nil {
+		return nil, invalidYAML(err)
+	}
 	for i, glob := range r.Exclude {
 		if err := checkExclude(i, glob); err != nil {
 			return nil, err
@@ -171,6 +186,60 @@ func Parse(data []byte) (*Config, error) {
 		c.Tests = t
 	}
 	return c, nil
+}
+
+// invalidYAML is err, yaml.v3's, as an *InvalidError in its own words.
+func invalidYAML(err error) error {
+	return &InvalidError{Reason: strings.TrimPrefix(err.Error(), "yaml: ")}
+}
+
+// spellingFix is how to mend a file spelled with an anchor, an alias or a
+// merge key.
+const spellingFix = "Write the value in place: give each key its own copy of the value, with no &anchor, *alias or << merge key."
+
+// spelled refuses the first anchor or merge key in n and the nodes below
+// it, in document order, naming the key whose value carries the anchor, or
+// the merge key itself; at is n's key, "" for the top level. An alias
+// always follows its anchor, so a file holding one is refused at its
+// anchor's key, and an alias can expand without bound (CVE-2019-11253).
+func spelled(n *yaml.Node, at string) error {
+	if n.Anchor != "" {
+		what := at
+		if what == "" {
+			what = "the top level"
+		}
+		return spellingError(at, fmt.Sprintf("%s carries the anchor &%s", what, n.Anchor))
+	}
+	switch n.Kind {
+	case yaml.SequenceNode:
+		for i, item := range n.Content {
+			if err := spelled(item, fmt.Sprintf("%s[%d]", at, i)); err != nil {
+				return err
+			}
+		}
+	case yaml.MappingNode:
+		for i := 0; i < len(n.Content); i += 2 {
+			key := n.Content[i].Value
+			if at != "" {
+				key = at + "." + key
+			}
+			if n.Content[i].Tag == "!!merge" {
+				return spellingError(key, key+" is a merge key")
+			}
+			if err := spelled(n.Content[i], key); err != nil {
+				return err
+			}
+			if err := spelled(n.Content[i+1], key); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// spellingError is the *InvalidError of key, found as found says.
+func spellingError(key, found string) error {
+	return &InvalidError{Reason: found + ", and " + File + " takes no anchors, aliases or merge keys", Key: key, Fix: spellingFix}
 }
 
 // checkExclude refuses exclude[i], glob, unless it is a doublestar pattern

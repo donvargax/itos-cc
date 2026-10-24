@@ -76,7 +76,7 @@ func failure(ctx context.Context, stage string, err error) mutants.FreshFailure 
 	}
 	var invalid *settings.InvalidError
 	if errors.As(err, &invalid) {
-		return mutants.FreshInvalid{Reason: invalid.Reason, Key: invalid.Key}
+		return mutants.FreshInvalid{Reason: invalid.Reason, Key: invalid.Key, Fix: invalid.Fix}
 	}
 	for _, refusal := range []struct {
 		cause error

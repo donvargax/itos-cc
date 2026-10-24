@@ -69,7 +69,7 @@ func exceptionFailure(err error) mutants.ExceptionFailure {
 	}
 	var invalid *settings.InvalidError
 	if errors.As(err, &invalid) {
-		return mutants.ExceptionInvalid{Reason: invalid.Reason, Key: invalid.Key}
+		return mutants.ExceptionInvalid{Reason: invalid.Reason, Key: invalid.Key, Fix: invalid.Fix}
 	}
 	return mutants.ExceptionFailed{Cause: err}
 }

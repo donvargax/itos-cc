@@ -148,7 +148,10 @@ func (FreshRefused) freshFailure()   {}
 func (f FreshRefused) Error() string { return f.Cause.Error() }
 func (f FreshRefused) Unwrap() error { return f.Cause }
 
-type FreshInvalid struct{ Reason, Key string }
+// FreshInvalid is settings the plan cannot read, Reason saying why, Key
+// naming the key at fault where one is, and Fix how to mend them where the
+// refusal has its own mending.
+type FreshInvalid struct{ Reason, Key, Fix string }
 
 func (FreshInvalid) freshFailure()   {}
 func (f FreshInvalid) Error() string { return f.Reason }

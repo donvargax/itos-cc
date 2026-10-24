@@ -293,7 +293,7 @@ Feature: Choosing which files a command looks at
   # they had written it.
   # Only these three are refused now: custom tags and a second document stay
   # as docs/CONFIG.md's table says (the person, 2026-10-24).
-  @bug-8 @ID-SEL-24 @wip
+  @bug-8 @ID-SEL-24
   Scenario Outline: An anchor, an alias or a merge key in itos-cc.yaml is a config error
     Given itos-cc.yaml holds '<yaml>'
     When I run "itos-cc crap --no-coverage"
@@ -309,7 +309,7 @@ Feature: Choosing which files a command looks at
 
   # Every command reads the file before anything else, the writers of
   # mutation.exceptions included, so none writes it.
-  @bug-8 @ID-SEL-25 @wip
+  @bug-8 @ID-SEL-25
   Scenario Outline: An aliased mutation.exceptions is refused by every command, and nothing writes the file
     Given itos-cc.yaml holds '{x: &e [], mutation: {exceptions: *e}}'
     When I run "itos-cc <command>"

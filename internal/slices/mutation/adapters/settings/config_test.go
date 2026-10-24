@@ -141,3 +141,53 @@ func TestExcludeThatIsNoListIsInvalid(t *testing.T) {
 		t.Errorf("error %v, want an *InvalidError", err)
 	}
 }
+
+// An anchor, an alias or a merge key anywhere in the file is refused,
+// before anything else is read, at the key whose value carries the first
+// anchor in document order, or at the merge key itself, with a fix of its
+// own (docs/CONFIG.md rule 1, bug-8).
+func TestAnchorsAliasesAndMergeKeysAreRefused(t *testing.T) {
+	for _, c := range []struct{ text, key, found string }{
+		{"exclude: &e [\"**/porttest/**\"]\n", "exclude", "exclude carries the anchor &e"},
+		{"exclude: [&g \"**/porttest/**\", *g]\n", "exclude[0]", "exclude[0] carries the anchor &g"},
+		{"{x: &e [\"**/porttest/**\"], exclude: *e}\n", "x", "x carries the anchor &e"},
+		{"{x: &e [], mutation: {exceptions: *e}}\n", "x", "x carries the anchor &e"},
+		{"mutation: {<<: {exceptions: []}}\n", "mutation.<<", "mutation.<< is a merge key"},
+		{"<<: {exclude: []}\n", "<<", "<< is a merge key"},
+		{"&k exclude: []\n", "exclude", "exclude carries the anchor &k"},
+		{"&r {exclude: []}\n", "", "the top level carries the anchor &r"},
+		{"mutation:\n  exceptions:\n    - {file: &f a.go}\n", "mutation.exceptions[0].file", "mutation.exceptions[0].file carries the anchor &f"},
+		{"exclude: ['', &g a]\n", "exclude[1]", "exclude[1] carries the anchor &g"},
+		{"exclude: [a]\nmutation: [&m b]\n", "mutation[0]", "mutation[0] carries the anchor &m"},
+	} {
+		_, err := Parse([]byte(c.text))
+		var invalid *InvalidError
+		if !errors.As(err, &invalid) {
+			t.Errorf("%q: error %v, want an *InvalidError", c.text, err)
+			continue
+		}
+		want := "itos-cc.yaml: " + c.found + ", and itos-cc.yaml takes no anchors, aliases or merge keys"
+		if invalid.Key != c.key || err.Error() != want || invalid.Fix != spellingFix {
+			t.Errorf("%q: key %q, error %q, fix %q; want %q, %q and the fix to write the value in place", c.text, invalid.Key, err, invalid.Fix, c.key, want)
+		}
+	}
+}
+
+// What rule 1 refuses besides anchors, aliases and merge keys is still
+// read for now: a custom tag, a second document, and a quoted << that is
+// a plain key; and a file of comments alone is an empty config.
+func TestOtherYAMLIsStillRead(t *testing.T) {
+	for _, text := range []string{
+		"exclude: [a]\nx: !thing 1\n",
+		"exclude: [a]\n---\nx: 1\n",
+		"exclude: [a]\n\"<<\": {x: 1}\n",
+	} {
+		c, err := Parse([]byte(text))
+		if err != nil || !slices.Equal(c.Selection.Exclude, []string{"a"}) {
+			t.Errorf("%q: config %+v, error %v, want exclude [a]", text, c, err)
+		}
+	}
+	if c, err := Parse([]byte("# nothing yet\n")); err != nil || len(c.Selection.Exclude) != 0 || c.Tests != nil {
+		t.Errorf("comments alone: config %+v, error %v, want an empty config", c, err)
+	}
+}

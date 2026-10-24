@@ -17,7 +17,7 @@ import (
 func settingsError(failure mutants.SettingsFailure) error {
 	switch failure := failure.(type) {
 	case mutants.SettingsInvalid:
-		return configInvalid(failure.Reason, failure.Key, "Fix it: exclude lists globs of sources from the project root, such as **/porttest/**; each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep.")
+		return configInvalid(failure.Reason, failure.Key, failure.Fix, "Fix it: exclude lists globs of sources from the project root, such as **/porttest/**; each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep.")
 	case mutants.InputFailed:
 		return failure.Cause
 	case mutants.InputCancelled:
@@ -27,9 +27,12 @@ func settingsError(failure mutants.SettingsFailure) error {
 }
 
 // configInvalid is config.invalid for an itos-cc.yaml that cannot be read,
-// for reason, with fix: its subject the file, and the key at fault when one
-// is.
-func configInvalid(reason, key, fix string) *cli.Problem {
+// for reason, with own, the refusal's own fix, else fix: its subject the
+// file, and the key at fault when one is.
+func configInvalid(reason, key, own, fix string) *cli.Problem {
+	if own != "" {
+		fix = own
+	}
 	p := cli.NewProblem(cli.CodeUsage, "config.invalid", "itos-cc.yaml: "+reason, fix).With("file", "itos-cc.yaml")
 	if key != "" {
 		p = p.With("key", key)
@@ -138,7 +141,7 @@ func countedNoGit(err error) *cli.Problem {
 func countedPlanError(failure mutants.FreshFailure, since string) error {
 	switch f := failure.(type) {
 	case mutants.FreshInvalid:
-		return configInvalid(f.Reason, f.Key, "Fix it in a commit: a counted run reads the itos-cc.yaml HEAD holds; exclude lists globs of sources from the project root, such as **/porttest/**.")
+		return configInvalid(f.Reason, f.Key, f.Fix, "Fix it in a commit: a counted run reads the itos-cc.yaml HEAD holds; exclude lists globs of sources from the project root, such as **/porttest/**.")
 	case mutants.FreshRefused:
 		switch f.Kind {
 		case mutants.FreshRepository:
@@ -365,7 +368,7 @@ func exceptError(err error, rel func(string) string, fix string) error {
 func updateError(failure mutants.ExceptionFailure, fix string) error {
 	switch failure := failure.(type) {
 	case mutants.ExceptionInvalid:
-		return configInvalid(failure.Reason, failure.Key, fix)
+		return configInvalid(failure.Reason, failure.Key, failure.Fix, fix)
 	case mutants.ExceptionFailed:
 		return failure.Cause
 	case mutants.ExceptionCancelled:

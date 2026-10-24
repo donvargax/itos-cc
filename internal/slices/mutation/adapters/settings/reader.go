@@ -48,7 +48,7 @@ func (r Reader) Read(ctx context.Context) (*mutants.Config, mutants.SettingsFail
 	if err != nil {
 		var invalid *InvalidError
 		if errors.As(err, &invalid) {
-			return nil, mutants.SettingsInvalid{Reason: invalid.Reason, Key: invalid.Key}
+			return nil, mutants.SettingsInvalid{Reason: invalid.Reason, Key: invalid.Key, Fix: invalid.Fix}
 		}
 		return nil, mutants.InputFailed{Cause: err}
 	}
@@ -65,7 +65,7 @@ func (r Reader) ReadSelection(ctx context.Context) (selport.Settings, selport.Se
 	case nil:
 		return config.Selection, nil
 	case mutants.SettingsInvalid:
-		return selport.Settings{}, &selport.SettingsInvalid{Reason: failure.Reason, Key: failure.Key}
+		return selport.Settings{}, &selport.SettingsInvalid{Reason: failure.Reason, Key: failure.Key, Fix: failure.Fix}
 	case mutants.InputCancelled:
 		return selport.Settings{}, &selport.Cancelled{Cause: failure.Cause}
 	case mutants.InputFailed:

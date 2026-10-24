@@ -1,11 +1,15 @@
 package main
 
 import (
+	"errors"
 	"io"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/donvargax/itos-cc/features"
+	"github.com/donvargax/itos-cc/internal/cli"
+	selport "github.com/donvargax/itos-cc/internal/selection/port"
 )
 
 // TestEveryPortIsBoundOnDiskAndInProcess holds both providers of adapters
@@ -44,5 +48,18 @@ func TestEveryPortIsBoundOnDiskAndInProcess(t *testing.T) {
 				t.Errorf("%s leaves adapters.%s unbound: bind its port there", provider.name, field.Name)
 			}
 		}
+	}
+}
+
+// Selection settings refused with a fix of their own, as an anchor is
+// (bug-8), are config.invalid with that fix; refused without, with the fix
+// saying what each key holds.
+func TestSelectionSettingsKeepARefusalsOwnFix(t *testing.T) {
+	var p *cli.Problem
+	if err := settingsError(&selport.SettingsInvalid{Reason: "r", Key: "x", Fix: "own"}); !errors.As(err, &p) || p.Rule != "config.invalid" || p.Fix != "own" || p.Subject("key") != "x" {
+		t.Errorf("with its own fix: %+v", err)
+	}
+	if err := settingsError(&selport.SettingsInvalid{Reason: "r"}); !errors.As(err, &p) || !strings.HasPrefix(p.Fix, "Fix it: exclude lists") || p.Subject("key") != nil {
+		t.Errorf("without: %+v", err)
 	}
 }

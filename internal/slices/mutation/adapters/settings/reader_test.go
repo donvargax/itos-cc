@@ -151,3 +151,23 @@ func TestSettingsReaderSelectionFailsAsMutationsDoes(t *testing.T) {
 		t.Fatalf("missing source: %v", missing)
 	}
 }
+
+// A refusal with a fix of its own, an anchor's, keeps it through mutation's
+// settings and the selection port's (bug-8).
+func TestSettingsReaderKeepsARefusalsOwnFix(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, File), []byte("{x: &e [], mutation: {exceptions: *e}}\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	reader := Reader{Source: configSource{root}}
+	_, failure := reader.Read(t.Context())
+	var invalid mutants.SettingsInvalid
+	if !errors.As(failure, &invalid) || invalid.Key != "x" || invalid.Fix != spellingFix {
+		t.Fatalf("mutation's settings: %+v, want key x and the anchor's fix", failure)
+	}
+	_, selected := reader.ReadSelection(t.Context())
+	var refused *selport.SettingsInvalid
+	if !errors.As(selected, &refused) || refused.Key != "x" || refused.Fix != spellingFix {
+		t.Fatalf("selection settings: %+v, want key x and the anchor's fix", selected)
+	}
+}

@@ -19,7 +19,11 @@ type ExceptionFailure interface {
 	error
 	exceptionFailure()
 }
-type ExceptionInvalid struct{ Reason, Key string }
+
+// ExceptionInvalid is a document that cannot be read, Reason saying why,
+// Key naming the key at fault where one is, and Fix how to mend it where
+// the refusal has its own mending.
+type ExceptionInvalid struct{ Reason, Key, Fix string }
 
 func (ExceptionInvalid) exceptionFailure() {}
 func (f ExceptionInvalid) Error() string   { return f.Reason }

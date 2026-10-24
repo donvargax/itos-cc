@@ -270,14 +270,17 @@ func exclusion(ctx context.Context, reader selport.SettingsReader) (selection.Ex
 }
 
 // settingsError is failure, from reading itos-cc.yaml, as a person reads it:
-// a file that cannot be read, or read as a config, is config.invalid, saying
-// what each key needs, and a read that failed short of it or was cancelled
-// is its cause.
+// a file that cannot be read, or read as a config, is config.invalid, with
+// the refusal's own fix, else saying what each key needs, and a read that
+// failed short of it or was cancelled is its cause.
 func settingsError(failure selport.SettingsFailure) error {
 	switch failure := failure.(type) {
 	case *selport.SettingsInvalid:
-		p := cli.NewProblem(cli.CodeUsage, "config.invalid", settings.File+": "+failure.Reason,
-			"Fix it: exclude lists globs of sources from the project root, such as **/porttest/**; each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep.").With("file", settings.File)
+		fix := failure.Fix
+		if fix == "" {
+			fix = "Fix it: exclude lists globs of sources from the project root, such as **/porttest/**; each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep."
+		}
+		p := cli.NewProblem(cli.CodeUsage, "config.invalid", settings.File+": "+failure.Reason, fix).With("file", settings.File)
 		if failure.Key != "" {
 			p = p.With("key", failure.Key)
 		}

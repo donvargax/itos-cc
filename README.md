@@ -114,6 +114,12 @@ as `exception.excluded`. `mutation run --count` reads the `itos-cc.yaml`
 a backslash is `config.invalid`, exit 80, its `key` naming it
 (`exclude[1]`). An itos-cc release older than this one ignores `exclude`.
 
+`itos-cc.yaml` is plain data, as JSON could write it: an anchor, an alias
+or a merge key (`&x`, `*x`, `<<`) anywhere in it is `config.invalid`, exit
+80, for every command, its `key` naming the key whose value carries the
+first anchor, or the merge key itself (`mutation.<<`). Write each value in
+place. A release older than this one read them.
+
 Some Dart is left out without `exclude`, in every command, tests included.
 A Flutter app's platform folders (`android`, `ios`, `macos`, `linux`,
 `windows` and `web` beside a `pubspec.yaml` that depends on the flutter SDK)
@@ -1011,8 +1017,9 @@ entry never excuses an uncovered mutant: that needs a test, not a reason, and
 `exception.no-survivor`, its fix naming a test that runs the line, or routing
 the branch through code a test already reaches, such as a helper the tests
 call. An
-`itos-cc.yaml` that cannot be read, or an entry with no reason, is
-`config.invalid`, exit 80.
+`itos-cc.yaml` that cannot be read, one holding an anchor, an alias or a
+merge key, or an entry with no reason, is `config.invalid`, exit 80, and
+nothing is written.
 
 A change that leaves an excepted mutant the same, such as a rename, a
 literal or comment edit, reformatting or a line added elsewhere in its

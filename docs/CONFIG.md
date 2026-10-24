@@ -26,9 +26,9 @@ command, and the slice's exceptions adapter writes it (`mutation except`, `mutat
 
 | Rule | What the loader does now |
 | ---- | ------------------------ |
-| 1 | Reads YAML with `go.yaml.in/yaml/v3` into Go structs. A key given twice is refused. Anchors, aliases and merge keys are accepted and expanded; a tag such as `!foo` or `!!python/object` builds nothing, the value read as its key's type; a second document after `---` is ignored. |
+| 1 | Reads YAML with `go.yaml.in/yaml/v3` into Go structs. A key given twice is refused, and so is an anchor, an alias or a merge key (`&x`, `*x`, `<<`) anywhere in the document, for every command, at the key whose value carries the first anchor in document order, or at the merge key itself (`mutation.<<`), its fix to write the value in place (bug-8); a tag such as `!foo` or `!!python/object` builds nothing, the value read as its key's type; a second document after `---` is ignored. |
 | 2 | A key the format does not list is ignored, not refused, so a misspelt key passes unseen. |
-| 3 | Stops at the first problem. An `exclude` glob's problem carries its key from the top (`exclude[1]`); an exception's or `mutation.tests`' names it in the message (`mutation.exceptions[0] has no reason`). |
+| 3 | Stops at the first problem. An `exclude` glob's problem, an anchor's and a merge key's carry their key from the top (`exclude[1]`, `mutation.<<`); an exception's or `mutation.tests`' names it in the message (`mutation.exceptions[0] has no reason`). |
 | 4 | Checks each `exclude` glob (empty, absolute, `..`, a backslash, or no pattern), each exception's required keys, and `mutation.tests`' placeholders, before any command uses them. |
 | 5–7 | The file has no `version` key, so no version is checked. |
 | 8–11 | Keys are snake case (`line_in_function`, `ids_pattern`); exceptions and tests are objects in lists; paths and globs are slash-separated, from the project root, the folder the file is in. |

@@ -34,9 +34,10 @@ type SettingsFailure interface {
 }
 
 // SettingsInvalid is settings that cannot be read: a file that could not be
-// read, or content that is not valid, Reason saying why and Key naming the
-// key at fault where one is.
-type SettingsInvalid struct{ Reason, Key string }
+// read, or content that is not valid, Reason saying why, Key naming the
+// key at fault where one is, and Fix how to mend it where the refusal has
+// its own mending.
+type SettingsInvalid struct{ Reason, Key, Fix string }
 
 func (*SettingsInvalid) settingsFailure() {}
 func (e *SettingsInvalid) Error() string  { return e.Reason }

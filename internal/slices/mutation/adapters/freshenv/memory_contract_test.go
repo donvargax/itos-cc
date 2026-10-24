@@ -21,7 +21,7 @@ func decodeFreshSettings(data []byte) ([]string, *mutants.Tests, []mutants.Excep
 	c, err := settings.Parse(data)
 	if err != nil {
 		invalid := err.(*settings.InvalidError)
-		return nil, nil, nil, &mutants.FreshInvalid{Reason: invalid.Reason, Key: invalid.Key}
+		return nil, nil, nil, &mutants.FreshInvalid{Reason: invalid.Reason, Key: invalid.Key, Fix: invalid.Fix}
 	}
 	return c.Selection.Exclude, c.Tests, c.Exceptions, nil
 }
