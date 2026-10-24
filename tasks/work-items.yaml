@@ -1033,8 +1033,8 @@ items:
   - id: T-203
     title: go test -cover's summary of internal/freshenv reads a coverage command's error as its percentage
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: transitive-test-reach
