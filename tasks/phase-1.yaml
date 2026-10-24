@@ -6548,42 +6548,47 @@
     docs: dequeue).
 - id: T-187
   type: ci
-  title: Each push judges one fresh mutation site of its changed code, and cd.yml samples ten recorded ones
+  title: Each push judges one fresh mutation site of its changed code
   why: >
-    Mutation proof turns back on now that T-46 is done (decision 40: it stayed off until the
-    refactor ended and the nightly finished over the whole repository; T-46's run 39930716718 judged
-    all 8378 mutants, 5322 run and 3056 kills reused, in 4 h 22 min). The person's calls, built to,
-    not re-decided: q-85 (2026-10-23) amends the 2026-10-18 plan. (1) itos.yaml sets proof.code:
-    paths every Go file and viewer/src's TypeScript ("**/*.go", "viewer/src/**/*.ts"), check the
-    itos-cc built from the pushed tree running mutation run --count 1 --since {base} --seed {base}
-    --fail-uncovered=lines --json, as itos's own proof does: one fresh site of the range's changed
-    functions, seeded by the range's start so a repair push re-judges what failed, and strict
-    coverage of the lines the range adds or changes. It judges fresh, so it needs no recorded
-    results: no check proof reading .metrics/mutate/ (mutation check), since nothing records a
-    push's changed functions before it is judged. A range with no site passes. itos ci run makes it
-    a step of ci.yml's and cd.yml's ci jobs, both Linux; each job gets what the step needs to judge
-    any drawn site: Node and npm ci in viewer/ as nightly.yml has them (a viewer site otherwise
-    fails its baseline), and itos and jq for mutation.tests' list command (the itos launcher is
-    there already; ubuntu-latest has jq). (2) cd.yml runs itos-cc mutation sample --count 10 on
-    every source push (not a prose-only one), in a Linux job, beside the proof, with sample's
-    default seed (the HEAD commit, fixed per push): ten recorded kills or survivors re-run, so a
-    stale kill (the cache keys no kill on its callees, decision 48) is caught within a push. ci.yml
-    stays fast: no sample there. (3) AGENTS.md's note is amended: no mutation run of this
-    repository's own code on an agent's machine, while a push's CI runs the code proof's one site
-    and cd.yml's sample, and the nightly judges the rest, committing .metrics/mutate/. docs/go.md's
-    Quality checks section, which says mutation proof is off, and itos.yaml's ci comment naming
-    q-53's wait say what runs now and where. A survivor the proof finds is killed by a test or, when
-    truly equivalent, excepted in itos-cc.yaml with its reason for the person to review; never by
-    weakening the step. The report gives the proof step's and the sample step's time on the task's
-    own push and on the first Go push after it (itos ci plan names the proof step only for a range
-    touching proof.code.paths).
+    Mutation proof turns back on now that T-46 is done (decision 40; T-46's run 39930716718 judged
+    all 8378 mutants in 4 h 22 min). The person's calls, built to, not re-decided: q-85
+    (2026-10-23). (1) itos.yaml sets proof.code: paths every Go file and viewer/src's TypeScript
+    ("**/*.go", "viewer/src/**/*.ts"), check the itos-cc built from the pushed tree running mutation
+    run --count 1 --since {base} --seed {base} --fail-uncovered=lines --json, as itos's own proof
+    does: one fresh site of the range's changed functions, seeded by the range's start so a repair
+    push re-judges what failed, and strict coverage of the lines the range adds or changes; it needs
+    no recorded results. itos ci run makes it a step of ci.yml's and cd.yml's ci jobs, which get
+    Node and npm ci in viewer/ as nightly.yml has them. It stays in ci.yml whatever it costs (the
+    person, 2026-10-23), the report giving its time. (2) AGENTS.md's note: no mutation run of this
+    repository's own code on an agent's machine; a push's CI runs the proof's one site and cd.yml's
+    sample (T-188), the nightly the rest. A survivor the proof finds in a function the push changed,
+    one that predates the push included, is killed by a test in that push; when the agent judges it
+    truly equivalent it stops and reports, and the coordinator approves it or sends it back before
+    the exception lands in itos-cc.yaml with its reason (the person, 2026-10-23, reviewing the list
+    weekly). docs/go.md's Quality checks and itos.yaml's q-53 comment say what runs now. (3) The
+    first attempt (947882e0, 32eff018, and AGENTS.md's rule 46ee5d0c) was reverted by 36f56be3: on
+    the first push with Go changes (f83e16d9, ci.yml run 40042092414) the proof failed before
+    judging a mutant, count.preparation-failed at listed-coverage, "listed test ID-GRAPH-01 produced
+    no per-ID coverage data". A counted run fails closed on a listed test with no data, and
+    mutation.tests.list listed every scenario itos calls live, 81 of which the in-process
+    TestScenarios never runs: the 75 of the feature files not converted to steps
+    (architecture_graph, serve, viewer), features.Deferred's 6 and the @binary-only ones. The
+    person's call (2026-10-24): the list names only what the run command executes. A program of this
+    repository's, under tools/bin, reads itos tests list scenario --json and prints the ID and file
+    of each live scenario the in-process driver runs, deciding by the harness's own rules
+    (features.Converted, features.Deferred, the @binary-only tag, as TagFilter does), never a second
+    copy of them, with a test of its own; mutation.tests.list calls it. The counted run's
+    fail-closed rule stays. Upstream, itos#117 asks itos to print each scenario's tags (and a run's
+    excluded tags); once a release does, a filter replaces the program (idea proof-code-unrun-listed
+    folds in here). Then restore the proof as (1) and (2) say, and see it judge a site on a push
+    with Go changes before closing. The report gives the proof step's time on that push.
   done_when:
     - run: itos config check
     - run: grep -qF -- 'mutation run --count 1 --since {base} --seed {base} --fail-uncovered=lines --json' itos.yaml
       after: push
     - run: itos ci plan b8b98b0e~1 b8b98b0e | grep -qF -- 'mutation run --count 1'
       after: push
-    - run: grep -qF -- 'mutation sample --count 10' .github/workflows/cd.yml
+    - run: "! grep -qF 'select(.live)' itos-cc.yaml"
       after: push
     - run: "! grep -qF 'Mutation proof is off' docs/go.md"
       after: push
