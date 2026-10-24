@@ -328,3 +328,78 @@ Feature: Choosing which files a command looks at
       | mutation sample         |
       | mutation except --renew |
       | mutation except --prune |
+
+  # slice-49, itos-cc-yaml-version's first item (q-94, the person
+  # 2026-10-24; docs/CONFIG.md rule 1). bug-8 refuses anchors, aliases and
+  # merge keys; the rest of what JSON cannot express is refused here, for
+  # every command, as config.invalid, exit 80, before every other check, in
+  # document order with bug-8's:
+  # 1. A tag written on a value, other than the non-specific ! and the tags
+  #    JSON has (!!str, !!int, !!float, !!bool, !!null, !!seq, !!map), keyed
+  #    by the key whose value carries it, its fix to write the value without
+  #    the tag. Only a tag written in the file counts: a plain 2026-10-24,
+  #    which YAML resolves as a timestamp, is read as its key's string.
+  # 2. A key that is not a string (a list or a mapping as a key), keyed by
+  #    the mapping holding it, the top level naming the file alone.
+  # 3. A second document after ---, naming the file alone, its fix to keep
+  #    one document; a --- before the first document is one document. The
+  #    reader decodes a second time and expects the end of input.
+  # The writers read the file through settings.Parse first, so they refuse
+  # it unwritten. The feat is a BREAKING-CHANGE with an Upgrading footer
+  # (remove each !tag and any --- after the first document), in a minor
+  # release. Unknown keys (itos-cc-yaml-unknown-keys) and version: 1
+  # (itos-cc-yaml-version-key) are the next items. Before this item SEL-26,
+  # SEL-27 and SEL-28 fail at the problem step; SEL-29 is a guardrail that
+  # passes today.
+  @slice-49 @ID-SEL-26 @wip
+  Scenario Outline: A tag or a key that is not a string in itos-cc.yaml is a config error
+    Given itos-cc.yaml holds '<yaml>'
+    When I run "itos-cc crap --no-coverage"
+    Then the problem is "config.invalid", with key "<key>"
+    And the exit code is 80
+
+    Examples:
+      | yaml                                             | key        |
+      | exclude: [!foo "**/porttest/**"]                 | exclude[0] |
+      | {x: !!python/object:os.system echo, exclude: []} | x          |
+      | mutation: {[a]: b}                               | mutation   |
+
+  @slice-49 @ID-SEL-27 @wip
+  Scenario: A second document in itos-cc.yaml is a config error
+    Given itos-cc.yaml holds:
+      """
+      exclude: ["**/porttest/**"]
+      ---
+      exclude: []
+      """
+    When I run "itos-cc crap --no-coverage"
+    Then the problem is "config.invalid", with file "itos-cc.yaml"
+    And its message says "a second document"
+    And its fix says "one document"
+    And the exit code is 80
+
+  @slice-49 @ID-SEL-28 @wip
+  Scenario Outline: A tagged mutation.exceptions is refused by its writers, and nothing writes the file
+    Given itos-cc.yaml holds 'mutation: {exceptions: !foo []}'
+    When I run "itos-cc <command>"
+    Then the problem is "config.invalid", with key "mutation.exceptions"
+    And the exit code is 80
+    And itos-cc.yaml is byte for byte as it was
+
+    Examples:
+      | command                 |
+      | mutation except --renew |
+      | mutation except --prune |
+
+  @slice-49 @ID-SEL-29 @wip
+  Scenario Outline: The non-specific tag, JSON's tags and a leading --- are plain data
+    Given itos-cc.yaml holds '<yaml>'
+    And the sources src/board.go and src/port/porttest/fake.go
+    When I run "itos-cc crap --no-coverage --json"
+    Then src/board.go is scored, and src/port/porttest/fake.go is not
+
+    Examples:
+      | yaml                                    |
+      | exclude: [! "**/porttest/**"]           |
+      | exclude: !!seq [!!str "**/porttest/**"] |
+      | --- {exclude: ["**/porttest/**"]}       |
