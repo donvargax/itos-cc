@@ -18,7 +18,7 @@ queue:
   - slice-49
   - itos-cc-yaml-unknown-keys
   - itos-cc-yaml-version-key
-  - flaky-kills
+  - slice-50
   - graph-snapshot
   - T-102
   - T-103
@@ -254,14 +254,15 @@ items:
     status: done
     depends_on: []
     kind: slice
-  - id: flaky-kills
-    title: "mutation: report a mutant whose outcome changes between runs with nothing changed"
+  - id: slice-50
+    title: "mutation sample tells a flaky mutant from a mismatch"
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was flaky-kills.
       Tests with random inputs and no fixed seed can kill a mutant in one run and not the next, so a
       cached kill flips with no code or test change and mutation check and the planned sample mode
       cannot trust it. A run that re-runs a cached kill with the same function and tests hashes and
