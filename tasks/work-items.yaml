@@ -13,7 +13,7 @@ phases:
 queue:
   - listed-support-per-test
   - listed-suites
-  - worker-copies-skip-ignored
+  - slice-43
   - T-102
   - T-103
   - T-104
@@ -3600,14 +3600,15 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: worker-copies-skip-ignored
+  - id: slice-43
     title: Worker copies leave out files git ignores, apart from the dependency folders they link
     phase: 1
     owner: null
     status: todo
     depends_on: [slice-13]
-    kind: idea
+    kind: slice
     why: >
+      Was worker-copies-skip-ignored.
       q-69, answered 2026-10-18: with coverage on, the coverage run executes in the project's own
       folder, so a file a test leaves behind (such as an ignored testdata/left-behind) lands in the
       live tree and every worker copy carries it, failing the baseline; slice-13's pristine copy
