@@ -5759,3 +5759,17 @@ items:
       per scenario only the common steps and its feature's own, so a feature's edit reaches only its
       scenarios. mutate.feature (317 of 602 scenarios, 108 step files) would need splitting too for
       the saving to matter. Re-measure hub churn after the refactor era before sizing it.
+  - id: serve-static-on-kong
+    title: serve becomes a static file server on kong, serving the viewer and .metrics
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      graph-snapshot item 5 (q-95, the person 2026-10-24): once the viewer reads .metrics/graph.json
+      and serve serves files only (item 4), serve moves onto kong as a slice that serves the viewer,
+      the .metrics snapshots and the source files graph.json lists, re-cutting T-112 and T-113. The
+      lowest priority: done only when nothing else remains and the separate web app (the person's
+      own and a friend's) has not moved out yet; if the web app has moved out, serve is removed
+      instead.
