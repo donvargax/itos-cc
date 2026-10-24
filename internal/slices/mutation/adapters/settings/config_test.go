@@ -24,6 +24,7 @@ func TestAnInvalidFileIsAnInvalidError(t *testing.T) {
 		"mutation:\n  exceptions:\n    - {file: a.go, function: f, hash: h, line_in_function: 1, column: 1, original: '<', replacement: '<='}\n":              "mutation.exceptions[0] has no reason",
 		"mutation:\n  exceptions:\n    - {file: a.go, function: f, hash: h, line_in_function: 0, column: 1, original: '<', replacement: '<=', reason: ' '}\n": "has no line_in_function of 1 or more, no reason",
 		"mutation:\n  exceptions:\n    - {file: a.go, function: f, hash: h, line_in_function: 1, column: 1, original: '<', reason: r}\n":                      "has no replacement",
+		"mutation:\n  exceptions:\n    - {file: a.go, function: f, hash: h, line_in_function: 1, column: 1, original: ' ', replacement: '', reason: r}\n":     "has no original",
 	} {
 		t.Chdir(t.TempDir())
 		if err := os.WriteFile(File, []byte(text), 0o644); err != nil {
