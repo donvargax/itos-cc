@@ -1125,9 +1125,11 @@ inside one, so a run of its own per scenario is how itos-cc's split path (decisi
 coverage each. Without the variable, or without `-cover`, it runs them in process, as above. A
 listed kill rests on its scenario's feature file and on what the `support` globs match (decision
 13): the step code (`features/*.go`), the in-process driver and its fakes
-(`cmd/itos-cc/scenarios*_test.go`, `cmd/itos-cc/run_fakes_test.go`) and every `porttest` folder
-under `internal/`, each named by a single-star glob, since the globs go through
-`filepath.Glob`, where `**` matches as `*`. The feature files are not among them, so a spec edit
+(`cmd/itos-cc/scenarios*_test.go`, `cmd/itos-cc/run_fakes_test.go`), the `TestMain` in
+`cmd/itos-cc/subprocess_test.go` that runs before every scenario, and every `porttest` folder
+under `internal/`, each named by a glob of its own, since the globs go through `filepath.Glob`,
+where `**` matches as `*`, so a `porttest` folder added later is added to the list (T-191). The
+other `cmd/itos-cc` test files hold tests `TestScenarios` never runs. The feature files are not among them, so a spec edit
 stales only the kills of its own file's scenarios. A scenario the in-process driver leaves out
 (`@binary-only`, `features.Deferred`) runs nothing there and kills nothing. `--all-tests` reads
 no listed tests, though its outcomes' freshness takes in the `support` files too (decision 16);
