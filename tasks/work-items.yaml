@@ -5391,3 +5391,10 @@ items:
     status: doing
     depends_on: []
     kind: task
+  - id: T-189
+    title: The scenarios no driver runs are @wip until serve's own work
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

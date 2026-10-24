@@ -6612,3 +6612,22 @@
     - run: itos config check
     - run: grep -qF -- 'mutation sample --count 10' .github/workflows/cd.yml
     - run: "! grep -qF 'proof:' itos.yaml"
+- id: T-189
+  type: test
+  title: The scenarios no driver runs are @wip until serve's own work
+  why: >
+    architecture_graph.feature (40 live scenarios), serve.feature (12) and viewer.feature (23) never
+    converted to steps: they describe serve, the one command still on its legacy handler, and their
+    conversion (T-102 to T-105) was deferred with serve's move (T-106 to T-108, T-112, T-113) on
+    2026-10-17 (1b449af) while serve leaves for a web app of its own. Neither driver runs them, the
+    Go tests of graph/ and server/ and the viewer's Vitest hold their behaviour, yet itos calls them
+    live: the smoke set names one of each, a CI range's scenario step names them and logs them as
+    not run, and mutation.tests.list listed them, which failed T-187's counted code proof
+    (36f56be3). The person (2026-10-24): a feature-level @wip on each file, with a comment saying
+    why and what lifts it, the text kept as the spec serve's own work starts from; their three smoke
+    entries go, and features/README.md says so. T-102 to T-105 drop the tag as they convert each
+    file.
+  done_when:
+    - run: itos config check
+    - run: itos tests smoke check scenario
+    - run: test -z "$(itos tests list scenario --tsv | grep -E 'architecture_graph|serve\.feature|viewer')"
