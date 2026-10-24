@@ -5397,3 +5397,22 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: except-from-identity
+    title: mutation except takes a CI report's mutant identity, with no local mutation run
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      GitHub #66: a survivor a CI run reports (the code proof, the nightly, sample) carries its
+      identity, e.g.
+      internal/tests/tsv.go:internal/tests#projectFile@84:103:b7aae01f28c3e046:517:||>&&, but
+      mutation except needs cached results from a local mutation run of that function, which agents
+      may not run here (AGENTS.md), so an equivalent mutant can only be excepted by hand-deriving
+      line_in_function, column and line_text. The person (2026-10-24): first after T-187, since the
+      code proof makes agents meet survivors and the coordinator now approves equivalent mutants'
+      exceptions. Wanted: mutation except accepting an identity (or a report's JSON) plus --reason,
+      checking the function's hash against the source, writing the entry with no mutation run. #64
+      and #65 (renew) are related, separate items.
+    refs: ["#66"]
