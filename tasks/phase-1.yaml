@@ -6818,6 +6818,8 @@
     the run is recorded in rule 9 beside 39101044040 and 39622138010. The dispatch is a GitHub write
     the person's standing rules allow an agent (agents may dispatch workflow_dispatch experiments).
     Expected: no difference. The plan is scratchpad/plan-top-level-libraries-internal.md of the
-    coordinator's session, its decisions now ADR-0061 (q-89).
+    coordinator's session, its decisions now ADR-0061 (q-89). The baseline is
+    33963a3078cf033b5a2fd86750e273fbc13e0ccb (docs: queue T-194, T-195, T-196, T-197, T-198), the
+    parent of d50206ef, T-193's first commit (docs: take T-193).
   done_when:
     - run: grep -qF 'top-level-libraries-internal' docs/go.md || grep -qF 'ADR-0061' docs/go.md
