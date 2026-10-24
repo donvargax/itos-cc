@@ -5677,3 +5677,16 @@ items:
       T-197 (2e23390f) deleted read's list-length check with the other guards yaml.v3 left
       unreachable, so read no longer looks at mutation.exceptions' node at all; the alias case still
       writes nothing.
+  - id: freshenv-coverage-summary
+    title: A freshenv test prints a line go test takes for its coverage summary
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Seen in T-197's code proof (ci 40110520591): the freshenv package's go test summary read
+      "coverage: typescript: helper exited nonzero" instead of a percentage. A test there writes a
+      line starting with "coverage:" to stdout, which go test reads as the package summary, hiding
+      the real coverage figure in CI logs. Harmless to the gates today; find the test and send the
+      line to stderr or reword it.
