@@ -5422,7 +5422,7 @@ items:
     title: The nightly records crap, dry and scrap snapshots beside mutation's
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: crap-go-test-timeout
