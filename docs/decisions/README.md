@@ -56,5 +56,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0052: Local runs hold the scenarios in process against the fakes, and the built binary runs them in CI and CD](0052-local-runs-hold-the-scenarios-in-process-against-the-fakes-and-the-built-binary-runs-them-in-ci-and-cd.md)
 - [ADR-0053: The in-process driver's adapters are hand-written per port and held complete by a test, amending decision 51](0053-the-in-process-driver-s-adapters-are-hand-written-per-port-and-held-complete-by-a-test-amending-decision-51.md)
 - [ADR-0054: Dart support starts with Flutter apps and packages run by flutter test](0054-dart-support-starts-with-flutter-apps-and-packages-run-by-flutter-test.md)
+- [ADR-0055: Flutter tests count in phases, unit and widget tests under test/ first](0055-flutter-tests-count-in-phases-unit-and-widget-tests-under-test-first.md)
 
 <!-- itos:decisions:end -->
