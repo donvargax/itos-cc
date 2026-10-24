@@ -6635,3 +6635,4 @@
     - run: grep -qF 'record the nightly crap, dry and scrap snapshots' .github/workflows/nightly.yml
     - run: grep -qF '!.metrics/crap.json' .gitignore
     - run: "test -n \"$(git log --format=%s -- .metrics/crap.json | grep -x 'chore: record the nightly crap, dry and scrap snapshots')\""
+      after: push
