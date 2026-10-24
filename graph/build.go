@@ -13,9 +13,9 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/imports"
+	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/internal/project"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/metrics"
 )
 
 // Builder rebuilds the graph of some repositories, reparsing only files that
@@ -221,7 +221,7 @@ func testHashes(ctx context.Context, inputs mutants.Fingerprints, root string) f
 // metricStamps watches the snapshots the overlay reads.
 func metricStamps(root string) []string {
 	var out []string
-	dir := metrics.DirOf(root)
+	dir := metricsdir.DirOf(root)
 	for _, name := range []string{"crap.json", "dry.json"} {
 		p := filepath.Join(dir, name)
 		out = append(out, p+"\x00"+stamp(p))
@@ -289,7 +289,7 @@ func (b *Builder) parseTest(ctx context.Context, root, path string) (*fileInfo, 
 // its file changed since the last build. Its path is marked live.
 func (b *Builder) snapshot(ctx context.Context, top, path string, live map[string]bool) (*mutants.Snapshot, error) {
 	rel := project.FromRootOf(top, path)
-	at := filepath.Join(metrics.DirOf(top), mutationName(rel))
+	at := filepath.Join(metricsdir.DirOf(top), mutationName(rel))
 	live[at] = true
 	st := stamp(at)
 	if c, ok := b.snapshots[at]; ok && c.stamp == st {
@@ -405,7 +405,7 @@ func mutationName(key string) string { return filepath.Join("mutate", filepath.T
 
 func loadOverlay(root string) overlay {
 	o := overlay{coverage: newKeyed[float64](), duplicates: map[string]int{}}
-	dir := metrics.DirOf(root)
+	dir := metricsdir.DirOf(root)
 	var crapSnap struct {
 		Entries []crapEntry `json:"entries"`
 	}

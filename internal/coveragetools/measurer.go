@@ -18,7 +18,7 @@ import (
 	covrun "github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage/port"
-	"github.com/donvargax/itos-cc/metrics"
+	"github.com/donvargax/itos-cc/internal/metricsdir"
 )
 
 // Measurer is the coverage domain's Measurer over the disk and the project's
@@ -57,7 +57,7 @@ func (m Measurer) MeasureListed(ctx context.Context, req port.Request, perTest *
 	if req.AllTests {
 		scope = port.AllTests
 	}
-	out := filepath.Join(metrics.Dir(), "coverage")
+	out := filepath.Join(metricsdir.Dir(), "coverage")
 	if req.Existing {
 		return covrun.Existing(ctx, covrun.Plans(ctx, req.Sources, out, scope, req.Reach), req.Sources, m.Log), nil
 	}

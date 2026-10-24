@@ -1,4 +1,4 @@
-package metrics
+package metricsdir
 
 import (
 	"math/rand/v2"

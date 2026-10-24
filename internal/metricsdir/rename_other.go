@@ -1,6 +1,6 @@
 //go:build !windows
 
-package metrics
+package metricsdir
 
 // ephemeral reports whether err is one the file operations get only for a
 // moment: never, off Windows, where a rename over an existing file is

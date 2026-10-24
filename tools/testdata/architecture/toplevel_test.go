@@ -19,7 +19,8 @@ type toplevelFixture struct {
 // tests, but the rows docs/go.md names: features internal/project alone,
 // tools/bin/release-notes and release-version internal/release alone, its
 // releasetest with it, and, until graph-snapshot and their moves, graph,
-// server, metrics, coverage and config whatever they import.
+// server, coverage and config whatever they import; metrics' row went
+// when it folded into internal/metricsdir.
 var toplevelFixtures = []toplevelFixture{
 	{"features", "toplevel_project_code", "internal/project", false, false},
 	{"features", "toplevel_project_test", "internal/project", true, false},
@@ -27,7 +28,6 @@ var toplevelFixtures = []toplevelFixture{
 	{"tools/bin/release-version", "toplevel_releasetest_test", "internal/release/releasetest", true, false},
 	{"server", "toplevel_lang_code", "internal/lang", false, false},
 	{"server", "toplevel_lang_test", "internal/lang", true, false},
-	{"metrics", "toplevel_snapshot_code", "internal/snapshot", false, false},
 	{"library", "toplevel_lang_code", "internal/lang", false, true},
 	{"library", "toplevel_lang_test", "internal/lang", true, true},
 	{"features", "toplevel_lang_code", "internal/lang", false, true},
@@ -35,6 +35,7 @@ var toplevelFixtures = []toplevelFixture{
 	{"tools/bin/release-notes", "toplevel_lang_code", "internal/lang", false, true},
 	{"tools/bin/release-version", "toplevel_lang_test", "internal/lang", true, true},
 	{"tools/bin/other", "toplevel_release_code", "internal/release", false, true},
+	{"metrics", "toplevel_snapshot_code", "internal/snapshot", false, true},
 }
 
 // addToplevel writes toplevelFixtures through TestArchitecture's add, each

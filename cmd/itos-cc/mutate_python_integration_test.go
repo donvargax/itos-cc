@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/internal/project"
-	"github.com/donvargax/itos-cc/metrics"
 )
 
 // The scenario of "Rule: Coverage from tests that start other processes, in
@@ -151,7 +151,7 @@ func TestLinesAPythonTestReachesThroughASubprocessAreCovered(t *testing.T) {
 		// Given a Python project whose only test runs its module in a
 		// subprocess and checks one branch of its output
 		record := pythonIntegrationRepo(t, pythonIntegrationFiles)
-		out := filepath.Join(metrics.DirOf(project.RootOf(wd(t))), "coverage")
+		out := filepath.Join(metricsdir.DirOf(project.RootOf(wd(t))), "coverage")
 
 		// When I run "itos-cc mutation run --all-tests --fail-uncovered --json"
 		o := mutateCovered(t, "--all-tests", "--fail-uncovered", "--json", "cli.py")

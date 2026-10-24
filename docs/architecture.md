@@ -27,12 +27,13 @@ flowchart TD
   dom["shared domains + port + porttest<br/>selection, lang, snapshot, coverage"]
   adp["shared adapters<br/>workdir, metricsdir, coveragetools"]
   eng["adapter-side engines<br/>processes, imports, project"]
-  lib["libraries<br/>coverage runner, metrics, config"]
+  lib["libraries<br/>coverage runner, config"]
   main --> ui & slice & sadp & adp & eng & dom
   slice --> ui & sdom & dom
   sdom --> dom
   sadp --> sdom & dom & eng & lib
   adp --> dom & eng & lib
+  adp -.->|"coveragetools: metricsdir's Dir"| adp
   eng --> dom & lib
   lib --> eng
   lib -.->|"config only"| sdom
@@ -50,7 +51,7 @@ An arrow is an import the rules allow. Every arrow not drawn is refused.
 | Shared domains | `internal/selection`, `internal/lang`, `internal/snapshot`, `internal/coverage`, each with `port` and `porttest` | one another and their ports; nothing under `internal/slices` | `domain`, `domain-io`, `shared-domains` |
 | Shared adapters | `internal/workdir`, `internal/metricsdir`, `internal/coveragetools` | the port they implement, the domain it belongs to, the libraries they wrap | `workdir`, `metricsdir`, `coveragetools` |
 | Adapter-side engines | `internal/processes` (process ownership), `internal/imports` (import resolution), `internal/project` (project and git history) | `processes` nothing of ours; `imports` lang, `internal/project` and the coverage runner; `project` lang with its port, selection and snapshot | `processes`, `imports`, `project` |
-| Libraries | `coverage`, `metrics`, `config` | what they wrap; nothing under `internal/slices`, but `config`'s settings codec imports the mutation domain; each moves under `internal/` (T-195 to T-197) | `architecture-check --outside` and `--toplevel` |
+| Libraries | `coverage`, `config` | what they wrap; nothing under `internal/slices`, but `config`'s settings codec imports the mutation domain; each moves under `internal/` (T-196 and T-197) | `architecture-check --outside` and `--toplevel` |
 
 The rules are depguard's, in `.golangci.yml`, and `tools/bin/architecture-check`, which runs the
 pinned golangci-lint over compile-valid fixtures in `tools/testdata/architecture` that each rule

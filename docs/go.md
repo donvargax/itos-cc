@@ -45,8 +45,8 @@ a `context.Context` first (decision 30); pure logic takes none.
   every snapshot records, and `Key(root, abs)`, an absolute path named as a snapshot records
   it, from the project root and slash-separated, a path the root cannot reach staying whole.
   The paths a selection discovers are absolute, so naming one needs no working directory.
-  `project.FromRootOf` names paths through it, and `metrics.Name` and `metrics.Version` are
-  its, so each has one copy.
+  `project.FromRootOf` names paths through it, and `metricsdir.Name` and `metricsdir.Version`
+  are its, so each has one copy.
 - `internal/snapshot/port` declares `Store`: the project `Root`, `Read`, `Write` and `Remove`
   of a snapshot by name, its path from `.metrics/`, a removal taking the folders it empties
   below the top one (`mutate/` stays), and `List`, the names of the regular `*.json` files
@@ -56,7 +56,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   `Cancelled`. A snapshot read that did not decode is `Unreadable` too, its `Reason` in each
   store's own words, naming no Go type or package; the port knows no JSON.
   `internal/snapshot/port/porttest` holds the in-memory fake of `Store`, writing the bytes the
-  `metrics` library writes and giving a plain reason for a snapshot that does not decode, and
+  `internal/metricsdir` library writes and giving a plain reason for a snapshot that does not decode, and
   `StoreContract`, the contract it and `internal/metricsdir`'s `Store` both pass (Tests, below).
 - `internal/workdir` is the selection port's adapter: the working directory as the disk and git
   hold it. It wraps `internal/project`'s discovery and git query, stats paths and
@@ -66,11 +66,14 @@ a `context.Context` first (decision 30); pure logic takes none.
   (T-161, below), so it imports no mutation package.
 - `internal/metricsdir` is the snapshot port's adapter: the snapshots under `.metrics/` at the
   project root of the working directory, or at the root its `RootDir` names, so one `Store` for
-  each root serves several projects (graph's, in S8) with no change to the port. It wraps the
-  top-level `metrics` library, which writes them as indented JSON renamed into place, removes
-  and lists them, and `internal/project`, which finds the root, so
-  every byte and every atomic write stays the library's, translating their errors into the
-  port's failures. It alone decodes snapshot files, so a snapshot that did not decode is
+  each root serves several projects (graph's, in S8) with no change to the port. It holds the
+  snapshot library, the top-level `metrics` until it folded in here (ADR-0061, T-195), in
+  `metrics.go`, `retry.go` and the rename files: `Dir`, `DirOf`, `Read`, `ReadIn`, `Write`,
+  `WriteIn`, `RemoveIn` and `ListIn` write snapshots as indented JSON renamed into place,
+  retrying a rename Windows refuses for a moment, read, remove and list them, and graph and
+  `internal/coveragetools` call its `Dir` and `DirOf`. Its `Store` wraps that library and
+  `internal/project`, which finds the root, so every byte and every atomic write stays behind
+  this adapter (decision 41), translating their errors into the port's failures. It alone decodes snapshot files, so a snapshot that did not decode is
   worded by its `Undecodable`, in the snapshot's own terms rather than the Go types a reader
   decodes into (bug-3): a value of the wrong kind names its key path and the JSON kinds,
   `files[0].file should be a string, not a number`, and JSON that does not parse keeps the
@@ -618,7 +621,7 @@ context-as-argument a context after any other parameter, tests included.
   fixtures with. `config`, the one settings codec, with any subpackage under `config/`, imports
   that domain from its code, decoding `mutation.exceptions` and `mutation.tests` into its
   `Config`, and the domain and its `porttest` from its tests. depguard's `slices` rule covers
-  `internal/` alone, and `coverage`, `metrics`, `server`, `features` and `tools` have
+  `internal/` alone, and `coverage`, `server`, `features` and `tools` have
   no rule, so `tools/bin/architecture-check` holds it over the same `go list` fields as the
   sibling rule and names both packages.
 - Top level: every package but `cmd` lives under `internal/` (ADR-0061), so a package outside
@@ -628,9 +631,9 @@ context-as-argument a context after any other parameter, tests included.
   `tools/bin/release-version` `internal/release` alone, its `releasetest` with it, the
   template's layout. Until graph-snapshot (ADR-0060), graph and `server`, the legacy serve
   consumer, import what they need, the outside check holding what they import under
-  `internal/slices`; until their moves under `internal/` (T-195 to T-197), `metrics`,
-  `coverage` and `config` too, each move deleting its row, as `project`'s went when it became
-  `internal/project` (T-194). A new package goes under
+  `internal/slices`; until their moves under `internal/` (T-196 and T-197), `coverage` and
+  `config` too, each move deleting its row, as `project`'s went when it became
+  `internal/project` (T-194) and `metrics`' when it folded into `internal/metricsdir` (T-195). A new package goes under
   `internal/`, never at the top level. depguard covers `internal/` alone, so
   `tools/bin/architecture-check`'s toplevel holds it over the outside check's `go list` fields
   and names both packages, and whether from the importer's tests.
@@ -642,7 +645,7 @@ context-as-argument a context after any other parameter, tests included.
   adapter imports
   nothing of ours but the port it implements and the libraries it wraps, `internal/workdir`
   the two ports it implements, selection's and `internal/lang`'s, and `internal/project`,
-  and `internal/metricsdir` the snapshot port, the `metrics` library and `internal/project`; only
+  and `internal/metricsdir` the snapshot domain it serves, its port and `internal/project`; only
   its tests may use `porttest`. Each port's adapters have a rule of their own, so none is allowed another's port
   or library. An adapter may also import the domain it serves, and a port the domain it
   belongs to, to build or return the domain's own types with no mapper between them (decision
@@ -656,7 +659,8 @@ context-as-argument a context after any other parameter, tests included.
   reads and writes through, and `exceptions`' config, the reading codec it wraps. `freshenv`
   serves mutants, yet its rule allows `internal/coverage` and its port too, since it reads Go coverage blocks (`coverage.GoBlock`) through that domain.
   `internal/coveragetools`' allows the coverage domain, whose `Report` it returns, beside its
-  port and the `coverage` runner and `metrics` it wraps. `importgraph`'s allows the
+  port, the `coverage` runner it wraps and `internal/metricsdir`, whose `Dir` names its run
+  folders' parent, an adapter using another's helper (T-195). `importgraph`'s allows the
   import-resolution engine it adapts, `internal/imports`, and neither graph nor
   `internal/project` (T-162). Nothing leaks the other way: the
   `domain` and `domain-io` rules still refuse every adapter and I/O package in a domain.
@@ -668,8 +672,7 @@ context-as-argument a context after any other parameter, tests included.
   `internal/slices`.
 - `imports`: the import-resolution engine, code and tests, imports nothing of ours but
   `internal/lang`, whose parsed files it resolves, `internal/project` and the `coverage` runner (T-162):
-  no other domain or port, slice, adapter, fake, UI or `cmd`, nor graph, `config` or
-  `metrics`. It is an adapter-side engine like `processes`: the `domain` and `slices` rules
+  no other domain or port, slice, adapter, fake, UI or `cmd`, nor graph or `config`. It is an adapter-side engine like `processes`: the `domain` and `slices` rules
   refuse it, of the adapters only `importgraph`'s allows it, and graph, which no rule holds,
   imports it. `slices` and `slice-fakes` leave it out. Its rule has one deny entry, the
   module, since depguard looks a deny up as the one entry sorting just before the import

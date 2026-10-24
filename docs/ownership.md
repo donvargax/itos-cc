@@ -58,9 +58,8 @@ Each change to one is a task the coordinator assigns.
 - **Engines**: `internal/selection`, `internal/lang`, `internal/snapshot` and `internal/coverage`
   with their ports and porttests; `internal/processes`, `internal/imports`, `internal/project`,
   `internal/cli`, `internal/version`, `internal/release`, `internal/workdir`,
-  `internal/metricsdir` and `internal/coveragetools`; the top-level `coverage`, `config` and
-  `metrics`. Their
-  feature files, above, are theirs.
+  `internal/metricsdir` and `internal/coveragetools`; the top-level `coverage` and `config`.
+  Their feature files, above, are theirs.
 - **Assembly**: `cmd/itos-cc`'s hand-written `main.go`, `dispatch.go` and `adapters.go` with
   their tests, `diskAdapters` and `inProcessAdapters` (decision 53); `scenarios_test.go`,
   `scenarios_fakes_test.go`, `run_fakes_test.go`, `adapters_test.go` and the other

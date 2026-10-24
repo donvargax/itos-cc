@@ -8,7 +8,6 @@ import (
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/metrics"
 )
 
 // The scenarios of "Rule: Mutation results say what happened, and leave
@@ -68,7 +67,7 @@ func removedSiteRepoWith(t *testing.T, outcome string) mutation.Mutant {
 		if err != nil {
 			t.Fatal(err)
 		}
-		writeFile(t, filepath.Join(metrics.Name, snapshots.MutationName(filepath.ToSlash(boardSource))), string(data)+"\n")
+		writeFile(t, filepath.Join(metricsdir.Name, snapshots.MutationName(filepath.ToSlash(boardSource))), string(data)+"\n")
 		return *gone
 	}
 	t.Fatalf("no entry of %s in %+v", placeID, snap.Units)

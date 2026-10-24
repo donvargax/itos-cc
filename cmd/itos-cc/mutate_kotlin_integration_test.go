@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/internal/project"
-	"github.com/donvargax/itos-cc/metrics"
 )
 
 // The scenario of "Rule: Coverage from tests that start other processes, in
@@ -177,7 +177,7 @@ func TestLinesAKotlinTestReachesThroughAJVMItStartsAreCovered(t *testing.T) {
 		// its main class in a JVM with the agent ITOS_CC_JACOCO_AGENT
 		// names, and checks one branch of its output
 		record := kotlinIntegrationRepo(t, ktIntegrationFiles("agent"))
-		out := filepath.Join(metrics.DirOf(project.RootOf(wd(t))), "coverage")
+		out := filepath.Join(metricsdir.DirOf(project.RootOf(wd(t))), "coverage")
 
 		// When I run "itos-cc mutation run --all-tests --fail-uncovered --json"
 		o := mutateCovered(t, "--all-tests", "--fail-uncovered", "--json", main)

@@ -12,7 +12,6 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/snapshot/port"
 	"github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
-	"github.com/donvargax/itos-cc/metrics"
 )
 
 // inProject is a temporary project with no git above it, the test's working
@@ -32,7 +31,7 @@ func inProject(t *testing.T) string {
 func open(t *testing.T, snapshots map[string]string) (port.Store, string) {
 	root := inProject(t)
 	for _, name := range slices.Sorted(maps.Keys(snapshots)) {
-		path := filepath.Join(root, metrics.Name, filepath.FromSlash(name))
+		path := filepath.Join(root, Name, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			t.Fatal(err)
 		}
@@ -55,7 +54,7 @@ func TestAStoreOfAnotherRootKeepsTheContract(t *testing.T) {
 		_, root := open(t, snapshots)
 		elsewhere := inProject(t)
 		t.Cleanup(func() {
-			if _, err := os.Stat(filepath.Join(elsewhere, metrics.Name)); err == nil {
+			if _, err := os.Stat(filepath.Join(elsewhere, Name)); err == nil {
 				t.Errorf("a store of %s touched the working directory's .metrics", root)
 			}
 		})
@@ -87,7 +86,7 @@ func TestStoreWritesWhatTheLibraryWrites(t *testing.T) {
 	if failure := store.Write(t.Context(), "store.json", v); failure != nil {
 		t.Fatalf("Write(store.json) = %v", failure)
 	}
-	if err := metrics.Write("library.json", v); err != nil {
+	if err := Write("library.json", v); err != nil {
 		t.Fatal(err)
 	}
 	written, err := os.ReadFile(filepath.Join(root, ".metrics", "store.json"))
@@ -117,7 +116,7 @@ func TestStoreTranslatesTheLibrarysFailures(t *testing.T) {
 		t.Fatal(err)
 	}
 	var v sample
-	_, want := metrics.Read("bad.json", &v)
+	_, want := Read("bad.json", &v)
 	found, failure := Store{}.Read(t.Context(), "bad.json", &v)
 	var unreadable *port.Unreadable
 	if want == nil || !found || !errors.As(failure, &unreadable) || unreadable.Name != "bad.json" || unreadable.Reason != want.Error() {
@@ -129,7 +128,7 @@ func TestStoreTranslatesTheLibrarysFailures(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, ".metrics", "sub"), nil, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	want = metrics.Write("sub/x.json", v)
+	want = Write("sub/x.json", v)
 	failure = Store{}.Write(t.Context(), "sub/x.json", v)
 	var unwritable *port.Unwritable
 	if want == nil || !errors.As(failure, &unwritable) || unwritable.Name != "sub/x.json" || unwritable.Reason != want.Error() {
@@ -181,7 +180,7 @@ func TestRemovingEmptiesNestedFoldersBelowTheTopOne(t *testing.T) {
 		}
 	}
 	at := func(name string) bool {
-		_, err := os.Lstat(filepath.Join(root, metrics.Name, filepath.FromSlash(name)))
+		_, err := os.Lstat(filepath.Join(root, Name, filepath.FromSlash(name)))
 		return err == nil
 	}
 	for _, name := range []string{"mutate/src/deep/er", "mutate/src/deep", "coverage/run"} {
@@ -206,7 +205,7 @@ func TestRemovingEmptiesNestedFoldersBelowTheTopOne(t *testing.T) {
 // a link to a folder is not followed.
 func TestALinkIsNoSnapshot(t *testing.T) {
 	_, root := open(t, map[string]string{"mutate/a.go.json": "{}", "elsewhere/b.go.json": "{}"})
-	dir := filepath.Join(root, metrics.Name)
+	dir := filepath.Join(root, Name)
 	if err := os.Symlink(filepath.Join(dir, "mutate", "a.go.json"), filepath.Join(dir, "mutate", "link.go.json")); err != nil {
 		t.Skipf("no symbolic link can be made here: %v", err)
 	}
@@ -223,16 +222,16 @@ func TestALinkIsNoSnapshot(t *testing.T) {
 // system takes a name holding a NUL.
 func TestStoreTranslatesTheLibrarysRemoveAndListFailures(t *testing.T) {
 	_, root := open(t, map[string]string{"mutate/a.go.json": "{}"})
-	dir := filepath.Join(root, metrics.Name)
+	dir := filepath.Join(root, Name)
 	const bad = "mutate/a\x00.go.json"
-	want := metrics.RemoveIn(dir, bad)
+	want := RemoveIn(dir, bad)
 	failure := Store{}.Remove(t.Context(), bad)
 	var unremovable *port.Unremovable
 	if want == nil || !errors.As(failure, &unremovable) || unremovable.Name != bad || unremovable.Reason != want.Error() {
 		t.Errorf("Remove(%q) = %T %v, want Unremovable %v", bad, failure, failure, want)
 	}
 	const folder = "mutate\x00"
-	_, want = metrics.ListIn(dir, folder)
+	_, want = ListIn(dir, folder)
 	names, failure := Store{}.List(t.Context(), folder)
 	var unlistable *port.Unlistable
 	if want == nil || names != nil || !errors.As(failure, &unlistable) || unlistable.Dir != folder || unlistable.Reason != want.Error() {

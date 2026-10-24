@@ -1,7 +1,8 @@
-// Package metrics writes the snapshots under .metrics/ that the tools share
-// and that projects commit. Snapshots carry no timestamps, so an unchanged
-// result is an unchanged file.
-package metrics
+// The library of the snapshots under .metrics/ that the tools share and
+// that projects commit, the top-level metrics until it folded in here
+// (ADR-0061): Store wraps it, and graph and coveragetools call its Dir.
+
+package metricsdir
 
 import (
 	"bytes"
