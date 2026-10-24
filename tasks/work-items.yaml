@@ -5716,3 +5716,16 @@ items:
       them changes visible output of three commands and many scenarios' stdout lines: q-97 asks the
       shape.
     refs: ["#21"]
+  - id: mismatch-fix-plain
+    title: A plain mutation sample prints no mismatch fix
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found with slice-45 (2026-10-24): Mismatch sets problem.Shown, so plain output lists the
+      mismatch on stdout and never prints its problem, fix included, on stderr. slice-45 made the
+      fix's command pasteable, but only a --json reader sees it. A plain run could print the fix
+      once after the mismatched lines, or Shown could leave the fix to stderr; check's stale lines
+      do the same and may want the same answer.
