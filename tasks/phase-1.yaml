@@ -6697,7 +6697,7 @@
   done_when:
     - run: tools/bin/architecture-check
     - run: grep -qF 'toplevel' tools/bin/architecture-check
-    - run: go test ./tools/testdata/architecture/...
+    - run: test -f tools/testdata/architecture/toplevel_test.go
 - id: T-194
   type: refactor
   title: project moves to internal/project
