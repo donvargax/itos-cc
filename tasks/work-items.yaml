@@ -14,7 +14,6 @@ queue:
   - listed-support-per-test
   - listed-suites
   - features-coverage-gocoverdir-leak
-  - slice-48
   - plain-output-matcher
   - T-205
   - T-206
