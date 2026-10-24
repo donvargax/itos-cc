@@ -5480,3 +5480,19 @@ items:
       the embed's build order in release.yml and .goreleaser.yaml, the viewer's notices in
       THIRD_PARTY_NOTICES if its bundle carries any, and the binary's size noted. A stopgap, kept
       small: serve's move (T-102 to T-113) is unchanged.
+  - id: graph-snapshot
+    title: A command writes the architecture graph as a .metrics snapshot, the viewer reading files alone
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The person (2026-10-24, q-86): serve's move to a web app of its own follows Uncle Bob's
+      uml-viewer, whose tools write files the viewer only reads (mutator and crapper write 'the
+      snapshot uml-viewer reads'; a parser and a policy write the topology). itos-cc gains a command
+      writing the graph, the tree of repositories, directories, modules and functions with their
+      import edges and metrics, as .metrics/graph.json, what /api/graph returns today; the web app
+      reads .metrics/ and needs none of itos-cc's code, as crap, dry and mutation's snapshots
+      already work, so the UI stays simple. T-190's nightly commits it beside the others. The
+      deferred serve tasks (T-102 to T-113) are re-cut against this when serve's move is specified.
