@@ -85,27 +85,19 @@ func entryOf(entries []mutants.Exception, done []bool, e mutants.Exception) int 
 }
 
 // read is data as settings.Parse reads it, and its node tree, whose top
-// level, when it has one, is a mapping holding mutation.exceptions as
-// settings.Parse read it.
+// level, unless it is empty or null, is a mapping holding mutation.exceptions
+// as settings.Parse read it, since Parse refuses any other.
 func read(data []byte) (*settings.Config, *yaml.Node, error) {
+	var doc yaml.Node
 	c, err := settings.Parse(data)
+	if err == nil {
+		// yaml.v3 decodes into a node tree every document it decoded for
+		// Parse, so this error cannot occur: it shares Parse's return rather
+		// than a branch no document reaches.
+		err = yaml.Unmarshal(data, &doc)
+	}
 	if err != nil {
 		return nil, nil, err
-	}
-	var doc yaml.Node
-	if err := yaml.Unmarshal(data, &doc); err != nil {
-		return nil, nil, &settings.InvalidError{Reason: err.Error()}
-	}
-	if len(doc.Content) > 0 && !isNull(doc.Content[0]) {
-		root := doc.Content[0]
-		if root.Kind != yaml.MappingNode {
-			return nil, nil, &settings.InvalidError{Reason: "its top level is not a mapping"}
-		}
-		if _, m := key(root, "mutation"); m != nil && m.Kind == yaml.MappingNode {
-			if _, list := key(m, "exceptions"); list != nil && list.Kind == yaml.SequenceNode && len(list.Content) != len(c.Exceptions) {
-				return nil, nil, fmt.Errorf("%s: mutation.exceptions changed while it was read", settings.File)
-			}
-		}
 	}
 	return c, &doc, nil
 }
