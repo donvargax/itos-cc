@@ -15,7 +15,7 @@ queue:
   - listed-suites
   - features-coverage-gocoverdir-leak
   - plain-output-matcher
-  - itos-cc-yaml-version
+  - slice-49
   - flaky-kills
   - graph-snapshot
   - T-102
@@ -2280,14 +2280,15 @@ items:
       The path above is out of date. mutate/listed.go is gone; support's globs are expanded by
       filepath.Glob in internal/testinputs/support.go:25 and checked with filepath.Match in
       config/config.go:232-236, while exclude's are doublestar's (config/config.go:166-183).
-  - id: itos-cc-yaml-version
-    title: itos-cc.yaml carries a version, as docs/CONFIG.md asks of every config file
+  - id: slice-49
+    title: itos-cc.yaml refuses explicit tags, keys that are not strings and a second document
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was itos-cc-yaml-version.
       docs/CONFIG.md rules 5 and 6 ask every config file for a version and its reader to refuse what
       it does not know, but itos-cc.yaml has none and config's parse ignores unknown keys, so an
       older itos-cc reading exclude: (decision on q-61) silently measures and mutates what it names.
