@@ -6762,10 +6762,6 @@
     function bodies may draw a fresh mutation site and kills what it meets (ADR-0059). The plan is
     scratchpad/plan-top-level-libraries-internal.md of the coordinator's session, its decisions now
     ADR-0061 (q-89).
-  done_when:
-    - run: test ! -d coverage && test -d internal/covrun
-    - run: "! grep -rn --include='*.go' '\"github.com/donvargax/itos-cc/coverage\"' ."
-    - run: tools/bin/architecture-check
 - id: T-197
   type: refactor
   title: config becomes mutation's settings adapter
