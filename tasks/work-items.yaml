@@ -5736,3 +5736,10 @@ items:
       gives Failed when its report measured some files; only the Go timeout case is aligned now.
       Scenarios that run in process can pass for the wrong reason. Align the fake with the runner's
       classification.
+  - id: T-207
+    title: Upgrade the repository pin to itos 8.15
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
