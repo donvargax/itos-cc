@@ -125,6 +125,25 @@ Feature: CRAP scores
     Then stderr says "itos-cc: no coverage for <dir> (go): ..."
     And the exit code is 0
 
+  # slice-47, crap-go-test-timeout (T-190; 2026-10-24, a coordinator's call
+  # inside the item): crap's Go coverage run is go test, whose -timeout of
+  # 10 minutes per package cut cmd/itos-cc and features short on a loaded
+  # machine; crap printed only "coverage: go: exit status 1" in the test
+  # output and the module read N/A with no word why. crap passes no -timeout
+  # of its own and adds no flag (GOFLAGS already sets it, as the nightly
+  # does); when go test reports a package timed out, crap's no-coverage
+  # warning names that package and the limit, and suggests raising it
+  # through GOFLAGS. Exit codes and N/A are unchanged. The fixture's test
+  # outlives a one-second limit given through GOFLAGS, so the scenario takes
+  # seconds. Before this item the warning named no timeout, failing at the
+  # stderr step.
+  @slice-47 @ID-CRAP-15 @wip
+  Scenario: A Go package whose tests time out says so in crap's warning
+    Given a Go project whose package example.com/slow has a test that sleeps 3 seconds
+    When itos-cc runs with "crap" and the environment "GOFLAGS=-timeout=1s"
+    Then stderr says "itos-cc: no coverage for" and names example.com/slow, "timed out after 1s" and "GOFLAGS=-timeout="
+    And the exit code is 0
+
   @ID-CRAP-13
   Scenario: Nothing to score
     Given the selection holds no production source files
