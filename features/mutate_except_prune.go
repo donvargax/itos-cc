@@ -30,12 +30,6 @@ func (e *exceptionMutation) pruneSteps(sc *godog.ScenarioContext) {
 		return e.pruneReported(map[string]any{"file": "src/port/porttest/fake.go", "why": "excluded"})
 	})
 	sc.Step(`^it reports nothing pruned, and the exit code is 0$`, e.pruneNothing)
-	sc.Step(`^itos-cc\.yaml is byte for byte as it was$`, func() error {
-		if after := e.s.m.read("itos-cc.yaml"); after != e.written {
-			return fmt.Errorf("itos-cc.yaml changed:\n%s\nwas:\n%s", after, e.written)
-		}
-		return nil
-	})
 	sc.Step(`^"itos-cc mutation except --prune --reason x" is "flags\.conflict", with flag "--reason", exit 80$`, func() error {
 		return e.pruneRefused("mutation except --prune --reason x --json", map[string]any{"rule": "flags.conflict", "flag": "--reason"})
 	})

@@ -168,7 +168,10 @@ func selectionSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^a file outside the working directory keeps its absolute path$`, s.outsideAbsolute)
 
 	// itos-cc.yaml's exclude.
-	sc.Step(`^itos-cc\.yaml holds '([^']*)'$`, func(text string) error { return s.write("itos-cc.yaml", text+"\n") })
+	sc.Step(`^itos-cc\.yaml holds '([^']*)'$`, func(text string) error {
+		s.w.config = text + "\n"
+		return s.write("itos-cc.yaml", s.w.config)
+	})
 	sc.Step(`^itos-cc\.yaml is a directory, so it cannot be read$`, func() error {
 		return s.w.d.Mkdir(filepath.Join(s.w.dir, "itos-cc.yaml"))
 	})

@@ -482,6 +482,10 @@ type world struct {
 	// problem is the problem of the last run the problem step found, its
 	// fix what the fix step reads, nil before one.
 	problem map[string]any
+	// config is the text of itos-cc.yaml a Given wrote or a fixture read
+	// back, which "itos-cc.yaml is byte for byte as it was" holds the file
+	// to; "" before one.
+	config string
 }
 
 // run is one run of itos-cc: where, with the variables the scenario set
@@ -569,6 +573,7 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	sc.Step(`^the problem is "([^"]*)", with (flag|argument|key|file) "([^"]*)"$`, w.problemIs)
 	sc.Step(`^the problem is "([^"]*)"$`, func(rule string) error { return w.problemIs(rule, "", "") })
 	sc.Step(`^its fix suggests "([^"]*)"$`, w.fixSuggests)
+	sc.Step(`^itos-cc\.yaml is byte for byte as it was$`, w.configKept)
 	sc.Step(`^its problems in --json are:$`, w.problemsAre)
 	sc.Step(`^stderr says "([^"]*)" once$`, w.stderrSaysOnce)
 	sc.Step(`^it ends as (interrupted|terminated), which a shell reads as (\d+)$`, w.endsAs)
@@ -696,7 +701,7 @@ func (w *world) setUp(s *godog.Scenario) error {
 	w.problemSubject = nil
 	w.beforeRemove = nil
 	w.last, w.problem, w.without, w.wrote, w.each, w.binary, w.edges, w.signal = nil, nil, nil, "", nil, "", nil, 0
-	w.feature, w.scored, w.noTests, w.with, w.project = filepath.Base(s.Uri), nil, nil, nil, ""
+	w.feature, w.scored, w.noTests, w.with, w.project, w.config = filepath.Base(s.Uri), nil, nil, nil, "", ""
 	var err error
 	w.dir, err = w.d.Folder()
 	return err
@@ -834,6 +839,22 @@ func (w *world) capture(dir string, env []string, args ...string) (code int, std
 // making the folders above it.
 func (w *world) write(name, text string) error {
 	return w.writeIn(w.dir, name, text)
+}
+
+// configKept is whether itos-cc.yaml holds, byte for byte, the text a
+// Given wrote or a fixture read back.
+func (w *world) configKept() error {
+	if w.config == "" {
+		return fmt.Errorf("no itos-cc.yaml was written before\n%s", w.report())
+	}
+	after, err := w.readIn(w.dir, "itos-cc.yaml")
+	if err != nil {
+		return fmt.Errorf("%v\n%s", err, w.report())
+	}
+	if string(after) != w.config {
+		return fmt.Errorf("itos-cc.yaml changed:\n%s\nwas:\n%s\n%s", after, w.config, w.report())
+	}
+	return nil
 }
 
 // writeIn writes text to name, a slash-separated path in dir, making the

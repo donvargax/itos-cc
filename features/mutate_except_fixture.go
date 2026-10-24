@@ -79,6 +79,7 @@ func (e *exceptionMutation) review(reason string) error {
 	}
 	e.entry = a[0]
 	e.written = e.s.m.read("itos-cc.yaml")
+	e.s.m.w.config = e.written
 	e.reviewed = true
 	return nil
 }
