@@ -149,6 +149,8 @@ func sampleMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMuta
 	sc.Step(`^outcomes of src/board\.ts recorded with scope "own", one of them a kill the whole suite no longer makes$`, func() error { return p.falseKill("without flags") })
 	sc.Step(`^the problem is "mutation\.mismatch", with scope "([^"]*)"$`, p.scopeProblem)
 	sc.Step(`^its fix says to run "([^"]*)"$`, p.fixCommand)
+	sc.Step(`^the problem's fix ends with "([^"]*)"$`, p.fixEndsWith)
+	sc.Step(`^the fix holds no quote but the two around make test$`, p.fixQuotesOnlyTestCommand)
 	return p
 }
 

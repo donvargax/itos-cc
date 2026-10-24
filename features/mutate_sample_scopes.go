@@ -187,3 +187,43 @@ func (p *sampleMutation) fixCommand(command string) error {
 	}
 	return nil
 }
+
+// mismatchFix is the fix of the one problem the last run's --json object
+// reports, a mutation.mismatch, its paths written with slashes.
+func (p *sampleMutation) mismatchFix() (string, error) {
+	obj, err := p.object()
+	if err != nil {
+		return "", err
+	}
+	problems := checkProblems(obj)
+	if len(problems) != 1 || problems[0]["rule"] != "mutation.mismatch" {
+		return "", fmt.Errorf("want one mutation.mismatch problem: %v", problems)
+	}
+	return filepath.ToSlash(fmt.Sprint(problems[0]["fix"])), nil
+}
+
+// fixEndsWith is whether the mismatch's fix ends with ending.
+func (p *sampleMutation) fixEndsWith(ending string) error {
+	fix, err := p.mismatchFix()
+	if err != nil {
+		return err
+	}
+	if !strings.HasSuffix(fix, ending) {
+		return fmt.Errorf("the mismatch's fix %q does not end with %q", fix, ending)
+	}
+	return nil
+}
+
+// fixQuotesOnlyTestCommand is whether the mismatch's fix holds no quote,
+// single, double or back, but the two single quotes around make test.
+func (p *sampleMutation) fixQuotesOnlyTestCommand() error {
+	fix, err := p.mismatchFix()
+	if err != nil {
+		return err
+	}
+	rest := strings.Replace(fix, "'make test'", "make test", 1)
+	if rest == fix || strings.ContainsAny(rest, "'\"`") {
+		return fmt.Errorf("the mismatch's fix %q holds a quote but the two around make test", fix)
+	}
+	return nil
+}
