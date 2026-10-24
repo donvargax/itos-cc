@@ -5567,3 +5567,15 @@ items:
       The exemption for graph and server is temporary (the person, 2026-10-24): graph-snapshot moves
       graph into a slice under internal/ and removes server, and the exemption goes in that work,
       leaving the gate with none.
+  - id: serve-port-zero-announce
+    title: serve --port 0 announces the port it got, not 0
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by the serve-embedded-viewer drafter (2026-10-24): with --port 0 serve listens on a free
+      port but its readiness line says http://127.0.0.1:0, the address it was asked for, not the
+      listener's, so nothing reading the line can reach it; the scenario harness picks a free port
+      itself instead. serve should print the listener's address.
