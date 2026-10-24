@@ -5430,3 +5430,10 @@ items:
       the file against the working directory (sourcePath(h.Dir, ...)), so a site copied from a
       report and run from a subfolder reads another path. slice-41 reads an identity's file from the
       project root; the site form should agree, or say which base it takes.
+  - id: T-190
+    title: The nightly records crap, dry and scrap snapshots beside mutation's
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

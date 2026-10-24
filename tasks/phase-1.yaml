@@ -6611,3 +6611,27 @@
     why and what lifts it, the text kept as the spec serve's own work starts from; their three smoke
     entries go, and features/README.md says so. T-102 to T-105 drop the tag as they convert each
     file.
+- id: T-190
+  type: ci
+  title: The nightly records crap, dry and scrap snapshots beside mutation's
+  why: >
+    No workflow, hook or gate runs crap, dry or scrap over this repository, and .gitignore keeps
+    every .metrics/ snapshot but mutate/ out of git, so serve's CRAP bands and duplicates are empty
+    in every clone until someone runs them by hand (seen 2026-10-24). The person (2026-10-24): the
+    nightly keeps them current, with no new gate (ADR-0044: no coverage threshold, mutation judges
+    the tests). A job of its own in nightly.yml, beside mutate and never inside its 330-minute
+    budget: Linux, Go and Node with npm ci in viewer/ as mutate has them, itos-cc built from the
+    tree, then itos-cc crap (its coverage run included), itos-cc dry and itos-cc scrap over the
+    whole repository, each with no threshold so a finding never fails the job, and a commit step
+    committing .metrics/crap.json, .metrics/dry.json and .metrics/scrap.json alone with the subject
+    "chore: record the nightly crap, dry and scrap snapshots", rebasing and retrying its push as
+    mutate's commit step does, since both jobs push to main. .gitignore lets those three files in,
+    with its comment updated; raw coverage stays out. docs/go.md's Quality checks and the README say
+    what the nightly records. No mutation run beyond what mutate already does. Done once a nightly
+    on main, scheduled or dispatched, has committed the three snapshots; a dispatch of the whole
+    nightly is fine.
+  done_when:
+    - run: itos config check
+    - run: grep -qF 'record the nightly crap, dry and scrap snapshots' .github/workflows/nightly.yml
+    - run: grep -qF '!.metrics/crap.json' .gitignore
+    - run: "test -n \"$(git log --format=%s -- .metrics/crap.json | grep -x 'chore: record the nightly crap, dry and scrap snapshots')\""
