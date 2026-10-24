@@ -5,7 +5,8 @@
 > its domain or mutation's adapters has moved since, as have `graph/tests.go` and `config`'s
 > exceptions codec. ADR-0051 settled section 7's questions. Today's
 > layout is `docs/go.md`'s; section 8 says where each move put each package and which work did
-> each of section 6's steps, and section 9, the last, records T-86's one refactor proof.
+> each of section 6's steps, and section 9, the last, records T-86's one refactor proof and,
+> after it, the one proof of the later move under `internal/` (ADR-0061).
 
 # T-86 inventory: feature-owned vertical slices
 
@@ -399,3 +400,41 @@ writes no snapshot. `internal/processes`' `killGroup` (`internal/worktrees`' at 
 code) most likely returns the group's `ESRCH` from `cmd.Cancel` when the group has already gone,
 which `os/exec` reports as `Wait`'s error for a command that otherwise exited 0. It is not one of
 T-86's items.
+
+### The move under `internal/` (ADR-0061)
+
+ADR-0061's one refactor proof, classified by T-198: run
+[40113359992](https://github.com/donvargax/itos-cc/actions/runs/40113359992) of
+`refactor-proof.yml`, dispatched on `main` at `49eea07`, against the baseline `33963a3`, the parent
+of T-193's first commit (`d50206e`). No code changed between `546399d5`, T-197's dequeue, and
+`49eea07`, only the work registry. Both builds print the same version line,
+`itos-cc 1.2.3-features`. No difference is one the moves made, and no commit of T-193 to T-197
+meant to change behaviour, so none is deliberate either.
+
+**Edges** (`tools/bin/refactor-proof`, 390 cases): 320 same, 67 normalized by the script's
+existing rules, 3 as-rerun, none differs, unstable or setup-failed. The job exited 1 for the three
+as-rerun cases alone, which the script counts as differing by design (the idea
+refactor-proof-unstable-exit). As-rerun is the script's own control: the old binary run again
+differed from its first run, and the new binary's run equals that second one after normalization.
+
+| Case | Verdict | Classification |
+|---|---|---|
+| `t48-01` (`mutation run --count 1`, SIGINT once coverage starts) | as-rerun | The run's. When the interrupt lands, `go test` is cancelled; whether it has already created `coverage.out` decides whether itos-cc also prints `coverage: open …/coverage.out: no such file or directory` before `interrupted before it finished`. The old binary's first run left the line out, its second printed it, and the new binary printed it, each exiting 130. |
+| `t48-02` (the same with `--json`) | as-rerun | The run's, the same race: the old binary's second run and the new binary both add that line to stderr and the `coverage report: … no such file or directory` cause to the coverage step's JSON `error`, which the old binary's first run left out; each exited 130. |
+| `t49-03` (`mutation run --fail-fast --workers 2 board.go`) | as-rerun | The run's, as T-172 classified it for T-86: the old binary's first run stopped at `0` → `1` and cancelled `>` → `>=`, its second and the new binary stopped at `>` → `>=` and cancelled `0` → `1`, each exiting 1. |
+
+**Suites** (`TestFeatures` through `ITOS_CC_FEATURES_BINARY`, 800 cucumber elements a side): the old
+side passed, `failed-old.txt` empty; the new side failed one, `failed-new.txt` naming
+`@ID-MUT-224` "Strict coverage refuses a Maven module outside the root" (`mutate.feature:3379`).
+Every other element has the same status on both sides: 770 passed, 1 partly skipped
+(`coverage.feature:69`, its Flutter row) and 28 skipped, the 6 macOS and Windows scenarios a Linux
+runner cannot run and 22 Dart scenarios, since this workflow installs no Flutter (the idea
+refactor-proof-dart); `cd.yml`'s `dart` job passed them on the refactored code at `546399d5`, run
+[40111224113](https://github.com/donvargax/itos-cc/actions/runs/40111224113).
+
+| Scenario | Side | Classification |
+|---|---|---|
+| `@ID-MUT-224`, a Maven module outside the root (`mutate.feature:3379`) | new failed, old passed | The runner's. Its setup step's `mvn -q jacoco:prepare-agent test jacoco:report` stopped in the Kotlin Maven plugin's compile with `Internal Kotlin compilation error`, `java.rmi.UnmarshalException … java.io.EOFException` from `compileWithDaemon`: the Kotlin compile daemon went away mid-call, while the outline's other Kotlin and Gradle rows ran beside it. itos-cc then reported `kotlin: exit status 1` and no `jacoco.xml`, as it must for a build that fails. Rerun alone on this machine with the new binary built from `49eea07` (stamped as the workflow does), `-scenarios 'MUT-224$'`, the row passed in 17 s. |
+
+**Items opened**: none for the refactor; no difference is unclassified. The idea refactor-proof-dart
+records the Dart scenarios this workflow skips on both sides.

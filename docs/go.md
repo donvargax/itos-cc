@@ -950,8 +950,13 @@ follows the same steps for a command it wrote before it had the template's desig
    [39101044040](https://github.com/donvargax/itos-cc/actions/runs/39101044040) against
    `51f3952`, classified by T-137; T-86's ran once, run
    [39622138010](https://github.com/donvargax/itos-cc/actions/runs/39622138010) against
-   `b768837`, classified by T-172 in `docs/vertical-slices-inventory.md`'s last section.
-   `units` (T-32) was compared on its own before either: 236 lines agreed but one,
+   `b768837`, classified by T-172 in `docs/vertical-slices-inventory.md`'s last section; the
+   move under `internal/` (ADR-0061, T-193 to T-197) ran once, T-198's run
+   [40113359992](https://github.com/donvargax/itos-cc/actions/runs/40113359992) at `49eea07`
+   against `33963a3`, T-193's parent, and found no difference the moves made: three edge cases
+   the old binary itself gave two ways and one Maven scenario that a Kotlin compile daemon's
+   crash failed on the refactored side, all the run's, classified in that file's section 9.
+   `units` (T-32) was compared on its own before any of them: 236 lines agreed but one,
    `---changed`, which the hand parser read as `--changed` and kong refuses as an unknown
    flag, as rule 15 has it.
 10. **Boundaries.** The `slice-packages` rule holds the new package with no edit. A top-level library
