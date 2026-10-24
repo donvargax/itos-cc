@@ -418,7 +418,7 @@ func (e *exceptionMutation) comment() string {
 }
 func (e *exceptionMutation) survivingComment() error {
 	c := e.comment()
-	if !strings.Contains(c, "14 killed, 1 survived, 0 uncovered") || !strings.Contains(c, "// survived: line 7 `<` → `<=` in count\n") {
+	if !strings.Contains(c, "14 killed, 1 survived, 0 uncovered") || !strings.Contains(c, "// survived: line 7 `<` → `<=` in Board#count\n") {
 		return fmt.Errorf("surviving comment %q", c)
 	}
 	return nil

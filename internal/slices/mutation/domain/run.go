@@ -336,7 +336,7 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 			// The comment excepts the survivors of every function,
 			// judged or not, as a full run would.
 			excepted := HeldReasons(opt.Exceptions, s.key, s.file, s.sites)
-			if err := opt.Source.Annotate(ctx, s.file.Path, s.file.Spec.Comment, Annotation(s.result.Snapshot, s.file.Spec.Comment, excepted)); err != nil {
+			if err := opt.Source.Annotate(ctx, s.file.Path, s.file.Spec.Comment, Annotation(s.result.Snapshot, s.file, excepted)); err != nil {
 				return nil, nil, err
 			}
 		}

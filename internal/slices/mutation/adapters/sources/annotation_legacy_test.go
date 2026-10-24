@@ -20,7 +20,7 @@ func TestAnnotateReplacesItsOwnBlock(t *testing.T) {
 	snap := mutants.Snapshot{Units: []mutants.UnitResult{{Name: "a", Killed: 1, Survived: 1, Mutants: []mutants.Mutant{
 		{Line: 2, Original: ">", Replacement: ">=", Outcome: mutants.Survived},
 	}}}}
-	if err := (SourceEdits{}).Annotate(t.Context(), path, spec.Comment, mutants.Annotation(snap, spec.Comment, nil)); err != nil {
+	if err := (SourceEdits{}).Annotate(t.Context(), path, spec.Comment, mutants.Annotation(snap, &lang.File{Spec: spec}, nil)); err != nil {
 		t.Fatal(err)
 	}
 	once, err := os.ReadFile(path)
@@ -34,7 +34,7 @@ func TestAnnotateReplacesItsOwnBlock(t *testing.T) {
 	}
 
 	snap.Units[0].Killed, snap.Units[0].Survived, snap.Units[0].Mutants = 2, 0, nil
-	if err := (SourceEdits{}).Annotate(t.Context(), path, spec.Comment, mutants.Annotation(snap, spec.Comment, nil)); err != nil {
+	if err := (SourceEdits{}).Annotate(t.Context(), path, spec.Comment, mutants.Annotation(snap, &lang.File{Spec: spec}, nil)); err != nil {
 		t.Fatal(err)
 	}
 	twice, err := os.ReadFile(path)
@@ -60,7 +60,7 @@ func TestASummaryCommentWithTheOldMarkersIsReplacedByOneWithTheNew(t *testing.T)
 	snap := mutants.Snapshot{Units: []mutants.UnitResult{{Name: "a", Killed: 1, Survived: 1, Mutants: []mutants.Mutant{
 		{Line: 2, Original: ">", Replacement: ">=", Outcome: mutants.Survived},
 	}}}}
-	if err := (SourceEdits{}).Annotate(t.Context(), path, lang.Detect(path).Comment, mutants.Annotation(snap, lang.Detect(path).Comment, nil)); err != nil {
+	if err := (SourceEdits{}).Annotate(t.Context(), path, lang.Detect(path).Comment, mutants.Annotation(snap, &lang.File{Spec: lang.Detect(path)}, nil)); err != nil {
 		t.Fatal(err)
 	}
 	data, err := os.ReadFile(path)

@@ -3,6 +3,8 @@ package domain
 import (
 	"fmt"
 	"strings"
+
+	"github.com/donvargax/itos-cc/internal/lang"
 )
 
 const (
@@ -19,13 +21,15 @@ var AnnotationMarkers = [][2]string{
 	{"itos-cc mutate:", "end itos-cc mutate"},
 }
 
-// Annotation is the summary comment for snap: totals, then each survivor,
-// which is what a reader can act on, then each survivor itos-cc.yaml
-// excepts, with its reason. excepted holds those reasons by exceptedKey; a
+// Annotation is the summary comment for snap, the results of file: totals,
+// then each survivor, which is what a reader can act on, then each survivor
+// itos-cc.yaml excepts, with its reason, each in its function as
+// CommentName names it. excepted holds those reasons by exceptedKey; a
 // survivor with none is listed as survived. "excepted" is counted only
 // where there is one, as mutation run's summary line counts it, so a file
 // with none reads as it always did. A file without sites gets none.
-func Annotation(snap Snapshot, comment string, excepted map[string]string) string {
+func Annotation(snap Snapshot, file *lang.File, excepted map[string]string) string {
+	comment := file.Spec.Comment
 	var killed, survived, uncovered int
 	var survivors, exceptions []string
 	for _, u := range snap.Units {
@@ -36,7 +40,7 @@ func Annotation(snap Snapshot, comment string, excepted map[string]string) strin
 			if m.Outcome != Survived {
 				continue
 			}
-			site := fmt.Sprintf("line %d %s → %s in %s", m.Line, Show(m.Original), Show(m.Replacement), u.Name)
+			site := fmt.Sprintf("line %d %s → %s in %s", m.Line, Show(m.Original), Show(m.Replacement), CommentName(file, u))
 			if reason, ok := excepted[ExceptedKey(UnitID(u.Namespace, u.Name), u.Hash, m.Key())]; ok {
 				exceptions = append(exceptions, fmt.Sprintf("%s excepted: %s: %s", comment, site, OneLine(reason)))
 				continue
@@ -57,6 +61,22 @@ func Annotation(snap Snapshot, comment string, excepted map[string]string) strin
 	lines = append(lines, exceptions...)
 	lines = append(lines, comment+" "+AnnotationEnd)
 	return strings.Join(lines, "\n") + "\n"
+}
+
+// CommentName is how the summary comment names u, a function of file:
+// Class#name for a method, its class being what its namespace adds to the
+// file's own (Board#count, Outer.Inner#name for a nested class), and the
+// bare name for a function at the file's top level, since the comment sits
+// in the file and its namespace would only repeat it (slice-46).
+func CommentName(file *lang.File, u UnitResult) string {
+	if u.Namespace == file.Namespace {
+		return u.Name
+	}
+	class := u.Namespace
+	if rest, ok := strings.CutPrefix(class, file.Namespace+file.Spec.Separator); ok {
+		class = rest
+	}
+	return UnitID(class, u.Name)
 }
 
 // oneLine is text on one line, each run of whitespace one space, so a

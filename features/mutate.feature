@@ -2654,7 +2654,7 @@ Feature: Mutation testing
       Then src/board.ts ends with:
         """
         // itos-cc mutation: 14 killed, 0 survived, 1 excepted, 0 uncovered
-        // excepted: line 7 `<` → `<=` in count: the loop only counts up
+        // excepted: line 7 `<` → `<=` in Board#count: the loop only counts up
         // end itos-cc mutation
         """
 
@@ -2666,9 +2666,10 @@ Feature: Mutation testing
     # comment's survived and excepted lines now name a function as mutation
     # run's output does (namespace#name for a method, the bare name for a
     # function with none). The feat changes MUT-138's expected line to "in
-    # Board#count", saying so; MUT-32's "in a" stays, a top-level function.
+    # Board#count", saying so, and MUT-140's, which quotes the same line;
+    # MUT-32's "in a" stays, a top-level function.
     # Before this item the line read "in count", failing at the Then.
-    @slice-46 @ID-MUT-335 @wip
+    @slice-46 @ID-MUT-335
     Scenario: The summary comment names a method with its class
       Given the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count", and every other mutant of src/board.ts is killed
       When I run "itos-cc mutation run src/board.ts"
@@ -2691,7 +2692,7 @@ Feature: Mutation testing
     Scenario: A reason over several lines is written on one comment line
       Given itos-cc.yaml excepts the survivor of "Board#count" with reason "the loop\n  only counts up"
       When I run "itos-cc mutation run src/board.ts"
-      Then the summary comment of src/board.ts has the line "// excepted: line 7 `<` → `<=` in count: the loop only counts up"
+      Then the summary comment of src/board.ts has the line "// excepted: line 7 `<` → `<=` in Board#count: the loop only counts up"
       And every line of the comment begins with "//"
 
     # exceptions-deleted-file: mutation run and mutation check judge the

@@ -15,8 +15,8 @@ import (
 // `<` → `<=` at src/board.go:11:11, survives whenever it runs and stands for
 // the equivalent mutant at src/board.ts:7:19. So where the scenario's comment
 // counts 14 killed and names line 7, `<` → `!=` and Board#count, this one
-// counts 1 killed and names line 11, `<` → `<=` and clear, the name a
-// survived line gives the function. Each run here writes the summary
+// counts 1 killed and names line 11, `<` → `<=` and Board#clear, as the
+// comment names a method (slice-46). Each run here writes the summary
 // comment, which the other scenarios turn off.
 
 // annotatedRun runs itos-cc mutation run with args, every mutant run
@@ -58,7 +58,7 @@ func TestUnderSinceTheSummaryCommentExceptsTheSurvivorsOfFunctionsNotJudged(t *t
 		t.Fatalf("judged %v, want place alone\n%s", j, o.stdout)
 	}
 	want := "// itos-cc mutation: 1 killed, 0 survived, 1 excepted, 0 uncovered\n" +
-		"// excepted: line 11 `<` → `<=` in clear: clear is never called\n" +
+		"// excepted: line 11 `<` → `<=` in Board#clear: clear is never called\n" +
 		"// end itos-cc mutation\n"
 	if comment := summaryComment(t); comment != want {
 		t.Errorf("the summary comment:\n%s\nwant:\n%s", comment, want)
@@ -72,7 +72,7 @@ func TestUnderSinceTheSummaryCommentExceptsTheSurvivorsOfFunctionsNotJudged(t *t
 		t.Fatalf("with a stale entry for clear: exit %d, want 0: clear is not judged\n%s%s", o.code, o.stdout, o.stderr)
 	}
 	want = "// itos-cc mutation: 1 killed, 1 survived, 0 uncovered\n" +
-		"// survived: line 11 `<` → `<=` in clear\n" +
+		"// survived: line 11 `<` → `<=` in Board#clear\n" +
 		"// end itos-cc mutation\n"
 	if comment := summaryComment(t); comment != want {
 		t.Errorf("with a stale entry for clear, the summary comment:\n%s\nwant:\n%s", comment, want)
