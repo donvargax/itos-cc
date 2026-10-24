@@ -5570,6 +5570,10 @@ items:
       support its own listed tests use (the step files their steps are defined in, or a support list
       per suite, listed-suites), so editing one feature's steps stales only the kills of the
       scenarios using them. The person's call on order (q-88).
+    deferred: >
+      q-91: parked; per-test support would have saved nothing on 14 of 14 support days, since files
+      every scenario links changed each time. Re-measure after the refactor era;
+      per-feature-step-registration first if the hubs stay busy.
   - id: T-191
     title: mutation.tests.support names the scenario driver's TestMain and every porttest folder
     phase: 1
