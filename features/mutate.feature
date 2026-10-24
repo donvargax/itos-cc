@@ -459,6 +459,158 @@ Feature: Mutation testing
         | rewrites testdata/golden.txt  | testdata/golden.txt is not committed |
         | removes testdata/keep.txt     | testdata/keep.txt is gone            |
 
+    # slice-43, q-69 and q-92 (the person, 2026-10-24): a worker's copy
+    # carried every file of the tree but the folders it skips or links,
+    # ignored ones too, so a file a coverage run left in the project (it
+    # runs in the project's own folder) reached every copy and failed its
+    # baseline, and stray build output and tools went into every copy (80
+    # MB a worker in itos-cc's own tree). Decided:
+    # 1. Ignored is what the committed .gitignore files ignore and git does
+    #    not track: git ls-files -z --others --ignored
+    #    --exclude-per-directory=.gitignore --directory, once per tree when a
+    #    pool opens, so copies are the same on every machine (no
+    #    info/exclude, no global excludes). A tracked file in an ignored
+    #    folder stays in the copy (MUT-267's keep.txt).
+    # 2. mutation.copy in itos-cc.yaml lists doublestar globs from the
+    #    project root, checked as exclude's are and refused as
+    #    config.invalid keyed mutation.copy[i], of paths a copy would leave
+    #    out, ignored or build output (a TypeScript dist/ beside its
+    #    package.json, left out before this slice too), which it copies
+    #    after the links. Never .git, .dart_tool or a linked folder.
+    # 3. A glob matching a folder brings all it holds: gen and gen/** alike.
+    # 4. The paths it brings are recorded and restored before each run like
+    #    any copied file (slice-13), a path inside a build-output folder
+    #    included.
+    # 5. The linked folders (node_modules, .venv, venv, vendor) stay linked.
+    # 6. A tree in no git repository, or where git fails, is copied as
+    #    before this slice, with no note.
+    # 7. A baseline that passes in the project but fails in the copy (MUT-284)
+    #    names the ignored paths the copy left out, folded at folders, the
+    #    first five then "and N more", and its fix names mutation.copy with
+    #    the first path as its example. --json keeps its fields.
+    # 8. Generated Dart stays in the copy even when ignored, recognised as
+    #    discovery recognises it, keeping q-77's promise; an adapter test
+    #    holds it, as the scenarios need no Flutter.
+    # 9. Counted runs are unchanged: their frozen copy already holds the
+    #    commit's tracked files alone. The pool asks git nothing for them.
+    # 10. A folder holding its own .git, a folder or a file as a linked
+    #    worktree has, is another repository and is never copied, ignored
+    #    or not, so a nested checkout such as .claude/worktrees/ never
+    #    reaches a copy (itos's evidence records refuse nested checkouts
+    #    for the same reason).
+    # It changes what a copy holds, so the feat carries an Upgrading
+    # footer: a project whose tests read an ignored file names it in
+    # mutation.copy. Binary-only for good but the refusal: copies are the
+    # real Workers'. An adapter test in worktrees holds decisions 1, 3, 4,
+    # 6, 8 and 10 on every system's go test. Before slice-43, MUT-325's
+    # first row's baseline failed in the copy, MUT-326's copy held
+    # tmp/stray.log, MUT-328 reported no ignored path, MUT-330 copied
+    # nested/ and MUT-331 refused nothing; MUT-325's second row, MUT-327
+    # and MUT-329 are guardrails that pass today.
+    @slice-43 @ID-MUT-325 @binary-only @wip
+    Scenario Outline: A file the coverage run leaves in the project never reaches a worker's copy
+      Given the Go module "example.com/leak" with the file "leak.go":
+        """
+        package leak
+
+        func A(x int) bool { return x > 0 }
+        func B(x int) bool { return x > 1 }
+        func C(x int) bool { return x > 2 }
+        """
+      And testdata/ is ignored by git and holds golden.txt, "committed", and keep.txt, both committed
+      And its test, which checks no result, fails when <found>, and then writes testdata/left-behind
+      When I run "itos-cc mutation run --workers 1 --no-annotate --json leak.go"
+      Then leak.go's baseline passed and every mutant of leak.go survived
+      And the exit code is 1
+
+      Examples:
+        | found                         |
+        | testdata/left-behind is there |
+        | testdata/keep.txt is gone     |
+
+    @slice-43 @ID-MUT-326 @binary-only @wip
+    Scenario: A worker's copy still links node_modules and leaves out a stray ignored file
+      Given a TypeScript package, tested with Vitest, whose .gitignore ignores node_modules/ and tmp/, with tmp/stray.log, and whose tests pass in the project
+      When I run "itos-cc mutation run --workers 1 --json" for its source
+      Then its baseline passed, and every mutant of it was judged
+      And the worker's copy held node_modules as a link to the project's, and no tmp/stray.log
+
+    @slice-43 @ID-MUT-327 @binary-only @wip
+    Scenario Outline: An ignored path itos-cc.yaml names is copied
+      Given the Go module "example.com/leak" with the file "leak.go":
+        """
+        package leak
+
+        func A(x int) bool { return x > 0 }
+        """
+      And gen/ is ignored by git and holds table.txt, which the project generated and never committed
+      And its test, which checks no result, fails when gen/table.txt is missing
+      And itos-cc.yaml holds '<yaml>'
+      When I run "itos-cc mutation run --workers 1 --no-annotate --json leak.go"
+      Then leak.go's baseline passed and every mutant of leak.go survived
+      And the exit code is 1
+
+      Examples:
+        | yaml                       |
+        | mutation: {copy: [gen/**]} |
+        | mutation: {copy: [gen]}    |
+
+    @slice-43 @ID-MUT-328 @binary-only @wip
+    Scenario: A baseline that fails for a missing ignored file names it and the key
+      Given the Go module "example.com/leak" with the file "leak.go":
+        """
+        package leak
+
+        func A(x int) bool { return x > 0 }
+        """
+      And gen/ is ignored by git and holds table.txt, which the project generated and never committed
+      And its test, which checks no result, fails when gen/table.txt is missing
+      When I run "itos-cc mutation run --workers 1 --json leak.go"
+      Then the problem is "mutation.baseline-failed", its message naming gen/ as ignored by git and left out of the worker's copy, and its fix naming mutation.copy in itos-cc.yaml
+      And the exit code is 1
+
+    @slice-43 @ID-MUT-329 @binary-only @wip
+    Scenario: A project in no git repository is copied whole, as before
+      Given the Go module "example.com/leak" with the file "leak.go":
+        """
+        package leak
+
+        func A(x int) bool { return x > 0 }
+        """
+      And the module is in no git repository and holds gen/table.txt
+      And its test, which checks no result, fails when gen/table.txt is missing
+      When I run "itos-cc mutation run --workers 1 --no-annotate --json leak.go"
+      Then leak.go's baseline passed and every mutant of leak.go survived
+      And the exit code is 1
+
+    @slice-43 @ID-MUT-330 @binary-only @wip
+    Scenario: A nested checkout never reaches a worker's copy
+      Given the Go module "example.com/leak" with the file "leak.go":
+        """
+        package leak
+
+        func A(x int) bool { return x > 0 }
+        """
+      And nested/ is a git repository of its own, holding marker.txt, which git in the module neither tracks nor ignores
+      And its test, which checks no result, fails when nested/marker.txt is there
+      When I run "itos-cc mutation run --no-coverage --workers 1 --no-annotate --json leak.go"
+      Then leak.go's baseline passed and every mutant of leak.go survived
+      And the exit code is 1
+
+    @slice-43 @ID-MUT-331 @wip
+    Scenario Outline: A mutation.copy glob that is no pattern is a config error
+      Given itos-cc.yaml holds '<yaml>'
+      When I run "itos-cc <command>"
+      Then the problem is "config.invalid", with key "<key>"
+      And the exit code is 80
+
+      Examples:
+        | yaml                                  | command      | key              |
+        | mutation: {copy: ["gen/[x"]}          | mutation run | mutation.copy[0] |
+        | mutation: {copy: [gen/**, "../x/**"]} | mutation run | mutation.copy[1] |
+        | mutation: {copy: ["/abs/**"]}         | crap         | mutation.copy[0] |
+        | mutation: {copy: [""]}                | mutation run | mutation.copy[0] |
+
     # slice-19, issue #44: a worker copied the package's own root alone,
     # the nearest package.json, with node_modules linked. Whatever the
     # package read above its folder was missing in the copy. In a pnpm
