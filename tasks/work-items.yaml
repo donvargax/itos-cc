@@ -5451,7 +5451,7 @@ items:
     title: cd.yml runs finish on a busy main instead of each push cancelling the last
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: slice-42

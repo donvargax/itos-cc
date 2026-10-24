@@ -6834,8 +6834,6 @@
     docs-only pushes skip the suite as designed. The release group is already false. The
     comment above each group says why, and the README or docs/architecture.md passage on cd.yml,
     if it says pushes cancel, is corrected. No product change.
-  done_when:
-    - run: "test $(grep -c 'cancel-in-progress: true' .github/workflows/cd.yml) -eq 0"
 - id: T-202
   type: build
   title: tools/bin/pinned's download fails fast instead of hanging
