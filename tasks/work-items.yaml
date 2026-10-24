@@ -17,7 +17,6 @@ queue:
   - slice-45
   - T-203
   - slice-46
-  - serve-port-zero-announce
   - features-coverage-gocoverdir-leak
   - slice-47
   - plain-output-wording
@@ -5513,14 +5512,9 @@ items:
     title: serve --port 0 announces the port it got, not 0
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      Found by the serve-embedded-viewer drafter (2026-10-24): with --port 0 serve listens on a free
-      port but its readiness line says http://127.0.0.1:0, the address it was asked for, not the
-      listener's, so nothing reading the line can reach it; the scenario harness picks a free port
-      itself instead. serve should print the listener's address.
   - id: release-version-viewer-deps
     title: A bump of a dependency the release's viewer bundles makes a patch release
     phase: 1
