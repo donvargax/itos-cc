@@ -2663,9 +2663,12 @@ Feature: Mutation testing
     # function by its bare name, so a method count of class Board read "in
     # count" and two classes' count methods read alike, while mutation run's
     # output, itos-cc.yaml and the scenarios name it Board#count. The
-    # comment's survived and excepted lines now name a function as mutation
-    # run's output does (namespace#name for a method, the bare name for a
-    # function with none). The feat changes MUT-138's expected line to "in
+    # comment's survived and excepted lines now name a method by its class
+    # within the file and its name (Board#count, Outer.Inner#name for a
+    # nested class), as itos-cc.yaml and the scenarios do, and a top-level
+    # function by its bare name; the file's own namespace is left out, so
+    # the comment reads shorter than mutation run's full IDs
+    # (board.Board#count). The feat changes MUT-138's expected line to "in
     # Board#count", saying so, and MUT-140's, which quotes the same line;
     # MUT-32's "in a" stays, a top-level function.
     # Before this item the line read "in count", failing at the Then.
