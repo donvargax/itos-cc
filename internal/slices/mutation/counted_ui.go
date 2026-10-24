@@ -289,7 +289,10 @@ func (p *Presentation) reportCounted(r *countedResult, failUncovered func(counte
 		m := mutants.Mutant{Line: site.Line, Column: site.Column, Original: site.Original, Replacement: site.Replacement}
 		switch {
 		case site.State == "judged" && site.Outcome == mutants.Survived && site.Excepted == "":
-			p.report(countedMutantProblem(site, m, "mutation.survived", "survived", "Add a test that fails with this change."))
+			// Its identity is in the message, which a CI log prints, and its
+			// except in the fix: no mutation run is needed to except it.
+			p.report(countedMutantProblem(site, m, "mutation.survived", "survived, as "+site.Identity,
+				fmt.Sprintf("Add a test that fails with this change. If no test can, as the change changes no behaviour, except it with itos-cc mutation except '%s' --reason '…', which runs nothing.", site.Identity)))
 		case site.State == "uncovered" && failUncovered(site):
 			p.report(countedMutantProblem(site, m, "mutation.uncovered", "is uncovered: no test executes its line",
 				"Add a test that executes this line and fails with this change."))

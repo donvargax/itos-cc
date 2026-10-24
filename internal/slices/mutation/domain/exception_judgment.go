@@ -3,7 +3,6 @@ package domain
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"
@@ -114,10 +113,13 @@ func Repointed(ctx context.Context, entries []Exception, survivor Exception, pat
 
 // NoSurvivorError is a site Survivor cannot except: Reason says why, and
 // Uncovered is true when its mutant is recorded uncovered, which an
-// exception never covers, on purpose: it needs a test.
+// exception never covers, on purpose: it needs a test. Line and Column are
+// the site's where IdentifiedSurvivor found it, 0 from Survivor, whose
+// caller named them.
 type NoSurvivorError struct {
-	Reason    string
-	Uncovered bool
+	Reason       string
+	Uncovered    bool
+	Line, Column int
 }
 
 func (e *NoSurvivorError) Error() string { return e.Reason }
@@ -177,12 +179,8 @@ func Survivor(ctx context.Context, path string, line, column int, opt CheckOptio
 				if m.Key() != s.Key() {
 					continue
 				}
-				switch m.Outcome {
-				case Survived:
-				case Uncovered:
-					return Exception{}, &NoSurvivorError{Reason: "its mutant is recorded uncovered", Uncovered: true}
-				default:
-					return Exception{}, &NoSurvivorError{Reason: fmt.Sprintf("its mutant is recorded %s, and only a survivor is excepted", m.Outcome)}
+				if err := survived(m.Outcome); err != nil {
+					return Exception{}, err
 				}
 				return Exception{File: c.Key, Function: fn.Function, Hash: UnitHash(f, u),
 					LineInFunction: s.Line - u.StartLine + 1, Column: s.Column, Original: s.Original, Replacement: s.Replacement,

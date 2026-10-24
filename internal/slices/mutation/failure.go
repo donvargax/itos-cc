@@ -30,10 +30,20 @@ type SeedUnavailable struct {
 }
 
 // SiteExcluded is except's site, at Path, in a source the settings'
-// exclude leaves out.
+// exclude leaves out; Identity is the identity that named it, "" for a
+// site named by its line and column.
 type SiteExcluded struct {
 	Path         string
 	Line, Column int
+	Identity     string
+}
+
+// IdentityStale is except's Identity, of Function in the file at Path,
+// which names no site of the source as it is now: Why is changed, the
+// function's hash now Hash, or gone.
+type IdentityStale struct {
+	Path, Identity, Function string
+	Why, Hash                string
 }
 
 // NoSurvivor is except's site, at Path, which no fresh snapshot records as
@@ -82,6 +92,7 @@ func (SinceUnavailable) failure()   {}
 func (SeedUnavailable) failure()    {}
 func (SiteExcluded) failure()       {}
 func (NoSurvivor) failure()         {}
+func (IdentityStale) failure()      {}
 func (ReasonMissing) failure()      {}
 func (StrictCoverageFlag) failure() {}
 func (CountedNoGit) failure()       {}
@@ -96,6 +107,7 @@ func (f SinceUnavailable) Error() string {
 func (f SeedUnavailable) Error() string { return "HEAD for the seed: " + f.Failure.Error() }
 func (f SiteExcluded) Error() string    { return f.Path + " is excluded" }
 func (f NoSurvivor) Error() string      { return f.Path + " holds no survivor: " + f.Reason }
+func (f IdentityStale) Error() string   { return f.Identity + " is " + f.Why }
 func (ReasonMissing) Error() string     { return "no --reason" }
 func (f StrictCoverageFlag) Error() string {
 	return f.Flag + " beside strict " + f.Language + " coverage"

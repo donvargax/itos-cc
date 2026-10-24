@@ -467,7 +467,7 @@ judged and no snapshot is written. Listed tests are not run with
    "subjects": {"judged": [{"file", "function"}], "omitted": [...]},
    "stages": [{"name", "state": "complete"|"failed"|"skipped"|"aborted", "error"}]`,
 		Rules: []string{
-			"mutation.survived         a mutant survived: file, line, column, function, original, replacement",
+			"mutation.survived         a mutant survived: file, line, column, function, original, replacement; with --count identity, which the message names and the fix's mutation except takes",
 			"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
 			"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python, TypeScript, Kotlin or Dart line is uncovered: file, function, line",
 			"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript, Kotlin or Dart function lacks complete measured coverage evidence: file, function, line",

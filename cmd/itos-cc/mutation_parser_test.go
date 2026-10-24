@@ -172,7 +172,7 @@ func TestMutationGroupHelpRoutingAndErrorPrecedence(t *testing.T) {
 	}{
 		{[]string{"mutation"}, 0, "Subcommands:"},
 		{[]string{"help", "mutation", "run"}, 0, "usage: itos-cc mutation run"},
-		{[]string{"help", "mutation", "except"}, 0, "<file>:<line>:<column> --reason TEXT"},
+		{[]string{"help", "mutation", "except"}, 0, "<file>:<line>:<column>|<identity> --reason TEXT"},
 		{[]string{"mutation", "--help", "nosuch"}, 0, "Subcommands:"},
 		{[]string{"mutation", "run", "--bad", "--help"}, 0, "usage: itos-cc mutation run"},
 		{[]string{"mutation", "run", "--help", "--json"}, 0, "usage: itos-cc mutation run"},

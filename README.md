@@ -950,7 +950,18 @@ the space around it; excepting a site again replaces it. Only the lines of
 the entry written change, in block style, after the list's last entry or in
 the place of the one it replaces, keeping the comment above it; every other
 byte of the file, its other entries included, is kept, so the commit shows
-only the exception:
+only the exception. A survivor a counted run reports, such as the per-push
+code proof's, is excepted from its identity, with no mutation run and no
+snapshot: `mutation except
+'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason '…'`,
+the identity copied whole from the survivor's `mutation.survived` problem,
+whose message names it and whose fix spells out that command. Its file is
+read from the project root, its function found by name and hash, so one that
+only moved is still found, and its site by the key the identity ends with;
+the entry is the one the site's except writes. A function that changed since,
+or a file, function or site that is gone, is `exception.identity-stale`, exit
+80, naming why; a fresh snapshot that records the mutant killed or uncovered
+still refuses it:
 
 ```yaml
 mutation:

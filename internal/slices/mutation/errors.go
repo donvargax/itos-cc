@@ -50,8 +50,12 @@ func failureError(failure Failure, rel func(string) string) error {
 		return seedError(failure.Failure)
 	case SiteExcluded:
 		file := rel(failure.Path)
+		at := fmt.Sprintf("%s:%d:%d", file, failure.Line, failure.Column)
+		if failure.Identity != "" {
+			at = failure.Identity
+		}
 		return cli.NewProblem(cli.CodeUsage, "exception.excluded",
-			fmt.Sprintf("%s:%d:%d is in %s, a source the exclude of %s leaves out, so none of its mutants is judged or excepted", file, failure.Line, failure.Column, file, "itos-cc.yaml"),
+			fmt.Sprintf("%s is in %s, a source the exclude of %s leaves out, so none of its mutants is judged or excepted", at, file, "itos-cc.yaml"),
 			fmt.Sprintf("Except a survivor of a source mutation run judges, or take %s out of exclude in %s first.", file, "itos-cc.yaml")).
 			With("file", file)
 	case NoSurvivor:
@@ -65,6 +69,8 @@ func failureError(failure Failure, rel func(string) string) error {
 		}
 		return cli.NewProblem(cli.CodeUsage, "exception.no-survivor", message, fix).
 			With("file", file).With("line", failure.Line).With("column", failure.Column)
+	case IdentityStale:
+		return identityStale(failure, rel(failure.Path))
 	case ReasonMissing:
 		return reasonMissing()
 	case StrictCoverageFlag:
@@ -78,6 +84,24 @@ func failureError(failure Failure, rel func(string) string) error {
 		return countedPlanError(failure.Failure, failure.Since)
 	}
 	return failure
+}
+
+// identityStale is exception.identity-stale: the identity names no site
+// of file as it is now, its function changed, with its hash now, or its
+// file, function or site gone.
+func identityStale(failure IdentityStale, file string) *cli.Problem {
+	why := fmt.Sprintf("%s, %s or its site in it is gone", file, failure.Function)
+	if failure.Why == mutants.ExceptionChanged {
+		why = fmt.Sprintf("%s changed since, its hash now %s", failure.Function, failure.Hash)
+	}
+	p := cli.NewProblem(cli.CodeUsage, "exception.identity-stale",
+		fmt.Sprintf("%s names no survivor of the code as it is now: %s", failure.Identity, why),
+		"Except the survivor from a report of the code as it is now, such as the code proof of the next push, or name its site, <file>:<line>:<column>, once mutation run has recorded it.").
+		With("file", file).With("function", failure.Function).With("identity", failure.Identity).With("why", failure.Why)
+	if failure.Why == mutants.ExceptionChanged {
+		p = p.With("hash", failure.Hash)
+	}
+	return p
 }
 
 // reasonMissing is mutation except's site given with no --reason, which

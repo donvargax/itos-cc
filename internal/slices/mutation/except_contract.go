@@ -13,6 +13,18 @@ ever read. itos-cc.yaml is meant to be committed and reviewed like
 the code. mutation run and mutation check then count the survivor as
 excepted, not survived, and it fails nothing while its entry holds.
 
+A survivor a counted run reports, such as a CI run's code proof, is
+excepted from its identity, as mutation run --count names it in its
+mutation.survived problem, with no mutation run and no snapshot:
+<file>:<namespace#name>@<start>:<end>:<hash>:<offset>:<original>><replacement>,
+told from a site by its @<start>:<end>:<hash>:<offset>: part. Its file is
+read from the project root; its function is the one of that name whose
+hash is the identity's, so one that only moved is still found, and its site
+the one whose whole key, the offset and the change, is the identity's. A
+function that changed since, or a file, function or site that is gone, is
+exception.identity-stale. A fresh snapshot that records the mutant killed
+or uncovered still refuses it; a missing or stale one is no refusal.
+
 The site must be a survivor that its file's snapshot in .metrics/mutate/
 records, fresh as mutation check judges it: run mutation run first. A site
 recorded killed or uncovered, one whose function's results are stale or
@@ -100,23 +112,25 @@ and with --prune a line per entry removed:
 		Rules: []string{
 			"exception.no-survivor     the site is no survivor a fresh snapshot records: file, line, column",
 			"exception.excluded        the site is in a source itos-cc.yaml excludes: file",
+			"exception.identity-stale  the identity names no site of the code as it is now: file, function, identity, why: changed (with hash, the function's now)|gone",
 			"mutation.exception-stale  with --renew, an entry that no longer holds was not renewed: file, function, line (when its site is found), column, original, replacement, why: killed|changed|gone|ambiguous|no-results|uncovered",
 			"flags.conflict            --renew with --reason, or --prune with --reason or --renew: flag",
 			"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
 			"flags.value-missing       no --reason, and the site re-points no stale entry: flag",
 			"flags.value-invalid       an empty --reason: flag, value",
 			"args.missing              no site given",
-			"args.invalid              the site is not <file>:<line>:<column>: argument",
+			"args.invalid              the site is not <file>:<line>:<column>, nor a mutant's identity: argument",
 			"args.unexpected           more than one site, or a site with --renew or --prune: argument",
 		},
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "the survivor is excepted in itos-cc.yaml; with --renew, no entry is left stale; with --prune, the entries nothing can mend are removed"},
 			{Code: 1, Meaning: "with --renew, an entry that no longer holds could not be renewed"},
-			{Code: cli.CodeUsage, Meaning: "a usage or config error: no site, or no --reason for a site that re-points no stale entry, a site that is no recorded survivor or is in an excluded source, --renew or --prune with a site or --reason, --prune with --renew, or an itos-cc.yaml that cannot be read"},
+			{Code: cli.CodeUsage, Meaning: "a usage or config error: no site, or no --reason for a site that re-points no stale entry, a site that is no recorded survivor or is in an excluded source, an identity the code as it is now does not have, --renew or --prune with a site or --reason, --prune with --renew, or an itos-cc.yaml that cannot be read"},
 		},
 		Examples: []string{
 			"itos-cc mutation except src/board.ts:3:13 --reason 'c is set again before it is read'",
 			"itos-cc mutation except src/billing/invoice.go:42:9 --reason 'the 0 is never read' --json",
+			"itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason 'x is never 5'  # from a counted run's report",
 			"itos-cc mutation except --renew  # after mutation run, carry stale entries whose mutant is unchanged",
 			"itos-cc mutation except --prune  # after mutation run, remove entries stale as gone, killed or excluded",
 		},

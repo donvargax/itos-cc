@@ -3721,7 +3721,7 @@ Feature: Mutation testing
   # gone.
   Rule: A survivor a CI report names is excepted from its identity, with no mutation run
 
-    @slice-41 @ID-MUT-318 @wip
+    @slice-41 @ID-MUT-318
     Scenario Outline: An identity from a counted run is excepted with <snapshot>
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And <snapshot>
@@ -3736,7 +3736,7 @@ Feature: Mutation testing
         | .metrics/mutate holds no snapshot of board/board.go                              |
         | a snapshot of board/board.go is stale, a later commit having changed board/board_test.go |
 
-    @slice-41 @ID-MUT-319 @wip
+    @slice-41 @ID-MUT-319
     Scenario: Excepting from an identity runs no command
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And .metrics/mutate holds no snapshot of board/board.go
@@ -3745,7 +3745,7 @@ Feature: Mutation testing
       And the exit code is 0
       And no test or coverage command ran, and .metrics/mutate was not written
       And with --json it prints {"exception": the entry itos-cc.yaml holds, "replaced": true}
-    @slice-41 @ID-MUT-320 @wip
+    @slice-41 @ID-MUT-320
     Scenario: An identity whose function only moved since the report is still excepted
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And a blank line was added above Count's comment since the report
@@ -3754,7 +3754,7 @@ Feature: Mutation testing
       And it records board/board.go, "example.com/fx/board#Count", the identity's hash, line_in_function 2, column 11, `<`, `<=`, the reason and line_text "return x < 5"
       And the exit code is 0
 
-    @slice-41 @ID-MUT-321 @wip
+    @slice-41 @ID-MUT-321
     Scenario Outline: An identity the source no longer has is refused, naming why
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And <change>
@@ -3770,7 +3770,7 @@ Feature: Mutation testing
         | nothing changed                    | board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:36:<><=   | board/board.go | gone    |
         | nothing changed                    | board/gone.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=    | board/gone.go  | gone    |
 
-    @slice-41 @ID-MUT-322 @wip
+    @slice-41 @ID-MUT-322
     Scenario: An identity needs a reason, as a site does
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       When I run "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --json"
@@ -3778,7 +3778,7 @@ Feature: Mutation testing
       And the exit code is 80
       And given "--reason ''" it is "flags.value-invalid", exit 80, and given --renew "args.unexpected", exit 80
       But given "--reason 'x is never 5'" it writes the entry, exit 0
-    @slice-41 @ID-MUT-323 @wip
+    @slice-41 @ID-MUT-323
     Scenario: A fresh snapshot that records the mutant killed still refuses its identity
       Given a committed Go module whose test also checks Count(5), so `<` → `<=` is killed
       And "itos-cc mutation run board/board.go" recorded it killed
@@ -3787,7 +3787,7 @@ Feature: Mutation testing
       And its message says the mutant is recorded killed, at board/board.go:5:11
       And the exit code is 80
 
-    @slice-41 @ID-MUT-324 @wip
+    @slice-41 @ID-MUT-324
     Scenario: A counted run's survivor names its identity and the except command that takes it
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       When I run "itos-cc mutation run --count 5"

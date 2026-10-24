@@ -89,12 +89,11 @@ func (c Except) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		return refuse(cli.NewProblem(cli.CodeUsage, "args.unexpected", fmt.Sprintf("mutation except takes one site, and was also given %q", c.Site[1]),
 			"Except one site at a time.").With("argument", c.Site[1]))
 	}
-	path, line, column, ok := parseSite(c.Site[0])
-	if !ok {
-		return refuse(cli.NewProblem(cli.CodeUsage, "args.invalid", fmt.Sprintf("%q is not a site, <file>:<line>:<column>", c.Site[0]),
-			"Name a survivor as mutation run lists it, such as src/board.ts:7:19.").With("argument", c.Site[0]))
+	q, invalid := exceptQuery(c.Site[0], c.Reason)
+	if invalid != nil {
+		return refuse(invalid)
 	}
-	found, err := h.Except(ctx, ExceptQuery{Path: path, Line: line, Column: column, Reason: c.Reason})
+	found, err := h.Except(ctx, q)
 	if err != nil {
 		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then except the site again.")))
 	}
@@ -105,10 +104,30 @@ func (c Except) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		if found.Replaced {
 			what = "excepted again"
 		}
-		_, _ = fmt.Fprintf(ui.Stdout, "%s %s:%d:%d %s → %s in %s in %s\n", what, ui.Rel(sourcePath(h.Dir, path)), line, column,
+		_, _ = fmt.Fprintf(ui.Stdout, "%s %s:%d:%d %s → %s in %s in %s\n", what, ui.Rel(found.Path), found.Line, found.Column,
 			Quote(e.Original), Quote(e.Replacement), e.Function, "itos-cc.yaml")
 	}
 	return ui.Emit(c.JSON, result, nil)
+}
+
+// exceptQuery is the query of arg, a site or, holding an identity's
+// @<start>:<end>:<hash>:<offset>: part, a survivor's identity as a counted
+// run reports it, with reason; args.invalid when it is neither.
+func exceptQuery(arg string, reason *string) (ExceptQuery, *cli.Problem) {
+	if mutants.IsIdentity(arg) {
+		id, ok := mutants.ParseIdentity(arg)
+		if !ok {
+			return ExceptQuery{}, cli.NewProblem(cli.CodeUsage, "args.invalid", fmt.Sprintf("%q is not a mutant's identity, <file>:<namespace#name>@<start>:<end>:<hash>:<offset>:<original>><replacement>", arg),
+				"Copy the identity whole from the report of mutation run --count, such as its mutation.survived problem.").With("argument", arg)
+		}
+		return ExceptQuery{Identity: &id, Reason: reason}, nil
+	}
+	path, line, column, ok := parseSite(arg)
+	if !ok {
+		return ExceptQuery{}, cli.NewProblem(cli.CodeUsage, "args.invalid", fmt.Sprintf("%q is not a site, <file>:<line>:<column>", arg),
+			"Name a survivor as mutation run lists it, such as src/board.ts:7:19.").With("argument", arg)
+	}
+	return ExceptQuery{Path: path, Line: line, Column: column, Reason: reason}, nil
 }
 
 // renew is mutation except --renew: each entry of itos-cc.yaml that no

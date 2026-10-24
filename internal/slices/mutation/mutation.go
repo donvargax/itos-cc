@@ -113,10 +113,10 @@ type Except struct {
 	Renew  bool     `help:"renew each stale entry whose mutant is unchanged, after mutation run, keeping its reason"`
 	Prune  bool     `help:"remove each entry stale as gone, killed or excluded, after mutation run"`
 	JSON   bool     `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
-	Site   []string `arg:"" optional:"" name:"site" help:"the recorded survivor’s file, line and column"`
+	Site   []string `arg:"" optional:"" name:"site" help:"the recorded survivor’s file, line and column, or its identity as mutation run --count reports it"`
 }
 
 // Synopsis retains except's two alternative invocation forms.
 func (Except) Synopsis() string {
-	return "<file>:<line>:<column> --reason TEXT [options] | --renew [options] | --prune [options]"
+	return "<file>:<line>:<column>|<identity> --reason TEXT [options] | --renew [options] | --prune [options]"
 }

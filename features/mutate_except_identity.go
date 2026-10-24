@@ -416,6 +416,8 @@ func (i *identityException) refusals() error {
 			return err
 		}
 	}
+	// The But runs the When's command again, not the last refusal's.
+	i.w.last = &last
 	return nil
 }
 
