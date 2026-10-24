@@ -16,7 +16,7 @@ queue:
   - slice-44
   - slice-45
   - T-203
-  - annotate-function-name
+  - slice-46
   - serve-port-zero-announce
   - features-coverage-gocoverdir-leak
   - crap-go-test-timeout
@@ -578,14 +578,15 @@ items:
     depends_on: []
     kind: idea
     refs: ["#14"]
-  - id: annotate-function-name
+  - id: slice-46
     title: mutation run's summary comment names a method without its class
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was annotate-function-name.
       Found building annotate-excepted. The summary comment's survived and excepted lines name a
       function by its bare name (u.Name): a method count of class Board reads 'in count', so two
       classes' count methods read alike, while mutation run's output, itos-cc.yaml and the scenarios
