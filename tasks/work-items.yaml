@@ -5711,3 +5711,15 @@ items:
       timed out; with --threshold a timed-out root stays Failed and silent (its functions read 0.0%,
       not N/A), so a gate can fail on coverage cut short with no word why. Name the timeout there
       too, as a problem or a note beside the gate's verdict; a scenario first.
+  - id: strict-run-timeouts
+    title: The strict mutation coverage path reads go test timeouts too
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-47 (2026-10-24) taught covrun.Run to read go test's "panic: test timed out after" lines
+      and mark the root; covrun.RunSupervised, the strict mutation path, does not, so a mutation run
+      whose coverage run timed out reports only the failed command. Share the line watcher; a
+      scenario first.
