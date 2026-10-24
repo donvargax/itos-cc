@@ -39,10 +39,10 @@ func exceptionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceM
 				e.id = strings.TrimPrefix(tag.Name, "@ID-MUT-")
 			}
 		}
-		if !slices.Contains([]string{"85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "138", "139", "140", "141", "142", "143", "144", "146", "227", "242", "290", "291", "292", "293", "295", "296", "297", "298", "299"}, e.id) {
+		if !slices.Contains([]string{"85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "138", "139", "140", "141", "142", "143", "144", "146", "227", "242", "290", "291", "292", "293", "295", "296", "297", "298", "299", "335"}, e.id) {
 			return ctx, nil
 		}
-		e.r.annotate = slices.Contains([]string{"138", "139", "140"}, e.id)
+		e.r.annotate = slices.Contains([]string{"138", "139", "140", "335"}, e.id)
 		e.r.options()
 		if e.id == "227" || e.id == "292" {
 			return ctx, e.renewProject()
@@ -110,6 +110,7 @@ func exceptionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceM
 	sc.Step(`^its file has "excepted": 1 beside "killed", "survived" and "uncovered"$`, e.counted)
 	sc.Step(`^that mutant has outcome "survived" and "excepted", the entry's reason$`, e.jsonExcepted)
 	sc.Step("^itos-cc\\.yaml excepts the survivor `<` → `<=` at src/board\\.ts:7:19 in \"Board#count\" with reason \"the loop only counts up\", and every other mutant of src/board\\.ts is killed$", func() error { return e.review(e.reason) })
+	sc.Step("^the survivor `<` → `<=` at src/board\\.ts:7:19 in \"Board#count\", and every other mutant of src/board\\.ts is killed$", e.record)
 	sc.Step(`^src/board\.ts ends with:$`, e.endsWith)
 	sc.Step(`^the summary comment of src/board\.ts counts it as survived and lists it on a "survived:" line$`, e.survivingComment)
 	sc.Step(`^the comment holds no "excepted" count and no "excepted:" line$`, e.noExceptedComment)
