@@ -5151,6 +5151,24 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --count 20 --json"
       Then no selected site is in src/port/porttest/fake.go
 
+    # slice-44, counted-config-own-fix (2026-10-24, after bug-8): a counted run reads
+    # the itos-cc.yaml HEAD commits, so its config.invalid fix opens with
+    # "Fix it in a commit: a counted run reads the itos-cc.yaml HEAD holds".
+    # bug-8 gave a refusal of an anchor, an alias or a merge key a fix of its
+    # own (write the value in place), and on a counted run that fix took the
+    # commit hint's place, so a person who fixed only the working copy met
+    # the same refusal again with no word why. The counted run's fix is now
+    # the commit hint, then the refusal's own fix. Before this item the fix
+    # held no commit hint, failing at the fix step. A run that is not
+    # counted reads the working copy and keeps its fix as it is.
+    @slice-44 @ID-MUT-333 @wip
+    Scenario: A counted run's refusal of an anchor keeps the hint to commit the fix
+      Given the itos-cc.yaml HEAD commits holds '{x: &e [], exclude: *e}'
+      When I run "itos-cc mutation run --count 1"
+      Then the problem is "config.invalid", with key "x"
+      And its fix says "Fix it in a commit: a counted run reads the itos-cc.yaml HEAD holds", then "Write the value in place"
+      And the exit code is 80
+
   # Decision 38 and q-37: an interrupt stops a complete mutation run as a
   # fail-fast stop does (ADR-0020 to ADR-0022): no command starts after it,
   # the judgment running is cancelled with no outcome, every owned process
