@@ -5723,3 +5723,16 @@ items:
       and mark the root; covrun.RunSupervised, the strict mutation path, does not, so a mutation run
       whose coverage run timed out reports only the failed command. Share the line watcher; a
       scenario first.
+  - id: coverage-fake-failed-roots
+    title: The in-process coverage fake gives Failed where the runner does
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found in slice-47 (2026-10-24): the in-process driver's coverage fake (cmd/itos-cc) reads any
+      failed coverage command as Missing with the whole output as its reason, while the real runner
+      gives Failed when its report measured some files; only the Go timeout case is aligned now.
+      Scenarios that run in process can pass for the wrong reason. Align the fake with the runner's
+      classification.
