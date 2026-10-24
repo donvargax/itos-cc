@@ -1066,6 +1066,9 @@ items:
       that reads the error now. On 2026-10-18, go test -cover -run
       TestFreshPreparationPreservesCompleteDefaults ./internal/freshenv/ ended that line with
       'coverage: go: exec: "legacy-helper": executable file not found in $PATH'.
+
+      Seen again 2026-10-24 in T-197's code proof (ci 40110520591): internal/freshenv's ok line read
+      "coverage: typescript: helper exited nonzero".
   - id: transitive-test-reach
     title: TypeScript, Python and Kotlin tests reach what they import transitively
     phase: 1
