@@ -5643,17 +5643,9 @@ items:
     title: A counted run's own-fix config refusal keeps the hint to commit the fix
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was counted-config-own-fix.
-      bug-8 (e8b779fc) gave an itos-cc.yaml refusal its own fix (write the value in place, no
-      anchor, alias or merge key), and on a counted run that fix replaces the usual 'Fix it in a
-      commit: a counted run reads the itos-cc.yaml HEAD holds' (internal/slices/mutation/errors.go
-      configInvalid's own parameter). A counted run reads HEAD's file, so someone who fixes only the
-      working copy gets the same refusal again with no word why. Keep the commit hint as a prefix
-      before the refusal's own fix on a counted run; a scenario first.
   - id: T-200
     title: Upgrade the repository pin to the newest itos 8.12
     phase: 1
