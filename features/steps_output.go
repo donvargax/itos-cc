@@ -22,15 +22,39 @@ func (w *world) report() string {
 // stderrSays is whether stderr holds text, \" in it a quote, in each run
 // the When made. In a text naming <dir>, that stands for the folder of the
 // project the Given made, as itos-cc names it from the scratch folder, and
-// "..." or "…" for the rest of what it says there.
+// "..." or "…" for the rest of what it says there. A text that goes on
+// past its said part with `" and names <a>, <b> and <c>` is a line that
+// begins with the said part and names each, quoted or not (saysNaming).
 func (w *world) stderrSays(text string) error {
 	text = strings.ReplaceAll(strings.ReplaceAll(text, `\"`, `"`), "…", "...")
 	if strings.Contains(text, "<message>") || strings.Contains(text, "<fix>") {
 		return w.saysEachProblem(text)
 	}
+	if said, names, ok := strings.Cut(text, `" and names `); ok {
+		return w.saysNaming(said, names)
+	}
 	for _, o := range w.outcomes() {
 		if err := w.saysIn(o.stderr, text); err != nil {
 			return fmt.Errorf("%v\n--- the run of itos-cc %s, exit %d\n--- stdout\n%s--- stderr\n%s", err, strings.Join(o.run.args, " "), o.exit, o.stdout, o.stderr)
+		}
+	}
+	return nil
+}
+
+// saysNaming is whether a line of each run's stderr begins with said and
+// names each of names, a list such as `a, "b" and "c"`, each with or
+// without its quotes.
+func (w *world) saysNaming(said, names string) error {
+	var each []string
+	for _, part := range strings.Split(strings.ReplaceAll(names, " and ", ", "), ", ") {
+		each = append(each, strings.Trim(part, `"`))
+	}
+	for _, o := range w.outcomes() {
+		if !slices.ContainsFunc(outputLines(filepath.ToSlash(o.stderr)), func(line string) bool {
+			return strings.HasPrefix(line, said) && !slices.ContainsFunc(each, func(name string) bool { return !strings.Contains(line, name) })
+		}) {
+			return fmt.Errorf("no line of stderr begins %q and names %q\n--- the run of itos-cc %s, exit %d\n--- stdout\n%s--- stderr\n%s",
+				said, each, strings.Join(o.run.args, " "), o.exit, o.stdout, o.stderr)
 		}
 	}
 	return nil

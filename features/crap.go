@@ -160,6 +160,7 @@ func crapSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^every function scores (\d+) or less$`, c.everyFunctionAtMost)
 	sc.Step(`^a project whose (tests do not compile|coverage tool is not installed|report is missing, with --use-existing-coverage|--coverage-report cannot be read)$`, c.projectWhose)
 	sc.Step(`^a Go project whose tests do not compile$`, c.goTestsDoNotCompile)
+	sc.Step(`^a Go project whose package example\.com/slow has a test that sleeps 3 seconds$`, c.goTestSleeps)
 	sc.Step(`^its functions show "([^"]*)"$`, c.functionsShow)
 	sc.Step(`^the problem is "([^"]*)", with (\w+(?:(?:, and |, | and )\w+)*)$`, c.problemWith)
 	sc.Step(`^the selection holds no production source files$`, c.noProductionSources)
@@ -643,6 +644,31 @@ func (c *crapState) goTestsDoNotCompile() error {
 	}
 	c.languages = append(c.languages, "go")
 	return c.w.d.Coverage(filepath.Join(c.w.dir, "board"), Coverage{Language: "go"})
+}
+
+// goTestSleeps is the module example.com/slow in the folder slow, whose one
+// test sleeps 3 seconds, so a go test limit of 1s stops it. The in-process
+// driver declares what go test does then: it prints the panic of a test
+// binary that outlived its limit, ends the package's output with its FAIL
+// line, exits 1, and writes a report that names the package's one block,
+// never run, as it does for a package of -coverpkg whose binary wrote no
+// counters.
+func (c *crapState) goTestSleeps() error {
+	c.w.project = "slow"
+	if err := c.writeIn("slow", map[string]string{
+		"go.mod":       "module example.com/slow\n\ngo 1.22\n",
+		"slow.go":      "package slow\n\nfunc Place(i int) bool { return i > 5 }\n",
+		"slow_test.go": "package slow\n\nimport (\n\t\"testing\"\n\t\"time\"\n)\n\nfunc TestPlace(t *testing.T) {\n\ttime.Sleep(3 * time.Second)\n\tif !Place(6) {\n\t\tt.Fatal(\"place\")\n\t}\n}\n",
+	}); err != nil {
+		return err
+	}
+	c.languages = append(c.languages, "go")
+	return c.w.d.Coverage(filepath.Join(c.w.dir, "slow"), Coverage{
+		Language:      "go",
+		Report:        "mode: set\nexample.com/slow/slow.go:3.26,3.40 1 0\n",
+		CommandExit:   1,
+		CommandOutput: "panic: test timed out after 1s\n\trunning tests:\n\t\tTestPlace (1s)\n\ngoroutine 33 [running]:\ntesting.(*M).startAlarm.func1()\nFAIL\texample.com/slow\t1.005s\nFAIL\n",
+	})
 }
 
 // functionsShow is whether the run lists functions, each showing text as
