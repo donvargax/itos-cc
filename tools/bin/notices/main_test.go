@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
 
 // fixture is a module tree, no network: example.com/app, whose
@@ -86,7 +87,56 @@ func tree() map[string]string {
 	files["deps/alpha/README.md"] = "Not a notice.\n"
 	files["deps/alpha/MY-LICENSE"] = "Not a notice.\n"
 	files["deps/alpha/LICENSES/MIT.txt"] = "A folder, not a file.\n"
+	for name, text := range viewerTree() {
+		files[name] = text
+	}
 	return files
+}
+
+// viewerTree is the viewer's lockfile and node_modules: kit and its scope's
+// ui, and elkjs, offered under the licences its choice was made for, which
+// the bundle carries; inner, a second copy nested under kit, also carried;
+// a dev package, a devOptional one and @types/kit's declarations, which it
+// does not. Each has a notice, kit two.
+func viewerTree() map[string]string {
+	files := map[string]string{
+		"viewer/package-lock.json": `{"name": "viewer", "lockfileVersion": 3, "packages": {
+  "": {"name": "viewer"},
+  "node_modules/kit": {"version": "1.0.0", "license": "MIT"},
+  "node_modules/kit/node_modules/inner": {"version": "2.0.0", "license": "ISC"},
+  "node_modules/@scope/ui": {"version": "1.0.0", "license": "BSD-3-Clause"},
+  "node_modules/elkjs": {"version": "0.12.0", "license": "EPL-2.0 OR GPL-3.0-or-later"},
+  "node_modules/@types/kit": {"version": "1.0.0", "license": "MIT"},
+  "node_modules/vite": {"version": "8.0.0", "dev": true, "license": "MIT"},
+  "node_modules/fsevents": {"version": "2.0.0", "devOptional": true, "license": "MIT"}
+}}`,
+		"viewer/node_modules/kit/LICENSE":                    "The kit license.\n",
+		"viewer/node_modules/kit/NOTICE.md":                  "kit's notice.\n",
+		"viewer/node_modules/kit/README.md":                  "Not a notice.\n",
+		"viewer/node_modules/kit/node_modules/inner/LICENSE": "The inner license.\n",
+		"viewer/node_modules/@scope/ui/LICENSE.md":           "The ui license.\n",
+		"viewer/node_modules/elkjs/LICENSE.md":               "elkjs's EPL-2.0.\n",
+	}
+	for _, name := range []string{"@types/kit", "vite", "fsevents"} {
+		files["viewer/node_modules/"+name+"/LICENSE"] = "Not carried.\n"
+	}
+	return files
+}
+
+// viewerWant is the viewer's packages as the file holds them, after the
+// toolchain: in the order of their places under node_modules, elkjs with
+// its choice's note and GPLv3's text after its own.
+func viewerWant(t *testing.T) string {
+	t.Helper()
+	gpl, err := os.ReadFile(filepath.Join("licences", "gpl-3.0.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return header("@scope/ui") + "\n--- LICENSE.md ---\n\nThe ui license.\n" +
+		header("elkjs") + "\n" + choices["elkjs"].note + "\n--- LICENSE.md ---\n\nelkjs's EPL-2.0.\n" +
+		"\n--- GPL-3.0-or-later (gpl-3.0.txt) ---\n\n" + string(gpl) +
+		header("kit") + "\n--- LICENSE ---\n\nThe kit license.\n\n--- NOTICE.md ---\n\nkit's notice.\n" +
+		header("kit/node_modules/inner") + "\n--- LICENSE ---\n\nThe inner license.\n"
 }
 
 // goWith is a GOROOT holding license as its LICENSE, or none when license
@@ -127,7 +177,8 @@ func toolchainWant(t *testing.T, goLicense string) string {
 // with every notice file of its root in name order, verbatim but for its
 // line endings; a module required but never imported, a sub-package's
 // license and a file named otherwise are not in it. The toolchain's parts
-// follow, Go's LICENSE from GOROOT first.
+// follow, Go's LICENSE from GOROOT first, then the viewer's packages the
+// bundle carries.
 func TestNotices(t *testing.T) {
 	root := fixture(t, tree())
 	var stderr bytes.Buffer
@@ -148,7 +199,8 @@ func TestNotices(t *testing.T) {
 		header("example.com/net") + "\n--- LICENSE ---\n\nThe net license.\n" +
 		header("example.com/win") + "\n--- LICENSE ---\n\nThe win license.\n" +
 		header("example.com/zeta") + "\n--- LICENSE ---\n\nThe zeta license.\n" +
-		toolchainWant(t, "The Go license.\n")
+		toolchainWant(t, "The Go license.\n") +
+		viewerWant(t)
 	if string(got) != want {
 		t.Errorf("%s:\n%s\nwant:\n%s", output, got, want)
 	}
@@ -205,6 +257,99 @@ func TestAGoWithNoLicenseFails(t *testing.T) {
 		t.Fatalf("run = %d, want 1: %s", code, stderr.String())
 	}
 	for _, want := range []string{"no LICENSE in GOROOT", "GOTOOLCHAIN"} {
+		if !strings.Contains(stderr.String(), want) {
+			t.Errorf("the refusal does not say %q: %s", want, stderr.String())
+		}
+	}
+	if _, err := os.Stat(filepath.Join(root, output)); !os.IsNotExist(err) {
+		t.Errorf("%s was written: %v", output, err)
+	}
+}
+
+// A viewer package with no notice file fails the generator, each such
+// package named, and nothing is written.
+func TestAViewerPackageWithNoNoticeFails(t *testing.T) {
+	files := tree()
+	delete(files, "viewer/node_modules/kit/node_modules/inner/LICENSE")
+	files["viewer/node_modules/kit/node_modules/inner/README.md"] = "No license here.\n"
+	root := fixture(t, files)
+	var stderr bytes.Buffer
+	if code := run(root, false, nil, goWith(t, "The Go license.\n"), &stderr); code != 1 {
+		t.Fatalf("run = %d, want 1: %s", code, stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "kit/node_modules/inner (") || strings.Contains(stderr.String(), "@scope/ui") {
+		t.Errorf("the refusal does not name inner alone: %s", stderr.String())
+	}
+	if _, err := os.Stat(filepath.Join(root, output)); !os.IsNotExist(err) {
+		t.Errorf("%s was written: %v", output, err)
+	}
+}
+
+// The viewer's packages not installed fails the generator, saying to run
+// npm ci, and nothing is written.
+func TestAViewerNotInstalledFails(t *testing.T) {
+	files := tree()
+	for name := range files {
+		if strings.HasPrefix(name, "viewer/node_modules/") {
+			delete(files, name)
+		}
+	}
+	root := fixture(t, files)
+	var stderr bytes.Buffer
+	if code := run(root, false, nil, goWith(t, "The Go license.\n"), &stderr); code != 2 || !strings.Contains(stderr.String(), "run npm ci in viewer/") {
+		t.Fatalf("run = %d, want 2 saying to run npm ci: %s", code, stderr.String())
+	}
+	if _, err := os.Stat(filepath.Join(root, output)); !os.IsNotExist(err) {
+		t.Errorf("%s was written: %v", output, err)
+	}
+}
+
+// A viewer whose lockfile is missing or unreadable fails the generator,
+// naming it, and nothing is written.
+func TestAViewerLockfileUnreadableFails(t *testing.T) {
+	for name, lock := range map[string]string{"missing": "", "malformed": "{not json"} {
+		t.Run(name, func(t *testing.T) {
+			files := tree()
+			delete(files, "viewer/package-lock.json")
+			if lock != "" {
+				files["viewer/package-lock.json"] = lock
+			}
+			root := fixture(t, files)
+			var stderr bytes.Buffer
+			if code := run(root, false, nil, goWith(t, "The Go license.\n"), &stderr); code != 2 || !strings.Contains(stderr.String(), "package-lock.json") {
+				t.Errorf("run = %d, want 2 naming the lockfile: %s", code, stderr.String())
+			}
+			if _, err := os.Stat(filepath.Join(root, output)); !os.IsNotExist(err) {
+				t.Errorf("%s was written: %v", output, err)
+			}
+		})
+	}
+}
+
+// A choice whose licence text is not committed is an error, not a notice
+// without it.
+func TestAChoiceWithoutItsTextFails(t *testing.T) {
+	notices := []notice{{path: "kit"}, {path: "elkjs", files: []noticeFile{{"LICENSE.md", []byte("EPL.\n")}}}}
+	if err := chosen(fstest.MapFS{}, notices); err == nil {
+		t.Errorf("chosen with no texts = nil, want an error")
+	}
+	if err := chosen(licenceTexts, notices); err != nil || len(notices[1].files) != 2 || notices[1].note == "" || len(notices[0].files) != 0 {
+		t.Errorf("chosen = %v, %+v", err, notices)
+	}
+}
+
+// A package the lockfile offers under other licences than its choice was
+// made for fails the generator, naming it and its offer, and nothing is
+// written: the choice is made again.
+func TestAChoiceNoLongerOfferedFails(t *testing.T) {
+	files := tree()
+	files["viewer/package-lock.json"] = strings.Replace(files["viewer/package-lock.json"], `"EPL-2.0 OR GPL-3.0-or-later"`, `"EPL-2.0"`, 1)
+	root := fixture(t, files)
+	var stderr bytes.Buffer
+	if code := run(root, false, nil, goWith(t, "The Go license.\n"), &stderr); code != 1 {
+		t.Fatalf("run = %d, want 1: %s", code, stderr.String())
+	}
+	for _, want := range []string{`offers elkjs under "EPL-2.0", not the "EPL-2.0 OR GPL-3.0-or-later"`, "GPL-3.0-or-later from"} {
 		if !strings.Contains(stderr.String(), want) {
 			t.Errorf("the refusal does not say %q: %s", want, stderr.String())
 		}
@@ -289,6 +434,15 @@ func TestCheck(t *testing.T) {
 	stderr.Reset()
 	if code := run(root, true, nil, goWith(t, "Another Go license.\n"), &stderr); code != 1 || !strings.HasSuffix(stderr.String(), "\n  changed Go, the runtime and standard library of every build\n") {
 		t.Errorf("-check under a Go whose LICENSE changed = %d, want 1 naming Go alone: %s", code, stderr.String())
+	}
+
+	// A viewer package bumped to a version whose license text changed.
+	if err := os.WriteFile(filepath.Join(root, "viewer", "node_modules", "kit", "LICENSE"), []byte("The new kit license.\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	stderr.Reset()
+	if code := run(root, true, nil, goRoot, &stderr); code != 1 || !strings.HasSuffix(stderr.String(), "\n  changed kit\n") {
+		t.Errorf("-check after a viewer package's license changed = %d, want 1 naming kit alone: %s", code, stderr.String())
 	}
 
 	if err := os.WriteFile(path, []byte("A note.\n"+string(current)), 0o600); err != nil {

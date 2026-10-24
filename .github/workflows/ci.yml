@@ -68,6 +68,14 @@ jobs:
       - name: Install the viewer's packages
         working-directory: viewer
         run: npm ci
+      # The viewer built as release.yml's viewer job builds the one a
+      # release's binary embeds (slice-42), so a viewer that no longer type
+      # checks or bundles fails this push gate, not the release after CD.
+      # The packages are also what the plan's notices -check reads the
+      # viewer's notices from.
+      - name: Build the viewer
+        working-directory: viewer
+        run: npm run build
       # The itos launcher, which runs the release itos.yaml pins.
       - uses: donvargax/itos@d02a769a8ea00030f5b385c06428485c23063318 # v7.4.0
       - name: Range

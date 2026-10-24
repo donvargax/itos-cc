@@ -1170,7 +1170,8 @@ these checks in cost order, the first failure stopping the run:
 - `gofmt` over every tracked Go file, then `go run ./tools/bin/assemble -check` (the generated
   `commands_gen.go` and `steps_gen.go` are current) and `go run ./tools/bin/notices -check`
   (`THIRD_PARTY_NOTICES` names every compiled-in module's and the toolchain's notices, T-173 to
-  T-176).
+  T-176, and those of the npm packages the viewer's bundle carries, slice-42, read from
+  `viewer/node_modules`, so the ci jobs run it after `npm ci`).
 - `go build ./...`, `go vet ./...`, `go mod verify` against `go.sum`, and `go mod tidy -diff` so
   the module files match the code.
 - `itos tests smoke check scenario`, so every feature file has a smoke scenario.

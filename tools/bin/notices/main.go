@@ -35,17 +35,32 @@
 // distribution's Go may have, is refused: run it with go.dev's Go, which
 // GOTOOLCHAIN set to go.mod's toolchain fetches.
 //
+// The viewer's npm packages follow the toolchain (slice-42): the bundle
+// vite builds from viewer/, which a release's binary embeds and serve
+// serves, carries them, and its minified JavaScript keeps none of their
+// notices. They are the packages viewer/package-lock.json lists with no
+// dev or devOptional flag, the @types scope left out, as it holds type
+// declarations alone: the set vite's own license list gives. Each is named
+// by its place under node_modules, its npm name for a top-level package,
+// never its version, and its notice files are read from viewer/node_modules
+// by the rule above, a package with none refused. A package offered under a
+// choice of licences is named under the one itos-cc takes (choices, below),
+// whose text follows its own files; the lockfile naming another offer for
+// it is refused, so the choice is made again.
+//
 //	go run ./tools/bin/notices [-check]
 //
 // from the repository's root writes the file; commit it. With -check it
-// writes nothing and fails, naming each module or toolchain part added,
-// removed or changed, when the committed file is not what it would write.
+// writes nothing and fails, naming each module, toolchain part or viewer
+// package added, removed or changed, when the committed file is not what it
+// would write.
 //
 // go list needs the modules, from the module cache or the network to the
-// module proxy. It imports nothing but the standard library. Exit status:
-// 0 written or current, 1 a module or Go's LICENSE refused or the file not
-// current, 2 go list or go env failed or a file could not be read or
-// written.
+// module proxy, and the viewer's packages need npm ci in viewer/. It
+// imports nothing but the standard library. Exit status: 0 written or
+// current, 1 a module, viewer package or Go's LICENSE refused or the file
+// not current, 2 go list or go env failed, viewer/node_modules is missing,
+// or a file could not be read or written.
 package main
 
 import (
@@ -56,6 +71,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"maps"
 	"os"
 	"os/exec"
@@ -111,6 +127,41 @@ var toolchain = []struct{ name, file string }{
 	{"MinGW-w64 winpthreads, linked into the Windows build", "toolchain/winpthreads/COPYING"},
 }
 
+// viewer is the viewer's folder, from the repository's root: its lockfile
+// and node_modules.
+const viewer = "viewer"
+
+// licenceTexts holds the texts of the licences choices takes, committed
+// verbatim.
+//
+//go:embed licences
+var licenceTexts embed.FS
+
+// choice is the licence itos-cc takes a package under that offers several:
+// the offer the lockfile names, which the choice was made for; the licence
+// taken; the note under the package's header; and the taken licence's text,
+// by its path in licenceTexts.
+type choice struct{ offered, taken, note, file string }
+
+// choices are the viewer's packages offered under a choice of licences, by
+// name.
+var choices = map[string]choice{
+	// The person, q-87 (2026-10-24): elkjs is taken under GPL-3.0-or-later,
+	// which GPLv3's section 13 lets combine with itos-cc's AGPL-3.0, so the
+	// binary stays AGPL-3.0. Its package ships EPL-2.0's text alone. GPLv3's
+	// is gnu.org's, https://www.gnu.org/licenses/gpl-3.0.txt, SHA-256
+	// 3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986.
+	"elkjs": {
+		offered: "EPL-2.0 OR GPL-3.0-or-later",
+		note: "elkjs is dual-licensed EPL-2.0 OR GPL-3.0-or-later. itos-cc takes it\n" +
+			"under GPL-3.0-or-later, which GPLv3's section 13 lets combine with\n" +
+			"itos-cc's AGPL-3.0; its text follows elkjs's own LICENSE.md, which holds\n" +
+			"EPL-2.0's.\n",
+		taken: "GPL-3.0-or-later",
+		file:  "licences/gpl-3.0.txt",
+	},
+}
+
 // prefixes are what a notice file's name starts with, case ignored.
 var prefixes = []string{"LICENSE", "LICENCE", "COPYING", "NOTICE"}
 
@@ -144,6 +195,11 @@ func run(dir string, check bool, args []string, root func(dir string) (string, e
 		parts, err = toolchainNotices(dir, root)
 		notices = append(notices, parts...)
 	}
+	if err == nil {
+		var parts []notice
+		parts, err = viewerNotices(dir)
+		notices = append(notices, parts...)
+	}
 	var r refused
 	if errors.As(err, &r) {
 		say(stderr, "%s: %s\n", self, r.reason)
@@ -164,7 +220,7 @@ func run(dir string, check bool, args []string, root func(dir string) (string, e
 		if bytes.Equal(committed, text) {
 			return 0
 		}
-		say(stderr, "%s: %s is not what the modules %s compiles in and the toolchain give: run go run ./tools/bin/notices and commit it\n", self, output, target)
+		say(stderr, "%s: %s is not what the modules %s compiles in, the toolchain and the viewer's packages give: run go run ./tools/bin/notices and commit it\n", self, output, target)
 		for _, line := range differences(committed, text) {
 			say(stderr, "  %s\n", line)
 		}
@@ -268,10 +324,12 @@ func decode(r io.Reader) ([]module, error) {
 	}
 }
 
-// notice is a module's notice files, in name order.
+// notice is a module's notice files, in name order, and the note under its
+// header, "" for none.
 type notice struct {
 	path  string
 	files []noticeFile
+	note  string
 }
 
 type noticeFile struct {
@@ -346,15 +404,74 @@ func toolchainNotices(dir string, root func(dir string) (string, error)) ([]noti
 	if err != nil {
 		return nil, err
 	}
-	parts := []notice{{goPart, []noticeFile{{"LICENSE", license}}}}
+	parts := []notice{{path: goPart, files: []noticeFile{{"LICENSE", license}}}}
 	for _, p := range toolchain {
 		text, err := toolchainTexts.ReadFile(p.file)
 		if err != nil {
 			return nil, err
 		}
-		parts = append(parts, notice{p.name, []noticeFile{{filepath.Base(p.file), text}}})
+		parts = append(parts, notice{path: p.name, files: []noticeFile{{filepath.Base(p.file), text}}})
 	}
 	return parts, nil
+}
+
+// lockedPackage is the part of a package-lock.json package entry that says
+// whether the bundle can carry it and under which licence it is offered.
+type lockedPackage struct {
+	License          string
+	Dev, DevOptional bool
+}
+
+// viewerNotices is the notice files of each npm package the viewer's
+// bundle carries, by its place under node_modules, read from the viewer's
+// node_modules in dir, with the licence choices takes a package under.
+func viewerNotices(dir string) ([]notice, error) {
+	lock, err := os.ReadFile(filepath.Join(dir, viewer, "package-lock.json")) //nolint:gosec // the repository's own viewer lockfile
+	if err != nil {
+		return nil, err
+	}
+	var locked struct{ Packages map[string]lockedPackage }
+	if err := json.Unmarshal(lock, &locked); err != nil {
+		return nil, fmt.Errorf("%s/package-lock.json: %v", viewer, err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, viewer, "node_modules")); err != nil {
+		return nil, fmt.Errorf("no %s/node_modules to read the viewer's notices from: run npm ci in %s/ first (%v)", viewer, viewer, err)
+	}
+	var pkgs []module
+	for _, key := range slices.Sorted(maps.Keys(locked.Packages)) {
+		p := locked.Packages[key]
+		name, ok := strings.CutPrefix(key, "node_modules/")
+		if !ok || p.Dev || p.DevOptional || strings.HasPrefix(name, "@types/") {
+			continue
+		}
+		if c, ok := choices[name]; ok && p.License != c.offered {
+			return nil, refused{fmt.Sprintf("%s/package-lock.json offers %s under %q, not the %q itos-cc took it under %s from: decide again under which licence it ships, in tools/bin/notices' choices", viewer, name, p.License, c.offered, c.taken)}
+		}
+		pkgs = append(pkgs, module{path: name, dir: filepath.Join(dir, viewer, filepath.FromSlash(key))})
+	}
+	notices, err := read(pkgs)
+	if err != nil {
+		return nil, err
+	}
+	return notices, chosen(licenceTexts, notices)
+}
+
+// chosen gives each of notices that choices names its choice's note, and
+// the text of the licence taken, read from texts, after its own files.
+func chosen(texts fs.FS, notices []notice) error {
+	for i, n := range notices {
+		c, ok := choices[n.path]
+		if !ok {
+			continue
+		}
+		text, err := fs.ReadFile(texts, c.file)
+		if err != nil {
+			return err
+		}
+		notices[i].note = c.note
+		notices[i].files = append(n.files, noticeFile{c.taken + " (" + filepath.Base(c.file) + ")", text})
+	}
+	return nil
 }
 
 // rule is the line above and below a module's header.
@@ -364,12 +481,16 @@ const preamble = `THIRD-PARTY NOTICES
 
 The itos-cc binary compiles in the Go modules below, then links in Go's
 runtime and standard library, and the C runtime of a statically linked
-build: musl on Linux, MinGW-w64's runtime and winpthreads on Windows. Each
-one's license and notice files follow, verbatim, under a header naming it.
+build: musl on Linux, MinGW-w64's runtime and winpthreads on Windows. A
+release's binary also carries the architecture viewer serve serves, whose
+bundle holds the npm packages after them, each named by its place under
+node_modules; each package's source is its npm package at the version
+viewer/package-lock.json pins. Each one's license and notice files follow,
+verbatim, under a header naming it.
 
 Written by go run ./tools/bin/notices from the modules ./cmd/itos-cc compiles
-in on every platform released and the toolchain's texts; never edited by
-hand.
+in on every platform released, the toolchain's texts and the viewer's
+packages; never edited by hand.
 `
 
 // render is the file: the preamble, then each module's or toolchain part's
@@ -379,6 +500,9 @@ func render(notices []notice) []byte {
 	b.WriteString(preamble)
 	for _, n := range notices {
 		b.WriteString(header(n.path))
+		if n.note != "" {
+			b.WriteString("\n" + n.note)
+		}
 		for _, f := range n.files {
 			fmt.Fprintf(&b, "\n--- %s ---\n\n", f.name)
 			text := bytes.ReplaceAll(f.text, []byte("\r\n"), []byte("\n"))

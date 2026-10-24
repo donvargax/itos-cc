@@ -44,7 +44,10 @@ itos-cc version
 ```
 
 Beside `LICENSE`, each archive carries `THIRD_PARTY_NOTICES`: the license and notice texts of
-every Go module the binary compiles in, which `go run ./tools/bin/notices` writes.
+every Go module the binary compiles in, of the toolchain parts it links and of the npm packages the
+viewer's bundle carries, which `go run ./tools/bin/notices` writes (after `npm ci` in `viewer/`).
+elkjs, the viewer's graph layout, is dual-licensed EPL-2.0 OR GPL-3.0-or-later; itos-cc takes it
+under GPL-3.0-or-later, which GPLv3's section 13 lets combine with itos-cc's AGPL-3.0.
 
 Or build it with Go, which needs cgo and a C compiler (tree-sitter is C):
 
