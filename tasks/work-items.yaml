@@ -2339,6 +2339,10 @@ items:
       Apply CONFIG.md to itos-cc.yaml: a version key, unknown keys refused, a migration path. The
       person (2026-10-12): it matters once itos-cc releases v1, not before; specify it as part of
       the road to v1.
+
+      Rule 1 too (q-90, 2026-10-24): bug-8 refuses anchors, aliases and merge keys; custom tags
+      (built nothing, read as the key's type) and a second document after --- (ignored) are still
+      accepted, against rule 1. Refuse them with the rest of this.
   - id: T-56
     title: No porttest fake is linked into itos-cc or a slice's code
     phase: 1
