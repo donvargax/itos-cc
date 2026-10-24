@@ -46,6 +46,7 @@ func ignoredSteps(sc *godog.ScenarioContext, m *mutateState) {
 	sc.Step(`^the problem is "mutation\.baseline-failed", its message naming (\S+) as ignored by git and left out of the worker's copy, and its fix naming mutation\.copy in itos-cc\.yaml$`, s.ignoredNamed)
 	sc.Step(`^the module is in no git repository and holds gen/table\.txt$`, s.ignoredNoRepository)
 	sc.Step(`^nested/ is a git repository of its own, holding marker\.txt, which git in the module neither tracks nor ignores$`, s.ignoredNested)
+	sc.Step(`^sub/ is a git submodule of the module, holding data\.txt$`, s.ignoredSubmodule)
 }
 
 // ignoredObserved is where the TypeScript package's test appends a line
@@ -193,11 +194,39 @@ func (s *ignoredState) ignoredNested() error {
 	return nil
 }
 
+// ignoredSubmodule makes .subsource/, which the module ignores, a
+// repository holding data.txt, committed there, and commits the module's
+// files in a repository at the scratch folder with .subsource/ added as
+// its submodule sub/.
+func (s *ignoredState) ignoredSubmodule() error {
+	source := filepath.Join(s.m.w.dir, ".subsource")
+	if err := s.m.writeAll(map[string]string{".subsource/data.txt": "data\n", ".gitignore": ".subsource/\n"}); err != nil {
+		return err
+	}
+	for _, args := range [][]string{{"init", "-q", "-b", "main"}, {"add", "data.txt"}, {"commit", "-qm", "data"}} {
+		if err := s.m.w.d.Git(source, args...); err != nil {
+			return err
+		}
+	}
+	for _, args := range [][]string{
+		{"init", "-q", "-b", "main"}, {"-c", "protocol.file.allow=always", "submodule", "add", "-q", source, "sub"},
+		{"add", "go.mod", ".gitignore", s.m.file}, {"commit", "-qm", "leak"},
+	} {
+		if err := s.m.w.git(args...); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // ignoredFound is the Go statement that fails a test when what a step
 // says it finds is so, run from the package's folder.
 var ignoredFound = map[string]string{
 	"gen/table.txt is missing": `if _, err := os.Stat("gen/table.txt"); err != nil {
 		t.Fatalf("gen/table.txt is missing: %v", err)
+	}`,
+	"sub/data.txt is missing": `if _, err := os.Stat("sub/data.txt"); err != nil {
+		t.Fatalf("sub/data.txt is missing: %v", err)
 	}`,
 	"nested/marker.txt is there": `if _, err := os.Stat("nested/marker.txt"); err == nil {
 		t.Fatal("nested/marker.txt is there")
@@ -266,7 +295,7 @@ func (s *ignoredState) ignoredNamed(left string) error {
 		fix, _ := problem["fix"].(string)
 		message = filepath.ToSlash(message)
 		start := s.m.file + ": its tests pass in the project but fail in the worker's copy of "
-		end := ", so none was judged; the copy left out what git ignores: " + left
+		end := ", so none was judged; the copy left out what git ignores and other repositories' checkouts: " + left
 		if !strings.HasPrefix(message, start) || !strings.HasSuffix(message, end) {
 			return fmt.Errorf("the problem's message is %q, not one starting %q and ending %q\n%s", message, start, end, s.m.w.report())
 		}

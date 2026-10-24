@@ -395,8 +395,9 @@ Feature: Mutation testing
     #    says it in a sentence, naming what stays (build output, caches, .dart_tool, the
     #    linked dependencies).
     # 10. Out of scope. A coverage run, which runs in the project's own folder, leaving a file
-    #    in the live tree that every copy then carries is q-69 and worker-copies-skip-
-    #    ignored's. The scenario therefore runs with --no-coverage. A test that writes into a
+    #    in the live tree that every copy then carries is q-69's, which slice-43 settles: a
+    #    copy leaves out what git ignores (MUT-325). The scenario therefore runs with
+    #    --no-coverage. A test that writes into a
     #    linked node_modules writes into the project's, as today.
     # Tests besides the scenario: an adapter test in worktrees that holds it on every OS's go
     # test with no tools. It reuses worker_test.go's approach of running the test binary
@@ -427,8 +428,8 @@ Feature: Mutation testing
     # What the copy leaves out, build output, caches and .dart_tool, and
     # the dependency folders it links stay as the runs leave them.
     # --no-coverage keeps every run in the copy: a coverage run, in the
-    # project's own folder, leaving a file there is q-69's, for
-    # worker-copies-skip-ignored. --workers 1 has one copy hold every run,
+    # project's own folder, leaving a file there is q-69's, which slice-43
+    # settles (MUT-325). --workers 1 has one copy hold every run,
     # and the test's own check decides each outcome, so no timing does. No
     # test checks a result, so every mutant survives. Before slice-13 the
     # baseline passed and left its mark, and every mutant was killed, exit
@@ -475,8 +476,9 @@ Feature: Mutation testing
     #    project root, checked as exclude's are and refused as
     #    config.invalid keyed mutation.copy[i], of paths a copy would leave
     #    out, ignored or build output (a TypeScript dist/ beside its
-    #    package.json, left out before this slice too), which it copies
-    #    after the links. Never .git, .dart_tool or a linked folder.
+    #    package.json, left out before this slice too), or an untracked
+    #    nested checkout (decision 10), whose files it brings, which it
+    #    copies after the links. Never .git, .dart_tool or a linked folder.
     # 3. A glob matching a folder brings all it holds: gen and gen/** alike.
     # 4. The paths it brings are recorded and restored before each run like
     #    any copied file (slice-13), a path inside a build-output folder
@@ -485,19 +487,24 @@ Feature: Mutation testing
     # 6. A tree in no git repository, or where git fails, is copied as
     #    before this slice, with no note.
     # 7. A baseline that passes in the project but fails in the copy (MUT-284)
-    #    names the ignored paths the copy left out, folded at folders, the
-    #    first five then "and N more", and its fix names mutation.copy with
-    #    the first path as its example. --json keeps its fields.
+    #    names the ignored paths and the nested checkouts the copy left out,
+    #    folded at folders, the first five then "and N more", and its fix
+    #    names mutation.copy with the first path as its example. --json
+    #    keeps its fields.
     # 8. Generated Dart stays in the copy even when ignored, recognised as
     #    discovery recognises it, keeping q-77's promise; an adapter test
     #    holds it, as the scenarios need no Flutter.
     # 9. Counted runs are unchanged: their frozen copy already holds the
     #    commit's tracked files alone. The pool asks git nothing for them.
     # 10. A folder holding its own .git, a folder or a file as a linked
-    #    worktree has, is another repository and is never copied, ignored
-    #    or not, so a nested checkout such as .claude/worktrees/ never
-    #    reaches a copy (itos's evidence records refuse nested checkouts
-    #    for the same reason).
+    #    worktree has, that git does not track is another repository and
+    #    is never copied, so a nested checkout such as .claude/worktrees/
+    #    never reaches a copy (git ls-files --others lists it as one entry;
+    #    itos's evidence records refuse nested checkouts for the same
+    #    reason). A submodule, which the index tracks as a gitlink, is
+    #    copied with its files, as before this slice, never its .git
+    #    (coordinator's correction, 2026-10-24: decision 10 as first written
+    #    dropped submodules too, whose folder holds a .git file).
     # It changes what a copy holds, so the feat carries an Upgrading
     # footer: a project whose tests read an ignored file names it in
     # mutation.copy. Binary-only for good but the refusal: copies are the
@@ -505,8 +512,8 @@ Feature: Mutation testing
     # 6, 8 and 10 on every system's go test. Before slice-43, MUT-325's
     # first row's baseline failed in the copy, MUT-326's copy held
     # tmp/stray.log, MUT-328 reported no ignored path, MUT-330 copied
-    # nested/ and MUT-331 refused nothing; MUT-325's second row, MUT-327
-    # and MUT-329 are guardrails that pass today.
+    # nested/ and MUT-331 refused nothing; MUT-325's second row, MUT-327,
+    # MUT-329 and MUT-332 are guardrails that pass today.
     @slice-43 @ID-MUT-325 @binary-only @wip
     Scenario Outline: A file the coverage run leaves in the project never reaches a worker's copy
       Given the Go module "example.com/leak" with the file "leak.go":
@@ -593,6 +600,20 @@ Feature: Mutation testing
         """
       And nested/ is a git repository of its own, holding marker.txt, which git in the module neither tracks nor ignores
       And its test, which checks no result, fails when nested/marker.txt is there
+      When I run "itos-cc mutation run --no-coverage --workers 1 --no-annotate --json leak.go"
+      Then leak.go's baseline passed and every mutant of leak.go survived
+      And the exit code is 1
+
+    @slice-43 @ID-MUT-332 @binary-only @wip
+    Scenario: A git submodule's files reach a worker's copy
+      Given the Go module "example.com/leak" with the file "leak.go":
+        """
+        package leak
+
+        func A(x int) bool { return x > 0 }
+        """
+      And sub/ is a git submodule of the module, holding data.txt
+      And its test, which checks no result, fails when sub/data.txt is missing
       When I run "itos-cc mutation run --no-coverage --workers 1 --no-annotate --json leak.go"
       Then leak.go's baseline passed and every mutant of leak.go survived
       And the exit code is 1
