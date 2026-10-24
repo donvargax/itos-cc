@@ -182,6 +182,13 @@ func TestAKotlinFileNoTestReachesHasTheLinesItsModulesReportLists(t *testing.T) 
 	if got := r.Unloaded("kotlin"); !reflect.DeepEqual(got, []string{far}) {
 		t.Errorf("unloaded %v, want Far.kt alone", got)
 	}
+	// An Unattested plan, the project's own command, lists nothing: its
+	// report is not known to list every class of the module.
+	plans[2].Unattested = true
+	if _, ok := Run(t.Context(), plans, []string{calc, lonely, far}, io.Discard, nil).Lines(lonely); ok {
+		t.Error("an Unattested plan's report lists Lonely.kt's lines")
+	}
+	plans[2].Unattested = false
 	// Without a successful plan of its module, a file no test reaches has
 	// nothing listed.
 	t.Setenv("HELPER_COVERAGE_FAIL", "1")
