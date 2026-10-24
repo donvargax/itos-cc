@@ -5496,3 +5496,15 @@ items:
       reads .metrics/ and needs none of itos-cc's code, as crap, dry and mutation's snapshots
       already work, so the UI stays simple. T-190's nightly commits it beside the others. The
       deferred serve tasks (T-102 to T-113) are re-cut against this when serve's move is specified.
+  - id: viewer-dependency-rule
+    title: The viewer colours a dependency that points from a higher level to a lower one
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      From uml-viewer (unclebob, read 2026-10-24 at the person's ask): dependencies pointing from a
+      higher architectural level to a lower one are drawn red, the Dependency Rule of Clean
+      Architecture made visible. For itos-cc's graph: which direction counts as higher needs a
+      definition (a policy, or the domain/adapter layering ADR-0047 states), decided in the spec.
