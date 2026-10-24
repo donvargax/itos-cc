@@ -1,9 +1,13 @@
 /itos-cc
 /dist/
-# Mutation results are committed, so later runs reuse their kills; raw
-# coverage and the other snapshots are not.
+# Mutation results are committed, so later runs reuse their kills, and so are
+# the crap, dry and scrap snapshots the nightly records (T-190), so every
+# clone has them; raw coverage and every other snapshot are not.
 .metrics/*
 !.metrics/mutate/
+!.metrics/crap.json
+!.metrics/dry.json
+!.metrics/scrap.json
 .metrics/mutate/**/*.tmp
 # The Node tools of the language smoke tests, installed with npm ci.
 /testdata/tools/node/node_modules/

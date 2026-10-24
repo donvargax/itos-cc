@@ -1218,6 +1218,16 @@ Mutation testing runs in three places, never on an agent's machine (AGENTS.md, q
   record partial nightly mutation results", one that finished "chore: record the nightly mutation
   results" (T-46's run 39930716718 judged all 8378 mutants in 4 h 22 min).
 
+`nightly.yml` also records the other snapshots (T-190). Its snapshots job, on a runner of its own
+so the mutation run's 330 minutes are untouched, runs `itos-cc crap`, `dry` and `scrap` over the
+whole repository with the itos-cc built from the tree, and commits `.metrics/crap.json`,
+`.metrics/dry.json` and `.metrics/scrap.json` back as "chore: record the nightly crap, dry and
+scrap snapshots", so `serve`'s CRAP bands and duplicates, and scrap's comparison with its previous
+run, are in every clone. crap's coverage run is every package's Go tests, under a 90-minute
+`go test` limit, and the viewer's Vitest tests. It is no gate: none of the three is given a
+threshold, so a finding never fails the job; a command that fails itself does, and its snapshot
+is left out of the commit. Raw coverage under `.metrics/coverage/` stays ignored.
+
 Each check runs where its cost fits:
 
 - On every commit, the project's `pre-commit` hook, `tools/hooks/pre-commit`: gofmt over the

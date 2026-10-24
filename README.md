@@ -1320,7 +1320,9 @@ ci jobs, one fresh mutation site of its changed code judged by the itos-cc built
 tree (T-187); `cd.yml`'s sample job re-runs ten recorded mutation results on every push that is
 not prose alone (T-188); and
 [`nightly.yml`](.github/workflows/nightly.yml), the nightly mutation run, judges the whole
-repository and commits `.metrics/mutate/`.
+repository and commits `.metrics/mutate/`, while its snapshots job runs `itos-cc crap`, `dry` and
+`scrap` over the whole repository and commits `.metrics/crap.json`, `.metrics/dry.json` and
+`.metrics/scrap.json`, with no threshold, so `serve` has them in every clone (T-190).
 CI's golangci-lint covers the whole module, `./...`.
 [docs/go.md](docs/go.md) lists every configured check.
 

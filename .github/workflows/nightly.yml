@@ -11,6 +11,10 @@ name: Nightly
 # results are committed anyway. A run cut off before it finishes keeps what
 # it judged and commits that too, under a subject that says it is partial
 # (T-46), so the job's colour never has to say how far the run got.
+#
+# Beside it, on a runner of its own, the snapshots job runs itos-cc crap, dry
+# and scrap over the whole repository and commits .metrics/crap.json,
+# .metrics/dry.json and .metrics/scrap.json (T-190), so every clone has them.
 on:
   schedule:
     - cron: "0 9 * * *" # 09:00 UTC, 2am Pacific
@@ -157,4 +161,128 @@ jobs:
             sleep $((attempt * 5))
           done
           echo "::error::Could not push the results after 3 attempts."
+          exit 1
+
+  # crap, dry and scrap over the whole repository, committing their snapshots
+  # so that serve's CRAP bands and duplicates, and scrap's comparison with the
+  # previous run, are there in every clone (T-190). A job of its own, on its
+  # own runner, so mutate's 330-minute budget is untouched. No gate, as
+  # mutation judges the tests: none of the three is given a threshold, so a
+  # finding never fails the job; only a command that fails itself does, and
+  # its snapshot is then not committed.
+  snapshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: write
+    steps:
+      # The setup mutate has, repeated: full history for the commit step's
+      # rebase, Go, the itos-cc built from the tree, and the viewer's packages
+      # so crap measures viewer/src's coverage with its Vitest tests.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Build itos-cc
+        run: go build -o "$RUNNER_TEMP/itos-cc" ./cmd/itos-cc
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: viewer/package-lock.json
+      - name: Install the viewer's packages
+        working-directory: viewer
+        run: npm ci
+
+      # Runs every package's Go tests with coverage, then the viewer's.
+      # With no --threshold, crap exits 0 whatever the scores, and a coverage
+      # run that fails shows its files as N/A with a warning, so a non-zero
+      # exit is crap itself failing (80, 100, 130). cmd/itos-cc's and
+      # features's tests take longer under coverage than go test's 10 minutes
+      # per package, which GOFLAGS raises to 90. --top only shortens the log:
+      # crap.json holds every function.
+      - name: crap
+        id: crap
+        env:
+          GOFLAGS: -timeout=90m
+        run: '"$RUNNER_TEMP/itos-cc" crap --top 20'
+
+      # Exit 0 whatever they find; each runs even when crap failed.
+      - name: dry
+        id: dry
+        if: ${{ !cancelled() }}
+        run: '"$RUNNER_TEMP/itos-cc" dry'
+      - name: scrap
+        id: scrap
+        if: ${{ !cancelled() }}
+        run: '"$RUNNER_TEMP/itos-cc" scrap'
+
+      # Commits the snapshot of each command that succeeded, and only those
+      # three files: raw coverage under .metrics/coverage/ stays ignored.
+      # Mutate pushes to main too, so it rebases and retries as mutate's
+      # commit step does.
+      - name: Commit the snapshots
+        if: ${{ always() }}
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CRAP: ${{ steps.crap.outcome }}
+          DRY: ${{ steps.dry.outcome }}
+          SCRAP: ${{ steps.scrap.outcome }}
+        run: |
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            echo "Not on main ($GITHUB_REF): the snapshots are not committed."
+            exit 0
+          fi
+          set --
+          for pair in "crap:$CRAP" "dry:$DRY" "scrap:$SCRAP"; do
+            name=${pair%%:*}
+            if [ "${pair#*:}" = success ]; then
+              set -- "$@" ".metrics/$name.json"
+            else
+              echo "itos-cc $name did not succeed (${pair#*:}): its snapshot is not committed."
+            fi
+          done
+          if [ "$#" -eq 0 ]; then
+            echo "No snapshot to commit."
+            exit 0
+          fi
+          git add -- "$@"
+          if git diff --cached --quiet; then
+            echo "No change to $*."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          cat > "$RUNNER_TEMP/message" <<MESSAGE
+          chore: record the nightly crap, dry and scrap snapshots
+
+          The nightly runs of itos-cc crap, dry and scrap over the whole
+          repository wrote $*.
+          Committing them gives every clone serve's CRAP bands and duplicates,
+          and scrap's next run its comparison, without running them by hand.
+          No threshold is set, so findings never fail the job; the run:
+          $RUN_URL
+
+          Task: T-190
+          MESSAGE
+          git commit --quiet -F "$RUNNER_TEMP/message"
+          git log -1 --stat
+          # Main may have moved during the run: rebase onto it and push, and
+          # try again if it moved once more in between.
+          for attempt in 1 2 3; do
+            if ! git pull --rebase --autostash origin main; then
+              git rebase --abort || true
+              echo "::error::Rebasing the snapshots onto origin/main failed."
+              exit 1
+            fi
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push attempt $attempt failed; retrying."
+            sleep $((attempt * 5))
+          done
+          echo "::error::Could not push the snapshots after 3 attempts."
           exit 1

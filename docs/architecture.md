@@ -165,7 +165,7 @@ still branches on `runtime.GOOS` in three places (`coverage/collector.go`, `pert
 | Push | itos's `pre-push`, then `tools/hooks/pre-push` (T-177) | `go vet ./...` on the rebased working tree, compiling every package and its tests | `itos push` rebases first, so two pushes that each compiled alone but clash together are refused before main breaks; seconds, `tools/bin/pre-push-check` proves it |
 | Push gate | `ci.yml`, Linux | the ci job: the commit rules and `itos.yaml`'s `ci.steps`; the test job: every package's Go tests, the in-process suite among them | what itos push and itos work done wait on; minutes (decision 48) |
 | Full suite | `cd.yml`, Linux, macOS, Windows | the ci job again, every Go test on three systems, every scenario through both drivers, the real language tools (`languages`, `dart`), then the release | slow and cross-system; the only workflow that cuts a release |
-| Nightly | `nightly.yml` | a whole mutation run committing `.metrics/mutate/`, or what it judged when cut off at 330 minutes | the costliest check; no run finishes yet (T-46) |
+| Nightly | `nightly.yml` | a whole mutation run committing `.metrics/mutate/`, or what it judged when cut off at 330 minutes; beside it, crap, dry and scrap over the whole repository committing their snapshots, with no threshold (T-190) | the costliest check; no run finishes yet (T-46) |
 | By hand | `refactor-proof.yml` | baseline and refactored binaries compared over the whole binary suite and listed edge cases | once, at a refactor's end |
 
 `ci.steps` runs in cost order and stops at the first failure: `itos config check`,
