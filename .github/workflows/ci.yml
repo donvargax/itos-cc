@@ -7,7 +7,9 @@ name: CI
 # runs itos.yaml's plan, ci.steps (T-29), its one scenario run the smoke set
 # and the scenarios the range names through both drivers; the test job runs
 # every package's Go tests, the in-process driver's whole suite among them,
-# skipped when the scope job finds the push's range prose-only (T-122).
+# skipped when the scope job finds the push's range prose-only (T-122); the
+# viewer job runs the viewer's type check and Vitest tests when the range
+# touches viewer/ (T-205), and the ci job waits for it.
 # Everything else is cd.yml's, which starts on the same push as a run of its
 # own: the binary driver's whole suite, macOS and Windows, the native T-80
 # and T-82 runs, the real language tools, and the release, so a green run of
@@ -44,7 +46,11 @@ jobs:
   # itos.yaml's proof.code paths also runs its check (T-187): one fresh
   # mutation site of the range's changed code, judged by the itos-cc built
   # from this tree, so the job has Node and the viewer's packages too.
+  # It needs the viewer job (T-205), so a red viewer fails the push gate,
+  # and runs when that passed or was skipped for a prose-only range.
   ci:
+    needs: viewer
+    if: ${{ !cancelled() && (needs.viewer.result == 'success' || needs.viewer.result == 'skipped') }}
     runs-on: ubuntu-latest
     env:
       TO: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -97,10 +103,12 @@ jobs:
   # (ci.prose.paths), never matched again here. No range to start from (no
   # green run) runs everything. Go is not set up: the launcher and git are
   # all it needs, so the tests start about as soon as they did.
+  # It also gives the range's start, from, to the viewer job.
   scope:
     runs-on: ubuntu-latest
     outputs:
       docs_only: ${{ steps.scope.outputs.docs_only }}
+      from: ${{ steps.scope.outputs.from }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -123,6 +131,54 @@ jobs:
           fi
           echo "docs_only=$docs_only"
           echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+          echo "from=$from" >> "$GITHUB_OUTPUT"
+
+  # The viewer's own checks (T-205): its type check, tsc --noEmit, and its
+  # Vitest tests, which alone hold viewer.feature's scenarios, so a change
+  # that breaks viewer/ fails the push rather than waiting for a nightly.
+  # Gated like test on the scope job's docs_only, and run only when the
+  # range, from the scope job's start to this push, touches viewer/: a
+  # paths check in the job, so a push that does not pays a few seconds. No
+  # range to start from runs it. Node and its setup-node pin are those of
+  # release.yml's viewer job.
+  viewer:
+    needs: scope
+    if: needs.scope.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Paths
+        id: paths
+        env:
+          FROM: ${{ needs.scope.outputs.from }}
+          TO: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          touched=true
+          if [ -n "$FROM" ] && git diff --quiet "$FROM" "$TO" -- viewer/; then
+            touched=false
+          fi
+          echo "touched=$touched"
+          echo "touched=$touched" >> "$GITHUB_OUTPUT"
+      - if: steps.paths.outputs.touched == 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: viewer/package-lock.json
+      - name: Install the viewer's packages
+        if: steps.paths.outputs.touched == 'true'
+        working-directory: viewer
+        run: npm ci
+      - name: Type check
+        if: steps.paths.outputs.touched == 'true'
+        working-directory: viewer
+        run: npm run typecheck
+      - name: Test
+        if: steps.paths.outputs.touched == 'true'
+        working-directory: viewer
+        run: npm test
 
   # The Go tests of every package on Linux, in three parts side by side
   # (T-127): cmd/itos-cc's split in two by name as cd.yml splits it, its

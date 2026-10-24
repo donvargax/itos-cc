@@ -1222,7 +1222,9 @@ Either prints the seed on failure. This project has no scheduled high-count run.
 
 CI has two tiers (decision 48). `ci.yml`, the push gate itos waits on, runs on Linux alone:
 the plan below, with the smoke set and the scenarios the push's range names through both
-drivers, and the Go tests of every package, the in-process driver's whole suite among them.
+drivers, the Go tests of every package, the in-process driver's whole suite among them, and,
+for a range touching `viewer/`, the viewer's `npm run typecheck` and `npm test`, its own job
+that the ci job waits for (T-205).
 `cd.yml`, on the same push, runs every test on Linux, macOS and Windows in its platform jobs,
 every scenario through both drivers, the real language tools in its `languages` jobs and, in
 its Linux `dart` job, the Dart scenarios with the Flutter `.fvmrc` pins (slice-32), and the
