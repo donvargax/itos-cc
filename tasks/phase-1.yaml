@@ -6801,3 +6801,13 @@
     coordinator's session, its decisions now ADR-0061 (q-89). The baseline is
     33963a3078cf033b5a2fd86750e273fbc13e0ccb (docs: queue T-194, T-195, T-196, T-197, T-198), the
     parent of d50206ef, T-193's first commit (docs: take T-193).
+- id: T-200
+  type: chore
+  title: Upgrade the repository pin to the newest itos 8.12
+  why: >
+    Between agents, after v0.30.0, the coordinator moves the pin from 8.12.0 to the newest 8.12
+    patch so the next agents read its guides and hooks, as T-192 did for 8.12.0. itos upgrade edits
+    only what each release fixes exactly; anything it asks by hand is applied or named in the
+    commit.
+  done_when:
+    - run: itos version --check
