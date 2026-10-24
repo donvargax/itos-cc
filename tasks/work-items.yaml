@@ -12,9 +12,9 @@ phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
   - T-188
+  - T-187
   - listed-support-doublestar
   - listed-suites
-  - T-187
   - worker-copies-skip-ignored
   - T-102
   - T-103
