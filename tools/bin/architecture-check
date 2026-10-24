@@ -59,7 +59,7 @@ siblings() {
 # cmd/, which assembles the slices, or a legacy consumer importing what its
 # row allows (ADR-0051, T-167): engines stay behind stable APIs the slices
 # import, never the reverse. depguard's slices rule covers internal/** only,
-# and coverage, server, features and tools/ have no rule,
+# and server, features and tools/ have no rule,
 # so this holds it over the same go list fields as siblings. graph, the
 # legacy serve consumer, its fixture subpackages with it, reads the
 # mutation domain's judgment in its code, and its tests build fixtures with
@@ -108,11 +108,11 @@ outside() {
 # release-version import internal/release alone, its releasetest with it,
 # as the template lays the release tools out. Until graph-snapshot
 # (ADR-0060), graph and server, the legacy serve consumer, import what they
-# need, outside holding what they import under internal/slices; until their
-# moves (T-196 and T-197), coverage and config too, each move deleting its
-# row, as project's and metrics' went with them under internal/ (T-194,
-# T-195). depguard covers internal/** only, so this holds it
-# over the same go list fields as outside.
+# need, outside holding what they import under internal/slices; until its
+# move (T-197), config too, its move deleting its row, as project's,
+# metrics' and coverage's went with them under internal/ (T-194 to T-196).
+# depguard covers internal/** only, so this holds it over the same go list
+# fields as outside.
 toplevel() {
 	module=$(go list -m)
 	listed=$(go list -f '{{$p := .ImportPath}}{{range .Imports}}{{$p}} code {{.}}{{"\n"}}{{end}}{{range .TestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}{{range .XTestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}' "$@")
@@ -126,8 +126,8 @@ toplevel() {
 			if (under(importer, "tools/bin/release-notes") || under(importer, "tools/bin/release-version")) return under(imported, "internal/release")
 			# Until graph-snapshot (ADR-0060).
 			if (under(importer, "graph") || under(importer, "server")) return 1
-			# Until their moves under internal/ (T-196 and T-197).
-			if (under(importer, "coverage") || under(importer, "config")) return 1
+			# Until its move under internal/ (T-197).
+			if (under(importer, "config")) return 1
 			return 0
 		}
 		NF == 3 && under($3, "internal") && !allowed($1, $3) {

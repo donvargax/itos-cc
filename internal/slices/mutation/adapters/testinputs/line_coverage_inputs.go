@@ -14,7 +14,7 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/covrun"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/project"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
@@ -383,9 +383,9 @@ func KotlinCoverageInputs(ctx context.Context, runtime mutants.RuntimeInputs, so
 		return nil, err
 	}
 	runner := "mvn"
-	if module := project.FindUp(ctx, source, kotlinModuleMarkers...); module != "" && coverage.KotlinRunner(module) != "maven" {
+	if module := project.FindUp(ctx, source, kotlinModuleMarkers...); module != "" && covrun.KotlinRunner(module) != "maven" {
 		runner = "gradle"
-		if coverage.GradleWrapper(ctx, module) {
+		if covrun.GradleWrapper(ctx, module) {
 			runner = "gradlew"
 		}
 	}
@@ -481,7 +481,7 @@ func dartNested(root string, workspace pubspecOf, dir string) bool {
 // pubspec_overrides.yaml and dart_test.yaml there; the root's pubspec.lock;
 // the nearest .fvmrc beneath the project root; the project's itos-cc.yaml,
 // the configured support files, the producer, and the flutter that runs,
-// as coverage.FlutterFor resolves it, with FLUTTER_ROOT and PUB_CACHE. No
+// as covrun.FlutterFor resolves it, with FLUTTER_ROOT and PUB_CACHE. No
 // command runs for them. Hidden folders, .dart_tool among them, build/,
 // coverage/, integration_test/ and test_driver/ beside a pubspec.yaml, a
 // Flutter app's platform folders and a nested package the workspace does
@@ -521,7 +521,7 @@ func DartCoverageInputs(ctx context.Context, runtime mutants.RuntimeInputs, sour
 	if dir == "" {
 		dir = filepath.Dir(source)
 	}
-	out["@flutter-env"] = envInput(runtime, coverage.FlutterFor(ctx, dir), "FLUTTER_ROOT", "PUB_CACHE")
+	out["@flutter-env"] = envInput(runtime, covrun.FlutterFor(ctx, dir), "FLUTTER_ROOT", "PUB_CACHE")
 	if err := addProjectCoverageInputs(out, projectRoot, producer, support); err != nil {
 		return nil, err
 	}

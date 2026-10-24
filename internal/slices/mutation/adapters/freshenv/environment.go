@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 
 	"github.com/donvargax/itos-cc/config"
-	covrun "github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage"
+	"github.com/donvargax/itos-cc/internal/covrun"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/selection"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"

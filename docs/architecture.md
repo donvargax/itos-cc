@@ -26,8 +26,8 @@ flowchart TD
   sadp["internal/slices/&lt;command&gt;/adapters/&lt;name&gt;"]
   dom["shared domains + port + porttest<br/>selection, lang, snapshot, coverage"]
   adp["shared adapters<br/>workdir, metricsdir, coveragetools"]
-  eng["adapter-side engines<br/>processes, imports, project"]
-  lib["libraries<br/>coverage runner, config"]
+  eng["adapter-side engines<br/>processes, imports, project, covrun"]
+  lib["libraries<br/>config"]
   main --> ui & slice & sadp & adp & eng & dom
   slice --> ui & sdom & dom
   sdom --> dom
@@ -50,8 +50,8 @@ An arrow is an import the rules allow. Every arrow not drawn is refused.
 | Slice's adapters | `internal/slices/<x>/adapters/<name>` | its slice's domain, the pure shared domains, the libraries it wraps | one rule each (`testtools`, `worktrees`, …) |
 | Shared domains | `internal/selection`, `internal/lang`, `internal/snapshot`, `internal/coverage`, each with `port` and `porttest` | one another and their ports; nothing under `internal/slices` | `domain`, `domain-io`, `shared-domains` |
 | Shared adapters | `internal/workdir`, `internal/metricsdir`, `internal/coveragetools` | the port they implement, the domain it belongs to, the libraries they wrap | `workdir`, `metricsdir`, `coveragetools` |
-| Adapter-side engines | `internal/processes` (process ownership), `internal/imports` (import resolution), `internal/project` (project and git history) | `processes` nothing of ours; `imports` lang, `internal/project` and the coverage runner; `project` lang with its port, selection and snapshot | `processes`, `imports`, `project` |
-| Libraries | `coverage`, `config` | what they wrap; nothing under `internal/slices`, but `config`'s settings codec imports the mutation domain; each moves under `internal/` (T-196 and T-197) | `architecture-check --outside` and `--toplevel` |
+| Adapter-side engines | `internal/processes` (process ownership), `internal/imports` (import resolution), `internal/project` (project and git history), `internal/covrun` (the coverage runner) | `processes` nothing of ours; `imports` lang, `internal/project` and `internal/covrun`; `project` lang with its port, selection and snapshot; `covrun` the coverage domain with its port, lang and `internal/project` | `processes`, `imports`, `project`, `covrun` |
+| Libraries | `config` | what they wrap; nothing under `internal/slices`, but `config`'s settings codec imports the mutation domain; it moves under `internal/` (T-197) | `architecture-check --outside` and `--toplevel` |
 
 The rules are depguard's, in `.golangci.yml`, and `tools/bin/architecture-check`, which runs the
 pinned golangci-lint over compile-valid fixtures in `tools/testdata/architecture` that each rule
@@ -127,8 +127,8 @@ passes `runtime.GOOS` as `Platform` to `processes.OwnedExecutor`, `worktrees.Wor
 build-tagged file holds only a call one OS lacks, with no mutation site: `internal/processes`'
 `proc_unix.go` and `proc_windows.go` (process groups), `cmd/itos-cc`'s `raise_unix.go` and
 `raise_windows.go` (re-raising an interrupt), `features/signals_unix.go` and
-`signals_windows.go` (`os.Interrupt` against `CTRL_BREAK_EVENT`). The top-level coverage runner
-still branches on `runtime.GOOS` in three places (`coverage/collector.go`, `pertest.go`,
+`signals_windows.go` (`os.Interrupt` against `CTRL_BREAK_EVENT`). The coverage runner,
+`internal/covrun`, still branches on `runtime.GOOS` in three places (`internal/covrun/collector.go`, `pertest.go`,
 `supervised.go`), a gap against the rule.
 
 ## Testing model
@@ -226,8 +226,8 @@ before the work, and its status line says what changed since.
    `internal/project/flutter.go` (platform folders and generated Dart never walked), with the fake's copy in
    `internal/selection/port/porttest/flutter.go`, which `TreeContract` keeps honest. Its steps are
    `features/selection_flutter.go`.
-3. **Coverage plan**, `coverage/dart.go` (`dartPlan`, `DartTests`, `FlutterFor`) and its marker
-   and plan lines in `coverage/run.go`. Its LCOV reports go through `internal/coverage`'s
+3. **Coverage plan**, `internal/covrun/dart.go` (`dartPlan`, `DartTests`, `FlutterFor`) and its marker
+   and plan lines in `internal/covrun/run.go`. Its LCOV reports go through `internal/coverage`'s
    existing parser.
 4. **Imports**, `internal/imports/dart.go`, a resolver, and its line in
    `internal/imports/languages.go`. `Resolve`, `Reach` and `Of` name no language, so no caller

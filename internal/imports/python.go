@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/covrun"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/project"
 )
@@ -116,7 +116,7 @@ func (python) support(tests []*File) supporter {
 // it, up to its build root, or root when it has none; none for a helper. Its
 // build root is found under ctx.
 func applyingConftests(ctx context.Context, t *File, conftests map[string]*File, root string) []*File {
-	if len(conftests) == 0 || !coverage.PythonTestFile(t.Abs) && filepath.Base(t.Abs) != "conftest.py" {
+	if len(conftests) == 0 || !covrun.PythonTestFile(t.Abs) && filepath.Base(t.Abs) != "conftest.py" {
 		return nil
 	}
 	top := project.FindUp(ctx, t.Abs, "pyproject.toml", "setup.py", "setup.cfg")

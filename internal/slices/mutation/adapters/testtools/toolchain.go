@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/covrun"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/project"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
@@ -40,14 +40,14 @@ func (t Toolchain) Observe(ctx context.Context, r mutants.CommandRequest) (mutan
 		// Its package, each pub workspace member a build root of its own,
 		// run by the flutter coverage runs it with, FVM's preferred.
 		f.Root = Base(ctx, r.Path, "pubspec.yaml")
-		flutter := coverage.FlutterFor(ctx, f.Root)
+		flutter := covrun.FlutterFor(ctx, f.Root)
 		if flutter == "" {
 			// No flutter is found: the run names the one it lacks.
 			flutter = "flutter"
 		}
-		f.Flutter = append([]string{flutter}, coverage.FlutterQuiet...)
+		f.Flutter = append([]string{flutter}, covrun.FlutterQuiet...)
 		if !r.All {
-			f.DartFiles = coverage.DartTests(f.Root, r.Tests)
+			f.DartFiles = covrun.DartTests(f.Root, r.Tests)
 		}
 	case "go":
 		f.Root = Base(ctx, r.Path, "go.mod")
@@ -56,7 +56,7 @@ func (t Toolchain) Observe(ctx context.Context, r mutants.CommandRequest) (mutan
 		deps := packageDeps(f.Root)
 		// Vitest that comes in through another package counts as
 		// coverage's choice of runner counts it (UsesVitest).
-		if deps["vitest"] || coverage.UsesVitest(f.Root) {
+		if deps["vitest"] || covrun.UsesVitest(f.Root) {
 			f.Vitest = project.NodeBin(f.Root, "vitest")
 		}
 		if deps["jest"] {
@@ -71,11 +71,11 @@ func (t Toolchain) Observe(ctx context.Context, r mutants.CommandRequest) (mutan
 			break
 		}
 		if !r.All {
-			f.PythonFiles = coverage.PythonTests(f.Root, r.Tests)
+			f.PythonFiles = covrun.PythonTests(f.Root, r.Tests)
 			if len(f.PythonFiles) == 0 {
 				break
 			}
-			f.PythonModules = coverage.PythonModules(f.PythonFiles)
+			f.PythonModules = covrun.PythonModules(f.PythonFiles)
 		}
 		f.Interpreter = PythonInterpreter(f.Root)
 		probe := exec.CommandContext(ctx, f.Interpreter, "-c", "import pytest") //nolint:gosec // probe the project's observed interpreter, never a downloaded executable
@@ -106,7 +106,7 @@ func (t Toolchain) Observe(ctx context.Context, r mutants.CommandRequest) (mutan
 			}
 		}
 		if !r.All {
-			f.Classes = coverage.KotlinTests(ctx, r.Tests)
+			f.Classes = covrun.KotlinTests(ctx, r.Tests)
 		}
 	}
 	if err := context.Cause(ctx); err != nil {
@@ -161,9 +161,9 @@ func (t Toolchain) CoverageRunner(ctx context.Context, source string, related bo
 	if spec := lang.Detect(source); spec != nil {
 		switch spec.Name {
 		case "typescript":
-			runner = coverage.TypeScriptRunner(Base(ctx, source, "package.json"), related)
+			runner = covrun.TypeScriptRunner(Base(ctx, source, "package.json"), related)
 		case "kotlin":
-			runner = coverage.KotlinRunner(Base(ctx, source, "build.gradle.kts", "build.gradle", "pom.xml"))
+			runner = covrun.KotlinRunner(Base(ctx, source, "build.gradle.kts", "build.gradle", "pom.xml"))
 		}
 	}
 	if err := context.Cause(ctx); err != nil {

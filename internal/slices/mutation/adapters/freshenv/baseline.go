@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/covrun"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/project"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
@@ -27,7 +27,7 @@ type Command = mutants.Command
 // execute and recorded; a cancelled probe is an error. A Python or Kotlin
 // file whose own tests run nothing has no baseline: no test reaches it, so
 // its sites are uncovered.
-func (e Environment) baselineCommands(ctx context.Context, plan *FreshPlan, all bool, tests func(path string) []string, execute coverage.CommandExecutor) ([]FreshBaseline, []coverage.CommandExecution, error) {
+func (e Environment) baselineCommands(ctx context.Context, plan *FreshPlan, all bool, tests func(path string) []string, execute covrun.CommandExecutor) ([]FreshBaseline, []covrun.CommandExecution, error) {
 	if execute == nil {
 		return nil, nil, errors.New("fresh baselines need a command executor")
 	}
@@ -36,7 +36,7 @@ func (e Environment) baselineCommands(ctx context.Context, plan *FreshPlan, all 
 	}
 	paths := mutants.FreshSelectedPaths(plan)
 	var baselines []FreshBaseline
-	var executions []coverage.CommandExecution
+	var executions []covrun.CommandExecution
 	for _, rel := range paths {
 		if err := ctx.Err(); err != nil {
 			return nil, executions, err
@@ -52,7 +52,7 @@ func (e Environment) baselineCommands(ctx context.Context, plan *FreshPlan, all 
 			reaching = tests(path)
 		}
 		if spec.Name == "python" {
-			var calls []coverage.CommandExecution
+			var calls []covrun.CommandExecution
 			var err error
 			c, calls, err = freshPythonCommand(ctx, path, all, reaching, execute)
 			executions = append(executions, calls...)
@@ -78,12 +78,12 @@ func (e Environment) baselineCommands(ctx context.Context, plan *FreshPlan, all 
 
 // freshPythonCommand is pythonCommand with its pytest probe supervised. A
 // probe that fails falls back to unittest exactly as pythonCommand does.
-func freshPythonCommand(ctx context.Context, path string, all bool, tests []string, execute coverage.CommandExecutor) (Command, []coverage.CommandExecution, error) {
+func freshPythonCommand(ctx context.Context, path string, all bool, tests []string, execute covrun.CommandExecutor) (Command, []covrun.CommandExecution, error) {
 	c := pythonBase(ctx, path)
 	root := c.Root
 	var run []string
 	if !all {
-		if run = coverage.PythonTests(c.Dir, tests); len(run) == 0 {
+		if run = covrun.PythonTests(c.Dir, tests); len(run) == 0 {
 			return c, nil, nil
 		}
 	}
@@ -91,7 +91,7 @@ func freshPythonCommand(ctx context.Context, path string, all bool, tests []stri
 	probe := exec.CommandContext(ctx, py, "-c", "import pytest") //nolint:gosec // observe the selected installed interpreter through the owned executor
 	probe.Dir, probe.Stdout, probe.Stderr = root, io.Discard, io.Discard
 	err := execute(ctx, probe)
-	calls := []coverage.CommandExecution{{Args: append([]string{}, probe.Args...), Dir: root, Err: err}}
+	calls := []covrun.CommandExecution{{Args: append([]string{}, probe.Args...), Dir: root, Err: err}}
 	if err != nil && ctx.Err() != nil {
 		return Command{}, calls, ctx.Err()
 	}
@@ -103,14 +103,14 @@ func freshPythonCommand(ctx context.Context, path string, all bool, tests []stri
 // frozen root, and records its time. Any failure, a nonzero exit included,
 // fails the whole preparation: no selected site of a failing command could
 // be judged.
-func RunFreshBaselines(ctx context.Context, baselines []FreshBaseline, log io.Writer, execute coverage.CommandExecutor) ([]FreshBaseline, []coverage.CommandExecution, error) {
+func RunFreshBaselines(ctx context.Context, baselines []FreshBaseline, log io.Writer, execute covrun.CommandExecutor) ([]FreshBaseline, []covrun.CommandExecution, error) {
 	return runFreshBaselines(ctx, baselines, log, execute, nil)
 }
 
 // runFreshBaselines is RunFreshBaselines, each baseline run through
 // measured, when it is set, which also gives what it used, the bytes it
 // wrote and its peak memory, that size its mutants' limits.
-func runFreshBaselines(ctx context.Context, baselines []FreshBaseline, log io.Writer, execute coverage.CommandExecutor, measured func(context.Context, *exec.Cmd) (mutants.CommandResult, error)) ([]FreshBaseline, []coverage.CommandExecution, error) {
+func runFreshBaselines(ctx context.Context, baselines []FreshBaseline, log io.Writer, execute covrun.CommandExecutor, measured func(context.Context, *exec.Cmd) (mutants.CommandResult, error)) ([]FreshBaseline, []covrun.CommandExecution, error) {
 	if execute == nil {
 		return nil, nil, errors.New("fresh baselines need a command executor")
 	}
@@ -118,7 +118,7 @@ func runFreshBaselines(ctx context.Context, baselines []FreshBaseline, log io.Wr
 		log = io.Discard
 	}
 	out := make([]FreshBaseline, 0, len(baselines))
-	var executions []coverage.CommandExecution
+	var executions []covrun.CommandExecution
 	for _, b := range baselines {
 		if err := ctx.Err(); err != nil {
 			return out, executions, err
@@ -153,7 +153,7 @@ func runFreshBaselines(ctx context.Context, baselines []FreshBaseline, log io.Wr
 			err = execute(ctx, cmd)
 		}
 		b.Elapsed = time.Since(started)
-		executions = append(executions, coverage.CommandExecution{Args: append([]string{}, cmd.Args...), Dir: c.Dir, Err: err})
+		executions = append(executions, covrun.CommandExecution{Args: append([]string{}, cmd.Args...), Dir: c.Dir, Err: err})
 		if err != nil {
 			return out, executions, fmt.Errorf("baseline of %s fails without any mutant: %w", strings.Join(b.Paths, ", "), err)
 		}
@@ -195,7 +195,7 @@ func pythonInterpreter(root string) string {
 	return py
 }
 func pythonArgs(py string, pytest bool, run []string) []string {
-	return mutants.PythonArgs(py, pytest, run, coverage.PythonModules(run))
+	return mutants.PythonArgs(py, pytest, run, covrun.PythonModules(run))
 }
 func fileExists(path string) bool {
 	_, err := os.Stat(path) // #nosec G703 -- Existence-only installed-interpreter observation deliberately permits external environments and symlink identities; no bytes are read or written.

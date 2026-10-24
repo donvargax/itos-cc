@@ -13,8 +13,8 @@ import (
 	"testing"
 
 	gherkin "github.com/cucumber/gherkin/go/v42"
-	covrun "github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/features"
+	"github.com/donvargax/itos-cc/internal/covrun"
 )
 
 // The scenarios measured apart, as itos-cc's listed tests (mutation.tests in

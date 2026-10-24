@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/covrun"
 	"github.com/donvargax/itos-cc/internal/project"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
@@ -115,14 +115,14 @@ func seedFreshLineEvidence(t *testing.T, root, rel string) {
 	var inputs map[string]string
 	switch f.Spec.Name {
 	case "typescript":
-		producer = mutation.TypeScriptCoverageProducer(coverage.TypeScriptRunner(project.FindUp(t.Context(), source, "package.json"), true), false)
+		producer = mutation.TypeScriptCoverageProducer(covrun.TypeScriptRunner(project.FindUp(t.Context(), source, "package.json"), true), false)
 		inputs, err = testinputs.TypeScriptCoverageInputs(t.Context(), testinputs.CurrentRuntime(), source, root, producer, nil)
 	case "python":
 		producer = mutation.CoverageProducer("python", false)
 		inputs, err = testinputs.PythonCoverageInputs(t.Context(), testinputs.CurrentRuntime(), source, root, producer, nil)
 	case "kotlin":
 		module := project.FindUp(t.Context(), source, "build.gradle.kts", "build.gradle", "pom.xml")
-		producer = mutation.KotlinCoverageProducer(coverage.KotlinRunner(module), false)
+		producer = mutation.KotlinCoverageProducer(covrun.KotlinRunner(module), false)
 		inputs, err = testinputs.KotlinCoverageInputs(t.Context(), testinputs.CurrentRuntime(), source, root, producer, nil)
 	default:
 		t.Fatalf("no strict line evidence for %s", f.Spec.Name)

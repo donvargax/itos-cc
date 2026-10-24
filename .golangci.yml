@@ -160,6 +160,7 @@ linters:
             - "!**/internal/processes/**" # the process-ownership engine, held by processes
             - "!**/internal/imports/**" # the import-resolution engine, held by imports
             - "!**/internal/project/**" # the project and git history engine, held by project
+            - "!**/internal/covrun/**" # the coverage runner, held by covrun
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # the build's version, which cmd gives the version slice
             - "!**/internal/release/**" # the release tools' library
@@ -267,6 +268,7 @@ linters:
             - "!**/internal/processes/**" # the process-ownership engine, held by processes
             - "!**/internal/imports/**" # the import-resolution engine, held by imports
             - "!**/internal/project/**" # the project and git history engine, held by project
+            - "!**/internal/covrun/**" # the coverage runner, held by covrun
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # the build's version, which cmd gives the version slice
             - "!**/internal/release/**" # the release tools' library
@@ -373,8 +375,8 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the metricsdir adapter imports only the snapshot domain it serves, its port and internal/project, which it wraps (T-92, T-161, T-195); extend the rules as docs/go.md's Adding a package says, never loosen this one"
-        # internal/coveragetools implements the coverage port over coverage,
-        # the top-level runner of each language's tools, its process groups
+        # internal/coveragetools implements the coverage port over
+        # internal/covrun, the runner of each language's tools, its process groups
         # and run folders, and internal/metricsdir's Dir, which says where
         # .metrics/ is for them (decision 46, T-195), an adapter using
         # another's helper. It returns the coverage domain's Report, so,
@@ -391,7 +393,7 @@ linters:
           allow:
             - github.com/donvargax/itos-cc/internal/coverage$
             - github.com/donvargax/itos-cc/internal/coverage/port$
-            - github.com/donvargax/itos-cc/coverage$
+            - github.com/donvargax/itos-cc/internal/covrun$
             - github.com/donvargax/itos-cc/internal/metricsdir$
           deny:
             - pkg: github.com/donvargax/itos-cc
@@ -448,7 +450,7 @@ linters:
           allow:
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/internal/project$
-            - github.com/donvargax/itos-cc/coverage$
+            - github.com/donvargax/itos-cc/internal/covrun$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the import-resolution engine imports nothing of ours but internal/lang, internal/project and the coverage runner (T-162): no other domain, slice, adapter, UI or fake; a caller converts its results into its own terms"
@@ -475,6 +477,30 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the project engine imports nothing of ours but internal/lang with its port, internal/selection and internal/snapshot (ADR-0061, T-194): no other domain or port, slice, adapter, UI or fake; extend the rules as docs/go.md's Adding a package says, never loosen this one"
+        # internal/covrun is the coverage runner (decision 46, ADR-0061,
+        # T-196), the top-level coverage until then: it runs each language's
+        # test and coverage tools, owns their run folders and reads what they
+        # write into the coverage domain's Report through its API. It is an
+        # adapter-side engine, not a domain: it runs processes and reads the
+        # disk, so it is never under internal/coverage/, whose domain globs
+        # would hold it, and no domain or slice imports it (their rules leave
+        # it out); of the adapters only those wrapping it allow it. Its code
+        # imports the coverage domain and its port, internal/lang and
+        # internal/project, and nothing else of ours; its tests may use the
+        # coverage port's fake too.
+        covrun:
+          list-mode: lax
+          files:
+            - "**/internal/covrun/**"
+            - "!$test"
+          allow:
+            - github.com/donvargax/itos-cc/internal/coverage$
+            - github.com/donvargax/itos-cc/internal/coverage/port$
+            - github.com/donvargax/itos-cc/internal/lang$
+            - github.com/donvargax/itos-cc/internal/project$
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "the coverage runner imports nothing of ours but the coverage domain and its port, internal/lang and internal/project (ADR-0061, T-196): no other domain or port, slice, adapter, UI or fake; extend the rules as docs/go.md's Adding a package says, never loosen this one"
         # T-89: each concrete observation adapter owns only its declared I/O.
         # testtools and testinputs (T-159), githistory, freshenv and
         # importgraph (T-160), snapshots, exceptions and sources (T-161), like
@@ -490,7 +516,7 @@ linters:
             - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/internal/project$
-            - github.com/donvargax/itos-cc/coverage$
+            - github.com/donvargax/itos-cc/internal/covrun$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the testtools adapter imports only the mutation domain and its observed libraries (T-89); no other adapters, UI or fakes"
@@ -503,7 +529,7 @@ linters:
             - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/internal/project$
-            - github.com/donvargax/itos-cc/coverage$
+            - github.com/donvargax/itos-cc/internal/covrun$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the testinputs adapter imports only the mutation domain and its observed libraries (T-89); no other adapters, UI or fakes"
@@ -533,7 +559,7 @@ linters:
             - github.com/donvargax/itos-cc/internal/lang/port$
             - github.com/donvargax/itos-cc/config$
             - github.com/donvargax/itos-cc/internal/project$
-            - github.com/donvargax/itos-cc/coverage$
+            - github.com/donvargax/itos-cc/internal/covrun$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "freshenv imports only its mutation contract and the observed libraries/codecs it wraps (T-95); cmd supplies other adapters and owned executors"

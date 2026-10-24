@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/covrun"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
@@ -120,7 +120,7 @@ func TestFreshPreparationReadiesTheFrozenFlutterPackageWithItsPinnedSDK(t *testi
 		others = append(others, strings.Join(cmd.Args, " "))
 		return nil
 	}
-	prep, err := prepareFreshContext(t.Context(), plan, freshPreparationOptions{Scope: coverage.OwnTests, Executor: execute})
+	prep, err := prepareFreshContext(t.Context(), plan, freshPreparationOptions{Scope: covrun.OwnTests, Executor: execute})
 	if err == nil {
 		t.Fatalf("a failed Ready passed preparation; stages=%+v", prep.Stages)
 	}

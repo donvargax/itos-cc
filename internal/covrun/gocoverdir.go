@@ -1,4 +1,4 @@
-package coverage
+package covrun
 
 import (
 	"errors"

@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/covrun"
 	"github.com/donvargax/itos-cc/internal/processes"
 )
 
@@ -24,8 +24,8 @@ import (
 // reds against the original product. They run no mutant trials.
 
 type freshPreparationOptions struct {
-	Scope    coverage.Scope
-	Executor coverage.CommandExecutor
+	Scope    covrun.Scope
+	Executor covrun.CommandExecutor
 	Log      io.Writer
 }
 
@@ -53,7 +53,7 @@ func TestFreshPreparationReportsEveryCommandFailure(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	plan := coverage.Plan{Language: "typescript", Dir: root, Sources: []string{source},
+	plan := covrun.Plan{Language: "typescript", Dir: root, Sources: []string{source},
 		Commands: [][]string{{"coverage-helper", "first"}, {"coverage-helper", "second"}}, Reports: []string{report}}
 	var attempted []string
 	execute := func(_ context.Context, cmd *exec.Cmd) error {
@@ -61,7 +61,7 @@ func TestFreshPreparationReportsEveryCommandFailure(t *testing.T) {
 		writeReport() // A usable artifact does not disguise the nonzero exit.
 		return fmt.Errorf("helper exited nonzero")
 	}
-	measured, calls, err := coverage.RunSupervised(context.Background(), []coverage.Plan{plan}, []string{source}, os.Stderr, execute)
+	measured, calls, err := covrun.RunSupervised(context.Background(), []covrun.Plan{plan}, []string{source}, os.Stderr, execute)
 	if err == nil {
 		t.Fatal("supervised preparation accepted failed commands that wrote a report")
 	}
@@ -146,7 +146,7 @@ func TestFreshPreparationOwnsCommandsAndPreservesListedReach(t *testing.T) {
 	t.Setenv("GIT_INDEX_FILE", filepath.Join(t.TempDir(), "index"))
 	var calls []string
 	execute := freshPreparationExecutor(t, &calls, nil)
-	prep, err := prepareFreshContext(context.Background(), plan, freshPreparationOptions{Scope: coverage.OwnTests, Executor: execute})
+	prep, err := prepareFreshContext(context.Background(), plan, freshPreparationOptions{Scope: covrun.OwnTests, Executor: execute})
 	if err != nil {
 		t.Fatalf("prepare fresh fixture: %v; stages=%+v calls=%v", err, prep.Stages, calls)
 	}
@@ -211,7 +211,7 @@ func TestFreshPreparationFailsClosedOnBaselineFailure(t *testing.T) {
 		}
 		return nil
 	})
-	prep, err := prepareFreshContext(context.Background(), plan, freshPreparationOptions{Scope: coverage.OwnTests, Executor: execute})
+	prep, err := prepareFreshContext(context.Background(), plan, freshPreparationOptions{Scope: covrun.OwnTests, Executor: execute})
 	if err == nil {
 		t.Fatalf("a failing baseline passed preparation; stages=%+v", prep.Stages)
 	}
@@ -230,7 +230,7 @@ func TestFreshPreparationFailsClosedOnBaselineFailure(t *testing.T) {
 
 func TestFreshPreparationRefusesMissingTools(t *testing.T) {
 	t.Parallel()
-	plans := []coverage.Plan{{Language: "go", Dir: t.TempDir(), Commands: [][]string{{"itos-cc-t12-no-such-tool", "test"}}}}
+	plans := []covrun.Plan{{Language: "go", Dir: t.TempDir(), Commands: [][]string{{"itos-cc-t12-no-such-tool", "test"}}}}
 	tools, err := resolvePreparationTools(runtime.GOOS, plans, nil, false)
 	if err == nil || !strings.Contains(err.Error(), "itos-cc-t12-no-such-tool") {
 		t.Fatalf("missing tool was not refused: tools=%+v err=%v", tools, err)
@@ -254,7 +254,7 @@ func TestFreshPreparationScopesGoPackagesFromWholeListing(t *testing.T) {
 		}
 	}
 	sources := []string{filepath.Join(root, "main.go"), filepath.Join(root, "unused", "unused.go")}
-	listing := func(text string, fail error) coverage.CommandExecutor {
+	listing := func(text string, fail error) covrun.CommandExecutor {
 		return func(_ context.Context, cmd *exec.Cmd) error {
 			if commandTool(cmd) != "go" || cmd.Args[1] != "list" {
 				return fmt.Errorf("unexpected planning command %v", cmd.Args)
@@ -269,20 +269,20 @@ func TestFreshPreparationScopesGoPackagesFromWholeListing(t *testing.T) {
 	// go list prints a package without dependencies last, its line ending in
 	// the tab before its empty dependency list.
 	whole := fmt.Sprintf("example.com/scope\t%s\tfmt\nexample.com/scope/unused\t%s\t\n", root, filepath.Join(root, "unused"))
-	plans, calls, err := coverage.PlansSupervised(context.Background(), sources, t.TempDir(), coverage.OwnTests, nil, listing(whole, nil))
+	plans, calls, err := covrun.PlansSupervised(context.Background(), sources, t.TempDir(), covrun.OwnTests, nil, listing(whole, nil))
 	if err != nil || len(plans) != 1 || len(calls) != 1 || calls[0].Err != nil {
 		t.Fatalf("supervised Go plan: plans=%+v calls=%+v err=%v", plans, calls, err)
 	}
 	if args := plans[0].Commands[0]; !slices.Contains(args, "example.com/scope/unused") || !slices.Contains(args, "example.com/scope") {
 		t.Fatalf("supervised own-test command %v does not measure every admitted package", args)
 	}
-	for name, run := range map[string]coverage.CommandExecutor{
+	for name, run := range map[string]covrun.CommandExecutor{
 		"failed":    listing("", errors.New("go list exited 1")),
 		"empty":     listing("", nil),
 		"malformed": listing(fmt.Sprintf("example.com/scope\t%s\n", root), nil),
 		"omitted":   listing(fmt.Sprintf("example.com/scope\t%s\tfmt\n", root), nil),
 	} {
-		plans, calls, err := coverage.PlansSupervised(context.Background(), sources, t.TempDir(), coverage.OwnTests, nil, run)
+		plans, calls, err := covrun.PlansSupervised(context.Background(), sources, t.TempDir(), covrun.OwnTests, nil, run)
 		if err == nil {
 			t.Errorf("%s go list was accepted: plans=%+v", name, plans)
 		}
@@ -295,7 +295,7 @@ func TestFreshPreparationScopesGoPackagesFromWholeListing(t *testing.T) {
 // freshPreparationExecutor stands in for every preparation command: real Git
 // for the private runtime repository, and small controlled helpers for Go,
 // listing and listed coverage. fail, when set, may refuse a command first.
-func freshPreparationExecutor(t *testing.T, calls *[]string, fail func(*exec.Cmd) error) coverage.CommandExecutor {
+func freshPreparationExecutor(t *testing.T, calls *[]string, fail func(*exec.Cmd) error) covrun.CommandExecutor {
 	t.Helper()
 	return func(ctx context.Context, cmd *exec.Cmd) error {
 		*calls = append(*calls, filepath.Base(cmd.Path)+" "+strings.Join(cmd.Args[1:], " "))
@@ -356,8 +356,8 @@ func freshPreparationExecutor(t *testing.T, calls *[]string, fail func(*exec.Cmd
 			default:
 				dir := ""
 				for _, entry := range cmd.Env {
-					if strings.HasPrefix(entry, coverage.TestCoverDirEnv+"=") {
-						dir = strings.TrimPrefix(entry, coverage.TestCoverDirEnv+"=")
+					if strings.HasPrefix(entry, covrun.TestCoverDirEnv+"=") {
+						dir = strings.TrimPrefix(entry, covrun.TestCoverDirEnv+"=")
 					}
 				}
 				if dir == "" {
@@ -476,13 +476,13 @@ func TestFreshPreparationPreservesCompleteDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 	report := filepath.Join(root, "coverage.out")
-	plan := coverage.Plan{Language: "go", Dir: root, Sources: []string{source},
+	plan := covrun.Plan{Language: "go", Dir: root, Sources: []string{source},
 		Commands: [][]string{{"legacy-helper"}}, Reports: []string{report}}
-	legacy := coverage.Run(t.Context(), []coverage.Plan{plan}, []string{source}, os.Stderr, nil)
+	legacy := covrun.Run(t.Context(), []covrun.Plan{plan}, []string{source}, os.Stderr, nil)
 	if legacy == nil || len(legacy.Missing()) == 0 {
 		t.Fatalf("legacy complete-run soft failure behavior changed: %#v", legacy)
 	}
-	if _, _, err := coverage.RunSupervised(context.Background(), []coverage.Plan{plan}, []string{source}, os.Stderr,
+	if _, _, err := covrun.RunSupervised(context.Background(), []covrun.Plan{plan}, []string{source}, os.Stderr,
 		func(context.Context, *exec.Cmd) error { return errors.New("owned helper failed") }); err == nil {
 		t.Fatal("opt-in preparation must fail closed while legacy Run remains soft")
 	}

@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/config"
-	covrun "github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/covrun"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/project"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"

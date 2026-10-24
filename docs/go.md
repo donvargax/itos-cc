@@ -107,8 +107,9 @@ a `context.Context` first (decision 30); pure logic takes none.
 - `internal/coverage` is the coverage domain (decisions 37 and 46): the `Report` that answers
   which lines a run covered, a function's fraction and which listed tests reach a line, its
   queries, and the parsers of LCOV, Go cover profiles and JaCoCo XML (`Parse` choosing by the
-  content). It reads nothing. The top-level `coverage` runner, which runs each language's
-  tools, imports no mutation package, keeping its own copy of the Maven and Gradle test
+  content). It reads nothing. The coverage runner, `internal/covrun` (the top-level `coverage`
+  until T-196, never under `internal/coverage/`, whose domain rules would refuse its
+  processes), which runs each language's tools, imports no mutation package, keeping its own copy of the Maven and Gradle test
   filters as graph keeps crap's formula (ADR-0051, T-156), and builds every `Report` through
   the domain's API, never its fields (decision 47):
   `Build(ctx, files, …)` and `Merge`, `FromLines` and `FromGoBlocks`, the setters
@@ -144,7 +145,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   reports of its build roots; and `FilesContract` and `MeasurerContract`, the contracts each
   and its adapter pass.
 - `internal/coveragetools` is the adapter of the coverage domain's `Measurer` and its
-  port (decision 46). Its `Measurer` wraps the top-level `coverage` runner, its process groups and the run folders under
+  port (decision 46). Its `Measurer` wraps the `internal/covrun` runner, its process groups and the run folders under
   `.metrics/coverage` the tools write their reports in, one for each run, the latest kept for
   `--use-existing-coverage`, and runs `--coverage-command` through the runner's `Shell`. It
   returns the domain's `Report` as the runner built it, with no mapper (decision 47), and
@@ -256,7 +257,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   edges and external packages from a `Resolution`, prefixing each id with the repository's
   name, and its staleness from `Reach`; mutation's `importgraph` adapter calls
   `TestsImporting`. It keeps its own `stopped`, `rel` and `appendUnique` (ADR-0051's small
-  duplication) and uses the `coverage` runner's `PythonTestFile`, so pytest's naming rule has
+  duplication) and uses the `internal/covrun` runner's `PythonTestFile`, so pytest's naming rule has
   one copy. A language is a resolver in a file of its own (`golang.go`, `python.go`,
   `typescript.go` beside `tsconfig.go`, `kotlin.go`, `dart.go`) plus a line in `languages.go`'s table,
   keyed by its `lang.Spec` name (T-163): the unexported `language` says what `Of` keeps of a
@@ -621,7 +622,7 @@ context-as-argument a context after any other parameter, tests included.
   fixtures with. `config`, the one settings codec, with any subpackage under `config/`, imports
   that domain from its code, decoding `mutation.exceptions` and `mutation.tests` into its
   `Config`, and the domain and its `porttest` from its tests. depguard's `slices` rule covers
-  `internal/` alone, and `coverage`, `server`, `features` and `tools` have
+  `internal/` alone, and `server`, `features` and `tools` have
   no rule, so `tools/bin/architecture-check` holds it over the same `go list` fields as the
   sibling rule and names both packages.
 - Top level: every package but `cmd` lives under `internal/` (ADR-0061), so a package outside
@@ -631,9 +632,10 @@ context-as-argument a context after any other parameter, tests included.
   `tools/bin/release-version` `internal/release` alone, its `releasetest` with it, the
   template's layout. Until graph-snapshot (ADR-0060), graph and `server`, the legacy serve
   consumer, import what they need, the outside check holding what they import under
-  `internal/slices`; until their moves under `internal/` (T-196 and T-197), `coverage` and
-  `config` too, each move deleting its row, as `project`'s went when it became
-  `internal/project` (T-194) and `metrics`' when it folded into `internal/metricsdir` (T-195). A new package goes under
+  `internal/slices`; until its move under `internal/` (T-197), `config` too, its move
+  deleting its row, as `project`'s went when it became `internal/project` (T-194), `metrics`'
+  when it folded into `internal/metricsdir` (T-195) and `coverage`'s when it became
+  `internal/covrun` (T-196). A new package goes under
   `internal/`, never at the top level. depguard covers `internal/` alone, so
   `tools/bin/architecture-check`'s toplevel holds it over the outside check's `go list` fields
   and names both packages, and whether from the importer's tests.
@@ -659,7 +661,7 @@ context-as-argument a context after any other parameter, tests included.
   reads and writes through, and `exceptions`' config, the reading codec it wraps. `freshenv`
   serves mutants, yet its rule allows `internal/coverage` and its port too, since it reads Go coverage blocks (`coverage.GoBlock`) through that domain.
   `internal/coveragetools`' allows the coverage domain, whose `Report` it returns, beside its
-  port, the `coverage` runner it wraps and `internal/metricsdir`, whose `Dir` names its run
+  port, the `internal/covrun` runner it wraps and `internal/metricsdir`, whose `Dir` names its run
   folders' parent, an adapter using another's helper (T-195). `importgraph`'s allows the
   import-resolution engine it adapts, `internal/imports`, and neither graph nor
   `internal/project` (T-162). Nothing leaks the other way: the
@@ -671,7 +673,7 @@ context-as-argument a context after any other parameter, tests included.
   command. `slices` and `slice-fakes` leave it out, as they leave out the adapters outside
   `internal/slices`.
 - `imports`: the import-resolution engine, code and tests, imports nothing of ours but
-  `internal/lang`, whose parsed files it resolves, `internal/project` and the `coverage` runner (T-162):
+  `internal/lang`, whose parsed files it resolves, `internal/project` and the `internal/covrun` runner (T-162):
   no other domain or port, slice, adapter, fake, UI or `cmd`, nor graph or `config`. It is an adapter-side engine like `processes`: the `domain` and `slices` rules
   refuse it, of the adapters only `importgraph`'s allows it, and graph, which no rule holds,
   imports it. `slices` and `slice-fakes` leave it out. Its rule has one deny entry, the
@@ -685,6 +687,14 @@ context-as-argument a context after any other parameter, tests included.
   `testinputs`, `githistory`, `freshenv`) and the `imports` engine allow it; `cmd`, graph and
   the libraries still outside `internal/`, which no rule holds, import it too, and `features`
   by its row in the top-level check. `slices` and `slice-fakes` leave it out.
+- `covrun`: the coverage runner's code imports nothing of ours but the coverage domain and its
+  port, `internal/lang` and `internal/project` (ADR-0061, T-196); its tests may use the
+  coverage port's fake too. It is an adapter-side engine like `processes`: it runs processes
+  and reads the disk, so it is never under `internal/coverage/`, whose `domain`, `domain-io`,
+  `shared-domains` and `coverage-fakes` globs would hold it, and the `domain` and `slices`
+  rules refuse it, so no domain or slice imports it. Of the adapters only those wrapping it
+  (`coveragetools`, `testtools`, `testinputs`, `freshenv`) and the `imports` engine allow it;
+  `cmd` imports it too. `slices` and `slice-fakes` leave it out.
 - `mocks`: no mocking library anywhere. Fakes live in `porttest`.
 - `rapid`: the property library only in the domains' own tests.
 - `kong`: kong only in `cmd` and `internal/cli`. A slice's struct tags need no import.

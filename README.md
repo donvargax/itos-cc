@@ -1215,7 +1215,7 @@ describes each package and the import rules `.golangci.yml` holds them to.
 | `internal/processes` | The process-ownership engine: the commands mutation and crap run, each in a process group it owns, killed and joined when it ends (ADR-0021) |
 | `internal/imports` | The import-resolution engine: each language's imports resolved into dependencies between modules, and the tests that reach each source, for the graph and the mutation slice's import reach |
 | `internal/project` | The project and git history engine: finding source and test files, what git says changed, and the disk lang's port asks: reading and parsing a file (`ParseFile`) and finding a project marker above it (`FindUp`) |
-| `coverage` | Running coverage and reading LCOV, Go profiles, and JaCoCo |
+| `internal/covrun` | The coverage runner: running each language's coverage tools, their process groups and run folders, and reading LCOV, Go profiles, and JaCoCo |
 | `config` | Reading `itos-cc.yaml`, which the mutation slice's exceptions adapter writes |
 | `graph`, `server` | The architecture graph, its dependencies resolved by `internal/imports`, its live HTTP API, and the viewer a release embeds |
 | `internal/version`, `internal/release` | The build's version, the one source the `version` command prints through cmd, and the library of the release tools in `tools/bin` |
@@ -1224,7 +1224,7 @@ describes each package and the import rules `.golangci.yml` holds them to.
 
 Adding a language means one file in `internal/lang/` (grammar, units, decisions,
 syntax, mutation rules), test-framework rules in `internal/slices/scrap/domain/`, a
-coverage plan in `coverage/`, an import resolver in `internal/imports/`, and the mutation
+coverage plan in `internal/covrun/`, an import resolver in `internal/imports/`, and the mutation
 slice's commands, workers and evidence. [docs/architecture.md](docs/architecture.md)'s "Adding
 a language" lists each place, with Dart as the worked example.
 

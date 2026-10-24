@@ -45,11 +45,11 @@ decisions 23-27), 24 `test:`, 15 `feat:`, 5 `refactor:`, 5 `ci:`, 4 `fix:` and 5
 commits touch 469 file-changes, +29.5k/-4.2k lines. That count includes multi-language commits and the
 godog conversions, so it overstates Kotlin alone. The Kotlin-only feature pairs above come to about 52
 file-changes and ~3k lines. Kotlin-specific product code today is ~1.3k lines [estimate]:
-`internal/lang/kotlin.go` 327, `coverage/kotlin.go` 104, `coverage/jacoco.go` 306, `kotlinPlan`
-(`coverage/run.go:532-576`) ~90, `testinputs` Kotlin inputs/scope ~160, `mutants` Gradle/Maven choice
+`internal/lang/kotlin.go` 327, `internal/covrun/kotlin.go` 104, `internal/covrun/jacoco.go` 306, `kotlinPlan`
+(`internal/covrun/run.go:532-576`) ~90, `testinputs` Kotlin inputs/scope ~160, `mutants` Gradle/Maven choice
 ~70, the producers and body line ~70, the scrap Kotlin extractor ~125 (`internal/slices/scrap/domain/extract.go:280-402`),
 and graph ~40. Kotlin-specific tests and fixtures: cmd tests 624 lines (`mutate_kotlin_*_test.go`,
-`strict_lines_kotlin_test.go`), `coverage/jacoco_test.go` 228, `features/mutate_language_kotlin_fixture.go`
+`strict_lines_kotlin_test.go`), `internal/covrun/jacoco_test.go` 228, `features/mutate_language_kotlin_fixture.go`
 67, and a smoke project `cmd/itos-cc/testdata/smoke/kotlin` (4 files).
 
 **Size estimate for Dart [guess]:** Kotlin-level parity (units, crap, dry, scrap, mutation incl. own tests,
@@ -71,19 +71,19 @@ Flutter apps rarely need them, takes out ~15%.
 2. **cgo.** Grammars are C. `release.yml:11-12,196` builds each platform natively with `CGO_ENABLED=1`
    (GoReleaser's `CGO_ENABLED=0` at `.goreleaser.yaml:21` cannot cross-build). A Dart grammar adds a C
    compile on Linux, macOS and Windows CD runners [guess: the scanner compiles under MSVC/MinGW as fwcd's does].
-3. **Build-tool variety.** Kotlin needed three coverage runners (`KotlinRunner`, `coverage/kotlin.go:89`:
+3. **Build-tool variety.** Kotlin needed three coverage runners (`KotlinRunner`, `internal/covrun/kotlin.go:89`:
    Gradle JaCoCo, Kover, Maven), an XML parser (`ParseJaCoCo`, `internal/coverage/formats.go:173`), test
    *class* discovery (`lang.TestClasses`, `kotlin.go:205`), because Gradle and Maven select classes, not files,
    reactor `-pl -am` selection (`internal/slices/mutation/domain/command_policy.go:103-135`), multi-module closure
    (a test in another module measures nothing), `--rerun` against Gradle's up-to-date check, a
    `KotlinBodyLine` because JaCoCo puts default-argument bridges on declaration lines
    (`internal/slices/mutation/domain/coverage.go:216-243`), JaCoCo agent/cli jars found in the Gradle/Maven caches
-   (`coverage/jacoco.go:56-140`), and CI shards because cold Gradle took 7.6 min (`cd.yml:235-246`).
+   (`internal/covrun/jacoco.go:56-140`), and CI shards because cold Gradle took 7.6 min (`cd.yml:235-246`).
    Dart/Flutter is closer to **Python's** model (tests are files, run by path, reach-based own tests) and
    to **TypeScript's** LCOV. One runner (`flutter test`), one format (LCOV, already parsed).
 4. **Python-only extras Kotlin lacks**, which Dart may need: an inventory command for files no test loads
-   (`coverage/inventory.go:26-29`, Python and TypeScript only; Kotlin uses `classInventories`,
-   `:156`); supervised probes through the executor (`PlansSupervised`, `coverage/run.go:139-143`;
+   (`internal/covrun/inventory.go:26-29`, Python and TypeScript only; Kotlin uses `classInventories`,
+   `:156`); supervised probes through the executor (`PlansSupervised`, `internal/covrun/run.go:139-143`;
    `freshPythonCommand` in freshenv); `PathEnv`/`PathDirs` (`command_policy.go:51`); bytecode and pytest
    cache hygiene (`project.NoBytecodeEnv`, MUT-214); conftest-style implicit support files
    (`internal/imports/python.go:100-135`, its `support`). TypeScript extras: `Spec.Inline` units (Express callbacks), `Mutations.Other`
@@ -117,7 +117,7 @@ Flutter apps rarely need them, takes out ~15%.
   (`~/.pub-cache`, `PUB_CACHE`) is outside the project, like Gradle's cache.
 - **[Flutter]** App folders `android/`, `ios/`, `macos/`, `linux/`, `windows/`, `web/`:
   - `android/app/src/main/kotlin/.../MainActivity.kt` plus `android/app/build.gradle(.kts)` makes discovery see
-    **a Kotlin build root inside every Flutter app** (`coverage/run.go:104` markers). crap and mutation would
+    **a Kotlin build root inside every Flutter app** (`internal/covrun/run.go:104` markers). crap and mutation would
     plan Gradle/JaCoCo for it (needs the Android SDK), and strict runs "fail closed when another language
     measured nothing" (MUT-204, `internal/slices/mutation/run.go:367-376`). ~~This needs a decision: an automatic
     exclusion of a Flutter app's platform folders, or documented `exclude:` globs (decision 45).~~ **[now]** q-75
@@ -146,7 +146,7 @@ Flutter apps rarely need them, takes out ~15%.
   and dominates mutant trials, as Gradle did for Kotlin.
 - Toolchain location: `flutter` on PATH, or FVM (`.fvmrc`, `.fvm/flutter_sdk/bin/flutter`) [guess: as
   common in Flutter apps as `gradlew` is in Gradle builds; prefer it as `gradlew` is preferred,
-  `testtools/toolchain.go:87-89`]. **[now]** `coverage.FlutterFor` prefers the SDK FVM links beside the
+  `testtools/toolchain.go:87-89`]. **[now]** `covrun.FlutterFor` prefers the SDK FVM links beside the
   nearest `.fvmrc`, else the PATH's (slice-32).
 - **Grammar shape [verified]:**
   - A Dart function or method is **two sibling nodes**: `function_signature` / `method_signature` /
@@ -226,12 +226,12 @@ feed most SEL/CRAP scenarios, so a new language there ripples [guess: avoid].
 
 | where | what | owner after |
 |---|---|---|
-| `coverage/run.go` `markers` | `"dart": {"pubspec.yaml"}`; the one table, which the in-process driver reads too through `Markers` (T-165), so nothing in cmd changes | coverage engine (top-level `coverage`, ADR-0037 may move it under internal later) |
-| `coverage/run.go:149-227` `buildPlans` | `case "dart"` → `dartPlan`; with `narrow` (OwnTests+reach) group by reaching test files as Python does (`:166-167`, `PythonTests`) | coverage engine |
-| `coverage/dart.go` (new) | `dartPlan(dir,out,tests)`: `flutter test --no-pub --coverage --coverage-path <out>/lcov.info [tests]`, `Reports`, `Existing` (`coverage/lcov.info`), `Unsupported` when no `flutter` (never downloaded, decision 26), FVM preference; `DartTests` (test files among reach, excluding `integration_test/`); `DartRunner` if `dart test` is ever supported. **[now]** the command is `flutter --suppress-analytics --no-version-check test --no-pub --no-dds --coverage --coverage-path=…`; `Unsupported` also for a pure Dart package and one pub has not resolved; `DartTests` keeps only `test/`, so `test_driver/` is out too; no `DartRunner` (idea dart-pure-packages) | coverage engine |
-| `coverage/inventory.go:26-29` `inventories` | optional Dart inventory for unreached files (§1), or none, leaving strict to fail closed. **[now]** none: strict fails closed (slice-36; idea dart-strict-inventory) | coverage engine |
-| `coverage/pertest.go:73-130` `testCollectors` | listed tests' per-test collectors. Dart: none (fallback one run per test, decision 10) [decision]. **[now]** none (q-76), so no listed test reaches a Dart line; per-test-name coverage is the idea dart-per-test-coverage | coverage engine |
-| `coverage/jacoco.go`/`collector.go` integration coverage | processes a test starts: recommend "Dart does not measure child processes", recorded beside decisions 26/27 [decision]. **[now]** q-76 phase 1: none, recorded there, not beside decisions 26/27 | coverage engine |
+| `internal/covrun/run.go` `markers` | `"dart": {"pubspec.yaml"}`; the one table, which the in-process driver reads too through `Markers` (T-165), so nothing in cmd changes | coverage engine (top-level `coverage`, ADR-0037 may move it under internal later) |
+| `internal/covrun/run.go:149-227` `buildPlans` | `case "dart"` → `dartPlan`; with `narrow` (OwnTests+reach) group by reaching test files as Python does (`:166-167`, `PythonTests`) | coverage engine |
+| `internal/covrun/dart.go` (new) | `dartPlan(dir,out,tests)`: `flutter test --no-pub --coverage --coverage-path <out>/lcov.info [tests]`, `Reports`, `Existing` (`coverage/lcov.info`), `Unsupported` when no `flutter` (never downloaded, decision 26), FVM preference; `DartTests` (test files among reach, excluding `integration_test/`); `DartRunner` if `dart test` is ever supported. **[now]** the command is `flutter --suppress-analytics --no-version-check test --no-pub --no-dds --coverage --coverage-path=…`; `Unsupported` also for a pure Dart package and one pub has not resolved; `DartTests` keeps only `test/`, so `test_driver/` is out too; no `DartRunner` (idea dart-pure-packages) | coverage engine |
+| `internal/covrun/inventory.go:26-29` `inventories` | optional Dart inventory for unreached files (§1), or none, leaving strict to fail closed. **[now]** none: strict fails closed (slice-36; idea dart-strict-inventory) | coverage engine |
+| `internal/covrun/pertest.go:73-130` `testCollectors` | listed tests' per-test collectors. Dart: none (fallback one run per test, decision 10) [decision]. **[now]** none (q-76), so no listed test reaches a Dart line; per-test-name coverage is the idea dart-per-test-coverage | coverage engine |
+| `internal/covrun/jacoco.go`/`collector.go` integration coverage | processes a test starts: recommend "Dart does not measure child processes", recorded beside decisions 26/27 [decision]. **[now]** q-76 phase 1: none, recorded there, not beside decisions 26/27 | coverage engine |
 | `internal/coverage/formats.go:16-75` | LCOV already parsed; DA only unless branch coverage; nothing to add [guess] | coverage engine |
 | `internal/coverage/porttest/measurer.go:64,175,208` | the fake's per-language reach/report rules (`group.Language != "python" && != "kotlin"` at :208) | coverage engine (fake) |
 | `cmd/itos-cc/scenarios_coverage_trace_test.go:273-275` | Kotlin selector special case; Dart likely none | cmd |
@@ -400,7 +400,7 @@ collisions).
 | `internal/lang/lang.go` | engine changes (unit span, Syntax callee, Detect) | the lang item only |
 | `internal/lang/dart.go` | the whole Spec: units, decisions, syntax, mutations, imports | the lang item (later items read it; a follow-up edit waits) |
 | `internal/project/project.go:19-36` + `internal/selection/port/porttest/tree.go:75-90` | twin tables under one contract | the selection item, one commit |
-| `coverage/run.go` (markers + `buildPlans` switch) | every coverage change | the coverage item only; it also exports `DartTests` for mutation |
+| `internal/covrun/run.go` (markers + `buildPlans` switch) | every coverage change | the coverage item only; it also exports `DartTests` for mutation |
 | `internal/slices/mutation/domain/coverage.go`, `command_policy.go`, `inputs.go` | mutation domain tables | split: commands/toolchain item gets `command_policy.go`/`inputs.go`; strict item gets `coverage.go`/`run_coverage.go` |
 | `internal/slices/mutation/domain/porttest/*.go` (tools, fingerprints, scope, reach, workers, input_contract) | fakes mirroring every adapter | per file: tools/workers → commands item; fingerprints/scope/input_contract → strict item; reach → reach item |
 | `features/mutate.feature` | most rows | many items add rows to **different** Examples tables, so git merges them when hunks are not adjacent; coordinator rebases in order [guess: low risk] |
@@ -444,7 +444,7 @@ q-numbers and scenarios hold the decisions.
 - **D3 dry**: DRY-02 row + `features/dry.go` regexes (likely no product change; it can fold into D1 if small).
 - **D4 scrap**: `internal/slices/scrap/domain/{extract,measure,analyze}.go`, scrap.feature rows and widget-test scenario,
   `features/scrap*.go`.
-- **D5 coverage + crap**: `coverage/run.go`, `coverage/dart.go`, `coverage/inventory.go` (if decided),
+- **D5 coverage + crap**: `internal/covrun/run.go`, `internal/covrun/dart.go`, `internal/covrun/inventory.go` (if decided),
   `internal/coverage/porttest/measurer.go`, `cmd/itos-cc/scenarios_fakes_test.go`, `features/binary.go`,
   `features/coverage*.go`, COV-04/05/08 rows, crap help text. Exports `DartTests`.
 - **D6 reach** (needed `slices-import-engine`, now T-162 and T-163, done): Dart resolution in the import engine (package:,
@@ -495,8 +495,8 @@ Run D9 and D10 one after the other if the coordinator wants zero rebase work.
 - The memory note "one implementing agent in this repo at a time; no worktrees unless asked" is the
   current rule. This split assumes the parallel-worktree trial that `slices-close` sets up. **[now]** q-78 allowed
   it after T-86.
-- `coverage/run.go` imported `mutants.MavenTests`/`GradleTests` when this was surveyed; T-156 gave the
-  runner its own copies, `gradleTests` and `mavenTests` (`coverage/run.go:582-606`), so it imports no
+- `internal/covrun/run.go` imported `mutants.MavenTests`/`GradleTests` when this was surveyed; T-156 gave the
+  runner its own copies, `gradleTests` and `mavenTests` (`internal/covrun/run.go:582-606`), so it imports no
   mutation package. D5 must add no coverage→slice import.
 - Kotlin-in-Flutter (the `android/` Gradle root) is the most likely first-run surprise. Settle it in D0 before
   any crap scenario, or every strict Flutter run fails closed on an unmeasured Kotlin root. **[now]** Settled by

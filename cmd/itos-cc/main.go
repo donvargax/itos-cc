@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/covrun"
 )
 
 // main makes the program's one context, which every command runs under,
@@ -68,10 +68,10 @@ func stdUI() *cli.UI {
 // than main, so the test binary of this package does the same and its tests
 // run coverage as itos-cc does.
 func init() {
-	if len(os.Args) > 1 && os.Args[1] == coverage.ExecArg {
-		os.Exit(coverage.ExecTest(os.Args[2:]))
+	if len(os.Args) > 1 && os.Args[1] == covrun.ExecArg {
+		os.Exit(covrun.ExecTest(os.Args[2:]))
 	}
-	coverage.Executable, _ = os.Executable()
+	covrun.Executable, _ = os.Executable()
 }
 
 // run runs args, the command line after the program's name, under ctx, and

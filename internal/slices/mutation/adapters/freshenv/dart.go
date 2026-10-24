@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	covrun "github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/covrun"
 	"github.com/donvargax/itos-cc/internal/lang"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
