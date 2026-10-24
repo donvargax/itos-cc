@@ -143,7 +143,9 @@ func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Writte
 // Mismatch lists sampled mutant m of file rel on stdout, as "mismatch
 // <file>:<line>:<column> <original> → <replacement> in <function>:
 // recorded <outcome>, now <outcome>", and reports it as mutation.mismatch,
-// with the scope it ran with and a fix that re-runs it there.
+// with the scope it ran with and a fix that re-runs it there, its command
+// last, after a colon and in no quotes of its own, so it pastes as written
+// whatever quotes a --test-command line brings (slice-45).
 func (p *Presentation) Mismatch(rel string, m mutants.SampledMutant) {
 	if !p.JSON {
 		_, _ = fmt.Fprintf(p.UI.Stdout, "  mismatch %s:%d:%d %s → %s in %s: recorded %s, now %s\n", rel, m.Line, m.Column,
@@ -152,7 +154,7 @@ func (p *Presentation) Mismatch(rel string, m mutants.SampledMutant) {
 	problem := cli.NewProblem(cli.CodeNo, "mutation.mismatch",
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s was recorded %s, and is %s now", rel, m.Line, m.Column,
 			Quote(m.Original), Quote(m.Replacement), m.Function, m.Recorded, m.Outcome),
-		fmt.Sprintf("The cached results are not what the tests do: run '%s', and commit .metrics/mutate/ with the code.", rerunIn(m.Scope, rel))).
+		"The cached results are not what the tests do: commit .metrics/mutate/ with the code after running: "+rerunIn(m.Scope, rel)).
 		With("file", rel).With("line", m.Line).With("column", m.Column).With("function", m.Function).
 		With("original", m.Original).With("replacement", m.Replacement).
 		With("recorded", m.Recorded).With("outcome", m.Outcome).With("scope", m.Scope)

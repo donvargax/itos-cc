@@ -182,7 +182,7 @@ func (p *sampleMutation) fixCommand(command string) error {
 		return err
 	}
 	problems := checkProblems(obj)
-	if len(problems) != 1 || !strings.Contains(filepath.ToSlash(fmt.Sprint(problems[0]["fix"])), "run '"+command+"'") {
+	if len(problems) != 1 || !strings.HasSuffix(filepath.ToSlash(fmt.Sprint(problems[0]["fix"])), ": "+command) {
 		return fmt.Errorf("mismatch fix does not run %s: %v", command, problems)
 	}
 	return nil

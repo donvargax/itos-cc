@@ -2278,7 +2278,7 @@ Feature: Mutation testing
     # step "its fix says to run" of MUT-147 and MUT-148 checks that ending in
     # the feat, its sentence unchanged. Before this item the fix's command
     # sat inside quotes, failing at the ending step.
-    @slice-45 @ID-MUT-334 @wip
+    @slice-45 @ID-MUT-334
     Scenario: A mismatch's fix ends with its command, which pastes as written
       Given a run with --test-command 'make test' recorded a kill in src/board.ts that those tests no longer make
       When I run "itos-cc mutation sample --count 100 src/board.ts"
