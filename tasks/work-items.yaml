@@ -5639,8 +5639,8 @@ items:
   - id: bug-7
     title: A timed-out mutant's reaping slack in the timing steps is tighter than the product's cleanup deadline
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: bug
     why: >
