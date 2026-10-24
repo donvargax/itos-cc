@@ -5513,6 +5513,13 @@ items:
       HTTP handler go once the web app reads the files, and with them top-level-libraries-internal's
       exemption for graph and server. graph's use of mutation freshness (FreshnessOf) reaches the
       mutation domain only as ADR-0051 lets slices share an engine, decided in the spec.
+
+      q-95 answered 2026-10-24 (draft .git/itos/draft-graph-snapshot.md on the coordinator's
+      machine): items 1 move to internal/slices/graph, 2 itos-cc graph writes .metrics/graph.json, 3
+      nightly commits it, 4 viewer reads the file and serve serves files only; item 5 is
+      serve-static-on-kong, deferred. D7: the repo node is the git remote's repository name
+      (origin's URL, its last path segment without .git); coordinator's routine call: with no
+      remote, the folder name, as today.
   - id: viewer-dependency-rule
     title: The viewer colours a dependency that points from a higher level to a lower one
     phase: 1
