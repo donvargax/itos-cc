@@ -5387,7 +5387,7 @@ items:
   - id: T-188
     title: cd.yml samples ten recorded mutation results on every source push
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
