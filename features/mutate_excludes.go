@@ -268,6 +268,44 @@ func (m *mutateState) headExcludes(glob string) error {
 	return nil
 }
 
+// headHolds commits the module with an itos-cc.yaml holding text, then
+// leaves one excluding nothing in the working tree, so a refusal of text
+// comes from the file HEAD commits, which a counted run reads.
+func (m *mutateState) headHolds(text string) error {
+	if err := m.w.d.Counted(); err != nil {
+		return err
+	}
+	if err := m.boardModule("src/port/porttest/fake.go", false); err != nil {
+		return err
+	}
+	if err := m.w.write("itos-cc.yaml", text+"\n"); err != nil {
+		return err
+	}
+	for _, args := range [][]string{{"init", "-q", "-b", "main"}, {"add", "-A"}, {"commit", "-qm", "base"}} {
+		if err := m.w.git(args...); err != nil {
+			return err
+		}
+	}
+	return m.w.write("itos-cc.yaml", "exclude: []\n")
+}
+
+// fixSaysThen is whether the fix of the problem problemIs found opens
+// with first and says then after it, and the error output prints it.
+func (m *mutateState) fixSaysThen(first, then string) error {
+	if m.w.problem == nil {
+		return errors.New("no problem found to read the fix of")
+	}
+	fix, _ := m.w.problem["fix"].(string)
+	rest, opens := strings.CutPrefix(fix, first)
+	if !opens || !strings.Contains(rest, then) {
+		return fmt.Errorf("the problem's fix %q does not open with %q and say %q after it\n%s", fix, first, then, m.w.report())
+	}
+	if !strings.Contains(m.w.stderr, fix) {
+		return fmt.Errorf("the error output does not print the problem's fix %q\n%s", fix, m.w.report())
+	}
+	return nil
+}
+
 // noSelectedSiteIn is whether the last run's --json object selects sites,
 // none in file.
 func (m *mutateState) noSelectedSiteIn(file string) error {

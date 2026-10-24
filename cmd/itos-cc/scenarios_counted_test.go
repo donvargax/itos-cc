@@ -120,7 +120,7 @@ func decodeFreshSettings(data []byte) ([]string, *mutation.Tests, []mutation.Exc
 		if !errors.As(err, &invalid) {
 			return nil, nil, nil, &mutation.FreshInvalid{Reason: err.Error()}
 		}
-		return nil, nil, nil, &mutation.FreshInvalid{Reason: invalid.Reason, Key: invalid.Key}
+		return nil, nil, nil, &mutation.FreshInvalid{Reason: invalid.Reason, Key: invalid.Key, Fix: invalid.Fix}
 	}
 	return c.Selection.Exclude, c.Tests, c.Exceptions, nil
 }

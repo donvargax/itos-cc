@@ -160,6 +160,8 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^it reports "([^"]*)" with "([^"]*)" "([^"]*)"$`, m.reports)
 	sc.Step(`^the itos-cc\.yaml HEAD commits excludes "([^"]*)"$`, m.headExcludes)
 	sc.Step(`^no selected site is in (\S+)$`, m.noSelectedSiteIn)
+	sc.Step(`^the itos-cc\.yaml HEAD commits holds '([^']*)'$`, m.headHolds)
+	sc.Step(`^its fix says "([^"]*)", then "([^"]*)"$`, m.fixSaysThen)
 
 	// Running mutants.
 	sc.Step(`^a source file in a (Go|TypeScript|Python|Kotlin|Dart) project with (.+)$`, m.sourceInProject)
