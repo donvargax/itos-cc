@@ -5773,3 +5773,6 @@ items:
       lowest priority: done only when nothing else remains and the separate web app (the person's
       own and a friend's) has not moved out yet; if the web app has moved out, serve is removed
       instead.
+    deferred: >
+      q-95: lowest priority, after everything else, and only if the web app has not moved to its own
+      project by then.
