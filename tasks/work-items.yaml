@@ -5497,6 +5497,13 @@ items:
       reads .metrics/ and needs none of itos-cc's code, as crap, dry and mutation's snapshots
       already work, so the UI stays simple. T-190's nightly commits it beside the others. The
       deferred serve tasks (T-102 to T-113) are re-cut against this when serve's move is specified.
+
+      The person (2026-10-24): graph stays in this repository and follows the pattern every other
+      command does, a vertical slice (internal/slices/graph, its domain and ports, ADR-0051) whose
+      command writes .metrics/graph.json through the snapshot store; the server package and serve's
+      HTTP handler go once the web app reads the files, and with them top-level-libraries-internal's
+      exemption for graph and server. graph's use of mutation freshness (FreshnessOf) reaches the
+      mutation domain only as ADR-0051 lets slices share an engine, decided in the spec.
   - id: viewer-dependency-rule
     title: The viewer colours a dependency that points from a higher level to a lower one
     phase: 1
