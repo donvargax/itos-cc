@@ -22,7 +22,7 @@ queue:
   - slice-48
   - plain-output-matcher
   - T-205
-  - refactor-proof-dart
+  - T-206
   - itos-cc-yaml-version
   - flaky-kills
   - graph-snapshot
@@ -5632,24 +5632,13 @@ items:
     status: dropped
     depends_on: []
     kind: idea
-  - id: refactor-proof-dart
+  - id: T-206
     title: refactor-proof.yml installs Flutter, so the Dart scenarios are compared too
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Found by T-198: run 40113359992 of refactor-proof.yml skipped 22 Dart scenarios on both sides
-      (coverage.feature's Flutter and pub workspace rows, mutate.feature's Dart reach, freshness,
-      workers and strict rows), because its suite job installs every language tool cd.yml's
-      languages job does but not the Flutter cd.yml's dart job sets up from the root .fvmrc, nor
-      ITOS_CC_FLUTTER_TOOLS. Its header says it runs today's whole binary-driver suite with every
-      language tool, and since slice-32 that is no longer so: a refactor that moves the coverage
-      runner or Dart's language code (T-196 moved covrun) is held by cd.yml's dart job on the
-      refactored side alone, never compared with its baseline. The suite job could set up Flutter as
-      cd.yml's dart job does and set ITOS_CC_FLUTTER_TOOLS, or a third matrix leg could run only the
-      Dart scenarios.
+    kind: task
   - id: slice-44
     title: A counted run's own-fix config refusal keeps the hint to commit the fix
     phase: 1
