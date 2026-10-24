@@ -5379,8 +5379,8 @@ items:
   - id: slice-47
     title: crap's Go coverage run outlives go test's 10-minute limit per package without saying so
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
