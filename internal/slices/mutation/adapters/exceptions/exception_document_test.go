@@ -110,6 +110,44 @@ func TestExceptDocumentFillsAnEmptyOrNullSetting(t *testing.T) {
 	}
 }
 
+// A document that is null, which Parse reads as no settings, holds no
+// mapping to keep: an entry added to it is a new document that Parse reads
+// back, as one added to no text is.
+func TestExceptDocumentAddsAnEntryToANullDocument(t *testing.T) {
+	for _, text := range []string{"~\n", "null\n"} {
+		data, replaced, err := exceptions.ExceptDocument([]byte(text), entry)
+		if err != nil || replaced {
+			t.Fatalf("%q: ExceptDocument: replaced %v, error %v, want a new entry", text, replaced, err)
+		}
+		c, err := settings.Parse(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !slices.Equal(c.Exceptions, []mutants.Exception{entry}) {
+			t.Errorf("%q: exceptions %+v, want the entry alone", text, c.Exceptions)
+		}
+	}
+}
+
+// RenewDocument renews entries the document's top-level mapping holds, so
+// one with none, empty, a comment alone or null, which Parse reads as no
+// settings, is refused with an *InvalidError saying so and no bytes, the
+// batch empty or not.
+func TestRenewDocumentRefusesADocumentWithNoTopLevelMapping(t *testing.T) {
+	for _, text := range []string{"", "# Settings.\n", "~\n"} {
+		for _, renewals := range [][]mutants.Renewal{nil, {{Old: entry, New: entry}}} {
+			data, err := exceptions.RenewDocument([]byte(text), renewals)
+			var invalid *settings.InvalidError
+			if !errors.As(err, &invalid) || invalid.Reason != "its top level is not a mapping" {
+				t.Errorf("%q, %d renewals: RenewDocument: %v, want an InvalidError saying its top level is not a mapping", text, len(renewals), err)
+			}
+			if data != nil {
+				t.Errorf("%q, %d renewals: RenewDocument gave %q, want no bytes", text, len(renewals), data)
+			}
+		}
+	}
+}
+
 // A document Parse refuses is refused with its *InvalidError and no bytes,
 // so the writer, which writes only the bytes it is given, leaves the file
 // as it was.
