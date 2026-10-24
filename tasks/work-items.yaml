@@ -5508,3 +5508,17 @@ items:
       higher architectural level to a lower one are drawn red, the Dependency Rule of Clean
       Architecture made visible. For itos-cc's graph: which direction counts as higher needs a
       definition (a policy, or the domain/adapter layering ADR-0047 states), decided in the spec.
+  - id: component-policy
+    title: A policy file groups modules into components for the graph
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      From uml-viewer (unclebob, read 2026-10-24 at the person's ask): a policy file says which
+      modules form a component, nesting arbitrarily, and the topology is regenerated from it; an
+      agent edits the policy, never the topology, to play what-if with the architecture before the
+      code changes. For itos-cc: the graph today groups by directory alone; a policy would let it
+      show components by a chosen principle (for example the Common Closure Principle). After
+      graph-snapshot.
