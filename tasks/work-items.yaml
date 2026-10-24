@@ -5592,3 +5592,18 @@ items:
       bump reaches users, but once the binary embeds the viewer (slice-42), a bump of an npm package
       the bundle carries changes the binary too and releases nothing until the next feat or fix.
       After slice-42: the rule also reads viewer/package-lock.json's non-dev packages.
+  - id: listed-support-per-test
+    title: A listed kill rests on the support its own tests use, not on one list for every test
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found drafting listed-support-doublestar (2026-10-24): since 2026-09-23 commits landed on 22
+      days, 12 touched mutation.tests.support, all 12 through step code (features/*.go, 11 days) or
+      the scenario driver (10 days), files every scenario's binary links, so no global support list
+      can narrow below them and slice-40's saving stays rare. A listed kill should rest on the
+      support its own listed tests use (the step files their steps are defined in, or a support list
+      per suite, listed-suites), so editing one feature's steps stales only the kills of the
+      scenarios using them. The person's call on order (q-88).
