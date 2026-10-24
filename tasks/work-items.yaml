@@ -15,7 +15,7 @@ queue:
   - listed-suites
   - T-201
   - T-202
-  - counted-config-own-fix
+  - slice-44
   - mismatch-fix-quotes
   - coverage-line-stderr
   - annotate-function-name
@@ -5690,14 +5690,15 @@ items:
       refactored side alone, never compared with its baseline. The suite job could set up Flutter as
       cd.yml's dart job does and set ITOS_CC_FLUTTER_TOOLS, or a third matrix leg could run only the
       Dart scenarios.
-  - id: counted-config-own-fix
+  - id: slice-44
     title: A counted run's own-fix config refusal keeps the hint to commit the fix
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was counted-config-own-fix.
       bug-8 (e8b779fc) gave an itos-cc.yaml refusal its own fix (write the value in place, no
       anchor, alias or merge key), and on a counted run that fix replaces the usual 'Fix it in a
       commit: a counted run reads the itos-cc.yaml HEAD holds' (internal/slices/mutation/errors.go
