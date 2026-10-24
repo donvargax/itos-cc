@@ -1669,11 +1669,11 @@ items:
     depends_on: [T-25]
     kind: task
   - id: T-187
-    title: Each push judges one fresh mutation site of its changed code, and cd.yml samples ten recorded ones
+    title: Each push judges one fresh mutation site of its changed code
     phase: 1
     owner: donvargax
     status: todo
-    depends_on: [T-46]
+    depends_on: [T-188]
     kind: task
   - id: T-27
     title: Every feat and fix says what a user must change, in an Upgrading footer
