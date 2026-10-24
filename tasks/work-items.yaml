@@ -5467,22 +5467,9 @@ items:
     title: itos-cc serve serves the viewer from its own binary, with no clone, Node or --ui
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was serve-embedded-viewer.
-      The person (2026-10-24), to share the graph with a friend's TypeScript repositories before
-      serve moves to a web app of its own: the release archives hold only the binary, LICENSE,
-      THIRD_PARTY_NOTICES and the README (.goreleaser.yaml's archives), so serve without --ui
-      answers only the JSON API, and seeing the graph means cloning itos-cc, npm ci and npm run
-      build in viewer/, and passing --ui viewer/dist. The release builds viewer/dist and go:embed
-      carries it, so itos-cc serve serves the UI at / by default; --ui DIR still overrides it, for
-      viewer development. A scenario of its own (serve is on its legacy handler and serve.feature is
-      @wip, T-189, so the scenario goes in a converted file or is binary-only, the spec deciding),
-      the embed's build order in release.yml and .goreleaser.yaml, the viewer's notices in
-      THIRD_PARTY_NOTICES if its bundle carries any, and the binary's size noted. A stopgap, kept
-      small: serve's move (T-102 to T-113) is unchanged.
   - id: graph-snapshot
     title: A command writes the architecture graph as a .metrics snapshot, the viewer reading files alone
     phase: 1
