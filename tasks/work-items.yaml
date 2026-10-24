@@ -5598,8 +5598,8 @@ items:
   - id: T-195
     title: metrics folds into internal/metricsdir
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-194]
     kind: task
   - id: T-196
