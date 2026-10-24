@@ -13,7 +13,7 @@ phases:
 queue:
   - listed-support-per-test
   - listed-suites
-  - cd-finish-on-busy-main
+  - T-201
   - pinned-curl-timeout
   - counted-config-own-fix
   - mismatch-fix-quotes
@@ -5447,25 +5447,13 @@ items:
       flag for it, or names a package that timed out in its warning, so a project with a slow suite
       learns why its coverage is N/A.
     refs: [T-190]
-  - id: cd-finish-on-busy-main
+  - id: T-201
     title: cd.yml runs finish on a busy main instead of each push cancelling the last
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Seen 2026-10-24 with two agents pushing: cd.yml's test, languages, dart and sample jobs are
-      cancel-in-progress per job (concurrency groups cd-test-…, cd-languages-…, cd-dart-…,
-      cd-sample-…), so every push cancels the run before it, and runs 40053899406, 40054389226 and
-      40055029503 all ended cancelled, the dart job and the macOS and Windows features shards never
-      finishing. The scope job ranges from cd.yml's own last green run, so while no run is green
-      every push's range holds source commits and none counts as docs-only: the loop feeds itself,
-      and only a quiet hour lets a run finish and a release be cut. Options to weigh: cancel only a
-      run whose head a newer run contains and has passed, queue rather than cancel on main
-      (cancel-in-progress false with one group, a later push waiting), or let the docs-only
-      judgement read ci.yml's green range. The coordinator judges cd after a wave at a quiet point
-      meanwhile.
+    kind: task
   - id: slice-42
     title: itos-cc serve serves the viewer from its own binary, with no clone, Node or --ui
     phase: 1

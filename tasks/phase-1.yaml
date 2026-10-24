@@ -6809,3 +6809,19 @@
     patch so the next agents read its guides and hooks, as T-192 did for 8.12.0. itos upgrade edits
     only what each release fixes exactly; anything it asks by hand is applied or named in the
     commit.
+- id: T-201
+  type: ci
+  title: cd.yml runs finish on a busy main instead of each push cancelling the last
+  why: >
+    Seen 2026-10-24 with two agents pushing: cd.yml's test, languages, dart and sample jobs are
+    cancel-in-progress per job (concurrency groups cd-test-…, cd-languages-…, cd-dart-…,
+    cd-sample-…), so every push cancels the run before it, and runs 40053899406, 40054389226 and
+    40055029503 all ended cancelled, the dart job and the macOS and Windows features shards never
+    finishing. The scope job ranges from cd.yml's own last green run, so while no run is green every
+    push's range holds source commits and none counts as docs-only: the loop feeds itself, and only
+    a quiet hour lets a run finish and a release be cut. Options to weigh: cancel only a run whose
+    head a newer run contains and has passed, queue rather than cancel on main (cancel-in-progress
+    false with one group, a later push waiting), or let the docs-only judgement read ci.yml's green
+    range. The coordinator judges cd after a wave at a quiet point meanwhile.
+  done_when:
+    - run: "test $(grep -c 'cancel-in-progress: true' .github/workflows/cd.yml) -eq 0"
