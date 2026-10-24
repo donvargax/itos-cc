@@ -5214,7 +5214,7 @@ Feature: Mutation testing
     # the commit hint, then the refusal's own fix. Before this item the fix
     # held no commit hint, failing at the fix step. A run that is not
     # counted reads the working copy and keeps its fix as it is.
-    @slice-44 @ID-MUT-333 @wip
+    @slice-44 @ID-MUT-333
     Scenario: A counted run's refusal of an anchor keeps the hint to commit the fix
       Given the itos-cc.yaml HEAD commits holds '{x: &e [], exclude: *e}'
       When I run "itos-cc mutation run --count 1"

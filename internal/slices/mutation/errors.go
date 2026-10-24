@@ -136,12 +136,22 @@ func countedNoGit(err error) *cli.Problem {
 		"Run it inside a Git repository, after committing the code to judge.")
 }
 
+// countedConfigHint opens the fix of every itos-cc.yaml a counted run
+// refuses, its own fix after it where the refusal has one (slice-44): a
+// counted run reads the file HEAD commits, so a fix of the working copy
+// alone meets the same refusal again.
+const countedConfigHint = "Fix it in a commit: a counted run reads the itos-cc.yaml HEAD holds"
+
 // countedPlanError words the fresh plan Fresh refused, since the --since
 // ref as written; a failure or a cancellation is itself.
 func countedPlanError(failure mutants.FreshFailure, since string) error {
 	switch f := failure.(type) {
 	case mutants.FreshInvalid:
-		return configInvalid(f.Reason, f.Key, f.Fix, "Fix it in a commit: a counted run reads the itos-cc.yaml HEAD holds; exclude lists globs of sources from the project root, such as **/porttest/**.")
+		own := f.Fix
+		if own != "" {
+			own = countedConfigHint + ". " + own
+		}
+		return configInvalid(f.Reason, f.Key, own, countedConfigHint+"; exclude lists globs of sources from the project root, such as **/porttest/**.")
 	case mutants.FreshRefused:
 		switch f.Kind {
 		case mutants.FreshRepository:
