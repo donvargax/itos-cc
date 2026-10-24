@@ -5673,8 +5673,8 @@ items:
   - id: slice-44
     title: A counted run's own-fix config refusal keeps the hint to commit the fix
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
