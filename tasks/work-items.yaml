@@ -561,17 +561,9 @@ items:
     title: mutation run's summary comment names a method without its class
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was annotate-function-name.
-      Found building annotate-excepted. The summary comment's survived and excepted lines name a
-      function by its bare name (u.Name): a method count of class Board reads 'in count', so two
-      classes' count methods read alike, while mutation run's output, itos-cc.yaml and the scenarios
-      name it Board#count (namespace#name). ID-MUT-138's comment writes 'in Board#count'; its test,
-      on the Go fixture, checks 'in clear', the name the survived lines give today. The comment
-      could name a method with its class, as the scenarios do, for both kinds of line at once.
     refs: ["#10"]
   - id: since-paths-deleted-entries
     title: mutation run --since with paths never judges an entry whose file the range deleted
