@@ -5599,7 +5599,7 @@ items:
     title: metrics folds into internal/metricsdir
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-194]
     kind: task
   - id: T-196

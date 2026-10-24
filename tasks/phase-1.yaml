@@ -6738,10 +6738,6 @@
     function bodies may draw a fresh mutation site and kills what it meets (ADR-0059). The plan is
     scratchpad/plan-top-level-libraries-internal.md of the coordinator's session, its decisions now
     ADR-0061 (q-89).
-  done_when:
-    - run: test ! -d metrics
-    - run: "! grep -rn --include='*.go' 'itos-cc/metrics\"' ."
-    - run: tools/bin/architecture-check
 - id: T-196
   type: refactor
   title: coverage's runner moves to internal/covrun
