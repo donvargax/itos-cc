@@ -5503,6 +5503,9 @@ items:
       serve-static-on-kong, deferred. D7: the repo node is the git remote's repository name
       (origin's URL, its last path segment without .git); coordinator's routine call: with no
       remote, the folder name, as today.
+
+      Item 4 parked with item 5 in serve-static-on-kong (the person 2026-10-24); graph-snapshot is
+      items 1 to 3.
   - id: viewer-dependency-rule
     title: The viewer colours a dependency that points from a higher level to a lower one
     phase: 1
