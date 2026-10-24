@@ -5758,3 +5758,17 @@ items:
       later; rule-1 refusals come first. Fixture features/mutate_except_fixture.go:196 writes other:
       {kept: true} and must change. A minor release with BREAKING-CHANGE and Upgrading. Draft:
       .git/itos/draft-itos-cc-yaml-version.md on the coordinator's machine.
+  - id: itos-cc-yaml-version-key
+    title: "itos-cc.yaml requires version: 1"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [itos-cc-yaml-unknown-keys]
+    kind: idea
+    why: >
+      q-94 item C (the person 2026-10-24): version, a JSON integer, 1; a missing one refused with
+      fix "add version: 1 as the first line" (an empty or comment-only file needs none); a newer one
+      config.invalid exit 80 with fix to upgrade itos-cc; every key added later bumps the version;
+      refuse with a fix, never rewrite; the exceptions writer starts a file it creates with version:
+      1; this repository's itos-cc.yaml gains it; counted runs read HEAD's file. Large fixture churn
+      (every itos-cc.yaml Given). After itos-cc-yaml-unknown-keys.
