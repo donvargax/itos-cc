@@ -288,9 +288,14 @@ func (w *world) runObject() (map[string]any, string, error) {
 // separators read as slashes, is value; any problem
 // of the rule where key is "". The plain output names no rule, so the
 // problem is read from the run made with --json (lastObject), and the plain
-// one's error output must print its message.
+// one's error output must print its message: a run with --json prints
+// none, so it is made again without --json, which must exit as it did.
 func (w *world) problemIs(rule, key, value string) error {
 	object, report, err := w.lastObject()
+	if err != nil {
+		return err
+	}
+	plain, err := w.plainError()
 	if err != nil {
 		return err
 	}
@@ -306,7 +311,7 @@ func (w *world) problemIs(rule, key, value string) error {
 		if problem["rule"] != rule || key != "" && got != value {
 			continue
 		}
-		if message, _ := problem["message"].(string); message == "" || !strings.Contains(w.stderr, message) {
+		if message, _ := problem["message"].(string); message == "" || !strings.Contains(plain, message) {
 			return fmt.Errorf("the error output does not print the problem's message %q\n%s", message, report)
 		}
 		w.problem = problem
@@ -316,6 +321,24 @@ func (w *world) problemIs(rule, key, value string) error {
 		return fmt.Errorf("no problem has the rule %q\n%s", rule, report)
 	}
 	return fmt.Errorf("no problem has the rule %q and the %s %q\n%s", rule, key, value, report)
+}
+
+// plainError is the error output of the last run made without --json: its
+// own, or, when it had --json, that of the same run made again without it,
+// which must exit as it did.
+func (w *world) plainError() (string, error) {
+	if !slices.Contains(w.last.args, "--json") {
+		return w.stderr, nil
+	}
+	args := slices.DeleteFunc(slices.Clone(w.last.args), func(arg string) bool { return arg == "--json" })
+	code, _, errOut, err := w.capture(w.last.dir, w.last.env, args...)
+	if err != nil {
+		return "", err
+	}
+	if code != w.exit {
+		return "", fmt.Errorf("without --json itos-cc exited %d, not %d as with it\n%s\n--- without --json\n%s", code, w.exit, w.report(), errOut)
+	}
+	return errOut, nil
 }
 
 // fixSuggests is whether the fix of the problem problemIs found asks

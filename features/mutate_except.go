@@ -147,6 +147,7 @@ func exceptionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceM
 	e.pruneSteps(sc)
 	e.repointSteps(sc)
 	e.uncoveredSteps(sc)
+	identityExceptionSteps(sc, m.w)
 }
 
 func (e *exceptionMutation) run(args string) error { return e.s.m.w.runWith(e.s.m.w.env(), args) }
