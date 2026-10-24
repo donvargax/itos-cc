@@ -5620,7 +5620,7 @@ items:
     title: One refactor-proof.yml run proves the move under internal/ changed no behaviour
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-197]
     kind: task
   - id: pinned-curl-timeout
