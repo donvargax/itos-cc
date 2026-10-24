@@ -5737,3 +5737,10 @@ items:
     deferred: >
       q-95: lowest priority, after everything else, and only if the web app has not moved to its own
       project by then.
+  - id: T-204
+    title: Upgrade the repository pin to itos 8.13
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
