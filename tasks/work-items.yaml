@@ -5641,3 +5641,20 @@ items:
     status: done
     depends_on: []
     kind: bug
+  - id: uncovered-line-exception
+    title: A way to accept an unreachable changed line under --fail-uncovered=lines
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-197 moved config to the mutation slice's settings adapter, which rewrote the qualifier on
+      three return lines of the exceptions adapter's read (exception_document.go): the Node decode's
+      error, the non-mapping root and the list-length check. Each runs only after settings.Parse
+      succeeded on the same bytes, and yaml.v3 refuses every document that would reach them first
+      (syntax, a non-mapping root, a duplicate or aliased key), so no test can run them; the
+      per-push proof (--fail-uncovered=lines) fails every push that changes such a line, a qualifier
+      change included, and itos-cc.yaml can except only an equivalent mutant, not an uncovered
+      statement. Either an exception for an unreachable statement, reviewed like a mutant's, or a
+      rule that a move's qualifier-only change is not a changed line.
