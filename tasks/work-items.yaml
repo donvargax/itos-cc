@@ -5673,3 +5673,7 @@ items:
       splices nothing into one. Either refuse an aliased list as an InvalidError (as anchors are
       refused nowhere else, docs/CONFIG.md rule 1 says aliases are expanded) or write through it; a
       scenario first.
+
+      T-197 (2e23390f) deleted read's list-length check with the other guards yaml.v3 left
+      unreachable, so read no longer looks at mutation.exceptions' node at all; the alias case still
+      writes nothing.
