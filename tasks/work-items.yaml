@@ -5400,8 +5400,8 @@ items:
   - id: slice-41
     title: mutation except takes a CI report's mutant identity, with no local mutation run
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
