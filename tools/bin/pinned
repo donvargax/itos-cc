@@ -126,7 +126,11 @@ if [ ! -x "$bin" ]; then
 	if command -v sha256sum >/dev/null 2>&1; then check="sha256sum -c -"; else check="shasum -a 256 -c -"; fi
 	tmp=$(mktemp -d)
 	trap 'rm -rf "$tmp"' EXIT
-	curl -fsSL -o "$tmp/$asset" "$url" || die "cannot fetch $url"
+	# Bounded, so a stalled download fails instead of hanging (T-202): 30
+	# seconds to connect, 5 minutes a try, and two retries of a transient
+	# failure, a timeout among them.
+	curl -fsSL --connect-timeout 30 --max-time 300 --retry 2 -o "$tmp/$asset" "$url" ||
+		die "cannot fetch $url: the download timed out or failed; run it again"
 	(cd "$tmp" && echo "$sum  $asset" | $check >/dev/null) || die "$asset SHA-256 did not match the pinned release"
 	case "$asset" in
 	*.zip) (cd "$tmp" && unzip -q "$asset" "$member") || die "$asset holds no $member" ;;
