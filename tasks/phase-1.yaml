@@ -6750,3 +6750,31 @@
     - run: test ! -d metrics
     - run: "! grep -rn --include='*.go' 'itos-cc/metrics\"' ."
     - run: tools/bin/architecture-check
+- id: T-196
+  type: refactor
+  title: coverage's runner moves to internal/covrun
+  why: >
+    ADR-0061, T4 of six: coverage (23 files, the runner: os/exec, run folders, Disk, Load,
+    Inventory, Shell) becomes the engine internal/covrun, package covrun, the alias eight importers
+    already use; never under internal/coverage/, whose domain, domain-io, shared-domains and
+    coverage-fakes globs would hold it and refuse os/exec; not split (ADR-0046 took the pure part
+    out). 16 importing files, 8 also changing about 52 coverage. qualifiers. Its 13 snapshots move
+    to .metrics/mutate/internal/covrun. depguard: a new rule covrun (allow internal/coverage,
+    coverage/port, lang, internal/project), the exclusions, and the top-level itos-cc/coverage$
+    becoming internal/covrun$ in five rules, never touching internal/coverage$. architecture-check
+    drops coverage's row. Feature-file comments naming the old package are left as they are. Keep
+    ports, ctx and domain rules whole (ADR-0047); refactor commits, no behaviour change, no binary
+    comparison per move (the proof is T-198); every package moved under internal/ gets its own
+    depguard rule in .golangci.yml and the exclusions in slices and slice-fakes, or depguard reads
+    it as a slice; git mv its .metrics/mutate snapshots with its files (never hand-edit crap, dry or
+    scrap.json: the nightly rewrites them); delete its own exemption row in
+    tools/bin/architecture-check; update docs/go.md's package and boundary lists,
+    docs/architecture.md, docs/ownership.md, README's layout table and the docs/dart path
+    references; rerun go run ./tools/bin/assemble and diff. A push whose qualifier changes touch
+    function bodies may draw a fresh mutation site and kills what it meets (ADR-0059). The plan is
+    scratchpad/plan-top-level-libraries-internal.md of the coordinator's session, its decisions now
+    ADR-0061 (q-89).
+  done_when:
+    - run: test ! -d coverage && test -d internal/covrun
+    - run: "! grep -rn --include='*.go' '\"github.com/donvargax/itos-cc/coverage\"' ."
+    - run: tools/bin/architecture-check

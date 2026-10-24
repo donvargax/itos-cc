@@ -5599,3 +5599,10 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: T-196
+    title: coverage's runner moves to internal/covrun
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
