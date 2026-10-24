@@ -1127,8 +1127,11 @@ listed kill rests on its scenario's feature file and on what the `support` globs
 13): the step code (`features/*.go`), the in-process driver and its fakes
 (`cmd/itos-cc/scenarios*_test.go`, `cmd/itos-cc/run_fakes_test.go`), the `TestMain` in
 `cmd/itos-cc/subprocess_test.go` that runs before every scenario, and every `porttest` folder
-under `internal/`, each named by a glob of its own, since the globs go through `filepath.Glob`,
-where `**` matches as `*`, so a `porttest` folder added later is added to the list (T-191). The
+under `internal/`. The globs go through `filepath.Glob`, where `**` matches as `*`, so the
+`porttest` globs name the three shapes such a folder takes (`internal/*/porttest`,
+`internal/*/port/porttest`, `internal/slices/*/domain/porttest`): they match every one there is
+today and any new one in those shapes, and a folder in a new shape is added to the list (T-191);
+listed-support-doublestar, if built, folds them into one `**` glob. The
 other `cmd/itos-cc` test files hold tests `TestScenarios` never runs. The feature files are not among them, so a spec edit
 stales only the kills of its own file's scenarios. A scenario the in-process driver leaves out
 (`@binary-only`, `features.Deferred`) runs nothing there and kills nothing. `--all-tests` reads
