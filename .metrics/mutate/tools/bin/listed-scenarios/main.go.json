@@ -1,0 +1,254 @@
+{
+  "version": 1,
+  "file": "tools/bin/listed-scenarios/main.go",
+  "language": "go",
+  "tests": {
+    "tools/bin/listed-scenarios/main_test.go": "267e5d3e29432293348d8a83dbc20914575233866f1007ade81bf73d232e5fe1"
+  },
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/listed-scenarios",
+      "name": "main",
+      "hash": "8bd30cac0515d4ce",
+      "start_line": 51,
+      "end_line": 53,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 52,
+          "column": 19,
+          "offset": 32,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/listed-scenarios",
+      "name": "run",
+      "hash": "3034ae18ff03d911",
+      "start_line": 58,
+      "end_line": 78,
+      "killed": 8,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 8,
+      "mutants": [
+        {
+          "line": 62,
+          "column": 35,
+          "offset": 290,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 65,
+          "column": 18,
+          "offset": 330,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 65,
+          "column": 21,
+          "offset": 333,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 66,
+          "column": 74,
+          "offset": 410,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 66,
+          "column": 79,
+          "offset": 415,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 70,
+          "column": 9,
+          "offset": 495,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 72,
+          "column": 10,
+          "offset": 565,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 77,
+          "column": 9,
+          "offset": 660,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/listed-scenarios",
+      "name": "inProcess",
+      "hash": "15ee03015985a4c5",
+      "start_line": 91,
+      "end_line": 97,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/listed-scenarios",
+      "name": "listed",
+      "hash": "8a9cd2e8d53058b1",
+      "start_line": 114,
+      "end_line": 142,
+      "killed": 8,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 8,
+      "mutants": [
+        {
+          "line": 116,
+          "column": 48,
+          "offset": 129,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 119,
+          "column": 13,
+          "offset": 230,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 125,
+          "column": 6,
+          "offset": 414,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 125,
+          "column": 14,
+          "offset": 422,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 125,
+          "column": 17,
+          "offset": 425,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 130,
+          "column": 6,
+          "offset": 550,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 132,
+          "column": 37,
+          "offset": 609,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 137,
+          "column": 14,
+          "offset": 683,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/listed-scenarios.harness",
+      "name": "runs",
+      "hash": "ed972fb38409ef30",
+      "start_line": 145,
+      "end_line": 173,
+      "killed": 4,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 4,
+      "mutants": [
+        {
+          "line": 147,
+          "column": 10,
+          "offset": 87,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 151,
+          "column": 9,
+          "offset": 153,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 156,
+          "column": 9,
+          "offset": 306,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 169,
+          "column": 17,
+          "offset": 654,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/listed-scenarios.harness",
+      "name": "skips",
+      "hash": "b798fbba4496cf29",
+      "start_line": 176,
+      "end_line": 178,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    }
+  ]
+}

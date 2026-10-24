@@ -148,7 +148,7 @@
     "internal/slices/mutation/baseline_output_test.go": "913ee59b866b4a5ede0f2738142dd6e924952d9926d6e818945255bccde60474",
     "internal/slices/mutation/domain/annotate_test.go": "1bcaa3a80048ce19ba6cd679a51d45db82421904e17ee3562c2bd8e341fd11ed",
     "internal/slices/mutation/domain/broad_test.go": "0ffcfcb72a0b883d86ba8c57b5932615ee7c3dff60f79255e61d97db292e310c",
-    "internal/slices/mutation/domain/check_orchestration_test.go": "ee51308bda03f249f438d70b4a8477321f3647869d8eb504595205fc9fdffa53",
+    "internal/slices/mutation/domain/check_orchestration_test.go": "4460c86b148f90a2b052002cae3832fdce34de9ddabdd6115bd88544340733ce",
     "internal/slices/mutation/domain/command_policy_test.go": "87492b8251d700bf414d7a8ca132f4cc76b090090e714ef13c3e0f04cc67e239",
     "internal/slices/mutation/domain/exception_orchestration_test.go": "00855245745d10cdd9f9eacefb67163255c8d4a41e4ece759b828c16de74116b",
     "internal/slices/mutation/domain/exceptions_test.go": "1c79f132b9c008cde2a0906b0d0c917fe613a61af3c43a0ee0421caf2c17855e",
@@ -159,6 +159,7 @@
     "internal/slices/mutation/domain/fresh_preparation_test.go": "0ba19abec991bc39684f0414bdc21a5d69c7ffba855b3c2577e6c20aef1c187a",
     "internal/slices/mutation/domain/fresh_trial_test.go": "d1dcf64412bffc8347778a3b36c2798b955731528fa32375bb9ce808cd9d3952",
     "internal/slices/mutation/domain/freshness_test.go": "047c8ab189a1a267ea2a838d71830c75e147b25331d530e1e93370fac9246da9",
+    "internal/slices/mutation/domain/importers_test.go": "f413cd0e555c3903d0f8e9e4217483f93d56149f28df197882710839a60d4a7f",
     "internal/slices/mutation/domain/limits_test.go": "0dff257012e1de4e9e4f9ccdaa95389303c5de441430b01a7b143ca1b891d67d",
     "internal/slices/mutation/domain/line_coverage_test.go": "20357afb7f4235b89ac5a6ff1b9024a8b4baf6f976bd4ef44b5aa9b8ed7e3cd1",
     "internal/slices/mutation/domain/listed_finalization_test.go": "340182529857c3f0a5a6594d1a8607b3852feda5decf5a85343f366dc140cfb5",
@@ -183,7 +184,7 @@
     "internal/slices/mutation/domain/sample_test.go": "873c16febe4435601b946d17e5aa80e25492d7f60128bcf3f5f09f7376ae540b",
     "internal/slices/mutation/domain/settings_reader_test.go": "38dc202f7ee1dc3f43e13453ec7b43cf7e0cd36d3c993829a92718f4a4a1a4ba",
     "internal/slices/mutation/domain/sites_test.go": "3f42cb8237c6f3e7425c4be1f3d5e92b215219ef1197c91364aa5a1ee101792c",
-    "internal/slices/mutation/domain/snapshot_test.go": "b3d8a69941125dd7841e673f9f592912be4feb79bf8a35987b00375e048287f9",
+    "internal/slices/mutation/domain/snapshot_test.go": "b747a69a88d33384f171bcfe25a06e9f7c2abcbe9b04a08a07f43ffa9caaca2b",
     "internal/slices/mutation/except_test.go": "17ddb0d28b638d5e853ac0945791c300b21c543895d19005cfe521896db40a23",
     "internal/slices/mutation/handler_test.go": "e979210797a6fe128af74f9407327fdc003a1ab52b9f89b9c884ebc51a782f13",
     "internal/slices/mutation/run_coverage_test.go": "74f75891fc3978b6d199ff6d92e03483622720138ffb400879210be168030366",
@@ -194,16 +195,16 @@
     {
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "FreshnessOf",
-      "hash": "803f613d3ddbcebe",
-      "start_line": 74,
-      "end_line": 95,
-      "killed": 13,
+      "hash": "19bd3b3976532d76",
+      "start_line": 77,
+      "end_line": 98,
+      "killed": 12,
       "survived": 0,
       "uncovered": 0,
-      "sites": 13,
+      "sites": 12,
       "mutants": [
         {
-          "line": 76,
+          "line": 79,
           "column": 13,
           "offset": 154,
           "original": "==",
@@ -211,7 +212,7 @@
           "outcome": "killed"
         },
         {
-          "line": 78,
+          "line": 81,
           "column": 18,
           "offset": 214,
           "original": "!=",
@@ -219,57 +220,49 @@
           "outcome": "killed"
         },
         {
-          "line": 80,
-          "column": 13,
-          "offset": 268,
-          "original": "!=",
-          "replacement": "==",
-          "outcome": "killed"
-        },
-        {
-          "line": 83,
+          "line": 86,
           "column": 42,
-          "offset": 383,
+          "offset": 397,
           "original": "true",
           "replacement": "false",
           "outcome": "killed"
         },
         {
-          "line": 85,
+          "line": 88,
           "column": 90,
-          "offset": 481,
+          "offset": 495,
           "original": ">",
           "replacement": ">=",
           "outcome": "killed"
         },
         {
-          "line": 85,
+          "line": 88,
           "column": 92,
-          "offset": 483,
+          "offset": 497,
           "original": "0",
           "replacement": "1",
           "outcome": "killed"
         },
         {
-          "line": 85,
+          "line": 88,
           "column": 94,
-          "offset": 485,
+          "offset": 499,
           "original": "||",
           "replacement": "&&",
           "outcome": "killed"
         },
         {
-          "line": 85,
+          "line": 88,
           "column": 108,
-          "offset": 499,
+          "offset": 513,
           "original": ">",
           "replacement": ">=",
           "outcome": "killed"
         },
         {
-          "line": 85,
+          "line": 88,
           "column": 110,
-          "offset": 501,
+          "offset": 515,
           "original": "0",
           "replacement": "1",
           "outcome": "killed",
@@ -288,6 +281,13 @@
             "ID-MUT-277",
             "ID-MUT-278",
             "ID-MUT-279",
+            "ID-MUT-308",
+            "ID-MUT-309",
+            "ID-MUT-310",
+            "ID-MUT-311",
+            "ID-MUT-312",
+            "ID-MUT-313",
+            "ID-MUT-315",
             "ID-MUT-306",
             "ID-MUT-115",
             "ID-MUT-116",
@@ -402,33 +402,33 @@
           ]
         },
         {
-          "line": 88,
+          "line": 91,
           "column": 16,
-          "offset": 591,
+          "offset": 605,
           "original": ">",
           "replacement": ">=",
           "outcome": "killed"
         },
         {
-          "line": 88,
+          "line": 91,
           "column": 18,
-          "offset": 593,
+          "offset": 607,
           "original": "0",
           "replacement": "1",
           "outcome": "killed"
         },
         {
-          "line": 91,
+          "line": 94,
           "column": 51,
-          "offset": 697,
+          "offset": 711,
           "original": ">",
           "replacement": ">=",
           "outcome": "killed"
         },
         {
-          "line": 91,
+          "line": 94,
           "column": 53,
-          "offset": 699,
+          "offset": 713,
           "original": "0",
           "replacement": "1",
           "outcome": "killed"
@@ -439,15 +439,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "Unrecorded",
       "hash": "8cb2693fd0a929a9",
-      "start_line": 99,
-      "end_line": 112,
+      "start_line": 102,
+      "end_line": 115,
       "killed": 2,
       "survived": 0,
       "uncovered": 0,
       "sites": 2,
       "mutants": [
         {
-          "line": 102,
+          "line": 105,
           "column": 18,
           "offset": 131,
           "original": "true",
@@ -455,7 +455,7 @@
           "outcome": "killed"
         },
         {
-          "line": 106,
+          "line": 109,
           "column": 6,
           "offset": 187,
           "original": "!",
@@ -468,15 +468,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "OnSites",
       "hash": "dc4d17505af5522f",
-      "start_line": 124,
-      "end_line": 153,
+      "start_line": 127,
+      "end_line": 156,
       "killed": 6,
       "survived": 0,
       "uncovered": 0,
       "sites": 6,
       "mutants": [
         {
-          "line": 125,
+          "line": 128,
           "column": 11,
           "offset": 83,
           "original": "==",
@@ -484,7 +484,7 @@
           "outcome": "killed"
         },
         {
-          "line": 125,
+          "line": 128,
           "column": 18,
           "offset": 90,
           "original": "||",
@@ -492,7 +492,7 @@
           "outcome": "killed"
         },
         {
-          "line": 125,
+          "line": 128,
           "column": 32,
           "offset": 104,
           "original": "!=",
@@ -500,7 +500,7 @@
           "outcome": "killed"
         },
         {
-          "line": 130,
+          "line": 133,
           "column": 18,
           "offset": 202,
           "original": "true",
@@ -508,7 +508,7 @@
           "outcome": "killed"
         },
         {
-          "line": 133,
+          "line": 136,
           "column": 31,
           "offset": 255,
           "original": "0",
@@ -516,7 +516,7 @@
           "outcome": "killed"
         },
         {
-          "line": 149,
+          "line": 152,
           "column": 22,
           "offset": 575,
           "original": "==",
@@ -529,15 +529,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "Placed",
       "hash": "6e39bb574b8844f1",
-      "start_line": 157,
-      "end_line": 176,
+      "start_line": 160,
+      "end_line": 179,
       "killed": 0,
       "survived": 3,
       "uncovered": 0,
       "sites": 3,
       "mutants": [
         {
-          "line": 170,
+          "line": 173,
           "column": 18,
           "offset": 341,
           "original": "!=",
@@ -554,6 +554,10 @@
             "ID-MUT-132",
             "ID-MUT-276",
             "ID-MUT-279",
+            "ID-MUT-308",
+            "ID-MUT-309",
+            "ID-MUT-312",
+            "ID-MUT-315",
             "ID-MUT-115",
             "ID-MUT-116",
             "ID-MUT-106",
@@ -578,7 +582,7 @@
           ]
         },
         {
-          "line": 171,
+          "line": 174,
           "column": 23,
           "offset": 380,
           "original": "<",
@@ -593,13 +597,17 @@
             "ID-MUT-132",
             "ID-MUT-276",
             "ID-MUT-279",
+            "ID-MUT-308",
+            "ID-MUT-309",
+            "ID-MUT-312",
+            "ID-MUT-315",
             "ID-MUT-75",
             "ID-MUT-227",
             "ID-MUT-292"
           ]
         },
         {
-          "line": 173,
+          "line": 176,
           "column": 24,
           "offset": 421,
           "original": "<",
@@ -616,6 +624,10 @@
             "ID-MUT-132",
             "ID-MUT-276",
             "ID-MUT-279",
+            "ID-MUT-308",
+            "ID-MUT-309",
+            "ID-MUT-312",
+            "ID-MUT-315",
             "ID-MUT-115",
             "ID-MUT-116",
             "ID-MUT-106",
@@ -644,15 +656,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "NeedsMutationCoverage",
       "hash": "6e3a96c974606594",
-      "start_line": 211,
-      "end_line": 228,
+      "start_line": 214,
+      "end_line": 231,
       "killed": 8,
       "survived": 0,
       "uncovered": 0,
       "sites": 8,
       "mutants": [
         {
-          "line": 213,
+          "line": 216,
           "column": 10,
           "offset": 95,
           "original": "true",
@@ -660,7 +672,7 @@
           "outcome": "killed"
         },
         {
-          "line": 217,
+          "line": 220,
           "column": 22,
           "offset": 199,
           "original": "!=",
@@ -668,7 +680,7 @@
           "outcome": "killed"
         },
         {
-          "line": 218,
+          "line": 221,
           "column": 12,
           "offset": 229,
           "original": "true",
@@ -676,7 +688,7 @@
           "outcome": "killed"
         },
         {
-          "line": 221,
+          "line": 224,
           "column": 23,
           "offset": 306,
           "original": "==",
@@ -684,7 +696,7 @@
           "outcome": "killed"
         },
         {
-          "line": 221,
+          "line": 224,
           "column": 35,
           "offset": 318,
           "original": "&&",
@@ -692,7 +704,7 @@
           "outcome": "killed"
         },
         {
-          "line": 221,
+          "line": 224,
           "column": 54,
           "offset": 337,
           "original": "==",
@@ -700,7 +712,7 @@
           "outcome": "killed"
         },
         {
-          "line": 222,
+          "line": 225,
           "column": 13,
           "offset": 357,
           "original": "true",
@@ -708,7 +720,7 @@
           "outcome": "killed"
         },
         {
-          "line": 227,
+          "line": 230,
           "column": 9,
           "offset": 388,
           "original": "false",
@@ -721,15 +733,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain.FunctionCheck",
       "name": "Judged",
       "hash": "ff2e4a7181d2f21e",
-      "start_line": 234,
-      "end_line": 236,
+      "start_line": 237,
+      "end_line": 239,
       "killed": 4,
       "survived": 0,
       "uncovered": 0,
       "sites": 4,
       "mutants": [
         {
-          "line": 235,
+          "line": 238,
           "column": 17,
           "offset": 55,
           "original": "==",
@@ -737,7 +749,7 @@
           "outcome": "killed"
         },
         {
-          "line": 235,
+          "line": 238,
           "column": 34,
           "offset": 72,
           "original": "||",
@@ -745,7 +757,7 @@
           "outcome": "killed"
         },
         {
-          "line": 235,
+          "line": 238,
           "column": 55,
           "offset": 93,
           "original": ">",
@@ -753,7 +765,7 @@
           "outcome": "killed"
         },
         {
-          "line": 235,
+          "line": 238,
           "column": 57,
           "offset": 95,
           "original": "0",
@@ -766,15 +778,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "CoverageFreshness",
       "hash": "32b202f6d6b73a9e",
-      "start_line": 240,
-      "end_line": 262,
+      "start_line": 243,
+      "end_line": 265,
       "killed": 17,
       "survived": 2,
       "uncovered": 0,
       "sites": 19,
       "mutants": [
         {
-          "line": 241,
+          "line": 244,
           "column": 14,
           "offset": 145,
           "original": "!=",
@@ -782,7 +794,7 @@
           "outcome": "killed"
         },
         {
-          "line": 241,
+          "line": 244,
           "column": 21,
           "offset": 152,
           "original": "&&",
@@ -790,7 +802,7 @@
           "outcome": "killed"
         },
         {
-          "line": 241,
+          "line": 244,
           "column": 42,
           "offset": 173,
           "original": "&&",
@@ -798,7 +810,7 @@
           "outcome": "killed"
         },
         {
-          "line": 242,
+          "line": 245,
           "column": 21,
           "offset": 196,
           "original": "==",
@@ -806,7 +818,7 @@
           "outcome": "killed"
         },
         {
-          "line": 242,
+          "line": 245,
           "column": 52,
           "offset": 227,
           "original": "&&",
@@ -814,7 +826,7 @@
           "outcome": "killed"
         },
         {
-          "line": 242,
+          "line": 245,
           "column": 72,
           "offset": 247,
           "original": "==",
@@ -822,7 +834,7 @@
           "outcome": "killed"
         },
         {
-          "line": 242,
+          "line": 245,
           "column": 107,
           "offset": 282,
           "original": "&&",
@@ -830,7 +842,7 @@
           "outcome": "killed"
         },
         {
-          "line": 243,
+          "line": 246,
           "column": 17,
           "offset": 301,
           "original": "==",
@@ -838,7 +850,7 @@
           "outcome": "killed"
         },
         {
-          "line": 243,
+          "line": 246,
           "column": 24,
           "offset": 308,
           "original": "&&",
@@ -846,7 +858,7 @@
           "outcome": "killed"
         },
         {
-          "line": 243,
+          "line": 246,
           "column": 45,
           "offset": 329,
           "original": "==",
@@ -854,7 +866,7 @@
           "outcome": "killed"
         },
         {
-          "line": 243,
+          "line": 246,
           "column": 63,
           "offset": 347,
           "original": "&&",
@@ -862,7 +874,7 @@
           "outcome": "killed"
         },
         {
-          "line": 243,
+          "line": 246,
           "column": 80,
           "offset": 364,
           "original": "==",
@@ -870,7 +882,7 @@
           "outcome": "killed"
         },
         {
-          "line": 251,
+          "line": 254,
           "column": 6,
           "offset": 637,
           "original": "!",
@@ -878,7 +890,7 @@
           "outcome": "killed"
         },
         {
-          "line": 254,
+          "line": 257,
           "column": 24,
           "offset": 794,
           "original": "==",
@@ -886,7 +898,7 @@
           "outcome": "killed"
         },
         {
-          "line": 254,
+          "line": 257,
           "column": 30,
           "offset": 800,
           "original": "&&",
@@ -894,7 +906,7 @@
           "outcome": "killed"
         },
         {
-          "line": 254,
+          "line": 257,
           "column": 52,
           "offset": 822,
           "original": "==",
@@ -928,7 +940,7 @@
           ]
         },
         {
-          "line": 254,
+          "line": 257,
           "column": 55,
           "offset": 825,
           "original": "0",
@@ -962,7 +974,7 @@
           ]
         },
         {
-          "line": 257,
+          "line": 260,
           "column": 25,
           "offset": 914,
           "original": ">",
@@ -970,7 +982,7 @@
           "outcome": "killed"
         },
         {
-          "line": 257,
+          "line": 260,
           "column": 27,
           "offset": 916,
           "original": "0",
@@ -1074,7 +1086,14 @@
     "ID-MUT-302": "features/mutate.feature",
     "ID-MUT-303": "features/mutate.feature",
     "ID-MUT-306": "features/mutate.feature",
+    "ID-MUT-308": "features/mutate.feature",
+    "ID-MUT-309": "features/mutate.feature",
     "ID-MUT-31": "features/mutate.feature",
+    "ID-MUT-310": "features/mutate.feature",
+    "ID-MUT-311": "features/mutate.feature",
+    "ID-MUT-312": "features/mutate.feature",
+    "ID-MUT-313": "features/mutate.feature",
+    "ID-MUT-315": "features/mutate.feature",
     "ID-MUT-57": "features/mutate.feature",
     "ID-MUT-58": "features/mutate.feature",
     "ID-MUT-59": "features/mutate.feature",
@@ -1113,7 +1132,7 @@
   },
   "listed_files": {
     "features/metrics_snapshots.feature": "dc436817eb86c3be4243d0c47291c2d284084924b84a2981489cc6c418e5ea53",
-    "features/mutate.feature": "2f4ee9e96aca3a409d6143ba124360d98bdd61a440a1c494229b1c7023b18d5b"
+    "features/mutate.feature": "1be6766b1d432a7a832ad2dd6b3405567299fdf71149dd4403f5495359557459"
   },
   "support": {
     "cmd/itos-cc/run_fakes_test.go": "ae0ab03c618d1a7a3538a775d1ca35572f29d21def8cd3f3a3239dcbca62b63f",
@@ -1155,7 +1174,7 @@
     "features/crap.go": "acc1f0b013ccfd0a22f607c05351e20f24842d6eb518407d5e10921720d85cb8",
     "features/crap_records.go": "a1b9592fa78892b18a138af447a3f869e28d2dfa6d77dce569b0ac86477564e9",
     "features/crap_table.go": "629baba3f88553e1accce0884a64255b4294f8b4403243983894838a542322e6",
-    "features/deferred.go": "4df60dac9381d0ee91c0a25c0375664af6949c3855da07fe613334a95c12e97a",
+    "features/deferred.go": "e17ef44107548db506dfe4fa14c872a8383007b0a61ed94a404822972891bec2",
     "features/dry.go": "82070e3b0a799cc55ab0f53fa70936ee4e15f47b16426d5e23db5fa6992d9dbd",
     "features/dry_order.go": "97344e08ac9ccef0afe90b9419b7699801a5b122338ded191775ff7d8871c891",
     "features/dry_report.go": "5503f06fb7bd46b6abb86506e42c83d208566157acbc288254e5aa2ddb1402ba",
@@ -1239,11 +1258,12 @@
     "features/mutate_language_tools.go": "b0e811b27978500eac1e29df18571b73e5c8aa904115d36552bc57e82e5044c9",
     "features/mutate_language_unrecorded.go": "6e89737cb936a9f5acf28af5aa0c8c83ac6751c1b1d7e2d1c8ef04fc779f3c89",
     "features/mutate_limits.go": "a0ddf8cb4c9c154fde863a914ef2b55ce0dde32aa575ad5b05c6383de3821b5d",
-    "features/mutate_listed.go": "fe870db659266145a0ca9cfc0f580fbc899a8a8d98ecc478fe51a88c7c6ed35e",
+    "features/mutate_listed.go": "ff8b99a08f73adf6fea5a55ec8c02bc7be98e06648aa9509fdbdfe400f61ddf7",
     "features/mutate_listed_coverage.go": "9f402a9ea5faa4b15b33df612697af0cfca0700e46bb07a62fc4ce0eada5495b",
     "features/mutate_listed_coverage_failed.go": "ec429cfe100aae0de20e3e9823e9d72e328188e2ddfa3d9b9b6f6925343fe77c",
     "features/mutate_listed_fingerprint.go": "cc550d88189fec591c3d54fae8145f307603982681ca77d0d3ec0377e4fed23b",
     "features/mutate_listed_fixture.go": "77ac49814b7558c06aa6b4deb7f892e1ed2d82ccdb58d3207ea61235c5773848",
+    "features/mutate_listed_importers.go": "dbeebf368482a2e2ccce0f03507312d1c62164bae4da07de5b4cc34d9ffbf948",
     "features/mutate_listed_reuse.go": "8873bbc86fe1c8e29237e4cbd2c0a51ac4b2d807486b78c0e6ba492d25bf1f31",
     "features/mutate_listed_timeout.go": "133b7058e4efa97b324f3aab3f2e0742d86ba1009706267e4c4340a11a6e4a25",
     "features/mutate_not_built.go": "1d7b1406c417eeb41168ff1565eee296966114419a98a3fcf627cb3911e754d6",

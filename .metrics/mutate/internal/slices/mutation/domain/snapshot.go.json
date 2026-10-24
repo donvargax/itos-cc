@@ -148,7 +148,7 @@
     "internal/slices/mutation/baseline_output_test.go": "913ee59b866b4a5ede0f2738142dd6e924952d9926d6e818945255bccde60474",
     "internal/slices/mutation/domain/annotate_test.go": "1bcaa3a80048ce19ba6cd679a51d45db82421904e17ee3562c2bd8e341fd11ed",
     "internal/slices/mutation/domain/broad_test.go": "0ffcfcb72a0b883d86ba8c57b5932615ee7c3dff60f79255e61d97db292e310c",
-    "internal/slices/mutation/domain/check_orchestration_test.go": "ee51308bda03f249f438d70b4a8477321f3647869d8eb504595205fc9fdffa53",
+    "internal/slices/mutation/domain/check_orchestration_test.go": "4460c86b148f90a2b052002cae3832fdce34de9ddabdd6115bd88544340733ce",
     "internal/slices/mutation/domain/command_policy_test.go": "87492b8251d700bf414d7a8ca132f4cc76b090090e714ef13c3e0f04cc67e239",
     "internal/slices/mutation/domain/exception_orchestration_test.go": "00855245745d10cdd9f9eacefb67163255c8d4a41e4ece759b828c16de74116b",
     "internal/slices/mutation/domain/exceptions_test.go": "1c79f132b9c008cde2a0906b0d0c917fe613a61af3c43a0ee0421caf2c17855e",
@@ -159,6 +159,7 @@
     "internal/slices/mutation/domain/fresh_preparation_test.go": "0ba19abec991bc39684f0414bdc21a5d69c7ffba855b3c2577e6c20aef1c187a",
     "internal/slices/mutation/domain/fresh_trial_test.go": "d1dcf64412bffc8347778a3b36c2798b955731528fa32375bb9ce808cd9d3952",
     "internal/slices/mutation/domain/freshness_test.go": "047c8ab189a1a267ea2a838d71830c75e147b25331d530e1e93370fac9246da9",
+    "internal/slices/mutation/domain/importers_test.go": "f413cd0e555c3903d0f8e9e4217483f93d56149f28df197882710839a60d4a7f",
     "internal/slices/mutation/domain/limits_test.go": "0dff257012e1de4e9e4f9ccdaa95389303c5de441430b01a7b143ca1b891d67d",
     "internal/slices/mutation/domain/line_coverage_test.go": "20357afb7f4235b89ac5a6ff1b9024a8b4baf6f976bd4ef44b5aa9b8ed7e3cd1",
     "internal/slices/mutation/domain/listed_finalization_test.go": "340182529857c3f0a5a6594d1a8607b3852feda5decf5a85343f366dc140cfb5",
@@ -183,7 +184,7 @@
     "internal/slices/mutation/domain/sample_test.go": "873c16febe4435601b946d17e5aa80e25492d7f60128bcf3f5f09f7376ae540b",
     "internal/slices/mutation/domain/settings_reader_test.go": "38dc202f7ee1dc3f43e13453ec7b43cf7e0cd36d3c993829a92718f4a4a1a4ba",
     "internal/slices/mutation/domain/sites_test.go": "3f42cb8237c6f3e7425c4be1f3d5e92b215219ef1197c91364aa5a1ee101792c",
-    "internal/slices/mutation/domain/snapshot_test.go": "b3d8a69941125dd7841e673f9f592912be4feb79bf8a35987b00375e048287f9",
+    "internal/slices/mutation/domain/snapshot_test.go": "b747a69a88d33384f171bcfe25a06e9f7c2abcbe9b04a08a07f43ffa9caaca2b",
     "internal/slices/mutation/except_test.go": "17ddb0d28b638d5e853ac0945791c300b21c543895d19005cfe521896db40a23",
     "internal/slices/mutation/handler_test.go": "e979210797a6fe128af74f9407327fdc003a1ab52b9f89b9c884ebc51a782f13",
     "internal/slices/mutation/run_coverage_test.go": "74f75891fc3978b6d199ff6d92e03483622720138ffb400879210be168030366",
@@ -484,9 +485,9 @@
     {
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain.Snapshot",
       "name": "TestsChanged",
-      "hash": "c9afb12d6122a29e",
-      "start_line": 255,
-      "end_line": 260,
+      "hash": "d6736734ea772dae",
+      "start_line": 256,
+      "end_line": 263,
       "killed": 0,
       "survived": 0,
       "uncovered": 0,
@@ -494,18 +495,63 @@
       "mutants": []
     },
     {
-      "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
-      "name": "CompareTests",
-      "hash": "cf999e4015a6cb32",
-      "start_line": 270,
-      "end_line": 289,
+      "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain.TestChange",
+      "name": "Bears",
+      "hash": "9a413a6ceb17b749",
+      "start_line": 280,
+      "end_line": 288,
       "killed": 4,
       "survived": 0,
       "uncovered": 0,
       "sites": 4,
       "mutants": [
         {
-          "line": 271,
+          "line": 282,
+          "column": 9,
+          "offset": 70,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 283,
+          "column": 10,
+          "offset": 87,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        },
+        {
+          "line": 284,
+          "column": 12,
+          "offset": 104,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 285,
+          "column": 10,
+          "offset": 121,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
+      "name": "CompareTests",
+      "hash": "cf999e4015a6cb32",
+      "start_line": 290,
+      "end_line": 309,
+      "killed": 4,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 4,
+      "mutants": [
+        {
+          "line": 291,
           "column": 40,
           "offset": 104,
           "original": "==",
@@ -513,7 +559,7 @@
           "outcome": "killed"
         },
         {
-          "line": 274,
+          "line": 294,
           "column": 8,
           "offset": 188,
           "original": "!",
@@ -521,7 +567,7 @@
           "outcome": "killed"
         },
         {
-          "line": 276,
+          "line": 296,
           "column": 12,
           "offset": 239,
           "original": "!=",
@@ -529,7 +575,7 @@
           "outcome": "killed"
         },
         {
-          "line": 281,
+          "line": 301,
           "column": 26,
           "offset": 349,
           "original": "!",
@@ -542,15 +588,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "UnitID",
       "hash": "7edd36fae7964e80",
-      "start_line": 307,
-      "end_line": 307,
+      "start_line": 327,
+      "end_line": 327,
       "killed": 2,
       "survived": 0,
       "uncovered": 0,
       "sites": 2,
       "mutants": [
         {
-          "line": 307,
+          "line": 327,
           "column": 63,
           "offset": 62,
           "original": "+",
@@ -558,7 +604,7 @@
           "outcome": "killed"
         },
         {
-          "line": 307,
+          "line": 327,
           "column": 69,
           "offset": 68,
           "original": "+",
@@ -571,15 +617,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "PairByHash",
       "hash": "27fd609970975c2e",
-      "start_line": 317,
-      "end_line": 338,
+      "start_line": 337,
+      "end_line": 358,
       "killed": 11,
       "survived": 1,
       "uncovered": 0,
       "sites": 12,
       "mutants": [
         {
-          "line": 321,
+          "line": 341,
           "column": 12,
           "offset": 160,
           "original": "-",
@@ -587,7 +633,7 @@
           "outcome": "killed"
         },
         {
-          "line": 321,
+          "line": 341,
           "column": 13,
           "offset": 161,
           "original": "1",
@@ -595,7 +641,7 @@
           "outcome": "killed"
         },
         {
-          "line": 323,
+          "line": 343,
           "column": 7,
           "offset": 200,
           "original": "!",
@@ -603,7 +649,7 @@
           "outcome": "killed"
         },
         {
-          "line": 323,
+          "line": 343,
           "column": 16,
           "offset": 209,
           "original": "&&",
@@ -611,7 +657,7 @@
           "outcome": "killed"
         },
         {
-          "line": 323,
+          "line": 343,
           "column": 21,
           "offset": 214,
           "original": "==",
@@ -619,7 +665,7 @@
           "outcome": "killed"
         },
         {
-          "line": 324,
+          "line": 344,
           "column": 26,
           "offset": 246,
           "original": "true",
@@ -627,7 +673,7 @@
           "outcome": "killed"
         },
         {
-          "line": 330,
+          "line": 350,
           "column": 13,
           "offset": 310,
           "original": ">=",
@@ -635,7 +681,7 @@
           "outcome": "killed"
         },
         {
-          "line": 330,
+          "line": 350,
           "column": 16,
           "offset": 313,
           "original": "0",
@@ -643,7 +689,7 @@
           "outcome": "killed"
         },
         {
-          "line": 333,
+          "line": 353,
           "column": 30,
           "offset": 362,
           "original": "false",
@@ -651,7 +697,7 @@
           "outcome": "killed"
         },
         {
-          "line": 333,
+          "line": 353,
           "column": 40,
           "offset": 372,
           "original": ">=",
@@ -659,7 +705,7 @@
           "outcome": "killed"
         },
         {
-          "line": 333,
+          "line": 353,
           "column": 43,
           "offset": 375,
           "original": "0",
@@ -667,7 +713,7 @@
           "outcome": "killed"
         },
         {
-          "line": 334,
+          "line": 354,
           "column": 25,
           "offset": 403,
           "original": "true",
@@ -676,6 +722,7 @@
           "scope": "listed",
           "tests": [
             "ID-CLI-13",
+            "ID-MUT-315",
             "ID-MUT-49",
             "ID-MUT-304",
             "ID-MUT-24",
@@ -701,11 +748,13 @@
             "ID-MUT-225",
             "ID-MUT-227",
             "ID-MUT-242",
+            "ID-MUT-292",
             "ID-MUT-297",
             "ID-MUT-298",
             "ID-MUT-295",
             "ID-MUT-240",
-            "ID-MUT-162"
+            "ID-MUT-162",
+            "ID-MUT-195"
           ]
         }
       ]
@@ -714,8 +763,8 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "FileKeys",
       "hash": "36a47f284eed699f",
-      "start_line": 341,
-      "end_line": 346,
+      "start_line": 361,
+      "end_line": 366,
       "killed": 0,
       "survived": 0,
       "uncovered": 0,
@@ -726,15 +775,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "EntriesOf",
       "hash": "98f5fadb4c898ca9",
-      "start_line": 352,
-      "end_line": 379,
+      "start_line": 372,
+      "end_line": 399,
       "killed": 4,
       "survived": 0,
       "uncovered": 0,
       "sites": 4,
       "mutants": [
         {
-          "line": 372,
+          "line": 392,
           "column": 17,
           "offset": 581,
           "original": "-",
@@ -742,7 +791,7 @@
           "outcome": "killed"
         },
         {
-          "line": 372,
+          "line": 392,
           "column": 18,
           "offset": 582,
           "original": "1",
@@ -750,7 +799,7 @@
           "outcome": "killed"
         },
         {
-          "line": 373,
+          "line": 393,
           "column": 9,
           "offset": 592,
           "original": ">=",
@@ -758,7 +807,7 @@
           "outcome": "killed"
         },
         {
-          "line": 373,
+          "line": 393,
           "column": 12,
           "offset": 595,
           "original": "0",
@@ -771,8 +820,8 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "Remembered",
       "hash": "92fa83617dc67a2a",
-      "start_line": 384,
-      "end_line": 387,
+      "start_line": 404,
+      "end_line": 407,
       "killed": 0,
       "survived": 0,
       "uncovered": 0,
@@ -783,15 +832,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "RememberedWithScopes",
       "hash": "a4eb2ff6c0ec45cb",
-      "start_line": 391,
-      "end_line": 413,
+      "start_line": 411,
+      "end_line": 433,
       "killed": 5,
       "survived": 0,
       "uncovered": 0,
       "sites": 5,
       "mutants": [
         {
-          "line": 393,
+          "line": 413,
           "column": 7,
           "offset": 134,
           "original": "==",
@@ -799,7 +848,7 @@
           "outcome": "killed"
         },
         {
-          "line": 398,
+          "line": 418,
           "column": 8,
           "offset": 256,
           "original": "<",
@@ -807,7 +856,7 @@
           "outcome": "killed"
         },
         {
-          "line": 398,
+          "line": 418,
           "column": 10,
           "offset": 258,
           "original": "0",
@@ -815,7 +864,7 @@
           "outcome": "killed"
         },
         {
-          "line": 402,
+          "line": 422,
           "column": 13,
           "offset": 308,
           "original": "!=",
@@ -823,7 +872,7 @@
           "outcome": "killed"
         },
         {
-          "line": 402,
+          "line": 422,
           "column": 26,
           "offset": 321,
           "original": "||",
@@ -835,16 +884,16 @@
     {
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "Usable",
-      "hash": "30a18ab2d2159e05",
-      "start_line": 418,
-      "end_line": 423,
-      "killed": 3,
+      "hash": "7e13befbe7761c92",
+      "start_line": 441,
+      "end_line": 446,
+      "killed": 2,
       "survived": 0,
       "uncovered": 0,
-      "sites": 3,
+      "sites": 2,
       "mutants": [
         {
-          "line": 419,
+          "line": 442,
           "column": 7,
           "offset": 68,
           "original": "==",
@@ -852,19 +901,11 @@
           "outcome": "killed"
         },
         {
-          "line": 419,
+          "line": 442,
           "column": 14,
           "offset": 75,
           "original": "||",
           "replacement": "&&",
-          "outcome": "killed"
-        },
-        {
-          "line": 419,
-          "column": 17,
-          "offset": 78,
-          "original": "!",
-          "replacement": "",
           "outcome": "killed"
         }
       ]
@@ -873,15 +914,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain.Previous",
       "name": "Kept",
       "hash": "5a52396a555097cf",
-      "start_line": 430,
-      "end_line": 433,
+      "start_line": 453,
+      "end_line": 456,
       "killed": 3,
       "survived": 0,
       "uncovered": 0,
       "sites": 3,
       "mutants": [
         {
-          "line": 432,
+          "line": 455,
           "column": 35,
           "offset": 142,
           "original": "||",
@@ -889,7 +930,7 @@
           "outcome": "killed"
         },
         {
-          "line": 432,
+          "line": 455,
           "column": 47,
           "offset": 154,
           "original": "&&",
@@ -897,7 +938,7 @@
           "outcome": "killed"
         },
         {
-          "line": 432,
+          "line": 455,
           "column": 58,
           "offset": 165,
           "original": "==",
@@ -910,15 +951,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "MarkExcepted",
       "hash": "c3b597a6c8263375",
-      "start_line": 437,
-      "end_line": 453,
+      "start_line": 460,
+      "end_line": 476,
       "killed": 7,
       "survived": 0,
       "uncovered": 0,
       "sites": 7,
       "mutants": [
         {
-          "line": 440,
+          "line": 463,
           "column": 17,
           "offset": 141,
           "original": "!=",
@@ -926,7 +967,7 @@
           "outcome": "killed"
         },
         {
-          "line": 441,
+          "line": 464,
           "column": 22,
           "offset": 170,
           "original": "+",
@@ -934,7 +975,7 @@
           "outcome": "killed"
         },
         {
-          "line": 441,
+          "line": 464,
           "column": 29,
           "offset": 177,
           "original": "+",
@@ -942,7 +983,7 @@
           "outcome": "killed"
         },
         {
-          "line": 444,
+          "line": 467,
           "column": 18,
           "offset": 224,
           "original": "==",
@@ -950,7 +991,7 @@
           "outcome": "killed"
         },
         {
-          "line": 444,
+          "line": 467,
           "column": 21,
           "offset": 227,
           "original": "0",
@@ -958,7 +999,7 @@
           "outcome": "killed"
         },
         {
-          "line": 450,
+          "line": 473,
           "column": 63,
           "offset": 375,
           "original": "+",
@@ -966,7 +1007,7 @@
           "outcome": "killed"
         },
         {
-          "line": 450,
+          "line": 473,
           "column": 70,
           "offset": 382,
           "original": "+",
@@ -979,8 +1020,8 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "Build",
       "hash": "03f5bb8bc075d0a7",
-      "start_line": 459,
-      "end_line": 461,
+      "start_line": 482,
+      "end_line": 484,
       "killed": 0,
       "survived": 0,
       "uncovered": 0,
@@ -991,15 +1032,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "BuildLimited",
       "hash": "29f51ba4677abd83",
-      "start_line": 465,
-      "end_line": 482,
+      "start_line": 488,
+      "end_line": 505,
       "killed": 3,
       "survived": 0,
       "uncovered": 0,
       "sites": 3,
       "mutants": [
         {
-          "line": 467,
+          "line": 490,
           "column": 12,
           "offset": 222,
           "original": "==",
@@ -1007,7 +1048,7 @@
           "outcome": "killed"
         },
         {
-          "line": 471,
+          "line": 494,
           "column": 18,
           "offset": 292,
           "original": "!=",
@@ -1015,7 +1056,7 @@
           "outcome": "killed"
         },
         {
-          "line": 476,
+          "line": 499,
           "column": 26,
           "offset": 404,
           "original": "==",
@@ -1028,15 +1069,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "BuildScoped",
       "hash": "0c936c655406f822",
-      "start_line": 487,
-      "end_line": 534,
+      "start_line": 510,
+      "end_line": 557,
       "killed": 7,
       "survived": 3,
       "uncovered": 1,
       "sites": 11,
       "mutants": [
         {
-          "line": 488,
+          "line": 511,
           "column": 11,
           "offset": 146,
           "original": "==",
@@ -1044,7 +1085,7 @@
           "outcome": "killed"
         },
         {
-          "line": 499,
+          "line": 522,
           "column": 18,
           "offset": 580,
           "original": "==",
@@ -1052,7 +1093,7 @@
           "outcome": "killed"
         },
         {
-          "line": 499,
+          "line": 522,
           "column": 29,
           "offset": 591,
           "original": "||",
@@ -1060,7 +1101,7 @@
           "outcome": "killed"
         },
         {
-          "line": 499,
+          "line": 522,
           "column": 44,
           "offset": 606,
           "original": "==",
@@ -1068,7 +1109,7 @@
           "outcome": "killed"
         },
         {
-          "line": 516,
+          "line": 539,
           "column": 13,
           "offset": 972,
           "original": "!=",
@@ -1076,7 +1117,7 @@
           "outcome": "killed"
         },
         {
-          "line": 519,
+          "line": 542,
           "column": 10,
           "offset": 1032,
           "original": "!=",
@@ -1084,7 +1125,7 @@
           "outcome": "killed"
         },
         {
-          "line": 519,
+          "line": 542,
           "column": 17,
           "offset": 1039,
           "original": "&&",
@@ -1131,6 +1172,15 @@
             "ID-MUT-277",
             "ID-MUT-278",
             "ID-MUT-279",
+            "ID-MUT-308",
+            "ID-MUT-309",
+            "ID-MUT-310",
+            "ID-MUT-311",
+            "ID-MUT-312",
+            "ID-MUT-313",
+            "ID-MUT-314",
+            "ID-MUT-315",
+            "ID-MUT-317",
             "ID-MUT-135",
             "ID-MUT-136",
             "ID-MUT-137",
@@ -1304,7 +1354,7 @@
           ]
         },
         {
-          "line": 519,
+          "line": 542,
           "column": 28,
           "offset": 1050,
           "original": "==",
@@ -1312,7 +1362,7 @@
           "outcome": "killed"
         },
         {
-          "line": 527,
+          "line": 550,
           "column": 17,
           "offset": 1296,
           "original": "!=",
@@ -1351,6 +1401,15 @@
             "ID-MUT-277",
             "ID-MUT-278",
             "ID-MUT-279",
+            "ID-MUT-308",
+            "ID-MUT-309",
+            "ID-MUT-310",
+            "ID-MUT-311",
+            "ID-MUT-312",
+            "ID-MUT-313",
+            "ID-MUT-314",
+            "ID-MUT-315",
+            "ID-MUT-317",
             "ID-MUT-135",
             "ID-MUT-136",
             "ID-MUT-137",
@@ -1390,7 +1449,7 @@
           ]
         },
         {
-          "line": 528,
+          "line": 551,
           "column": 22,
           "offset": 1332,
           "original": "<",
@@ -1429,6 +1488,15 @@
             "ID-MUT-277",
             "ID-MUT-278",
             "ID-MUT-279",
+            "ID-MUT-308",
+            "ID-MUT-309",
+            "ID-MUT-310",
+            "ID-MUT-311",
+            "ID-MUT-312",
+            "ID-MUT-313",
+            "ID-MUT-314",
+            "ID-MUT-315",
+            "ID-MUT-317",
             "ID-MUT-135",
             "ID-MUT-136",
             "ID-MUT-137",
@@ -1468,7 +1536,7 @@
           ]
         },
         {
-          "line": 530,
+          "line": 553,
           "column": 26,
           "offset": 1374,
           "original": "<",
@@ -1481,15 +1549,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "ListedOf",
       "hash": "c345f377d70f6e07",
-      "start_line": 538,
-      "end_line": 555,
+      "start_line": 561,
+      "end_line": 578,
       "killed": 4,
       "survived": 0,
       "uncovered": 0,
       "sites": 4,
       "mutants": [
         {
-          "line": 543,
+          "line": 566,
           "column": 12,
           "offset": 228,
           "original": "==",
@@ -1497,7 +1565,7 @@
           "outcome": "killed"
         },
         {
-          "line": 547,
+          "line": 570,
           "column": 8,
           "offset": 307,
           "original": "!",
@@ -1505,7 +1573,7 @@
           "outcome": "killed"
         },
         {
-          "line": 547,
+          "line": 570,
           "column": 12,
           "offset": 311,
           "original": "&&",
@@ -1513,7 +1581,7 @@
           "outcome": "killed"
         },
         {
-          "line": 547,
+          "line": 570,
           "column": 24,
           "offset": 323,
           "original": "!=",
@@ -1525,16 +1593,16 @@
     {
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
       "name": "KeepUnjudged",
-      "hash": "b847841f2ceed759",
-      "start_line": 567,
-      "end_line": 614,
-      "killed": 8,
+      "hash": "119ea84c704f16a8",
+      "start_line": 592,
+      "end_line": 639,
+      "killed": 9,
       "survived": 0,
       "uncovered": 0,
-      "sites": 8,
+      "sites": 9,
       "mutants": [
         {
-          "line": 569,
+          "line": 594,
           "column": 14,
           "offset": 149,
           "original": "!=",
@@ -1542,7 +1610,7 @@
           "outcome": "killed"
         },
         {
-          "line": 580,
+          "line": 605,
           "column": 17,
           "offset": 453,
           "original": ">=",
@@ -1550,7 +1618,7 @@
           "outcome": "killed"
         },
         {
-          "line": 580,
+          "line": 605,
           "column": 20,
           "offset": 456,
           "original": "0",
@@ -1558,7 +1626,7 @@
           "outcome": "killed"
         },
         {
-          "line": 587,
+          "line": 612,
           "column": 8,
           "offset": 558,
           "original": "!",
@@ -1566,33 +1634,41 @@
           "outcome": "killed"
         },
         {
-          "line": 588,
-          "column": 8,
-          "offset": 570,
-          "original": "!",
-          "replacement": "",
-          "outcome": "killed"
-        },
-        {
-          "line": 588,
-          "column": 19,
-          "offset": 581,
+          "line": 613,
+          "column": 18,
+          "offset": 580,
           "original": "||",
           "replacement": "&&",
           "outcome": "killed"
         },
         {
-          "line": 589,
+          "line": 613,
+          "column": 21,
+          "offset": 583,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 613,
+          "column": 32,
+          "offset": 594,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 614,
           "column": 16,
-          "offset": 610,
+          "offset": 655,
           "original": "true",
           "replacement": "false",
           "outcome": "killed"
         },
         {
-          "line": 591,
+          "line": 616,
           "column": 17,
-          "offset": 657,
+          "offset": 702,
           "original": "==",
           "replacement": "!=",
           "outcome": "killed"
@@ -1752,7 +1828,16 @@
     "ID-MUT-304": "features/mutate.feature",
     "ID-MUT-305": "features/mutate.feature",
     "ID-MUT-306": "features/mutate.feature",
+    "ID-MUT-308": "features/mutate.feature",
+    "ID-MUT-309": "features/mutate.feature",
     "ID-MUT-31": "features/mutate.feature",
+    "ID-MUT-310": "features/mutate.feature",
+    "ID-MUT-311": "features/mutate.feature",
+    "ID-MUT-312": "features/mutate.feature",
+    "ID-MUT-313": "features/mutate.feature",
+    "ID-MUT-314": "features/mutate.feature",
+    "ID-MUT-315": "features/mutate.feature",
+    "ID-MUT-317": "features/mutate.feature",
     "ID-MUT-32": "features/mutate.feature",
     "ID-MUT-33": "features/mutate.feature",
     "ID-MUT-34": "features/mutate.feature",
@@ -1820,7 +1905,7 @@
   "listed_files": {
     "features/cli.feature": "1231be9421531026e5ff0ec4265dd7bf5419b7c350eed47c8d8fd8f28401f313",
     "features/metrics_snapshots.feature": "dc436817eb86c3be4243d0c47291c2d284084924b84a2981489cc6c418e5ea53",
-    "features/mutate.feature": "2f4ee9e96aca3a409d6143ba124360d98bdd61a440a1c494229b1c7023b18d5b"
+    "features/mutate.feature": "1be6766b1d432a7a832ad2dd6b3405567299fdf71149dd4403f5495359557459"
   },
   "support": {
     "cmd/itos-cc/run_fakes_test.go": "ae0ab03c618d1a7a3538a775d1ca35572f29d21def8cd3f3a3239dcbca62b63f",
@@ -1862,7 +1947,7 @@
     "features/crap.go": "acc1f0b013ccfd0a22f607c05351e20f24842d6eb518407d5e10921720d85cb8",
     "features/crap_records.go": "a1b9592fa78892b18a138af447a3f869e28d2dfa6d77dce569b0ac86477564e9",
     "features/crap_table.go": "629baba3f88553e1accce0884a64255b4294f8b4403243983894838a542322e6",
-    "features/deferred.go": "4df60dac9381d0ee91c0a25c0375664af6949c3855da07fe613334a95c12e97a",
+    "features/deferred.go": "e17ef44107548db506dfe4fa14c872a8383007b0a61ed94a404822972891bec2",
     "features/dry.go": "82070e3b0a799cc55ab0f53fa70936ee4e15f47b16426d5e23db5fa6992d9dbd",
     "features/dry_order.go": "97344e08ac9ccef0afe90b9419b7699801a5b122338ded191775ff7d8871c891",
     "features/dry_report.go": "5503f06fb7bd46b6abb86506e42c83d208566157acbc288254e5aa2ddb1402ba",
@@ -1946,11 +2031,12 @@
     "features/mutate_language_tools.go": "b0e811b27978500eac1e29df18571b73e5c8aa904115d36552bc57e82e5044c9",
     "features/mutate_language_unrecorded.go": "6e89737cb936a9f5acf28af5aa0c8c83ac6751c1b1d7e2d1c8ef04fc779f3c89",
     "features/mutate_limits.go": "a0ddf8cb4c9c154fde863a914ef2b55ce0dde32aa575ad5b05c6383de3821b5d",
-    "features/mutate_listed.go": "fe870db659266145a0ca9cfc0f580fbc899a8a8d98ecc478fe51a88c7c6ed35e",
+    "features/mutate_listed.go": "ff8b99a08f73adf6fea5a55ec8c02bc7be98e06648aa9509fdbdfe400f61ddf7",
     "features/mutate_listed_coverage.go": "9f402a9ea5faa4b15b33df612697af0cfca0700e46bb07a62fc4ce0eada5495b",
     "features/mutate_listed_coverage_failed.go": "ec429cfe100aae0de20e3e9823e9d72e328188e2ddfa3d9b9b6f6925343fe77c",
     "features/mutate_listed_fingerprint.go": "cc550d88189fec591c3d54fae8145f307603982681ca77d0d3ec0377e4fed23b",
     "features/mutate_listed_fixture.go": "77ac49814b7558c06aa6b4deb7f892e1ed2d82ccdb58d3207ea61235c5773848",
+    "features/mutate_listed_importers.go": "dbeebf368482a2e2ccce0f03507312d1c62164bae4da07de5b4cc34d9ffbf948",
     "features/mutate_listed_reuse.go": "8873bbc86fe1c8e29237e4cbd2c0a51ac4b2d807486b78c0e6ba492d25bf1f31",
     "features/mutate_listed_timeout.go": "133b7058e4efa97b324f3aab3f2e0742d86ba1009706267e4c4340a11a6e4a25",
     "features/mutate_not_built.go": "1d7b1406c417eeb41168ff1565eee296966114419a98a3fcf627cb3911e754d6",
