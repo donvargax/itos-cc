@@ -15,7 +15,7 @@ queue:
   - listed-suites
   - T-202
   - slice-44
-  - mismatch-fix-quotes
+  - slice-45
   - coverage-line-stderr
   - annotate-function-name
   - serve-port-zero-announce
@@ -642,14 +642,15 @@ items:
     depends_on: []
     kind: slice
     refs: ["#18"]
-  - id: mismatch-fix-quotes
+  - id: slice-45
     title: A mismatch's fix with --test-command nests single quotes
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mismatch-fix-quotes.
       Found with mismatch-fix-scope: the fix wraps its command in single quotes, so with a
       --test-command scope it reads run 'itos-cc mutation run --mutate-all --test-command 'go
       version' src/board.go', which a reader cannot paste. The fix could set the command off another
