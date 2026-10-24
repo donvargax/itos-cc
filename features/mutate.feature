@@ -849,6 +849,21 @@ Feature: Mutation testing
       Then no coverage or test command runs
       And stderr says "itos-cc: no mutations to test"
 
+    # slice-48, issue #49 (2026-10-24, a coordinator's call inside the
+    # item): a run whose every mutant was reused printed "itos-cc: no
+    # mutations to test" above per-file summaries listing them, which reads
+    # as an empty selection. It now says "itos-cc: every mutant reused from
+    # .metrics/mutate, none to run". A selection with no mutant at all keeps
+    # "no mutations to test". The feat changes MUT-22's line to the new
+    # wording, saying so. Before this item the old line was printed, failing
+    # at the stderr step.
+    @slice-48 @ID-MUT-336 @wip
+    Scenario: A run whose every mutant is reused says so
+      Given every mutant can be reused from the previous snapshot
+      When I run "itos-cc mutation run"
+      Then stderr says "itos-cc: every mutant reused from .metrics/mutate, none to run"
+      And stderr does not say "no mutations to test"
+
     # The lines the mutation commands write to stderr themselves (the
     # baseline, coverage, each mutant's outcome) began "mutate:", a command
     # that is gone since the mutation group. They begin "itos-cc:", as every
