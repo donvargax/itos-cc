@@ -6909,9 +6909,6 @@
     actions/setup-node pinned as cd.yml's release viewer job pins it, npm ci in viewer/, then npm
     run typecheck and npm test. ci (the gate job) needs it, so a red viewer fails the push. No
     product change; the nightly's viewer install stays as it is.
-  done_when:
-    - run: grep -q 'npm run typecheck' .github/workflows/ci.yml
-    - run: grep -q 'npm test' .github/workflows/ci.yml
 - id: T-206
   type: ci
   title: refactor-proof.yml installs Flutter, so the Dart scenarios are compared too

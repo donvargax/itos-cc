@@ -154,7 +154,7 @@ items:
     title: Push CI runs the viewer's tests and typecheck
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-7
