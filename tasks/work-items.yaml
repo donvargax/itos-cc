@@ -1034,7 +1034,7 @@ items:
     title: go test -cover's summary of internal/freshenv reads a coverage command's error as its percentage
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: transitive-test-reach

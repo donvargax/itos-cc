@@ -6875,8 +6875,6 @@
     covrun.RunSupervised os.Stderr at lines 64, 481 and 485. Each gets a bytes.Buffer instead,
     which the test prints with t.Log only when it fails, so go test's summary line is its own.
     Test code only; no product change, no assertion weakened.
-  done_when:
-    - run: test $(grep -c 'os.Stderr' internal/slices/mutation/adapters/freshenv/preparation_test.go) -eq 0
 - id: T-204
   type: chore
   title: Upgrade the repository pin to itos 8.13
