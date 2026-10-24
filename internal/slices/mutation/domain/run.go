@@ -175,9 +175,10 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 		return nil, nil, err
 	}
 
-	pending := 0
+	pending, sites := 0, 0
 	for _, s := range states {
 		s.failFast = ff != nil
+		sites += len(s.outcomes)
 		for _, o := range s.outcomes {
 			if o == "" {
 				pending++
@@ -210,6 +211,10 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 		} else if stop, err = execute(ctx, states, opt, ff); err != nil {
 			return nil, nil, err
 		}
+	} else if sites > 0 {
+		// Every mutant's outcome came from the snapshots, so none runs,
+		// which is not a selection without mutants (slice-48).
+		report(opt.Progress, RunEvent{Kind: "reused"})
 	} else {
 		report(opt.Progress, RunEvent{Kind: "nothing"})
 	}

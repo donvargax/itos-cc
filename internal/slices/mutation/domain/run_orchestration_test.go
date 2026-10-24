@@ -227,3 +227,33 @@ func TestParseListingKeepsOnlyFirstStdoutIdentity(t *testing.T) {
 		t.Fatalf("listed: %+v", got)
 	}
 }
+
+// A run whose every mutant is reused says so, while a selection with no
+// mutant at all says there is none to test (slice-48).
+func TestARunOfReusedMutantsIsToldFromOneWithNone(t *testing.T) {
+	f := newRunFixture(t)
+	events := &runEvents{}
+	f.options.Progress = events
+	f.run(t)
+	before := len(events.values)
+	if second := f.run(t); second[0].Ran != 0 || second[0].Reused == 0 {
+		t.Fatalf("the second run: %+v, want every mutant reused", second)
+	}
+	var kinds []string
+	for _, e := range events.values[before:] {
+		kinds = append(kinds, e.Kind)
+	}
+	if !reflect.DeepEqual(kinds, []string{"reused"}) {
+		t.Errorf("a run of reused mutants reported %q, want reused alone", kinds)
+	}
+
+	f = newRunFixture(t)
+	events = &runEvents{}
+	f.options.Progress = events
+	f.files[f.path] = "package board\n\nfunc noop() {}\n"
+	f.options.Tree = seltest.TreeOf(f.root, map[string]string{"board.go": f.files[f.path], "go.mod": "module example.test/board\n", "board_test.go": "package board\n"}, nil)
+	f.run(t)
+	if len(events.values) != 1 || events.values[0].Kind != "nothing" {
+		t.Errorf("a file with no mutant reported %+v, want nothing to test", events.values)
+	}
+}

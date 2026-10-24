@@ -847,7 +847,7 @@ Feature: Mutation testing
       Given every mutant can be reused from the previous snapshot
       When I run "itos-cc mutation run"
       Then no coverage or test command runs
-      And stderr says "itos-cc: no mutations to test"
+      And stderr says "itos-cc: every mutant reused from .metrics/mutate, none to run"
 
     # slice-48, issue #49 (2026-10-24, a coordinator's call inside the
     # item): a run whose every mutant was reused printed "itos-cc: no
@@ -857,7 +857,7 @@ Feature: Mutation testing
     # "no mutations to test". The feat changes MUT-22's line to the new
     # wording, saying so. Before this item the old line was printed, failing
     # at the stderr step.
-    @slice-48 @ID-MUT-336 @wip
+    @slice-48 @ID-MUT-336
     Scenario: A run whose every mutant is reused says so
       Given every mutant can be reused from the previous snapshot
       When I run "itos-cc mutation run"

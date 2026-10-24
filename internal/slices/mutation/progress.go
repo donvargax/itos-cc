@@ -43,6 +43,8 @@ func (p Progress) Report(e mutants.RunEvent) {
 		_, _ = fmt.Fprintf(log, "itos-cc: [%d/%d] %s:%d %s → %s %s (%.1fs)\n", e.Done, e.Total, e.File, e.Site.Line, mutants.Show(e.Site.Original), mutants.Show(e.Site.Replacement), said, r.Elapsed.Seconds())
 	case "nothing":
 		_, _ = fmt.Fprintln(log, "itos-cc: no mutations to test")
+	case "reused":
+		_, _ = fmt.Fprintln(log, "itos-cc: every mutant reused from .metrics/mutate, none to run")
 	case "stop":
 		_, _ = fmt.Fprintf(log, "itos-cc: --fail-fast: stopping at %s in %s; no further command starts\n", e.Stop.Rule, e.Stop.File)
 	case "no-coverage":
