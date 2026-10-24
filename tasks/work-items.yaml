@@ -11,7 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
-  - top-level-libraries-internal
+  - T-193
   - listed-support-per-test
   - listed-suites
   - worker-copies-skip-ignored
@@ -5517,42 +5517,13 @@ items:
       code changes. For itos-cc: the graph today groups by directory alone; a policy would let it
       show components by a chosen principle (for example the Common Closure Principle). After
       graph-snapshot.
-  - id: top-level-libraries-internal
-    title: config, coverage, metrics and project move under internal/, and no package outside it imports it but cmd
+  - id: T-193
+    title: architecture-check refuses a package outside internal/ but cmd importing internal/, naming the few that may
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      The person (2026-10-24), seen in serve's graph: before the kong refactor (51f3952) no
-      directory box depended on another both ways; after the slices (b768837) and today, internal/
-      and each of config, coverage, metrics and project depend on each other, since the refactors
-      moved the pure parts into internal/ (internal/coverage, lang, selection, snapshot) and left
-      the top-level packages as a half-migrated layer between. Today: config imports
-      internal/slices/mutation/domain and internal/selection/port while mutation's exceptions and
-      freshenv adapters import config; coverage imports internal/coverage, its port and
-      internal/lang while coveragetools, imports and three mutation adapters import it; metrics
-      imports internal/snapshot while metricsdir and coveragetools import it; project imports
-      internal/lang, selection and snapshot while eight internal packages import it. No Go cycle
-      (the compiler forbids one), but the boxes no longer show which way the layers go, and a shared
-      config knowing one slice's domain is the sharpest case. Each package moves under internal/
-      beside what it serves, an adapter by its port or folded into the domain it wraps, keeping the
-      ports, ctx and domain rules whole (ADR-0047: adapters may import the domain they serve,
-      nothing leaks into a domain), with one byte-for-byte proof at the end (refactor-proof.yml),
-      never per move. The exit is a gate: tools/bin/architecture-check (depguard) refuses any
-      package outside internal/ but cmd/ importing internal/, so the crossing cannot come back. Also
-      top-level graph and server, which serve owns (ADR-0060 re-cuts them), stay as they are. Size
-      the moves and split them into tasks when specifying.
-
-      The gate exempts graph and server, serve's packages, by name until ADR-0060's re-cut moves or
-      replaces them: graph imports internal/slices/mutation/domain (FreshnessOf) on purpose, so its
-      stale marks agree with mutation check. The exemption is listed in architecture-check with that
-      reason and goes when serve's move does.
-
-      The exemption for graph and server is temporary (the person, 2026-10-24): graph-snapshot moves
-      graph into a slice under internal/ and removes server, and the exemption goes in that work,
-      leaving the gate with none.
+    kind: task
   - id: serve-port-zero-announce
     title: serve --port 0 announces the port it got, not 0
     phase: 1
