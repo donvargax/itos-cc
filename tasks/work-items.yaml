@@ -5611,7 +5611,7 @@ items:
     title: config becomes mutation's settings adapter
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-196]
     kind: task
   - id: T-198

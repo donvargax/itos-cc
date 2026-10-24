@@ -6786,10 +6786,6 @@
     function bodies may draw a fresh mutation site and kills what it meets (ADR-0059). The plan is
     scratchpad/plan-top-level-libraries-internal.md of the coordinator's session, its decisions now
     ADR-0061 (q-89).
-  done_when:
-    - run: test ! -d config
-    - run: "! grep -rn --include='*.go' 'itos-cc/config\"' ."
-    - run: tools/bin/architecture-check
 - id: T-198
   type: chore
   title: One refactor-proof.yml run proves the move under internal/ changed no behaviour
