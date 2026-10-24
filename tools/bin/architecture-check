@@ -3,7 +3,7 @@
 set -eu
 
 usage() {
-	echo "usage: tools/bin/architecture-check [--linked <package> | --siblings <package>... | --outside <package>...]" >&2
+	echo "usage: tools/bin/architecture-check [--linked <package> | --siblings <package>... | --outside <package>... | --toplevel <package>...]" >&2
 	exit 2
 }
 
@@ -99,8 +99,52 @@ outside() {
 	return 1
 }
 
-# --linked <package>, --siblings <package>... and --outside <package>... run
-# that check alone, in the current module: the fixtures prove each refuses.
+# toplevel <package>...: refuse a package outside internal/ and cmd/
+# importing one under internal/, from its code or its tests, unless its row
+# allows it (ADR-0061): every package but cmd lives under internal/, so
+# nothing else reaches into it. Permanent rows: features imports
+# internal/project alone, a package under it with it, since the harness asks
+# discovery's own rules, never a copy; tools/bin/release-notes and
+# release-version import internal/release alone, its releasetest with it,
+# as the template lays the release tools out. Until graph-snapshot
+# (ADR-0060), graph and server, the legacy serve consumer, import what they
+# need, outside holding what they import under internal/slices; until their
+# moves (T-194 to T-197), project, metrics, coverage and config too, each
+# move deleting its row. depguard covers internal/** only, so this holds it
+# over the same go list fields as outside.
+toplevel() {
+	module=$(go list -m)
+	listed=$(go list -f '{{$p := .ImportPath}}{{range .Imports}}{{$p}} code {{.}}{{"\n"}}{{end}}{{range .TestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}{{range .XTestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}' "$@")
+	refused=$(printf '%s\n' "$listed" | awk -v module="$module" '
+		function under(path, folder) {
+			return path == module "/" folder || index(path, module "/" folder "/") == 1
+		}
+		function allowed(importer, imported) {
+			if (under(importer, "cmd") || under(importer, "internal")) return 1
+			if (under(importer, "features")) return under(imported, "internal/project")
+			if (under(importer, "tools/bin/release-notes") || under(importer, "tools/bin/release-version")) return under(imported, "internal/release")
+			# Until graph-snapshot (ADR-0060).
+			if (under(importer, "graph") || under(importer, "server")) return 1
+			# Until their moves under internal/ (T-194 to T-197).
+			if (under(importer, "project") || under(importer, "metrics") || under(importer, "coverage") || under(importer, "config")) return 1
+			return 0
+		}
+		NF == 3 && under($3, "internal") && !allowed($1, $3) {
+			if (seen[$1 " " $3]++) next
+			from = ""
+			if ($2 == "tests") from = " from its tests"
+			print $1 " imports " $3 from
+		}')
+	[ -z "$refused" ] && return 0
+	printf '%s\n' "$refused" | while IFS= read -r line; do
+		echo "architecture-check: $line; only cmd and what is under internal/ import a package under internal/, but the rows docs/go.md names (ADR-0061)" >&2
+	done
+	return 1
+}
+
+# --linked <package>, --siblings <package>..., --outside <package>... and
+# --toplevel <package>... run that check alone, in the current module: the
+# fixtures prove each refuses.
 case "${1-}" in
 --linked)
 	[ $# -eq 2 ] || usage
@@ -119,6 +163,12 @@ case "${1-}" in
 	outside "$@"
 	exit 0
 	;;
+--toplevel)
+	[ $# -ge 2 ] || usage
+	shift
+	toplevel "$@"
+	exit 0
+	;;
 -*) usage ;;
 esac
 [ $# -eq 0 ] || usage
@@ -128,6 +178,7 @@ cd "$root"
 linked ./cmd/itos-cc
 siblings ./...
 outside ./...
+toplevel ./...
 ARCHITECTURE_ROOT=$root
 ARCHITECTURE_LINTER=$(tools/bin/pinned --path golangci-lint)
 export ARCHITECTURE_ROOT ARCHITECTURE_LINTER

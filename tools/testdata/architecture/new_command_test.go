@@ -119,9 +119,9 @@ const probeSmoke = `- file: probe.feature
 // feature file and steps, the smoke set and the files tools/bin/assemble
 // writes (ADR-0051, T-169): in a copy of the module, probe is added as a
 // person would, and it assembles, builds, runs, passes its scenario in
-// process, and passes the sibling, outside and lint rules with no rule
-// edit. A port no adapters method answers is assembly's edit, which go
-// build refuses, naming it.
+// process, and passes the sibling, outside, top-level and lint rules
+// with no rule edit. A port no adapters method answers is assembly's
+// edit, which go build refuses, naming it.
 func TestANewCommandTouchesOnlyItsSliceAndTheGeneratedFiles(t *testing.T) {
 	root := os.Getenv("ARCHITECTURE_ROOT")
 	linter := os.Getenv("ARCHITECTURE_LINTER")
@@ -218,7 +218,7 @@ func TestANewCommandTouchesOnlyItsSliceAndTheGeneratedFiles(t *testing.T) {
 	})
 	t.Run("architecture rules", func(t *testing.T) {
 		check := filepath.Join(copied, "tools", "bin", "architecture-check")
-		for _, args := range [][]string{{"--siblings", "./internal/slices/probe/..."}, {"--outside", "./..."}} {
+		for _, args := range [][]string{{"--siblings", "./internal/slices/probe/..."}, {"--outside", "./..."}, {"--toplevel", "./..."}} {
 			if output, err := run("sh", append([]string{check}, args...)...); err != nil {
 				t.Errorf("architecture-check %s: %v\n%s", strings.Join(args, " "), err, output)
 			}

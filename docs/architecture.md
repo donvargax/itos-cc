@@ -41,7 +41,7 @@ An arrow is an import the rules allow. Every arrow not drawn is refused.
 
 | Layer | Paths | May import | Held by |
 | --- | --- | --- | --- |
-| Assembly | `cmd/itos-cc` | everything; the one place that knows every package, and with `internal/cli` the only importer of kong | `kong`; `architecture-check --outside` lets it in |
+| Assembly | `cmd/itos-cc` | everything; the one place that knows every package, and with `internal/cli` the only importer of kong | `kong`; `architecture-check --outside` and `--toplevel` let it in |
 | UI | `internal/cli` | nothing of ours | `ui` |
 | Slice | `internal/slices/<x>` | the shared domains and ports, `internal/cli`, its own subpackages | `slice-packages`, `slice-adapters`, `slice-fakes`, `architecture-check --siblings` |
 | Slice's domain | `internal/slices/<x>/domain` | shared domains and their ports; no I/O, no kong | `domain`, `domain-io` |
@@ -49,15 +49,19 @@ An arrow is an import the rules allow. Every arrow not drawn is refused.
 | Shared domains | `internal/selection`, `internal/lang`, `internal/snapshot`, `internal/coverage`, each with `port` and `porttest` | one another and their ports; nothing under `internal/slices` | `domain`, `domain-io`, `shared-domains` |
 | Shared adapters | `internal/workdir`, `internal/metricsdir`, `internal/coveragetools` | the port they implement, the domain it belongs to, the libraries they wrap | `workdir`, `metricsdir`, `coveragetools` |
 | Adapter-side engines | `internal/processes` (process ownership), `internal/imports` (import resolution) | `processes` nothing of ours; `imports` lang, `project` and the coverage runner | `processes`, `imports` |
-| Libraries | `project`, `coverage`, `metrics`, `config` | what they wrap; nothing under `internal/slices`, but `config`'s settings codec imports the mutation domain | `architecture-check --outside` |
+| Libraries | `project`, `coverage`, `metrics`, `config` | what they wrap; nothing under `internal/slices`, but `config`'s settings codec imports the mutation domain; each moves under `internal/` (T-194 to T-197) | `architecture-check --outside` and `--toplevel` |
 
 The rules are depguard's, in `.golangci.yml`, and `tools/bin/architecture-check`, which runs the
 pinned golangci-lint over compile-valid fixtures in `tools/testdata/architecture` that each rule
-must accept and refuse. depguard matches a prefix, so three arrows it cannot hold are checks of
-their own over `go list ./...`: no slice imports a sibling slice (`--siblings`), nothing outside
-`internal/slices` imports a slice but `cmd`, graph and `config` (`--outside`), and the binary
-links no `porttest` (`--linked`). Further rules: `mocks` (no mocking library anywhere), `rapid`
-(the property library only in a domain's tests) and `kong`.
+must accept and refuse. depguard matches a prefix and covers `internal/` alone, so four arrows
+it cannot hold are checks of their own over `go list ./...`: no slice imports a sibling slice
+(`--siblings`), nothing outside `internal/slices` imports a slice but `cmd`, graph and `config`
+(`--outside`), nothing outside `internal/` and `cmd/` imports a package under `internal/` but
+the rows `docs/go.md` names, `features` importing `internal/project` and the release tools
+`internal/release`, graph and `server` until graph-snapshot, the libraries until their moves
+(`--toplevel`, ADR-0061), and the binary links no `porttest` (`--linked`). Further rules: `mocks`
+(no mocking library anywhere), `rapid` (the property library only in a domain's tests) and
+`kong`.
 
 A slice declares itself and cmd assembles it. Its package holds `Command`, a `cli.Declaration`
 (name, help line, a fresh `*CLI` per parser); `Ports`, an interface it owns naming each port its

@@ -80,7 +80,10 @@ func TestArchitecture(t *testing.T) {
 	// internal/lang is a domain every command measures by, its port the one
 	// workdir implements beside selection's; internal/snapshot is the domain
 	// of the snapshots under .metrics/, its port metricsdir's (decision 41).
-	for _, path := range []string{"internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", "internal/slices/mutation/domain", "internal/coverage", "internal/coverage/port", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/slices/mutation/adapters/worktrees", "internal/processes", "internal/imports", "internal/slices/mutation/adapters/testtools", "internal/slices/mutation/adapters/testinputs", "internal/slices/mutation/adapters/importgraph", "internal/slices/mutation/adapters/githistory", "internal/slices/mutation/adapters/freshenv", "internal/slices/mutation/adapters/snapshots", "internal/slices/mutation/adapters/exceptions", "internal/slices/mutation/adapters/sources", "internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/slices/version", "internal/slices/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "project", "metrics", "coverage", "graph", "config"} {
+	// internal/release/releasetest and internal/project are what the
+	// release tools' tests and features may import from outside internal/
+	// (ADR-0061).
+	for _, path := range []string{"internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", "internal/slices/mutation/domain", "internal/coverage", "internal/coverage/port", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/slices/mutation/adapters/worktrees", "internal/processes", "internal/imports", "internal/slices/mutation/adapters/testtools", "internal/slices/mutation/adapters/testinputs", "internal/slices/mutation/adapters/importgraph", "internal/slices/mutation/adapters/githistory", "internal/slices/mutation/adapters/freshenv", "internal/slices/mutation/adapters/snapshots", "internal/slices/mutation/adapters/exceptions", "internal/slices/mutation/adapters/sources", "internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/slices/version", "internal/slices/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "internal/release/releasetest", "internal/project", "cmd/probe", "project", "metrics", "coverage", "graph", "config"} {
 		write(path+"/stub.go", "package probe\n\nconst Value = 1\n")
 	}
 	for _, fake := range fakes {
@@ -443,6 +446,10 @@ func TestArchitecture(t *testing.T) {
 	add("testtools", "graph", module+"/internal/slices/mutation/adapters/testtools", "Value", "", true)
 	add("units", "config", module+"/internal/slices/units", "Value", "", false)
 	add("fake", "config", module+"/"+mutation+"/porttest", "Value", "", true)
+	// What is outside internal/ and cmd/, which architecture-check
+	// --toplevel refuses or accepts by its rows, below (ADR-0061): depguard
+	// lets every one by.
+	addToplevel(module, add)
 	// What assembles them is free to import the domain, the adapters and
 	// the slices.
 	for _, target := range []string{"internal/selection", "internal/lang", "internal/snapshot", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", mutation, "internal/coverage", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/slices/mutation/adapters/worktrees", "internal/processes", "internal/imports", "internal/slices/mutation/adapters/testtools", "internal/slices/mutation/adapters/testinputs", "internal/slices/mutation/adapters/importgraph", "internal/slices/mutation/adapters/githistory", "internal/slices/mutation/adapters/freshenv", "internal/slices/mutation/adapters/snapshots", "internal/slices/mutation/adapters/exceptions", "internal/slices/mutation/adapters/sources", "internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/slices/version", "internal/slices/mutation", "internal/next", "internal/cli", "internal/version", "project", "metrics", "coverage"} {
@@ -777,4 +784,9 @@ func Code(failure sealed.Failure) int {
 	// architecture-check --outside refuses, from code or tests, naming both
 	// packages; the lint above holds that depguard accepts every fixture.
 	checkOutside(t, check, dir, compile.Env, module)
+	// Every package but cmd lives under internal/ (ADR-0061): a package
+	// outside internal/ and cmd/ imports none under it, from its code or
+	// its tests, but what its row in docs/go.md allows, which
+	// architecture-check --toplevel holds over the same go list fields.
+	checkToplevel(t, check, dir, compile.Env, module)
 }

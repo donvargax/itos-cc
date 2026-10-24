@@ -610,6 +610,18 @@ context-as-argument a context after any other parameter, tests included.
   `internal/` alone, and `project`, `coverage`, `metrics`, `server`, `features` and `tools` have
   no rule, so `tools/bin/architecture-check` holds it over the same `go list` fields as the
   sibling rule and names both packages.
+- Top level: every package but `cmd` lives under `internal/` (ADR-0061), so a package outside
+  `internal/` and `cmd/`, with its subpackages, imports none under `internal/`, from its code or
+  its tests, but by a row naming it. Permanent rows: `features` imports `internal/project` alone,
+  since the harness asks discovery's own rules, never a copy, and `tools/bin/release-notes` and
+  `tools/bin/release-version` `internal/release` alone, its `releasetest` with it, the
+  template's layout. Until graph-snapshot (ADR-0060), graph and `server`, the legacy serve
+  consumer, import what they need, the outside check holding what they import under
+  `internal/slices`; until their moves under `internal/` (T-194 to T-197), `project`,
+  `metrics`, `coverage` and `config` too, each move deleting its row. A new package goes under
+  `internal/`, never at the top level. depguard covers `internal/` alone, so
+  `tools/bin/architecture-check`'s toplevel holds it over the outside check's `go list` fields
+  and names both packages, and whether from the importer's tests.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
 - `workdir`, `metricsdir`, `coveragetools`, and the mutation adapters' `worktrees`,
@@ -699,9 +711,9 @@ each changed in a task of its own, is `docs/ownership.md`'s.
   entry, the one shared hand list. Then the assembly is current, the files changed are those
   four and the two generated ones, each generated file only gaining lines that name `probe`,
   and the binary builds, lists and runs it and gives its help. Its scenario passes in process,
-  and the sibling and outside checks and the lint with no rule edit all pass. What it leaves
-  to a task of its own: a new port, which `go build` refuses until `adapters` answers it, as
-  the test's last check proves; a slice's own domain, which needs the rules of the next
+  and the sibling, outside and top-level checks and the lint with no rule edit all pass. What
+  it leaves to a task of its own: a new port, which `go build` refuses until `adapters` answers
+  it, as the test's last check proves; a slice's own domain, which needs the rules of the next
   bullet; and an engine.
 - A slice's own domain: put it in the slice's `domain` subpackage, as
   `internal/slices/dry/domain`, and add its folder as a `**/internal/slices/<command>/domain/**`
