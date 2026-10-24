@@ -48,8 +48,11 @@ jobs:
   # rules and itos.yaml's plan (T-26, T-29), as it did when both were one
   # workflow: itos verify over the range from ci.yml's last green run, then
   # itos ci run over it, the static and late steps, the checks of the tasks
-  # the range names and its merged scenario run. Its range is ci.yml's, as
-  # itos.yaml's ci.range says, so it judges what ci.yml's ci job judges.
+  # the range names and its merged scenario run, and the proof step of a
+  # range touching itos.yaml's proof.code paths, one fresh mutation site of
+  # its changed code (T-187), for which it has Node and the viewer's
+  # packages as ci.yml's ci job has. Its range is ci.yml's, as itos.yaml's
+  # ci.range says, so it judges what ci.yml's ci job judges.
   ci:
     runs-on: ubuntu-latest
     env:
@@ -62,6 +65,18 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
+      # The viewer's packages, as nightly.yml installs them, for the proof
+      # step of the plan (itos.yaml's proof.code, T-187): a viewer site it
+      # draws runs its Vitest tests, and without node_modules every
+      # viewer/src file reports a failing baseline.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: viewer/package-lock.json
+      - name: Install the viewer's packages
+        working-directory: viewer
+        run: npm ci
       # The itos launcher, which runs the release itos.yaml pins.
       - uses: donvargax/itos@d02a769a8ea00030f5b385c06428485c23063318 # v7.4.0
       - name: Range
