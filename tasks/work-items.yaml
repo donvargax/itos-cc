@@ -5380,19 +5380,9 @@ items:
     title: crap's Go coverage run outlives go test's 10-minute limit per package without saying so
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was crap-go-test-timeout.
-      T-190 (2026-10-24): itos-cc crap over this repository runs go test -coverpkg=./... ./... with
-      go test's default -timeout of 10 minutes per package, and on a loaded 8-core machine
-      cmd/itos-cc and features each panicked at it, so their coverage was cut short, crap printed
-      only 'coverage: go: exit status 1' among the test output, and exited 0 with much of the module
-      N/A. The nightly's snapshots job raises the limit through GOFLAGS=-timeout=90m, which go test
-      honours. Decide whether crap passes a larger -timeout to the Go coverage command, offers a
-      flag for it, or names a package that timed out in its warning, so a project with a slow suite
-      learns why its coverage is N/A.
     refs: [T-190]
   - id: T-201
     title: cd.yml runs finish on a busy main instead of each push cancelling the last
