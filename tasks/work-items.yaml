@@ -5579,3 +5579,16 @@ items:
       port but its readiness line says http://127.0.0.1:0, the address it was asked for, not the
       listener's, so nothing reading the line can reach it; the scenario harness picks a free port
       itself instead. serve should print the listener's address.
+  - id: release-version-viewer-deps
+    title: A bump of a dependency the release's viewer bundles makes a patch release
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by the serve-embedded-viewer drafter (2026-10-24): tools/bin/release-version releases a
+      patch when the modules cmd/itos-cc links or the Go toolchain change, so a Renovate security
+      bump reaches users, but once the binary embeds the viewer (slice-42), a bump of an npm package
+      the bundle carries changes the binary too and releases nothing until the next feat or fix.
+      After slice-42: the rule also reads viewer/package-lock.json's non-dev packages.
