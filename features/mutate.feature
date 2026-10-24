@@ -2369,6 +2369,42 @@ Feature: Mutation testing
 
   Rule: Results
 
+    # slice-51, issue #21 (q-97, the person 2026-10-24): setup-go's problem
+    # matcher, on in most Go CI jobs, read itos-cc's plain lines shaped
+    # <file>.go: <text>, or holding <file>.go:<line>:<column>, as compiler
+    # errors and annotated a passing run with ##[error]. Decided: counts or
+    # verdict first, the file after them; no plain line of mutation run,
+    # check or sample starts with a path or holds path:line:column. So:
+    # "14 killed, 1 survived, 2 uncovered in src/board.ts (ran 7, reused 8)",
+    # "survived `>` → `>=` in Board#place, src/board.ts line 5 column 9", and
+    # the same for sample's per-file and mismatch lines and check's per-file
+    # lines. Plain output is no contract (JSON is), so no breaking note; the
+    # feat changes every scenario asserting the old lines (MUT-28 below
+    # among them), saying so. The matcher's pattern is setup-go's own, from
+    # its matchers.json at the actions/setup-go version cd.yml pins, held as
+    # a constant in the step with a comment naming its source. The agent
+    # picks the driver: binary-only if the Go fixture needs a real go.
+    # Before this item each row fails at the matcher step.
+    @slice-51 @ID-MUT-343 @wip
+    Scenario Outline: No plain line of <command> reads as a Go compiler error to a CI problem matcher
+      Given the Go module "example.com/leak" with the file "leak.go":
+        """
+        package leak
+
+        func A(x int) bool { return x > 0 }
+        """
+      And its test checks no result, so every mutant of leak.go survives
+      And "itos-cc mutation run --no-annotate leak.go" has recorded its outcomes
+      When I run "itos-cc <command> leak.go"
+      Then no line of its output matches setup-go's Go problem matcher
+      And its line for leak.go gives its counts before naming leak.go
+
+      Examples:
+        | command                    |
+        | mutation run --no-annotate |
+        | mutation check             |
+        | mutation sample            |
+
     @ID-MUT-28
     Scenario: Summary per file
       When I run "itos-cc mutation run src/board.ts"
