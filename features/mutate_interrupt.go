@@ -276,7 +276,7 @@ func (q *mutationExecution) returnedAtDeadline() error {
 		return fmt.Errorf("the run was not interrupted twice before it returned\n%s", q.m.w.report())
 	}
 	took := o.joinedAt.Sub(o.released)
-	if took < 5*time.Second-100*time.Millisecond || took > 10*time.Second {
+	if took < cleanupDeadline-100*time.Millisecond || took > 10*time.Second {
 		return fmt.Errorf("the run returned %s after the first interrupt, not once the five-second deadline passed\n%s", took, q.m.w.report())
 	}
 	return nil

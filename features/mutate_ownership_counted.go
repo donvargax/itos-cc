@@ -113,7 +113,7 @@ func (q *mutationExecution) releaseSurvivor(ctx context.Context) error {
 		r, err := q.owned.run.Wait(bounded)
 		return q.returned(ctx, r, err, time.Now())
 	}
-	bounded, stop := context.WithDeadline(ctx, q.owned.released.Add(5*time.Second))
+	bounded, stop := context.WithDeadline(ctx, q.owned.released.Add(cleanupDeadline))
 	defer stop()
 	return q.waitOwned(bounded)
 }
@@ -140,13 +140,13 @@ func (q *mutationExecution) failFastCancelled() error {
 }
 
 func (q *mutationExecution) sharedStop(ctx context.Context) error {
-	if q.owned.joinedAt.IsZero() || q.owned.released.IsZero() || q.owned.joinedAt.Sub(q.owned.released) > 5*time.Second {
+	if q.owned.joinedAt.IsZero() || q.owned.released.IsZero() || q.owned.joinedAt.Sub(q.owned.released) > cleanupDeadline {
 		return fmt.Errorf("owned join exceeded release-relative shared bound")
 	}
 	if err := q.ownedEnded(ctx); err != nil {
 		return err
 	}
-	deadline := q.owned.released.Add(5 * time.Second)
+	deadline := q.owned.released.Add(cleanupDeadline)
 	bounded, cancel := context.WithDeadline(ctx, deadline)
 	defer cancel()
 	if err := q.owned.trigger.EOF(bounded); err != nil {

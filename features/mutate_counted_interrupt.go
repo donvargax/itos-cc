@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/cucumber/godog"
 )
@@ -92,7 +91,7 @@ func (q *countedMutation) interruptedRemoved(ctx context.Context) error {
 	return nil
 }
 func (q *countedMutation) interruptBound(ctx context.Context) error {
-	if q.e.owned.joinedAt.Before(q.e.owned.released) || q.e.owned.joinedAt.Sub(q.e.owned.released) > 5*time.Second {
+	if q.e.owned.joinedAt.Before(q.e.owned.released) || q.e.owned.joinedAt.Sub(q.e.owned.released) > cleanupDeadline {
 		return fmt.Errorf("counted cancellation exceeded one shared deadline")
 	}
 	if err := q.e.ownedEnded(ctx); err != nil {

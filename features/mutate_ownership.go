@@ -15,6 +15,14 @@ import (
 	"github.com/cucumber/godog"
 )
 
+// cleanupDeadline is the one deadline within which itos-cc terminates and
+// joins a command scope's owned processes, as the ownership rules of
+// mutate.feature and ADR-0021 give it: from a parent's abort, shared across
+// scopes, and from a normal return or a mutant's own timeout, local to the
+// scope. The steps that bound a cleanup, or a timed-out run's end, take it
+// from here.
+const cleanupDeadline = 5 * time.Second
+
 type ownershipExecution struct {
 	mode             string
 	run              Running
@@ -336,10 +344,10 @@ func (q *mutationExecution) ownedEnded(ctx context.Context) error {
 	if q.owned == nil || !q.owned.returned || len(q.owned.peers) != 3 {
 		return fmt.Errorf("owned command has not returned with three captured peers")
 	}
-	deadline := time.Now().Add(5 * time.Second)
+	deadline := time.Now().Add(cleanupDeadline)
 	shared := q.owned.mode == "cancel" || q.owned.mode == "failfast"
 	if shared {
-		deadline = q.owned.released.Add(5 * time.Second)
+		deadline = q.owned.released.Add(cleanupDeadline)
 	}
 	bounded, cancel := context.WithDeadline(ctx, deadline)
 	defer cancel()
@@ -444,7 +452,7 @@ func (q *mutationExecution) signalParent(ctx context.Context, send func(Running,
 	if err := send(q.owned.run, ctx); err != nil {
 		return err
 	}
-	bounded, stop := context.WithDeadline(ctx, q.owned.released.Add(5*time.Second))
+	bounded, stop := context.WithDeadline(ctx, q.owned.released.Add(cleanupDeadline))
 	defer stop()
 	return q.waitOwned(bounded)
 }

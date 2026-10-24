@@ -88,15 +88,11 @@ func (m *mutateState) baselineFirst() error {
 const timeoutAllowance = 5.0
 
 // reaping is how much longer than its timeout a timed-out run may take to
-// end on the platform: a second, and on Windows, where itos-cc ends the
-// command's process but not the processes it started, the two seconds it
-// lets those hold its output.
-func reaping(platform string) float64 {
-	if platform == "windows" {
-		return 3
-	}
-	return 1
-}
+// end: the cleanup deadline within which itos-cc kills and joins a
+// timed-out mutant's owned processes, on every platform. A loaded runner
+// may take most of it (bug-7: 1.7s on macos-latest, past a second's slack)
+// and still end within the contract; a timeout that fires late is past it.
+const reaping = float64(cleanupDeadline) / float64(time.Second)
 
 // timedOut are the last run's mutants of the file that timed out, and the
 // longest of those that did not, in seconds.
@@ -141,7 +137,7 @@ func (m *mutateState) durationSetsTimeout() error {
 		return err
 	}
 	factor := 10.0
-	low, high := factor*shortest+timeoutAllowance, factor*longest+timeoutAllowance+reaping(m.w.d.Platform())
+	low, high := factor*shortest+timeoutAllowance, factor*longest+timeoutAllowance+reaping
 	for _, t := range out {
 		if t.elapsed < low || t.elapsed > high {
 			return fmt.Errorf("the mutant at line %d timed out after %.1fs, not between %.1fs and %.1fs, as a baseline of %.2fs to %.1fs sets\n%s",
@@ -262,7 +258,7 @@ func (m *mutateState) timesOutAfter(text, times, allowance string) error {
 	if err != nil {
 		return err
 	}
-	high := after + factor*max(0, longest-m.baseline.Seconds()) + reaping(m.w.d.Platform())
+	high := after + factor*max(0, longest-m.baseline.Seconds()) + reaping
 	for _, t := range out {
 		if t.elapsed < after || t.elapsed > high {
 			return fmt.Errorf("the mutant at line %d timed out after %.1fs, not %ss, its baseline %s and the longest other run %.1fs\n%s",
