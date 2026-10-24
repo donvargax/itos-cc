@@ -6809,5 +6809,3 @@
     patch so the next agents read its guides and hooks, as T-192 did for 8.12.0. itos upgrade edits
     only what each release fixes exactly; anything it asks by hand is applied or named in the
     commit.
-  done_when:
-    - run: itos version --check

@@ -5713,6 +5713,6 @@ items:
     title: Upgrade the repository pin to the newest itos 8.12
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
