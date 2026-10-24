@@ -5593,7 +5593,7 @@ items:
     title: project moves to internal/project
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-193]
     kind: task
   - id: T-195
