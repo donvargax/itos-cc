@@ -5749,7 +5749,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [slice-49]
     kind: idea
     why: >
       q-94 item B (the person 2026-10-24): unknown keys refused at every level, keyed by path
