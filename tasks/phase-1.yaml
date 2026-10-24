@@ -6672,3 +6672,15 @@
   done_when:
     - run: itos config check
     - run: grep -qF 'cmd/itos-cc/subprocess_test.go' itos-cc.yaml
+- id: T-192
+  type: chore
+  title: Upgrade the repository pin to itos 8.12.0
+  why: >
+    The person chose on 2026-10-24 to move to the newest itos (8.7.5 to 8.12.0) between agents. itos
+    upgrade edited the pin alone; 8.8.0 added the optional key ci.steps[].evidence, set nowhere
+    here. By hand, 8.12.0 asks that a static check written below a late one be marked cost: late for
+    CI; no task check in tasks/phase-1.yaml carries a cost, so nothing applies.
+  done_when:
+    - run: test "$(itos version)" = 'itos 8.12.0'
+    - run: itos version --check
+    - run: itos config check

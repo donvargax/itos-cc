@@ -5608,3 +5608,10 @@ items:
     status: done
     depends_on: []
     kind: bug
+  - id: T-192
+    title: Upgrade the repository pin to itos 8.12.0
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
