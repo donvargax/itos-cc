@@ -6822,6 +6822,17 @@
     a quiet hour lets a run finish and a release be cut. Options to weigh: cancel only a run whose
     head a newer run contains and has passed, queue rather than cancel on main (cancel-in-progress
     false with one group, a later push waiting), or let the docs-only judgement read ci.yml's green
-    range. The coordinator judges cd after a wave at a quiet point meanwhile.
+    range. The coordinator judges cd after a wave at a quiet point meanwhile. Seen again the same
+    day: CD 40110520588 (T-197's code) was cancelled by its own close commit's run.
+
+    Decided by the coordinator (2026-10-24, a routine call inside the item): queue rather than
+    cancel. Every concurrency group in cd.yml (cd-test, cd-languages, cd-dart, cd-sample) sets
+    cancel-in-progress false, keeping its group names, so a job already running always finishes
+    and GitHub keeps at most one pending job per group, cancelling an older pending one when a
+    newer push queues: under a burst of pushes the running run finishes, the newest waits, and
+    the ones between never start. A run that finishes green gives scope its base again, so later
+    docs-only pushes skip the suite as designed. The release group is already false. The
+    comment above each group says why, and the README or docs/architecture.md passage on cd.yml,
+    if it says pushes cancel, is corrected. No product change.
   done_when:
     - run: "test $(grep -c 'cancel-in-progress: true' .github/workflows/cd.yml) -eq 0"
