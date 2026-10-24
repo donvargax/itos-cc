@@ -308,6 +308,40 @@ Feature: Command line
       # a command that catches the signal and exits, even with 130, lets the
       # loop go on: a shell stops only when the command ends by the signal
 
+  # serve-embedded-viewer (ADR-0060): until the graph is a .metrics snapshot
+  # its own web app reads, serve serves the viewer its build embedded, so a
+  # release's binary shows the graph with no clone, Node or --ui. A build
+  # embeds what server/ui holds, where the release copies viewer/dist; a
+  # checkout's or go install's build holds none and answers / as before.
+  # The person decides under which licence the bundle's elkjs is taken
+  # (q-87, EPL-2.0 OR GPL-3.0-or-later, in an AGPL-3.0 binary) before this
+  # slice starts. The coordinator's calls (2026-10-24): server/ui holds only
+  # a committed .gitignore and is embedded with all:ui, the release copying
+  # viewer/dist there before each build, so every Go job builds unchanged
+  # and a checkout's build answers / as before (no build tag: AGENTS.md
+  # keeps those for OS calls; no committed dist); release.yml gains a viewer
+  # job building it once and a step serving the archive's binary;
+  # THIRD_PARTY_NOTICES names the bundle's 18 npm packages, tools/bin/notices
+  # -check keeping it true; binary +1.9 MB.
+  Rule: serve serves the viewer its build carries
+
+    # Binary-only for good, as ID-CLI-03: each row builds itos-cc.
+    @binary-only @slice-42 @ID-CLI-29 @wip
+    Scenario Outline: serve answers / with the viewer it was built with, unless --ui names another
+      Given the binary was built <how>
+      And the scratch folder holds a viewer in "other" whose index.html says "other viewer"
+      And "itos-cc serve <args>" is serving the scratch folder
+      When I request "GET /"
+      Then the response is 200 and its body says "<says>"
+      When I request "GET /api/graph"
+      Then the response is JSON with the version, nodes, and edges
+
+      Examples:
+        | how                                                                                  | args       | says                                                                                         |
+        | with "go build" from a tree whose server/ui holds a viewer saying "built-in viewer" |            | built-in viewer                                                                              |
+        | with "go build" from a tree whose server/ui holds a viewer saying "built-in viewer" | --ui other | other viewer                                                                                 |
+        | with "go build" from a tree with no git information                                  |            | itos-cc API: /api/graph, /api/events, /api/source. Start the viewer, or pass --ui viewer/dist. |
+
   # Decided with the person on 2026-10-06 (q-1, q-3): mutation testing is one
   # group, mutation, following itos's CLI rules 3, 4, 7 and 13. mutate and
   # mutate --scan go with no alias: itos-cc is before 1.0, so a breaking
