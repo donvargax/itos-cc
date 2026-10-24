@@ -20,6 +20,7 @@ queue:
   - features-coverage-gocoverdir-leak
   - slice-47
   - slice-48
+  - plain-output-matcher
   - viewer-ci-tests
   - refactor-proof-dart
   - itos-cc-yaml-version
