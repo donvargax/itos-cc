@@ -5712,7 +5712,7 @@ items:
   - id: T-200
     title: Upgrade the repository pin to the newest itos 8.12
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
