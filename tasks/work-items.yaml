@@ -14,6 +14,21 @@ queue:
   - listed-support-per-test
   - listed-suites
   - slice-43
+  - cd-finish-on-busy-main
+  - pinned-curl-timeout
+  - counted-config-own-fix
+  - mismatch-fix-quotes
+  - coverage-line-stderr
+  - annotate-function-name
+  - serve-port-zero-announce
+  - features-coverage-gocoverdir-leak
+  - crap-go-test-timeout
+  - plain-output-wording
+  - viewer-ci-tests
+  - refactor-proof-dart
+  - itos-cc-yaml-version
+  - flaky-kills
+  - graph-snapshot
   - T-102
   - T-103
   - T-104
