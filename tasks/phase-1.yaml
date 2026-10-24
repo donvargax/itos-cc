@@ -6929,5 +6929,3 @@
     (same action and pin) and sets ITOS_CC_FLUTTER_TOOLS for both sides, so the Dart scenarios run
     on the baseline and the refactored binary alike; no third matrix leg. Its header comment says
     the Dart scenarios are compared too. Nothing is dispatched: the next refactor proof proves it.
-  done_when:
-    - run: grep -q 'ITOS_CC_FLUTTER_TOOLS' .github/workflows/refactor-proof.yml

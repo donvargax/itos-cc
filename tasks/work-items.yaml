@@ -5599,7 +5599,7 @@ items:
     title: refactor-proof.yml installs Flutter, so the Dart scenarios are compared too
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: slice-44
