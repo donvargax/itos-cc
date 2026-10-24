@@ -411,3 +411,4 @@ questions:
     item: "graph-snapshot"
     question: "How does serve's architecture graph reach its own web app: serve builds it in process and the app asks over HTTP, as today, or itos-cc writes it as a .metrics snapshot the app only reads, as Uncle Bob's uml-viewer reads the files his tools write?"
     answer: "A snapshot the app only reads (the person, 2026-10-24), so the UI code stays simple: itos-cc writes the graph, its tree, import edges and metrics, as .metrics/graph.json beside crap, dry, scrap and mutation's snapshots, and the web app reads .metrics/ and needs none of itos-cc's code. serve's move (T-102 to T-113) is re-cut against this when it is specified; serve-embedded-viewer stays as the stopgap until then."
+    decision: 60
