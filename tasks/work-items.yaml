@@ -2288,8 +2288,8 @@ items:
   - id: slice-49
     title: itos-cc.yaml refuses explicit tags, keys that are not strings and a second document
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
