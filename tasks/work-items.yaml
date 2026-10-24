@@ -19,7 +19,7 @@ queue:
   - slice-46
   - serve-port-zero-announce
   - features-coverage-gocoverdir-leak
-  - crap-go-test-timeout
+  - slice-47
   - plain-output-wording
   - viewer-ci-tests
   - refactor-proof-dart
@@ -5411,14 +5411,15 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: crap-go-test-timeout
+  - id: slice-47
     title: crap's Go coverage run outlives go test's 10-minute limit per package without saying so
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was crap-go-test-timeout.
       T-190 (2026-10-24): itos-cc crap over this repository runs go test -coverpkg=./... ./... with
       go test's default -timeout of 10 minutes per package, and on a loaded 8-core machine
       cmd/itos-cc and features each panicked at it, so their coverage was cut short, crap printed
