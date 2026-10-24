@@ -5562,3 +5562,7 @@ items:
       replaces them: graph imports internal/slices/mutation/domain (FreshnessOf) on purpose, so its
       stale marks agree with mutation check. The exemption is listed in architecture-check with that
       reason and goes when serve's move does.
+
+      The exemption for graph and server is temporary (the person, 2026-10-24): graph-snapshot moves
+      graph into a slice under internal/ and removes server, and the exemption goes in that work,
+      leaving the gate with none.
