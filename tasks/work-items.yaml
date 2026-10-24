@@ -5434,7 +5434,7 @@ items:
   - id: T-190
     title: The nightly records crap, dry and scrap snapshots beside mutation's
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
