@@ -6657,3 +6657,18 @@
     what the nightly records. No mutation run beyond what mutate already does. Done once a nightly
     on main, scheduled or dispatched, has committed the three snapshots; a dispatch of the whole
     nightly is fine.
+- id: T-191
+  type: chore
+  title: mutation.tests.support names the scenario driver's TestMain and every porttest folder
+  why: >
+    Found drafting listed-support-doublestar (2026-10-24): cmd/itos-cc/subprocess_test.go holds a
+    TestMain that runs in every in-process scenario, yet no mutation.tests.support glob names it, so
+    a change there leaves listed kills fresh that it may have changed (a kill resting on a file it
+    does not name). And the three porttest globs name folders one by one (filepath.Glob takes ** as
+    *), so a porttest folder added later is missed. itos-cc.yaml's support list adds
+    cmd/itos-cc/subprocess_test.go and names each porttest folder there is today, with its comment
+    saying why; no product change (listed-support-doublestar, if built, may later fold the porttest
+    folders into one ** glob).
+  done_when:
+    - run: itos config check
+    - run: grep -qF 'cmd/itos-cc/subprocess_test.go' itos-cc.yaml
