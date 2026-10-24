@@ -6580,7 +6580,12 @@
   done_when:
     - run: itos config check
     - run: grep -qF -- 'mutation run --count 1 --since {base} --seed {base} --fail-uncovered=lines --json' itos.yaml
+      after: push
     - run: itos ci plan b8b98b0e~1 b8b98b0e | grep -qF -- 'mutation run --count 1'
+      after: push
     - run: grep -qF -- 'mutation sample --count 10' .github/workflows/cd.yml
+      after: push
     - run: "! grep -qF 'Mutation proof is off' docs/go.md"
+      after: push
     - run: "! grep -qF 'locally or in a push' AGENTS.md"
+      after: push
