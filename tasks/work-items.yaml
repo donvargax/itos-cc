@@ -560,8 +560,8 @@ items:
   - id: slice-46
     title: mutation run's summary comment names a method without its class
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
