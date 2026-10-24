@@ -6686,14 +6686,14 @@
     is refused, naming both packages and whether from its tests, as outside() does. Named rows, each
     with its reason: permanent, features to internal/project alone (the harness asks discovery's own
     rules, never a copy) and tools/bin/release-notes and release-version to internal/release alone
-    (the template's layout); until graph-snapshot (ADR-0060), graph and server; until their move,
-    config (T-196... see T-194 to T-197), coverage, metrics, project. Fixtures in
-    tools/testdata/architecture (a toplevel_test.go beside outside_test.go): accepted for cmd, graph
-    and each named row, refused for a top-level fixture library importing internal/ from code and
-    from tests. docs/go.md's boundary list and docs/architecture.md say it. This task's parent
-    commit is the refactor's proof baseline (T-198): record it in the ledger entry of T-198 when
-    closing. The plan is scratchpad/plan-top-level-libraries-internal.md of the coordinator's
-    session, its decisions now ADR-0061 (q-89). Build changes no binary.
+    (the template's layout); until graph-snapshot (ADR-0060), graph and server; until their moves
+    (T-194 to T-197), project, metrics, coverage and config. Fixtures in tools/testdata/architecture
+    (a toplevel_test.go beside outside_test.go): accepted for cmd, graph and each named row, refused
+    for a top-level fixture library importing internal/ from code and from tests. docs/go.md's
+    boundary list and docs/architecture.md say it. This task's parent commit is the refactor's proof
+    baseline (T-198): record it in the ledger entry of T-198 when closing. The plan is
+    scratchpad/plan-top-level-libraries-internal.md of the coordinator's session, its decisions now
+    ADR-0061 (q-89). Build changes no binary.
   done_when:
     - run: tools/bin/architecture-check
     - run: grep -qF 'toplevel' tools/bin/architecture-check
