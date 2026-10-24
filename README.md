@@ -1122,17 +1122,29 @@ snapshot, so rerunning after a refactor says whether it helped.
 ## The architecture viewer
 
 `itos-cc serve` watches one or more repositories and publishes their
-architecture over HTTP; `viewer/` is a separate web app (TypeScript, React,
+architecture over HTTP; `viewer/` is a web app (TypeScript, React,
 React Flow, ELK) that draws it as a canvas you drill into: repositories →
-directories → modules → functions.
+directories → modules → functions. A release's binary carries the built
+viewer and serves it at `/`, so it needs no clone, Node or `--ui`:
 
 ```bash
-itos-cc serve . ../other-repo          # API on http://127.0.0.1:7070
-cd viewer && npm install && npm run dev # viewer on http://localhost:5173
-
-# or serve a built viewer from the same port
-(cd viewer && npm run build) && itos-cc serve --ui viewer/dist .
+itos-cc serve . ../other-repo          # viewer and API on http://127.0.0.1:7070
 ```
+
+A binary from `go install` or a checkout's `go build` carries no viewer, and its `/` says so:
+build the viewer and pass it with `--ui`, which also replaces a release's own. `npm run dev` is
+for working on the viewer.
+
+```bash
+(cd viewer && npm ci && npm run build) && itos-cc serve --ui viewer/dist .
+cd viewer && npm ci && npm run dev     # viewer on http://localhost:5173, the API on :7070
+```
+
+The release builds `viewer/` once and copies `viewer/dist` into `server/ui`, which the binary
+embeds (`//go:embed all:ui`; the folder holds only a `.gitignore` in the repository), before
+building each archive's binary. The viewer adds about 1.9 MB to the binary (25.9 MB rather than
+24.0 MB on Linux amd64, 8%; 0.6 MB, 9.5%, gzipped). To try a build with it from a checkout,
+`cp -R viewer/dist/. server/ui/` before `go build`, and `git clean -fdX server/ui` after.
 
 - A module is a file in TypeScript, Python, Kotlin and Dart, and a package
   in Go.
@@ -1206,7 +1218,7 @@ describes each package and the import rules `.golangci.yml` holds them to.
 | `coverage` | Running coverage and reading LCOV, Go profiles, and JaCoCo |
 | `config` | Reading `itos-cc.yaml`, which the mutation slice's exceptions adapter writes |
 | `metrics` | Snapshot files |
-| `graph`, `server` | The architecture graph, its dependencies resolved by `internal/imports`, and its live HTTP API |
+| `graph`, `server` | The architecture graph, its dependencies resolved by `internal/imports`, its live HTTP API, and the viewer a release embeds |
 | `internal/version`, `internal/release` | The build's version, the one source the `version` command prints through cmd, and the library of the release tools in `tools/bin` |
 | `features` | The scenarios and their steps, each file of steps declaring its feature file, listed in `steps_gen.go` by `tools/bin/assemble` ([features/README.md](features/README.md)) |
 | `viewer/` | The web viewer, a separate npm project |

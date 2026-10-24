@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -23,7 +24,7 @@ import (
 // Server holds the latest graph and the clients listening for changes.
 type Server struct {
 	builder *graph.Builder
-	ui      string // directory of a built viewer to serve at /, or ""
+	ui      string // directory of a built viewer to serve at / instead of the built-in one, or ""
 	log     *log.Logger
 
 	mu        sync.Mutex
@@ -94,14 +95,20 @@ func (s *Server) Watch(ctx context.Context, interval time.Duration) {
 	}
 }
 
-// Handler routes the API and, when configured, the viewer.
+// Handler routes the API and the viewer at /: the one the ui directory
+// holds, else the one the binary was built with. With neither, / says how
+// to get one.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/graph", s.graph)
 	mux.HandleFunc("GET /api/events", s.events)
 	mux.HandleFunc("GET /api/source", s.source)
+	ui := builtIn
 	if s.ui != "" {
-		mux.Handle("GET /", spa(s.ui))
+		ui = os.DirFS(s.ui)
+	}
+	if ui != nil {
+		mux.Handle("GET /", spa(ui))
 	} else {
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 			_, _ = fmt.Fprintln(w, "itos-cc API: /api/graph, /api/events, /api/source. Start the viewer, or pass --ui viewer/dist.") // the client has gone if the write fails; there is no one left to tell
@@ -182,12 +189,14 @@ func (s *Server) source(w http.ResponseWriter, r *http.Request) {
 }
 
 // spa serves a built single-page app, falling back to its index.html for
-// client-side routes.
-func spa(dir string) http.Handler {
-	files := http.FileServer(http.Dir(dir))
+// client-side routes and for /, which names no file.
+func spa(fsys fs.FS) http.Handler {
+	files := http.FileServerFS(fsys)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, err := os.Stat(filepath.Join(dir, filepath.FromSlash(r.URL.Path))); err != nil { //nolint:gosec // ServeMux has cleaned the rooted request path, so the join stays in dir; only existence is asked
-			http.ServeFile(w, r, filepath.Join(dir, "index.html"))
+		// ServeMux has cleaned the rooted request path, and fs.FS refuses any
+		// name leaving fsys; only existence is asked.
+		if _, err := fs.Stat(fsys, strings.TrimPrefix(r.URL.Path, "/")); err != nil {
+			http.ServeFileFS(w, r, fsys, "index.html")
 			return
 		}
 		files.ServeHTTP(w, r)

@@ -73,7 +73,7 @@ Feature: Serving the architecture graph
     And the previous graph is still served
 
   @ID-SERVE-10
-  Scenario: Without a built viewer, / says how to get one
+  Scenario: A build without its viewer, run without --ui, says at / how to get one
     When I run "itos-cc serve" and request "GET /"
     Then the response names the API endpoints and suggests starting the viewer or passing --ui viewer/dist
 

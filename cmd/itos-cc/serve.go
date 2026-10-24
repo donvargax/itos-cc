@@ -22,6 +22,7 @@ var serveCommand = &command{
 	about: `
 Serves the architecture of one or more repositories for the viewer:
 
+  GET /             the viewer this binary was built with, or --ui's
   GET /api/graph    repositories, directories, modules, functions, and
                     their dependencies and metrics, as JSON
   GET /api/events   server-sent events: the graph version, on every change
@@ -32,7 +33,7 @@ complexity and dependencies at once, and rerunning crap, mutate, or dry
 updates their numbers. Listens on localhost only, until interrupted.`,
 	flags: []flagSpec{
 		opt("port", intFlag, "N", "7070", "port to listen on"),
-		opt("ui", stringFlag, "DIR", "", "directory of a built viewer to serve at /, such as viewer/dist"),
+		opt("ui", stringFlag, "DIR", "", "directory of a viewer to serve at / instead of the one built in, such as viewer/dist"),
 		opt("interval", durationFlag, "D", "500ms", "how often to check for changes"),
 	},
 	json: `"address" once it stops`,
@@ -45,6 +46,7 @@ updates their numbers. Listens on localhost only, until interrupted.`,
 		{cli.CodeUsage, "a usage error: a bad flag, or a repository that cannot be read"},
 	},
 	examples: []string{
+		"itos-cc serve .",
 		"itos-cc serve --ui viewer/dist .",
 		"itos-cc serve --port 8080 ../api ../web",
 	},

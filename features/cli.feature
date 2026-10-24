@@ -313,20 +313,21 @@ Feature: Command line
   # release's binary shows the graph with no clone, Node or --ui. A build
   # embeds what server/ui holds, where the release copies viewer/dist; a
   # checkout's or go install's build holds none and answers / as before.
-  # The person decides under which licence the bundle's elkjs is taken
-  # (q-87, EPL-2.0 OR GPL-3.0-or-later, in an AGPL-3.0 binary) before this
-  # slice starts. The coordinator's calls (2026-10-24): server/ui holds only
-  # a committed .gitignore and is embedded with all:ui, the release copying
-  # viewer/dist there before each build, so every Go job builds unchanged
-  # and a checkout's build answers / as before (no build tag: AGENTS.md
-  # keeps those for OS calls; no committed dist); release.yml gains a viewer
-  # job building it once and a step serving the archive's binary;
-  # THIRD_PARTY_NOTICES names the bundle's 18 npm packages, tools/bin/notices
-  # -check keeping it true; binary +1.9 MB.
+  # The bundle's elkjs, EPL-2.0 OR GPL-3.0-or-later in an AGPL-3.0 binary,
+  # is taken under GPL-3.0-or-later (the person, q-87, 2026-10-24), which
+  # GPLv3's section 13 lets combine with AGPLv3. The coordinator's calls
+  # (2026-10-24): server/ui holds only a committed .gitignore and is
+  # embedded with all:ui, the release copying viewer/dist there before each
+  # build, so every Go job builds unchanged and a checkout's build answers /
+  # as before (no build tag: AGENTS.md keeps those for OS calls; no
+  # committed dist); release.yml gains a viewer job building it once and a
+  # step serving the archive's binary; THIRD_PARTY_NOTICES names the
+  # bundle's 18 npm packages, tools/bin/notices -check keeping it true;
+  # binary +1.9 MB.
   Rule: serve serves the viewer its build carries
 
     # Binary-only for good, as ID-CLI-03: each row builds itos-cc.
-    @binary-only @slice-42 @ID-CLI-29 @wip
+    @binary-only @slice-42 @ID-CLI-29
     Scenario Outline: serve answers / with the viewer it was built with, unless --ui names another
       Given the binary was built <how>
       And the scratch folder holds a viewer in "other" whose index.html says "other viewer"
