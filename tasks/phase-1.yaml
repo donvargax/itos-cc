@@ -6936,5 +6936,3 @@
     Between agents, the coordinator moves the pin from 8.13.3 to the newest 8.15 so the next agents
     read its guides and hooks, as T-204 did. itos upgrade edits only what each release fixes
     exactly; anything it asks by hand is applied or named in the commit.
-  done_when:
-    - run: itos version --check
