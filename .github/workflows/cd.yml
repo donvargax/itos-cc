@@ -144,17 +144,19 @@ jobs:
   # one scenario at a time (runs 39097433982, 39097875789, 39102423311),
   # and 9.5 and 12.8, 7.1 and 8.4, and 4.1 and 4 at once (runs 39113993739,
   # 39115097770).
-  # A newer push's run cancels this job of an older run on the same ref
-  # (T-123): the newer run's range, from this workflow's last green run,
-  # covers the older commits. Per job, not per workflow, so a release already
-  # publishing is never cancelled. The group names cd, so no job of ci.yml's
-  # shares it.
   test:
     needs: scope
     if: needs.scope.outputs.docs_only != 'true'
+    # Queued, never cancelled (T-201): a job already running finishes, and a
+    # newer push's job waits, replacing only an older one still pending, so
+    # under a burst of pushes a run still goes green and gives the scope job
+    # its base again. Cancelling in progress (T-123) let each push cancel the
+    # run before it, and no run finished while pushes kept coming. Per job,
+    # not per workflow, as the release has its own group. The group names
+    # cd, so no job of ci.yml's shares it.
     concurrency:
       group: cd-test-${{ github.ref }}-${{ matrix.os }}-${{ matrix.part }}
-      cancel-in-progress: true
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
@@ -239,13 +241,14 @@ jobs:
   # Each tool is pinned: Node's by testdata/tools/node's lockfile,
   # Python's by testdata/tools/python/requirements.txt, and the JDK,
   # Gradle and Maven here; the Kotlin fixtures pin their plugins.
-  # A newer push's run cancels an older one's shard, as for test (T-123).
   languages:
     needs: scope
     if: needs.scope.outputs.docs_only != 'true'
+    # Queued, as for test (T-201): a running shard finishes, and a newer
+    # push's shard replaces only one still pending.
     concurrency:
       group: cd-languages-${{ github.ref }}-${{ matrix.shard }}
-      cancel-in-progress: true
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
@@ -371,13 +374,14 @@ jobs:
   # which caches the SDK and the pub cache the fixtures resolve from.
   # ITOS_CC_LANGUAGE_TOOLS makes a missing flutter fail these scenarios
   # instead of skipping them.
-  # A newer push's run cancels an older one's, as for test (T-123).
   dart:
     needs: scope
     if: needs.scope.outputs.docs_only != 'true'
+    # Queued, as for test (T-201): a running job finishes, and a newer
+    # push's job replaces only one still pending.
     concurrency:
       group: cd-dart-${{ github.ref }}
-      cancel-in-progress: true
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -413,14 +417,15 @@ jobs:
   # mutant's Vitest tests, and itos and jq for mutation.tests' list command,
   # which ubuntu-latest has. On Linux alone, as the nightly that records the
   # results runs; ci.yml stays fast, with no sample. Skipped when the scope
-  # job finds the range prose-only, and a newer push's run cancels an older
-  # one's, as for test (T-123).
+  # job finds the range prose-only.
   sample:
     needs: scope
     if: needs.scope.outputs.docs_only != 'true'
+    # Queued, as for test (T-201): a running job finishes, and a newer
+    # push's job replaces only one still pending.
     concurrency:
       group: cd-sample-${{ github.ref }}
-      cancel-in-progress: true
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
