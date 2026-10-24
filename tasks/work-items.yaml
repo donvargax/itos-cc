@@ -5585,3 +5585,10 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: T-194
+    title: project moves to internal/project
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

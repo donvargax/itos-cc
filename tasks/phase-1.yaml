@@ -6698,3 +6698,29 @@
     - run: tools/bin/architecture-check
     - run: grep -qF 'toplevel' tools/bin/architecture-check
     - run: go test ./tools/testdata/architecture/...
+- id: T-194
+  type: refactor
+  title: project moves to internal/project
+  why: >
+    ADR-0061, T2 of six: project (17 files and testdata/gomod) becomes internal/project, package
+    project, an adapter-side engine (ADR-0051's project and git history engine), not split, its pure
+    helpers serving only its own I/O; 40 importing files change their path alone. Its 11 snapshots
+    move from .metrics/mutate/project to .metrics/mutate/internal/project. depguard: a new rule
+    project (allow internal/lang, lang/port, selection, snapshot), the exclusions, and /project$
+    becoming /internal/project$ in the eight rules naming it. architecture-check drops project's
+    row; features' permanent row names internal/project. Stays clear of the lang and selection
+    globs. Keep ports, ctx and domain rules whole (ADR-0047); refactor commits, no behaviour change,
+    no binary comparison per move (the proof is T-198); every package moved under internal/ gets its
+    own depguard rule in .golangci.yml and the exclusions in slices and slice-fakes, or depguard
+    reads it as a slice; git mv its .metrics/mutate snapshots with its files (never hand-edit crap,
+    dry or scrap.json: the nightly rewrites them); delete its own exemption row in
+    tools/bin/architecture-check; update docs/go.md's package and boundary lists,
+    docs/architecture.md, docs/ownership.md, README's layout table and the docs/dart path
+    references; rerun go run ./tools/bin/assemble and diff. A push whose qualifier changes touch
+    function bodies may draw a fresh mutation site and kills what it meets (ADR-0059). The plan is
+    scratchpad/plan-top-level-libraries-internal.md of the coordinator's session, its decisions now
+    ADR-0061 (q-89).
+  done_when:
+    - run: test ! -d project && test -d internal/project
+    - run: "! grep -rn --include='*.go' '\"github.com/donvargax/itos-cc/project\"' ."
+    - run: tools/bin/architecture-check
