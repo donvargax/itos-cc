@@ -5699,3 +5699,15 @@ items:
       fix's command pasteable, but only a --json reader sees it. A plain run could print the fix
       once after the mismatched lines, or Shown could leave the fix to stderr; check's stale lines
       do the same and may want the same answer.
+  - id: crap-threshold-timeout
+    title: crap with --threshold names a Go package whose tests timed out
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-47 (2026-10-24) made crap warn, without --threshold, when go test reports a package
+      timed out; with --threshold a timed-out root stays Failed and silent (its functions read 0.0%,
+      not N/A), so a gate can fail on coverage cut short with no word why. Name the timeout there
+      too, as a problem or a note beside the gate's verdict; a scenario first.
