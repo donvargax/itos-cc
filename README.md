@@ -1082,7 +1082,10 @@ the entry is replaced, reported as `excepted again`, and keeps its reason
 unless `--reason` gives another, so `--reason` may be left out then.
 
 Killed mutants are kept per function in `.metrics/mutate/`, so the day's
-runs reuse the night's kills for code that has not changed. Each file's
+runs reuse the night's kills for code that has not changed. A run whose
+every mutant is reused says `itos-cc: every mutant reused from
+.metrics/mutate, none to run`; one whose selection holds no mutant at all
+says `itos-cc: no mutations to test`. Each file's
 snapshot also records, under `tests`, the SHA-256 of every test file that
 reaches the file, by its path from the project root. In TypeScript, Python,
 Kotlin and Dart those are the test files whose imports reach its module, directly
