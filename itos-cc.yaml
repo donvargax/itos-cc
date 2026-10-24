@@ -35,10 +35,16 @@ mutation:
 
   # The listed tests are the scenarios, run in process (decision 49, T-184):
   # a mutant that survives its file's own tests runs the scenarios whose
-  # coverage reaches its line. list prints each live scenario's ID and its
-  # feature file, which itos names from features/, so the folder is added:
-  # a listed file that is not there would keep a kill fresh forever. No
-  # fingerprint column until itos#22 and itos#112 give one. {pattern} is
+  # coverage reaches its line. list prints the ID and feature file of each
+  # live scenario TestScenarios runs, the file from the project's top, as a
+  # listed file that is not there would keep a kill fresh forever.
+  # tools/bin/listed-scenarios decides by the harness's own rules
+  # (features.Converted, features.Deferred, features.Unstepped,
+  # @binary-only): a counted run fails closed on a listed test with no
+  # per-ID coverage data, and every live scenario itos lists was the first
+  # code proof's failure (T-187). Once itos prints each scenario's tags
+  # (itos#117), a filter replaces the program. No fingerprint column, as the
+  # jq filter printed none, until itos#22 and itos#112 give one. {pattern} is
   # single-quoted, since it reaches the shell line unquoted. whole runs every
   # scenario with -cover; with ITOS_CC_TEST_COVERDIR set, as itos-cc sets it,
   # TestScenarios runs each in a test binary of its own writing its coverage
@@ -48,9 +54,10 @@ mutation:
   # filepath.Glob, where ** is *, so each folder is named; never
   # features/*.feature, which would stale every listed kill on any spec edit.
   # A scenario the in-process driver leaves out (@binary-only,
-  # features.Deferred) runs nothing there and kills nothing.
+  # features.Deferred) runs nothing there and kills nothing, so it is not
+  # listed.
   tests:
-    list: itos tests list scenario --json | jq -r '.tests[]|select(.live)|"\(.id)\tfeatures/\(.file)"'
+    list: itos tests list scenario --json | go run ./tools/bin/listed-scenarios
     run: go test -count=1 ./cmd/itos-cc -run '^TestScenarios$' -scenarios='{pattern}'
     ids_pattern: "^@(?:{ids})$"
     join: {each: "(?:{id})", sep: "|"}

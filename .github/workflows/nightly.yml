@@ -65,7 +65,7 @@ jobs:
         run: npm ci
 
       # mutation.tests' list command runs itos tests list and reads its JSON
-      # with jq, which ubuntu-latest has. The itos launcher, pinned as in
+      # with tools/bin/listed-scenarios, through go run. The itos launcher, pinned as in
       # ci.yml, runs the release itos.yaml pins.
       - uses: donvargax/itos@d02a769a8ea00030f5b385c06428485c23063318 # v7.4.0
 

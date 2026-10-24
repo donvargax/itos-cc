@@ -1109,9 +1109,13 @@ This repository's mutants are killed by the scenarios the in-process driver runs
 `itos-cc.yaml`'s `mutation.tests` (decision 49, T-184), never by unit tests written for
 mutation's sake. A mutant runs its own tests first, its package's (decision 12), and only if it
 survives them the scenarios whose coverage reaches its line, in one `TestScenarios` run that
-selects them by ID tag (`run`). `list` is `itos tests list scenario --json` through jq, each
-live scenario's ID and its feature file from the project root, so itos and jq must be on the
-PATH. The coverage per scenario comes from one run, `whole`, of `TestScenarios` built with
+selects them by ID tag (`run`). `list` is `itos tests list scenario --json` through
+`tools/bin/listed-scenarios`, the ID and feature file, from the project root, of each live
+scenario `TestScenarios` runs, so itos must be on the PATH. It decides by the harness's own
+values, `features.Converted`, `features.Deferred`, `features.Unstepped` and the `@binary-only`
+tag, over the pickles the gherkin parser makes, since a counted run fails closed on a listed
+test with no per-ID coverage data (T-187).
+The coverage per scenario comes from one run, `whole`, of `TestScenarios` built with
 `-cover -coverpkg=./...`: with `ITOS_CC_TEST_COVERDIR` set, as itos-cc sets it, and coverage on,
 `TestScenarios` runs each scenario it selects in a run of its own test binary with
 `-test.gocoverdir=<dir>/<ID>`, the ID tag without its `@` (`scenarios_apart_test.go`), and a
