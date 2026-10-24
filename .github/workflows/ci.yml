@@ -40,10 +40,7 @@ jobs:
   # name; a push touching only ci.prose.paths runs ci.prose.steps alone.
   # go-template-itos's ci job, with Go set up for the plan's go steps.
   # tools/bin/pinned fetches golangci-lint for architecture-check and checks
-  # its SHA-256, and govulncheck is a Go tool of go.mod. A range touching
-  # itos.yaml's proof.code paths also runs its check (T-187): one fresh
-  # mutation site of the range's changed code, judged by the itos-cc built
-  # from this tree, so the job has Node and the viewer's packages too.
+  # its SHA-256, and govulncheck is a Go tool of go.mod.
   ci:
     runs-on: ubuntu-latest
     env:
@@ -56,18 +53,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
-      # The viewer's packages, as nightly.yml installs them, for the proof
-      # step of the plan (itos.yaml's proof.code, T-187): a viewer site it
-      # draws runs its Vitest tests, and without node_modules every
-      # viewer/src file reports a failing baseline.
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: viewer/package-lock.json
-      - name: Install the viewer's packages
-        working-directory: viewer
-        run: npm ci
       # The itos launcher, which runs the release itos.yaml pins.
       - uses: donvargax/itos@d02a769a8ea00030f5b385c06428485c23063318 # v7.4.0
       - name: Range

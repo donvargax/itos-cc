@@ -124,12 +124,9 @@ ci:
   # of its own: tools/bin/domain-coverage runs the domains' tests with
   # RAPID_CHECKS=1, one random case per property, and the Go test jobs set
   # nothing, so a property runs rapid's default 100 cases there (docs/go.md).
-  # A range touching proof.code's paths also runs its check, one fresh
-  # mutation site of the range's changed code (T-187, below); cd.yml's
-  # sample job re-runs ten recorded results, and nightly.yml judges the
-  # rest, committing .metrics/mutate/. ci.yml's and cd.yml's ci jobs both
-  # run this plan; the Go tests and every scenario on three systems are
-  # cd.yml's (decision 48).
+  # Mutation sample and proof (q-53) wait on T-46 (p1-itos-proof-code).
+  # ci.yml's and cd.yml's ci jobs both run it; the Go tests and every
+  # scenario on three systems are cd.yml's (decision 48).
   steps:
     - { run: itos config check, cost: static }
     - { run: tools/bin/doc-caps, cost: static }
@@ -185,31 +182,3 @@ ci:
   watch:
     provider: github
     github: { workflow: ci.yml }
-
-# The proof of done (q-85, T-187): a range touching these paths, every Go
-# file and the viewer's TypeScript, gets this check as a step of the plan
-# above, among the static ones and before the scenarios, with {base} the
-# range's start, so ci.yml's and cd.yml's ci jobs both run it. One mutation
-# site of the range's changed functions, of the sources itos-cc.yaml's
-# exclude leaves in, judged freshly by the itos-cc built from the pushed
-# tree with no cache: nothing records a push's changed functions before it
-# is judged (no agent mutates this code on its machine, and the nightly
-# records once a day), so a check reading .metrics/mutate/ (mutation
-# check) would fail every Go push. --fail-uncovered=lines holds the lines
-# the range adds or changes to strict coverage (itos-cc's =lines): old
-# uncovered code beside a change is not the range's. --seed {base} draws
-# the site by the range's start, not HEAD (itos-cc's default seed), so the
-# same site leads while the range stands: a repair push re-judges what
-# failed instead of drawing another. A range with no site passes. Both
-# jobs set up what any drawn site needs, as nightly.yml does: Go, Node and
-# npm ci in viewer/, without which a viewer site fails its baseline, and
-# itos and jq for mutation.tests' list command. A survivor in a function
-# the push changed is killed by a test in that push; one its agent judges
-# truly equivalent is reported with the reasoning, and the coordinator
-# approves it, or sends it back for a test, before its exception lands in
-# itos-cc.yaml with its reason (the person reviews the exceptions weekly);
-# never by weakening this step.
-proof:
-  code:
-    paths: ["**/*.go", "viewer/src/**/*.ts"]
-    check: "go run ./cmd/itos-cc mutation run --count 1 --since {base} --seed {base} --fail-uncovered=lines --json"
