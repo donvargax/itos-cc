@@ -19,6 +19,8 @@ queue:
   - itos-cc-yaml-unknown-keys
   - itos-cc-yaml-version-key
   - slice-50
+  - flaky-kills-record
+  - sample-repeat
   - graph-snapshot
   - T-102
   - T-103
