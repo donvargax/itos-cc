@@ -23,7 +23,10 @@ import (
 // output and Dart's build/ and coverage/, so incremental builds and
 // .dart_tool, Ready's resolution, persist. The linked dependency folders
 // are the project's own and shared: the restore never walks into them, and
-// makes a link a run removed again.
+// makes a link a run removed again. What git ignores is no such folder: a
+// run that writes it in the copy has it removed, as any file a run added
+// (slice-43). In a left-out folder that holds what mutation.copy brought
+// back, the restore puts back what it brought and keeps the rest.
 
 // copied is what a copy's record holds of one of its entries, as made: its
 // type and permissions, a file's size and modification time, a link's
@@ -38,10 +41,13 @@ type copied struct {
 }
 
 // workerCopy is a worker's copy of one tree: its folder, dir, the tree it
-// copies, kept, where it keeps the files Ready wrote, and the record of
-// each entry it held once made and readied, by its path from dir.
+// copies, kept, where it keeps the files Ready wrote, brought, each path
+// from dir that mutation.copy brought back where the copy leaves it out
+// (slice-43), and the record of each entry it held once made and readied,
+// by its path from dir.
 type workerCopy struct {
 	dir, tree, kept string
+	brought         []string
 	record          map[string]copied
 }
 
@@ -51,17 +57,27 @@ func leftOut(ctx context.Context, dir string) bool {
 	return skipDirs[filepath.Base(dir)] || dartLeftOut(dir) || project.IsBuildOutputWithIgnore(ctx, dir, nil)
 }
 
-// recordOf is the record of the copy at dir as it is now: each folder,
-// file and link it holds, by its path from dir, leaving out what leftOut
-// leaves out and never walking into a link.
-func recordOf(ctx context.Context, dir string) (map[string]copied, error) {
+// holdsBrought says whether the folder rel, from the copy's folder, is or
+// holds a path mutation.copy brought back, or lies in one.
+func (c *workerCopy) holdsBrought(rel string) bool {
+	return slices.ContainsFunc(c.brought, func(b string) bool { return b == rel || within(rel, b) || within(b, rel) })
+}
+
+// recordOf is the record of the copy as it is now: each folder, file and
+// link it holds, by its path from its folder, leaving out what leftOut
+// leaves out but what mutation.copy brought back, and never walking into a
+// link.
+func (c *workerCopy) recordOf(ctx context.Context) (map[string]copied, error) {
+	dir := c.dir
 	record := map[string]copied{}
 	err := project.WalkDir(ctx, dir, func(ctx context.Context, path string, d fs.DirEntry, err error) error {
 		if err != nil || path == dir {
 			return err
 		}
 		if d.IsDir() && leftOut(ctx, path) {
-			return filepath.SkipDir
+			if rel, _ := filepath.Rel(dir, path); !c.holdsBrought(rel) {
+				return filepath.SkipDir
+			}
 		}
 		info, err := d.Info()
 		if err != nil {
@@ -123,16 +139,24 @@ func (e copied) same(o copied) bool {
 // a folder's permissions, and makes again what is missing or changed, a
 // changed file copied again from where it came from. A file it copies
 // again is recorded anew, so the record follows its new modification time.
+// In a folder the copy leaves out that holds what mutation.copy brought
+// back, only what it brought is put back.
 func (c *workerCopy) restore(ctx context.Context) error {
 	seen := make(map[string]bool, len(c.record))
+	out := map[string]bool{} // the folders left out that the walk goes into
 	err := project.WalkDir(ctx, c.dir, func(ctx context.Context, path string, d fs.DirEntry, err error) error {
 		if err != nil || path == c.dir {
 			return err
 		}
 		rel, _ := filepath.Rel(c.dir, path)
 		want, known := c.record[rel]
-		if !known && d.IsDir() && leftOut(ctx, path) {
-			return filepath.SkipDir
+		inOut := out[filepath.Dir(rel)]
+		switch {
+		case !known && (inOut || d.IsDir() && leftOut(ctx, path)):
+			// What the runs left in a folder the copy leaves out stays.
+			return skipped(d)
+		case known && d.IsDir() && len(c.brought) > 0 && (inOut || leftOut(ctx, path)):
+			out[rel] = true
 		}
 		info, err := d.Info()
 		if err != nil {

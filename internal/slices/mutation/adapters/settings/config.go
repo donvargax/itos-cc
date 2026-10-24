@@ -2,8 +2,9 @@
 // project root under version control and reviewed like the code. It holds
 // exclude, globs of the sources no command measures or mutates,
 // mutation.exceptions, the equivalent mutants a person excepted, each with
-// a reason, and mutation.tests, how to list the project's tests and run a
-// selection of them. It is the mutation slice's settings adapter, its
+// a reason, mutation.tests, how to list the project's tests and run a
+// selection of them, and mutation.copy, globs of what a worker's copy
+// leaves out that it brings back. It is the mutation slice's settings adapter, its
 // Reader implementing mutation's SettingsReader and selection's, which cmd
 // gives every slice (ADR-0061), and the one reading codec: the slice's
 // exceptions adapter writes mutation.exceptions through its Parse.
@@ -39,8 +40,8 @@ func Path() string {
 type Config = mutants.Config
 
 // InvalidError is an itos-cc.yaml that cannot be read: not YAML, a key of
-// the wrong type, an anchor, an alias or a merge key, an exclude glob that
-// is no pattern, or an exception that lacks a key. Key is the path from the
+// the wrong type, an anchor, an alias or a merge key, an exclude or
+// mutation.copy glob that is no pattern, or an exception that lacks a key. Key is the path from the
 // top of the key at fault, such as exclude[1], where one key is; empty
 // otherwise. Fix is how to mend a refusal that has its own mending; empty
 // where saying what each key holds mends it.
@@ -69,6 +70,7 @@ type raw struct {
 			LineText       *string `yaml:"line_text"`
 		} `yaml:"exceptions"`
 		Tests *rawTests `yaml:"tests"`
+		Copy  []string  `yaml:"copy"`
 	} `yaml:"mutation"`
 }
 
@@ -139,13 +141,19 @@ func Parse(data []byte) (*Config, error) {
 		return nil, invalidYAML(err)
 	}
 	for i, glob := range r.Exclude {
-		if err := checkExclude(i, glob); err != nil {
+		if err := checkGlob(fmt.Sprintf("exclude[%d]", i), glob); err != nil {
 			return nil, err
 		}
 		c.Selection.Exclude = append(c.Selection.Exclude, glob)
 	}
 	if r.Mutation == nil {
 		return c, nil
+	}
+	for i, glob := range r.Mutation.Copy {
+		if err := checkGlob(fmt.Sprintf("mutation.copy[%d]", i), glob); err != nil {
+			return nil, err
+		}
+		c.Copy = append(c.Copy, glob)
 	}
 	for i, x := range r.Mutation.Exceptions {
 		at := fmt.Sprintf("mutation.exceptions[%d]", i)
@@ -242,13 +250,13 @@ func spellingError(key, found string) error {
 	return &InvalidError{Reason: found + ", and " + File + " takes no anchors, aliases or merge keys", Key: key, Fix: spellingFix}
 }
 
-// checkExclude refuses exclude[i], glob, unless it is a doublestar pattern
-// from the project root, slash-separated: not empty, not absolute, never
-// leaving the root through .., and holding no backslash, which doublestar
-// reads as an escape where a path on Windows means a separator. A glob
-// that matches nothing is fine.
-func checkExclude(i int, glob string) error {
-	key := fmt.Sprintf("exclude[%d]", i)
+// checkGlob refuses glob, the value of key, such as exclude[1] or
+// mutation.copy[0], unless it is a doublestar pattern from the project
+// root, slash-separated: not empty, not absolute, never leaving the root
+// through .., and holding no backslash, which doublestar reads as an
+// escape where a path on Windows means a separator. A glob that matches
+// nothing is fine.
+func checkGlob(key, glob string) error {
 	var why string
 	switch {
 	case strings.TrimSpace(glob) == "":

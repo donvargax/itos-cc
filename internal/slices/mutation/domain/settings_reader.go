@@ -18,6 +18,10 @@ type Config struct {
 	// Tests, when set, is how to list the project's tests and run a
 	// selection of them.
 	Tests *Tests
+	// Copy is mutation.copy: doublestar globs, slash-separated from the
+	// project root, of paths a worker's copy leaves out, ignored by git or
+	// build output, that it brings back, a folder whole.
+	Copy []string
 }
 
 // SettingsReader rereads the current settings at each admission boundary.

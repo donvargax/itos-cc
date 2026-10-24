@@ -46,7 +46,7 @@ func TestFlutterCopyLayout(t *testing.T) {
 		t.Fatalf("a package of no workspace copies %s with members %v", other, none)
 	}
 	dst := filepath.Join(t.TempDir(), "copy")
-	if err := copyPackages(t.Context(), root, members, dst); err != nil {
+	if err := copyPackages(t.Context(), &copyPlan{tree: root}, members, dst); err != nil {
 		t.Fatal(err)
 	}
 	for name, held := range map[string]bool{

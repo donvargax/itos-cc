@@ -29,8 +29,11 @@ func (p *Presentation) report(problem *cli.Problem) { p.Problems = append(p.Prob
 // none of its mutants was done, judged or run, before command runs again:
 // its tests fail, or, when copied is the tree a worker's copy held and
 // they pass in the project's own folder, they fail only in that copy,
-// which holds copied alone.
-func (p *Presentation) baselineFailed(rel, copied, done, command string) *cli.Problem {
+// which holds copied alone and left out leftOut, what git ignores and
+// the checkouts of other repositories it does not track, by their paths
+// from the project root (slice-43): the first five of them,
+// and the first the example of mutation.copy that brings it back.
+func (p *Presentation) baselineFailed(rel, copied string, leftOut []string, done, command string) *cli.Problem {
 	if copied == "" {
 		return cli.NewProblem(cli.CodeNo, "mutation.baseline-failed", rel+": its tests fail before any mutant, so none was "+done,
 			"Make its tests pass, then run "+command+" again.").With("file", rel)
@@ -39,9 +42,22 @@ func (p *Presentation) baselineFailed(rel, copied, done, command string) *cli.Pr
 	if name == "." {
 		name = filepath.Base(copied)
 	}
-	return cli.NewProblem(cli.CodeNo, "mutation.baseline-failed",
-		rel+": its tests pass in the project but fail in the worker's copy of "+name+", so none was "+done,
-		"The copy holds "+name+" alone: its tests read something outside it.").With("file", rel)
+	message := rel + ": its tests pass in the project but fail in the worker's copy of " + name + ", so none was " + done
+	if len(leftOut) == 0 {
+		return cli.NewProblem(cli.CodeNo, "mutation.baseline-failed", message,
+			"The copy holds "+name+" alone: its tests read something outside it.").With("file", rel)
+	}
+	const named = 5
+	listed := strings.Join(leftOut[:min(named, len(leftOut))], ", ")
+	if len(leftOut) > named {
+		listed += fmt.Sprintf(" and %d more", len(leftOut)-named)
+	}
+	example := leftOut[0]
+	if strings.HasSuffix(example, "/") {
+		example += "**"
+	}
+	return cli.NewProblem(cli.CodeNo, "mutation.baseline-failed", message+"; the copy left out what git ignores and other repositories' checkouts: "+listed,
+		"If its tests read what it left out, name it in mutation.copy in itos-cc.yaml, such as mutation: {copy: ["+example+"]}; else they read something outside "+name+", which the copy holds alone.").With("file", rel)
 }
 
 func (p *Presentation) Failed(rel, function string, items []mutants.Mutant, failUncovered func(line int) bool) {

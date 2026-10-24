@@ -149,7 +149,8 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Sam
 		for _, c := range drawn[s] {
 			r := runs[scoped{s, c.scope}]
 			if r.Result().BaselineFailed && !f.BaselineFailed {
-				f.BaselineFailed, f.BaselineOutput, f.BaselineCopy = true, r.Result().BaselineOutput, r.Result().BaselineCopy
+				f.BaselineFailed, f.BaselineOutput = true, r.Result().BaselineOutput
+				f.BaselineCopy, f.BaselineLeftOut = r.Result().BaselineCopy, r.Result().BaselineLeftOut
 			}
 			for _, sel := range r.Result().FailedSelections {
 				failed.AddFailed(&sel)

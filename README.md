@@ -120,6 +120,25 @@ or a merge key (`&x`, `*x`, `<<`) anywhere in it is `config.invalid`, exit
 first anchor, or the merge key itself (`mutation.<<`). Write each value in
 place. A release older than this one read them.
 
+A worker's copy of the project leaves out what git ignores (see Parallel
+workers), so a file a test or a coverage run left in the project never
+reaches it. A project whose tests read an ignored file, such as generated
+sources or a TypeScript `dist/` they import, names it in `mutation.copy`:
+globs in `exclude`'s syntax, from the project root, of paths a copy leaves
+out, ignored by git, build output or an untracked checkout, which `mutation run` and `mutation
+sample` copy into every worker's copy, a folder whole (`gen` and `gen/**`
+alike), and put back before each run as any copied file. `.git`,
+`.dart_tool` and the linked dependency folders are never copied. A glob
+that is no pattern, empty, absolute, holding `..` or a backslash is
+`config.invalid`, exit 80, its `key` naming it (`mutation.copy[0]`). A
+release older than this one copied ignored files and ignores
+`mutation.copy`.
+
+```yaml
+mutation:
+  copy: [gen/**, dist/types/**]
+```
+
 Some Dart is left out without `exclude`, in every command, tests included.
 A Flutter app's platform folders (`android`, `ios`, `macos`, `linux`,
 `windows` and `web` beside a `pubspec.yaml` that depends on the flutter SDK)
@@ -427,7 +446,15 @@ test. What keeps `mutation run` fast:
   `.pytest_cache` into the project; a `--test-command` or
   `--coverage-command` runs exactly as given.
 - **Parallel workers** in private copies of the project, so the real tree is
-  never modified while tests run. The baseline runs inside a worker, which
+  never modified while tests run. A copy leaves out history, caches, build
+  output and what the committed `.gitignore` files ignore and git does not
+  track, a tracked file in an ignored folder kept, so a test's or a coverage
+  run's leftovers and stray builds never reach it; it links `node_modules`,
+  `.venv`, `venv` and `vendor`, copies what `mutation.copy` names in
+  `itos-cc.yaml`, and never copies a folder git does not track that holds
+  its own `.git`, another repository's checkout; a submodule's files are
+  copied, never its `.git`. A tree in no git repository is copied whole. The
+  baseline runs inside a worker, which
   proves the copy works before any mutant does. Every run in a worker, the
   baseline's and each mutant's, starts from the copy as it was made: what a
   test run wrote, rewrote or removed there is put back before the next, so
@@ -436,7 +463,7 @@ test. What keeps `mutation run` fast:
   putting the copy back is not part of a run's time. A copy of a Dart
   package leaves out `build/` and `coverage/` beside its `pubspec.yaml` and
   a Flutter app's platform folders, keeps the generated Dart its tests
-  compile against, and holds a pub workspace member's workspace root and
+  compile against, even where git ignores it, and holds a pub workspace member's workspace root and
   members. It takes no `.dart_tool` from the project, whose resolution
   points into the project's tree: `flutter pub get --offline` makes the
   copy's own once, before its first run. A copy of a TypeScript package
@@ -449,7 +476,9 @@ test. What keeps `mutation run` fast:
   worker. When a file's baseline fails in a copy, itos-cc runs it once
   more, unmutated, in the project's own folder: when it passes there,
   `mutation.baseline-failed` says the tests pass in the project but fail
-  in the worker's copy, which holds that tree alone. A failing baseline's
+  in the worker's copy, which holds that tree alone, and names the first
+  five paths git ignores, and checkouts, that the copy left out, its fix naming
+  `mutation.copy` with the first as its example. A failing baseline's
   report gives what its tests printed, whole up to 40 lines, else the first
   20 and the last 20 with a line saying how many were left out between, so
   a cause printed first shows as well as the end (`output` in `--json`). A

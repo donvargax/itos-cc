@@ -59,6 +59,9 @@ type FileResult struct {
 	// command passes in the project's own folder, is the tree the copy
 	// holds, absolute; "" otherwise.
 	BaselineCopy string
+	// BaselineLeftOut is then each path git ignores, or another
+	// repository's checkout, that the copy left out (ProjectRun.LeftOut).
+	BaselineLeftOut []string
 	// FailedSelections is each selection of listed tests that a mutant of
 	// the file needed and that failed without any mutant: such a mutant is
 	// not decided, so the snapshot is not written, as when the baseline

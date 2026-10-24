@@ -26,6 +26,9 @@ type Workers struct {
 	// workspace a worker's copy of a TypeScript package may hold; "", each
 	// package's own project root, as a counted run's frozen export has.
 	Dir string
+	// Settings, read when a pool opens, gives mutation.copy, the paths a
+	// copy brings back of what it leaves out; nil brings back none.
+	Settings mutants.SettingsReader
 }
 
 var _ mutants.Workers = Workers{}
@@ -42,6 +45,10 @@ func (f Workers) Open(ctx context.Context, purpose mutants.WorkPurpose, count in
 	default:
 		return nil, mutants.WorkerFailed{Cause: errors.New("unknown worker purpose")}
 	}
+	rules, failure := f.rules(ctx, purpose)
+	if failure != nil {
+		return nil, failure
+	}
 	scratch, err := newWorkerScratch(prefix, processes.PlatformAtBoundary(f.Platform))
 	if err != nil {
 		return nil, mutants.WorkerFailed{Cause: err}
@@ -53,9 +60,27 @@ func (f Workers) Open(ctx context.Context, purpose mutants.WorkPurpose, count in
 	}
 	p := &pool{scratch: scratch, budget: budget, closing: make(chan struct{}), done: make(chan struct{})}
 	for i := 0; i < max(1, count); i++ {
-		p.workers = append(p.workers, &boundWorker{pool: p, worker: &worker{dir: filepath.Join(scratch.dir, fmt.Sprintf("w%d", i)), copies: map[string]*workerCopy{}, project: f.Dir, runner: processes.Runner{Budget: budget, Platform: processes.PlatformAtBoundary(f.Platform), Hold: hold}, prepare: f.Prepare}})
+		p.workers = append(p.workers, &boundWorker{pool: p, worker: &worker{dir: filepath.Join(scratch.dir, fmt.Sprintf("w%d", i)), copies: map[string]*workerCopy{}, project: f.Dir, rules: rules, runner: processes.Runner{Budget: budget, Platform: processes.PlatformAtBoundary(f.Platform), Hold: hold}, prepare: f.Prepare}})
 	}
 	return p, nil
+}
+
+// rules are what the copies of a pool opened for purpose leave out as git
+// ignores it and bring back as mutation.copy names: none for a counted
+// run's, whose frozen export holds the commit's tracked files alone.
+func (f Workers) rules(ctx context.Context, purpose mutants.WorkPurpose) (*copyRules, mutants.WorkerFailure) {
+	if purpose == mutants.FrozenTrials {
+		return nil, nil
+	}
+	rules := &copyRules{trees: map[string]ignoredPaths{}}
+	if f.Settings != nil {
+		config, failure := f.Settings.Read(ctx)
+		if failure != nil {
+			return nil, failed(ctx, failure)
+		}
+		rules.root, rules.globs = config.Selection.Root, config.Copy
+	}
+	return rules, nil
 }
 
 type pool struct {
@@ -110,11 +135,12 @@ func (p *pool) enter(ctx context.Context) (done func(), failure mutants.WorkerFa
 }
 
 // InProject runs c in c.Dir itself, through the first worker's runner and
-// preparation, with no copy, Ready or timeout.
+// preparation, with no copy, Ready or timeout, and names what git ignores
+// that a copy of its tree leaves out.
 func (p *pool) InProject(ctx context.Context, c mutants.Command) (mutants.ProjectRun, mutants.WorkerFailure) {
 	w := p.workers[0].worker
 	tree, _ := w.tree(c)
-	run := mutants.ProjectRun{Copied: tree}
+	run := mutants.ProjectRun{Copied: tree, LeftOut: w.rules.leftOut(ctx, tree)}
 	done, failure := p.enter(ctx)
 	if failure != nil {
 		return run, failure

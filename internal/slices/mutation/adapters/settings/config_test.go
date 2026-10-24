@@ -134,6 +134,23 @@ func TestExcludeRefusesWhatIsNoPatternFromTheRoot(t *testing.T) {
 	}
 }
 
+// mutation.copy holds doublestar globs from the project root, in order,
+// each checked as exclude's are and refused by its own key (slice-43).
+func TestMutationCopyReadsAndChecksItsGlobs(t *testing.T) {
+	c, err := Parse([]byte("mutation:\n  copy: [gen, \"dist/**/*.d.ts\"]\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"gen", "dist/**/*.d.ts"}; !slices.Equal(c.Copy, want) {
+		t.Errorf("mutation.copy %q, want %q", c.Copy, want)
+	}
+	_, err = Parse([]byte("mutation:\n  copy: [gen, \"../x/**\"]\n"))
+	var invalid *InvalidError
+	if !errors.As(err, &invalid) || invalid.Key != "mutation.copy[1]" || !strings.Contains(invalid.Reason, "mutation.copy[1] \"../x/**\" leaves the project root") {
+		t.Errorf("error %v, want mutation.copy[1] refused for leaving the project root", err)
+	}
+}
+
 // An exclude that is no list is a file that cannot be read.
 func TestExcludeThatIsNoListIsInvalid(t *testing.T) {
 	var invalid *InvalidError

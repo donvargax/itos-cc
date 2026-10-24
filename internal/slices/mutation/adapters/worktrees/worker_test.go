@@ -104,6 +104,11 @@ func TestCommandRunnerFixtureHelper(t *testing.T) {
 		}
 	case "pristine":
 		pristineHelper(t)
+	case "ignored":
+		// As Ready, it writes into .idea, a folder every copy leaves out.
+		if testing.Short() {
+			writeTree(t, ".", map[string]string{".idea/workspace.xml": "ready\n"})
+		}
 	case "barrier":
 		started := os.Getenv("ITOS_COMMAND_RUNNER_STARTED")
 		release := os.Getenv("ITOS_COMMAND_RUNNER_RELEASE")

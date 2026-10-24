@@ -29,16 +29,24 @@ type WorkerPool interface {
 }
 
 // ProjectRun is a command's run in the project's own folder (InProject):
-// its result, and Copied, the tree a worker's copy holds for the command,
-// which may hold more than its Root, such as the workspace it belongs to.
+// its result, Copied, the tree a worker's copy holds for the command,
+// which may hold more than its Root, such as the workspace it belongs to,
+// and LeftOut, each path of that tree git ignores, or another
+// repository's checkout git does not track, that the copy left out,
+// slash-separated from the project root mutation.copy reads its globs
+// from, a folder's ending in /, sorted: what the tests may read that only
+// the project holds.
 type ProjectRun struct {
-	Result CommandResult
-	Copied string
+	Result  CommandResult
+	Copied  string
+	LeftOut []string
 }
 
 // Worker executes a command in its private copy of Command.Root, or of the
 // tree around it the command needs, such as the workspace it belongs to,
-// running it in Root's place there. Each run
+// running it in Root's place there. The copy leaves out what the project's
+// version control ignores but what Config.Copy names, so a file a run left
+// in the project never reaches it (slice-43). Each run
 // starts from the copy as it was made: what an earlier run wrote, changed or
 // removed there is put back first, outside the run's timeout and Elapsed,
 // while the build output, caches and linked dependencies the copy leaves to

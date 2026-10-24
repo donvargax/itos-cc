@@ -514,7 +514,7 @@ Feature: Mutation testing
     # tmp/stray.log, MUT-328 reported no ignored path, MUT-330 copied
     # nested/ and MUT-331 refused nothing; MUT-325's second row, MUT-327,
     # MUT-329 and MUT-332 are guardrails that pass today.
-    @slice-43 @ID-MUT-325 @binary-only @wip
+    @slice-43 @ID-MUT-325 @binary-only
     Scenario Outline: A file the coverage run leaves in the project never reaches a worker's copy
       Given the Go module "example.com/leak" with the file "leak.go":
         """
@@ -535,14 +535,14 @@ Feature: Mutation testing
         | testdata/left-behind is there |
         | testdata/keep.txt is gone     |
 
-    @slice-43 @ID-MUT-326 @binary-only @wip
+    @slice-43 @ID-MUT-326 @binary-only
     Scenario: A worker's copy still links node_modules and leaves out a stray ignored file
       Given a TypeScript package, tested with Vitest, whose .gitignore ignores node_modules/ and tmp/, with tmp/stray.log, and whose tests pass in the project
       When I run "itos-cc mutation run --workers 1 --json" for its source
       Then its baseline passed, and every mutant of it was judged
       And the worker's copy held node_modules as a link to the project's, and no tmp/stray.log
 
-    @slice-43 @ID-MUT-327 @binary-only @wip
+    @slice-43 @ID-MUT-327 @binary-only
     Scenario Outline: An ignored path itos-cc.yaml names is copied
       Given the Go module "example.com/leak" with the file "leak.go":
         """
@@ -562,7 +562,7 @@ Feature: Mutation testing
         | mutation: {copy: [gen/**]} |
         | mutation: {copy: [gen]}    |
 
-    @slice-43 @ID-MUT-328 @binary-only @wip
+    @slice-43 @ID-MUT-328 @binary-only
     Scenario: A baseline that fails for a missing ignored file names it and the key
       Given the Go module "example.com/leak" with the file "leak.go":
         """
@@ -576,7 +576,7 @@ Feature: Mutation testing
       Then the problem is "mutation.baseline-failed", its message naming gen/ as ignored by git and left out of the worker's copy, and its fix naming mutation.copy in itos-cc.yaml
       And the exit code is 1
 
-    @slice-43 @ID-MUT-329 @binary-only @wip
+    @slice-43 @ID-MUT-329 @binary-only
     Scenario: A project in no git repository is copied whole, as before
       Given the Go module "example.com/leak" with the file "leak.go":
         """
@@ -590,7 +590,7 @@ Feature: Mutation testing
       Then leak.go's baseline passed and every mutant of leak.go survived
       And the exit code is 1
 
-    @slice-43 @ID-MUT-330 @binary-only @wip
+    @slice-43 @ID-MUT-330 @binary-only
     Scenario: A nested checkout never reaches a worker's copy
       Given the Go module "example.com/leak" with the file "leak.go":
         """
@@ -604,7 +604,7 @@ Feature: Mutation testing
       Then leak.go's baseline passed and every mutant of leak.go survived
       And the exit code is 1
 
-    @slice-43 @ID-MUT-332 @binary-only @wip
+    @slice-43 @ID-MUT-332 @binary-only
     Scenario: A git submodule's files reach a worker's copy
       Given the Go module "example.com/leak" with the file "leak.go":
         """
@@ -618,7 +618,7 @@ Feature: Mutation testing
       Then leak.go's baseline passed and every mutant of leak.go survived
       And the exit code is 1
 
-    @slice-43 @ID-MUT-331 @wip
+    @slice-43 @ID-MUT-331
     Scenario Outline: A mutation.copy glob that is no pattern is a config error
       Given itos-cc.yaml holds '<yaml>'
       When I run "itos-cc <command>"

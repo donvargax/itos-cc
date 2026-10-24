@@ -59,9 +59,9 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 	limits := map[string]Limits{}
 	failed := map[string]*Output{}
 	unmeasured := false
-	// copies is the tree a worker's copy holds for each command whose
-	// baseline failed there but passes in the project's own folder.
-	copies := map[string]string{}
+	// copies is what a worker's copy holds and leaves out for each command
+	// whose baseline failed there but passes in the project's own folder.
+	copies := map[string]ProjectRun{}
 	var jobs []job
 	for _, s := range states {
 		for i, o := range s.outcomes {
@@ -109,7 +109,8 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 				}
 			}
 			if out, bad := failed[key]; bad {
-				s.result.BaselineFailed, s.result.BaselineOutput, s.result.BaselineCopy = true, *out, copies[key]
+				s.result.BaselineFailed, s.result.BaselineOutput = true, *out
+				s.result.BaselineCopy, s.result.BaselineLeftOut = copies[key].Copied, copies[key].LeftOut
 				if st != nil {
 					st.trigger(&Stop{Rule: "mutation.baseline-failed", File: s.rel})
 				}
@@ -325,20 +326,21 @@ func (l *Listed) Command(ids []string) Command {
 }
 
 // copyOnly runs c, whose baseline failed in a worker's copy, once in the
-// project's own folder, as coverage runs there: the tree the copy holds
-// when it passes there, and "" when it fails there too. A run the caller
-// stopped decides nothing, so the failure stays the tests'.
-func copyOnly(ctx context.Context, pool WorkerPool, c Command, progress Progress) (string, WorkerFailure) {
+// project's own folder, as coverage runs there: that run, naming the tree
+// the copy holds and what it leaves out, when it passes there, and none
+// when it fails there too. A run the caller stopped decides nothing, so
+// the failure stays the tests'.
+func copyOnly(ctx context.Context, pool WorkerPool, c Command, progress Progress) (ProjectRun, WorkerFailure) {
 	report(progress, RunEvent{Kind: "baseline-project", Command: c})
 	there, err := pool.InProject(ctx, c)
 	if cancelledBy(ctx, err) {
-		return "", nil
+		return ProjectRun{}, nil
 	}
 	if err != nil {
-		return "", err
+		return ProjectRun{}, err
 	}
 	if !there.Result.Passed || there.Result.Cancelled {
-		return "", nil
+		return ProjectRun{}, nil
 	}
-	return there.Copied, nil
+	return there, nil
 }

@@ -24,8 +24,11 @@ type SampledFile struct {
 	BaselineFailed bool
 	BaselineOutput Output
 	// BaselineCopy is that baseline's tree a worker's copy holds when its
-	// command passes in the project's own folder (FileResult).
-	BaselineCopy string
+	// command passes in the project's own folder (FileResult), and
+	// BaselineLeftOut what git ignores, and other repositories'
+	// checkouts, that the copy left out.
+	BaselineCopy    string
+	BaselineLeftOut []string
 	// FailedSelections is each selection of listed tests a sampled mutant
 	// of the file needed that failed without any mutant: that mutant is
 	// not decided, so none of the file's is reported, as when a baseline

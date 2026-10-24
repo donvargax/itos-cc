@@ -23,8 +23,8 @@ import (
 var linkDirs = map[string]bool{"node_modules": true, ".venv": true, "venv": true, "vendor": true}
 
 // skipDirs are history and caches a worker neither copies nor shares, as
-// is build output (project.IsBuildOutput); tools rebuild what they need
-// inside the worker.
+// is build output (project.IsBuildOutput) and what git ignores (slice-43,
+// ignored.go); tools rebuild what they need inside the worker.
 // .dart_tool holds pub's resolution, which points into the tree it was
 // made for, and flutter test writes into it, so a worker neither copies nor
 // links it: its copy resolves itself (Command.Ready).
@@ -50,6 +50,10 @@ type worker struct {
 	// restored, when set, hears each restore of a copy end: a test's
 	// observation, unset in a run.
 	restored func()
+	// rules are what the pool's copies leave out as git ignores it and
+	// bring back as mutation.copy names; nil for a counted run's, whose
+	// frozen export holds tracked files alone.
+	rules *copyRules
 }
 
 // tree is the tree a worker copies for c, and the members it copies of
@@ -87,11 +91,12 @@ func (w *worker) copyOf(ctx context.Context, c Command) (string, error) {
 	for n := 1; exists(dst); n++ {
 		dst = filepath.Join(fmt.Sprintf("%s-%d", place, n), filepath.Base(tree))
 	}
-	if err := copyPackages(ctx, tree, members, dst); err != nil {
+	plan := &copyPlan{tree: tree, rules: w.rules, ignored: w.rules.ignored(ctx, tree), dart: regular(filepath.Join(tree, "pubspec.yaml"))}
+	if err := copyPackages(ctx, plan, members, dst); err != nil {
 		return "", err
 	}
 	root := filepath.Join(dst, rel)
-	cp, err := w.made(ctx, c, tree, dst, root)
+	cp, err := w.made(ctx, c, tree, dst, root, plan.brought)
 	if err != nil {
 		cp.discard() // a later command copies afresh
 		return "", err
@@ -101,11 +106,12 @@ func (w *worker) copyOf(ctx context.Context, c Command) (string, error) {
 }
 
 // made readies dst, the worker's fresh copy of tree, where c.Root's place
-// is root, and records it as made: a file Ready wrote is kept beside, as
-// no project file gives it back.
-func (w *worker) made(ctx context.Context, c Command, tree, dst, root string) (*workerCopy, error) {
-	cp := &workerCopy{dir: dst, tree: tree, kept: dst + ".ready"}
-	record, err := recordOf(ctx, dst)
+// is root and which holds brought, what mutation.copy brought back, and
+// records it as made: a file Ready wrote is kept beside, as no project
+// file gives it back.
+func (w *worker) made(ctx context.Context, c Command, tree, dst, root string, brought []string) (*workerCopy, error) {
+	cp := &workerCopy{dir: dst, tree: tree, kept: dst + ".ready", brought: brought}
+	record, err := cp.recordOf(ctx)
 	if err != nil || len(c.Ready) == 0 {
 		cp.record = record
 		return cp, err
@@ -113,7 +119,7 @@ func (w *worker) made(ctx context.Context, c Command, tree, dst, root string) (*
 	if err := w.ready(ctx, c, root); err != nil {
 		return cp, err
 	}
-	readied, err := recordOf(ctx, dst)
+	readied, err := cp.recordOf(ctx)
 	if err != nil {
 		return cp, err
 	}
@@ -149,9 +155,10 @@ func (w *worker) ready(ctx context.Context, c Command, root string) error {
 // copyPackages copies tree to dst: members alone, each at its place in
 // tree, beside tree's pubspec.yaml and pubspec.lock, when members are a
 // pub workspace's, else the whole tree.
-func copyPackages(ctx context.Context, tree string, members []string, dst string) error {
+func copyPackages(ctx context.Context, plan *copyPlan, members []string, dst string) error {
+	tree := plan.tree
 	if members == nil {
-		return copyTree(ctx, tree, dst)
+		return copyTree(ctx, tree, dst, plan)
 	}
 	if err := os.MkdirAll(dst, 0o755); err != nil { //nolint:gosec // preserve project directory behavior inside the owner's private 0700 scratch
 		return err
@@ -166,40 +173,174 @@ func copyPackages(ctx context.Context, tree string, members []string, dst string
 		if err != nil {
 			return err
 		}
-		if err := copyTree(ctx, member, filepath.Join(dst, rel)); err != nil {
+		if err := copyTree(ctx, member, filepath.Join(dst, rel), plan); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// copyTree copies the tree at src to dst under ctx, linking dependencies
-// and leaving out history, caches and build output.
-func copyTree(ctx context.Context, src, dst string) error {
+// copyPlan is how a worker copies tree: what git ignores there, which
+// the copy leaves out, the pool's rules, whether tree is a Dart package's,
+// whose generated Dart stays though ignored, and, as the copy is made,
+// each path mutation.copy brought back that the copy would leave out, by
+// its path from tree.
+type copyPlan struct {
+	tree    string
+	rules   *copyRules
+	ignored ignoredPaths
+	dart    bool
+	brought []string
+}
+
+// leaving is why a copy leaves out an entry: not at all, as git ignores it
+// alone, or as every copy leaves it out, history, caches and build output.
+type leaving int
+
+const (
+	kept leaving = iota
+	leftIgnored
+	leftAlways
+)
+
+// leaves says why the copy leaves out the entry d at path, rel from the
+// tree.
+func (p *copyPlan) leaves(ctx context.Context, path, rel string, d fs.DirEntry) leaving {
+	slashed := filepath.ToSlash(rel)
+	switch {
+	case !d.IsDir():
+		if p.ignored.has(slashed, false) && (!p.dart || !project.GeneratedDart(path)) {
+			return leftIgnored
+		}
+		return kept
+	case skipDirs[d.Name()] || dartLeftOut(path):
+		return leftAlways
+	case p.ignored.has(slashed, true):
+		return leftIgnored
+	case project.IsBuildOutput(ctx, path):
+		return leftAlways
+	}
+	return kept
+}
+
+// never says whether no copy holds the entry d, even when mutation.copy
+// names it: history, a submodule's .git file among it, or .dart_tool,
+// which Ready resolves anew.
+func never(d fs.DirEntry) bool {
+	return d.Name() == ".git" || d.IsDir() && d.Name() == ".dart_tool"
+}
+
+// copyTree copies src, the tree plan copies or a member of it, to dst
+// under ctx, linking dependencies, leaving out history, caches, build
+// output, what git ignores and the checkouts of other repositories git
+// does not track, and bringing
+// back what mutation.copy names of what it leaves out, a folder whole.
+func copyTree(ctx context.Context, src, dst string, plan *copyPlan) error {
+	// out and in are the folders, from the tree, the walk is in that the
+	// copy leaves out, as git ignores it alone when ignored, and that
+	// mutation.copy brings back; "" for none.
+	var out, in string
+	ignored := false
 	return project.WalkDir(ctx, src, func(ctx context.Context, path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		rel, _ := filepath.Rel(src, path)
-		target := filepath.Join(dst, rel)
-		switch {
-		case d.IsDir() && path != src && (skipDirs[d.Name()] || dartLeftOut(path) || project.IsBuildOutput(ctx, path)):
-			return filepath.SkipDir
-		case d.IsDir() && path != src && linkDirs[d.Name()]:
-			return skipAfter(os.Symlink(path, target))
-		case d.IsDir():
-			return os.MkdirAll(target, 0o755) //nolint:gosec // preserve project directory behavior inside the owner's private 0700 scratch
-		case d.Type()&fs.ModeSymlink != 0:
-			link, err := os.Readlink(path)
-			if err != nil {
-				return err
-			}
-			return os.Symlink(link, target)
-		case d.Type().IsRegular():
-			return copyFile(path, target)
+		fromSrc, _ := filepath.Rel(src, path)
+		target := filepath.Join(dst, fromSrc)
+		rel, _ := filepath.Rel(plan.tree, path)
+		if out != "" && !within(out, rel) {
+			out = ""
 		}
-		return nil
+		if in != "" && !within(in, rel) {
+			in = ""
+		}
+		switch {
+		case path == src:
+			return os.MkdirAll(target, 0o755) //nolint:gosec // preserve project directory behavior inside the owner's private 0700 scratch
+		case never(d):
+			return skipped(d)
+		case d.IsDir() && linkDirs[d.Name()]:
+			if out != "" && in == "" {
+				return filepath.SkipDir
+			}
+			return skipAfter(os.Symlink(path, target))
+		case in != "":
+		case plan.rules.brings(path):
+			if out != "" || plan.leaves(ctx, path, rel, d) != kept {
+				plan.brought = append(plan.brought, rel)
+			}
+			if d.IsDir() {
+				in = rel
+			}
+		case out != "":
+			return plan.outside(path, d, ignored, target)
+		default:
+			switch plan.leaves(ctx, path, rel, d) {
+			case kept:
+			case leftIgnored:
+				if d.IsDir() && (plan.dart || plan.rules.mayBring(path)) {
+					out, ignored = rel, true
+					return nil
+				}
+				return skipped(d)
+			case leftAlways:
+				if d.IsDir() && plan.rules.mayBring(path) {
+					out, ignored = rel, false
+					return nil
+				}
+				return skipped(d)
+			}
+		}
+		return copyEntry(path, target, d, out != "")
 	})
+}
+
+// outside copies the entry d at path to target when it lies in a folder
+// the copy leaves out, ignored when as git ignores it alone, and
+// mutation.copy does not name it: only generated Dart, in a Dart package's
+// ignored folder, is copied, and only a folder that may hold what
+// mutation.copy names or such Dart is walked.
+func (p *copyPlan) outside(path string, d fs.DirEntry, ignored bool, target string) error {
+	switch {
+	case d.IsDir() && p.rules.mayBring(path):
+		return nil
+	case d.IsDir() && ignored && p.dart && !skipDirs[d.Name()] && !dartLeftOut(path):
+		return nil
+	case !d.IsDir() && ignored && p.dart && project.GeneratedDart(path):
+		return copyEntry(path, target, d, true)
+	}
+	return skipped(d)
+}
+
+// skipped is what the walk returns to leave out the entry d.
+func skipped(d fs.DirEntry) error {
+	if d.IsDir() {
+		return filepath.SkipDir
+	}
+	return nil
+}
+
+// copyEntry copies the entry d at path to target, a folder made, a link
+// made again, a file copied; with parents, the folders above target first.
+func copyEntry(path, target string, d fs.DirEntry, parents bool) error {
+	if parents {
+		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil { //nolint:gosec // preserve project directory behavior inside the owner's private 0700 scratch
+			return err
+		}
+	}
+	switch {
+	case d.IsDir():
+		return os.MkdirAll(target, 0o755) //nolint:gosec // preserve project directory behavior inside the owner's private 0700 scratch
+	case d.Type()&fs.ModeSymlink != 0:
+		link, err := os.Readlink(path)
+		if err != nil {
+			return err
+		}
+		return os.Symlink(link, target)
+	case d.Type().IsRegular():
+		return copyFile(path, target)
+	}
+	return nil
 }
 
 func skipAfter(err error) error {
