@@ -102,3 +102,22 @@ func TestAnIdentityIsWordedWhereASiteWouldBe(t *testing.T) {
 		t.Fatalf("gone: %+v", gone)
 	}
 }
+
+// No in-process scenario names a site or an identity that is neither, which
+// is refused before anything is observed; a missing --reason words every
+// such refusal as itself.
+func TestNeitherASiteNorAnIdentityIsRefusedBeforeAnythingIsObserved(t *testing.T) {
+	t.Parallel()
+	reason := "x is never 5"
+	for given, says := range map[*string]string{&reason: "is not a mutant's identity", nil: "--reason is required"} {
+		var out, errOut strings.Builder
+		ui := &cli.UI{Stdout: &out, Stderr: &errOut}
+		code := Except{Site: []string{"board/board.go:Count@4:6:ab:35:<><="}, Reason: given}.Run(t.Context(), ui, Handler{})
+		if code != cli.CodeUsage || !strings.Contains(errOut.String(), says) || out.Len() != 0 {
+			t.Fatalf("given %v: exit %d %q", given, code, errOut.String())
+		}
+	}
+	if got := (IdentityStale{Identity: "a.go:p#F@1:2:ab:3:<><=", Why: "gone"}).Error(); got != "a.go:p#F@1:2:ab:3:<><= is gone" {
+		t.Fatalf("stale identity: %q", got)
+	}
+}

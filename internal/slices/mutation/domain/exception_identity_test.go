@@ -1,6 +1,7 @@
 package domain_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -106,11 +107,12 @@ func TestDomainIdentifiedSurvivorIsTheSiteOfTheSourceAsItIsNow(t *testing.T) {
 	}
 	var stale *mutants.IdentityStaleError
 	changed := strings.Replace(runSource, "x > 1", "x > 2", 1)
-	if _, _, err = mutants.IdentifiedSurvivor(t.Context(), id, with(changed), f.edits); !errors.As(err, &stale) || stale.Why != mutants.ExceptionChanged || stale.Hash == "" || stale.Hash == id.Hash {
+	if _, _, err = mutants.IdentifiedSurvivor(t.Context(), id, with(changed), f.edits); !errors.As(err, &stale) || stale.Why != mutants.ExceptionChanged || stale.Hash == "" || stale.Hash == id.Hash ||
+		stale.Error() != "its function changed, its hash now "+stale.Hash {
 		t.Fatalf("changed: %v", err)
 	}
 	for name, gone := range map[string]mutants.Identity{"key": withKey(id, "99:>>="), "name": withName(id, "Other"), "namespace": withNamespace(id, "other"), "file": withFile(id, "gone.go"), "language": withFile(id, "board.txt")} {
-		if _, _, err = mutants.IdentifiedSurvivor(t.Context(), gone, opt, f.edits); !errors.As(err, &stale) || stale.Why != mutants.ExceptionGone {
+		if _, _, err = mutants.IdentifiedSurvivor(t.Context(), gone, opt, f.edits); !errors.As(err, &stale) || stale.Why != mutants.ExceptionGone || stale.Error() != "its file, function or site is gone" {
 			t.Errorf("gone %s: %v", name, err)
 		}
 	}
@@ -192,3 +194,42 @@ func withNamespace(id mutants.Identity, namespace string) mutants.Identity {
 	return id
 }
 func withFile(id mutants.Identity, file string) mutants.Identity { id.File = file; return id }
+
+// cancelledStatus is a source status whose caller was cancelled.
+type cancelledStatus struct{ cause error }
+
+func (s cancelledStatus) Kind(context.Context, string) (mutants.SourceKind, mutants.InputFailure) {
+	return mutants.SourceMissing, mutants.InputCancelled{Cause: s.cause}
+}
+
+// No public scenario cancels except, or leaves a binding unbound: each is
+// the failure itself, never a refusal of the identity.
+func TestDomainIdentifiedSurvivorKeepsItsFailures(t *testing.T) {
+	f, site := survivingFixture(t)
+	opt := exceptionOptions(f)
+	id := identityOf(t, opt, f.path, site)
+	cause := errors.New("except stopped")
+	ctx, cancel := context.WithCancelCause(t.Context())
+	cancel(cause)
+	if _, _, err := mutants.IdentifiedSurvivor(ctx, id, opt, f.edits); !errors.Is(err, cause) {
+		t.Fatalf("cancelled: %v", err)
+	}
+	if _, _, err := mutants.IdentifiedSurvivor(t.Context(), id, opt, cancelledStatus{cause}); !errors.Is(err, cause) {
+		t.Fatalf("status cancelled: %v", err)
+	}
+	if _, _, err := mutants.IdentifiedSurvivor(t.Context(), id, opt, nil); err == nil || !strings.Contains(err.Error(), "status binding") {
+		t.Fatalf("no status: %v", err)
+	}
+	var stale *mutants.IdentityStaleError
+	var none *mutants.NoSurvivorError
+	unparsed := opt
+	unparsed.Tree = nil
+	if _, _, err := mutants.IdentifiedSurvivor(t.Context(), id, unparsed, f.edits); err == nil || errors.As(err, &stale) || errors.As(err, &none) {
+		t.Fatalf("no tree: %v", err)
+	}
+	unread := opt
+	unread.Store = nil
+	if _, _, err := mutants.IdentifiedSurvivor(t.Context(), id, unread, f.edits); err == nil || errors.As(err, &stale) || errors.As(err, &none) {
+		t.Fatalf("no snapshots: %v", err)
+	}
+}
