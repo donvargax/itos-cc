@@ -99,6 +99,7 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 	pristineSteps(sc, m)
 	vitestThroughSteps(sc, m)
 	workspaceCopySteps(sc, m)
+	ignoredSteps(sc, m)
 	capsSteps(sc, m)
 	notBuiltSteps(sc, m)
 
