@@ -5775,3 +5775,16 @@ items:
       refuse with a fix, never rewrite; the exceptions writer starts a file it creates with version:
       1; this repository's itos-cc.yaml gains it; counted runs read HEAD's file. Large fixture churn
       (every itos-cc.yaml Given). After itos-cc-yaml-unknown-keys.
+  - id: flaky-kills-record
+    title: mutation run records a flaky mutant, and check fails on it
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      q-93 item B (the person 2026-10-24): run confirms a flipped survivor, or a --mutate-all kill
+      that now survives, with two more runs and records an additive "flaky": true with its
+      "outcomes" in the snapshot (left out when false, like stale and limit); check reports a
+      recorded flaky mutant as mutation.flaky, exit 1; run's summary and annotation list it with the
+      survivors. After slice-50.
