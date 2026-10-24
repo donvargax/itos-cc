@@ -15,7 +15,6 @@ queue:
   - T-191
   - top-level-libraries-internal
   - listed-support-per-test
-  - listed-support-doublestar
   - listed-suites
   - worker-copies-skip-ignored
   - T-102
