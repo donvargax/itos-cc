@@ -382,6 +382,18 @@ func (w *world) fixSuggests(flag string) error {
 	return nil
 }
 
+// problemSays is whether the field, message or fix, of the problem
+// problemIs found holds text.
+func (w *world) problemSays(field, text string) error {
+	if w.problem == nil {
+		return errors.New("no problem found to read the " + field + " of")
+	}
+	if got, _ := w.problem[field].(string); !strings.Contains(got, text) {
+		return fmt.Errorf("the problem's %s %q does not say %q\n%s", field, got, text, w.report())
+	}
+	return nil
+}
+
 // jsonGivesBuild is whether the success object of version --json is schema
 // 1 and ok, and gives the version and the commit the harness stamped.
 func (w *world) jsonGivesBuild() error {

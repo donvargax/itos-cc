@@ -573,6 +573,8 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	sc.Step(`^the problem is "([^"]*)", with (flag|argument|key|file) "([^"]*)"$`, w.problemIs)
 	sc.Step(`^the problem is "([^"]*)"$`, func(rule string) error { return w.problemIs(rule, "", "") })
 	sc.Step(`^its fix suggests "([^"]*)"$`, w.fixSuggests)
+	sc.Step(`^its message says "([^"]*)"$`, func(text string) error { return w.problemSays("message", text) })
+	sc.Step(`^its fix says "([^"]*)"$`, func(text string) error { return w.problemSays("fix", text) })
 	sc.Step(`^itos-cc\.yaml is byte for byte as it was$`, w.configKept)
 	sc.Step(`^its problems in --json are:$`, w.problemsAre)
 	sc.Step(`^stderr says "([^"]*)" once$`, w.stderrSaysOnce)

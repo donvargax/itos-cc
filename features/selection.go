@@ -172,6 +172,10 @@ func selectionSteps(sc *godog.ScenarioContext, w *world) {
 		s.w.config = text + "\n"
 		return s.write("itos-cc.yaml", s.w.config)
 	})
+	sc.Step(`^itos-cc\.yaml holds:$`, func(text *godog.DocString) error {
+		s.w.config = text.Content + "\n"
+		return s.write("itos-cc.yaml", s.w.config)
+	})
 	sc.Step(`^itos-cc\.yaml is a directory, so it cannot be read$`, func() error {
 		return s.w.d.Mkdir(filepath.Join(s.w.dir, "itos-cc.yaml"))
 	})
