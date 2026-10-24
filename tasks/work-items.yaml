@@ -5716,3 +5716,26 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: per-feature-step-registration
+    title: Each scenario registers only the shared steps and its own feature's, with feature state out of the world
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Asked 2026-10-24 while measuring listed-support-per-test (q-91): on all 14 days since
+      2026-09-23 that touched mutation.tests.support, a file every scenario links changed. Size is
+      not the cause: revive's file-length-limit (600 code lines, test files included) holds
+      features/steps.go at 472, features/cli.go at 550 and cmd/itos-cc/scenarios_test.go at 567. Two
+      causes are. The refactor era (kong, slices, the in-process driver, ADR-0061's moves and their
+      reverts) rewrote imports and port bindings there, and ended with T-198. And the hub grows per
+      feature: the world's shared types gain fields for one feature (13cbaa8b Tests.Output/Memory,
+      bc059d97 Build.Viewer), and steps.go:687-696 registers every feature's steps for every
+      scenario under godog Strict, so any step file can change any scenario (a new sentence can make
+      another feature's step ambiguous): every step file is truly support of every scenario, and
+      splitting files alone cannot make per-test support sound. This refactor moves feature state
+      into each stepped file's own type, moves shared sentences to a common step file, and registers
+      per scenario only the common steps and its feature's own, so a feature's edit reaches only its
+      scenarios. mutate.feature (317 of 602 scenarios, 108 step files) would need splitting too for
+      the saving to matter. Re-measure hub churn after the refactor era before sizing it.
