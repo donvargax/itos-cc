@@ -16,6 +16,8 @@ queue:
   - features-coverage-gocoverdir-leak
   - plain-output-matcher
   - slice-49
+  - itos-cc-yaml-unknown-keys
+  - itos-cc-yaml-version-key
   - flaky-kills
   - graph-snapshot
   - T-102
