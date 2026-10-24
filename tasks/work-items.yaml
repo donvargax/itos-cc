@@ -5615,3 +5615,20 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: bug-6
+    title: "Excepting from an identity fails on Windows: the identity mis-parses and paths print with backslashes"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: bug
+    why: >
+      cd.yml run 40060628319 (head ec74f087) failed only on windows-latest, in test cmd-b, others
+      and features, all from slice-41 (dfc8f0bf, 573718c4), which ci.yml (Linux only) passed.
+      TestAnIdentityKeepsItsSiteKeyWhole: ParseIdentity of "dir:x/a.go:p.q#T.M@9:12:0:0:1>0" gives
+      ":#@0:0::" (a Windows path rule splitting the file at its drive-like colon or separator);
+      ID-MUT-319, 320 and 323 fail in both drivers because the excepted line and the no-survivor
+      message print board\board.go where the identity and the scenarios say board/board.go. The
+      identity's file is slash-separated from the project root on every system; parse and print it
+      so, converting to the OS path only to read the file. Fix in the product, never the scenario;
+      the Windows shards of cd.yml are the proof.
