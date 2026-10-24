@@ -142,6 +142,14 @@ never handled it. A shell's scenarios run `bash`, which stops a loop when the co
 ends by the signal, as POSIX shells do, skipping where there is none. `Result.Signal` gives the
 signal whose default action ended a run, its `Exit` then -1.
 
+The serve a step starts (`"itos-cc …" is serving the scratch folder`) runs the binary a Given
+built, else the one under test, and, unless its line names `--port`, listens on a port free when
+the harness asked, tried again on another when serve exits 75 as that port was taken meanwhile,
+up to three times, as `Graph` does: serve announces the port it was given, so `--port 0` would
+leave nothing to request. `I request "GET …"` asks that port, and `the response is … and its body
+says "…"` and `the response is JSON with the version, nodes, and edges` judge its answer
+(cli.feature's `ID-CLI-29`).
+
 ## Which files run
 
 The harness runs the feature files that have steps, the ones `Converted` names in `steps.go`,
@@ -176,7 +184,8 @@ group moved (T-125), `metrics_snapshots.feature` once the mutation commands it r
 (T-101), and `cli.feature` once `version` and the top-level dispatch had moved onto the one kong
 model (T-114), after which its own list, equal to `Converted`, went (T-164). Its `ID-CLI-03` is
 `@binary-only` for good, each row building itos-cc as a release, `go install` or a checkout's
-`go build` makes it. `TagFilter` still takes the files a driver runs, so a selection naming a
+`go build` makes it, as is `ID-CLI-29`, whose rows build it with and without a viewer in
+`server/ui` and serve it. `TagFilter` still takes the files a driver runs, so a selection naming a
 scenario of a converted file the driver did not run would log it as binary driver only
 (`Unmoved`) and pass; with both drivers running `Converted`, none is left.
 
@@ -613,7 +622,8 @@ script would leave `test-ran` (14).
 | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | `the usage text is printed to stdout` / `it lists the commands …`                     | The top-level help; each command named begins a line of its Commands section. |
 | `the command's usage, options, --json shape, problem rules, and exit codes are printed to stdout` / `it ends with examples and the address for issue reports` | The usage names the command the words name, then those sections in order, exit 0; examples after the exit codes, and a last line giving the address. |
-| `the binary was built …` / `the first line of stdout is "…"`                          | That build (`Build`), which every run then runs; the line, a checkout's `<next>` the release after its tag, `<time>` fourteen digits and `<commit>` its commit's first twelve characters. |
+| `the binary was built …` / `the first line of stdout is "…"`                          | That build (`Build`), which every run then runs; the line, a checkout's `<next>` the release after its tag, `<time>` fourteen digits and `<commit>` its commit's first twelve characters. A `viewer` build copies the module's files (Go sources, `go.mod`, `go.sum` and `server/ui/.gitignore`) and writes an `index.html` saying the text and an asset into its `server/ui`, as a release copies `viewer/dist` there. |
+| `the scratch folder holds a viewer in "…" whose index.html says "…"`                  | That folder holds a built viewer's `index.html` saying the text, for `--ui` (`interrupt_test.go`, beside the serve steps). |
 | `it is the same as "itos-cc …"`                                                       | The run, no usage error, and that command give the same exit code and stdout, and stderr but for its numbers. |
 | `"…" is a path, not the flag`                                                         | Every unit listed is under that folder.                          |
 | `<situation>` / `the command ends`                                                    | A command for each thing the situation names, each in a folder of its own, each held to the exit code step. |

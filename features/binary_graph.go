@@ -108,21 +108,38 @@ func (b binary) graphOn(ctx context.Context, r Run, port int) (result []byte, ru
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://127.0.0.1:"+strconv.Itoa(port)+"/api/graph", nil)
+	response, err := get(ctx, port, "/api/graph")
 	if err != nil {
 		return nil, err
 	}
-	response, err := http.DefaultClient.Do(req)
+	if response.status != http.StatusOK {
+		return nil, fmt.Errorf("GET /api/graph: %d\n%s", response.status, response.body)
+	}
+	return response.body, nil
+}
+
+// response is what serve answered a request with: its status, its
+// Content-Type and its body.
+type response struct {
+	status      int
+	contentType string
+	body        []byte
+}
+
+// get requests path from the serve listening on port of 127.0.0.1.
+func get(ctx context.Context, port int, path string) (response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://127.0.0.1:"+strconv.Itoa(port)+path, nil)
 	if err != nil {
-		return nil, err
+		return response{}, err
 	}
-	defer func() { _ = response.Body.Close() }() // read whole below: closing it loses nothing
-	body, err := io.ReadAll(response.Body)
+	answer, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return response{}, err
 	}
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GET /api/graph: %s\n%s", response.Status, body)
+	defer func() { _ = answer.Body.Close() }() // read whole below: closing it loses nothing
+	body, err := io.ReadAll(answer.Body)
+	if err != nil {
+		return response{}, err
 	}
-	return body, nil
+	return response{status: answer.StatusCode, contentType: answer.Header.Get("Content-Type"), body: body}, nil
 }

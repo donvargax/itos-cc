@@ -254,6 +254,7 @@ var (
 	installBuild  = regexp.MustCompile(`^by "go install \.\.\.@(\S+)"$`)
 	checkoutBuild = `from a local checkout with "go build"`
 	noGitBuild    = `with "go build" from a tree with no git information`
+	viewerBuild   = regexp.MustCompile(`^with "go build" from a tree whose server/ui holds a viewer saying "([^"]*)"$`)
 )
 
 const checkoutRelease = "v1.2.3"
@@ -272,6 +273,8 @@ func (c *cliState) builtAs(how string) error {
 		c.next = "1.2.4"
 	case how == noGitBuild:
 		b = Build{How: "no-git"}
+	case viewerBuild.MatchString(how):
+		b = Build{How: "viewer", Viewer: viewerBuild.FindStringSubmatch(how)[1]}
 	default:
 		return fmt.Errorf("no build is made %s", how)
 	}

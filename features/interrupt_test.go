@@ -9,12 +9,15 @@ package features
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -54,6 +57,8 @@ type interrupter struct {
 	started []FixturePeer
 	records string
 	script  string
+	port    int      // the port serve listens on, once a step started it on one it chose
+	answer  response // what serve answered the last request with
 }
 
 // interruptSteps are the steps of a run that goes on until something ends
@@ -82,6 +87,10 @@ func interruptSteps(bin string) func(*godog.ScenarioContext, *world) {
 			return ctx, nil
 		})
 		sc.Step(`^"itos-cc ([^"]*)" is serving the scratch folder$`, i.serve)
+		sc.Step(`^the scratch folder holds a viewer in "([^"]*)" whose index\.html says "([^"]*)"$`, i.viewerIn)
+		sc.Step(`^I request "GET ([^"]*)"$`, i.request)
+		sc.Step(`^the response is (\d+) and its body says "([^"]*)"$`, i.responseSays)
+		sc.Step(`^the response is JSON with the version, nodes, and edges$`, i.responseIsGraph)
 		sc.Step(`^it is interrupted$`, func() error { return i.signal(interrupt) })
 		sc.Step(`^it is sent SIGTERM$`, i.terminate)
 		sc.Step(`^a Go project whose test starts a process of its own and then hangs$`, i.hangingProject)
@@ -144,21 +153,101 @@ func (i *interrupter) await(ready *regexp.Regexp, what string) error {
 	}
 }
 
-// serve starts itos-cc with args, serve's command line, on a port the
-// system picks unless args name one, so scenarios beside it never take
-// the same, and waits until it says it serves.
+// serve starts itos-cc with args, serve's command line, the binary a Given
+// built or else the one under test, and waits until it says it serves.
+// Unless args name a port, it serves on one free when asked, recorded for
+// the requests: serve announces the port it was given, not the one it
+// listens on, so --port 0 would leave nothing to request. A scenario
+// running beside it can take that port in between, and serve then exits
+// as a temporary failure; it is tried again on another, up to
+// portAttempts times, as Graph tries.
 func (i *interrupter) serve(args string) error {
 	fields, err := commandWords(args)
 	if err != nil {
 		return err
 	}
-	if !strings.Contains(args, "--port") {
-		fields = append(fields, "--port", "0")
+	bin := i.bin
+	if i.w.binary != "" {
+		bin = i.w.binary
 	}
-	if err := i.start(i.bin, fields, nil, false); err != nil {
+	if strings.Contains(args, "--port") {
+		if err := i.start(bin, fields, nil, false); err != nil {
+			return err
+		}
+		return i.await(serving, "that it serves")
+	}
+	for attempt := 1; ; attempt++ {
+		port, err := freePort()
+		if err != nil {
+			return err
+		}
+		if err := i.start(bin, append(slices.Clone(fields), "--port", strconv.Itoa(port)), nil, false); err != nil {
+			return err
+		}
+		err = i.await(serving, "that it serves")
+		if err != nil && attempt < portAttempts && i.portTaken() {
+			continue
+		}
+		i.port = port
 		return err
 	}
-	return i.await(serving, "that it serves")
+}
+
+// portTaken is whether the run ended as a temporary failure, as serve ends
+// when its port is in use.
+func (i *interrupter) portTaken() bool {
+	state := i.running.cmd.ProcessState
+	return state != nil && state.ExitCode() == temporaryFailure
+}
+
+// viewerIn writes a built viewer in the scratch folder's dir, its
+// index.html saying says.
+func (i *interrupter) viewerIn(dir, says string) error {
+	return i.w.write(dir+"/index.html", ViewerPage(says))
+}
+
+// request asks the serve a step started for path, recording its answer.
+func (i *interrupter) request(ctx context.Context, path string) error {
+	if i.running == nil || i.port == 0 {
+		return errors.New("no serve runs on a port the steps chose: start one first")
+	}
+	answer, err := get(ctx, i.port, path)
+	if err != nil {
+		return fmt.Errorf("GET %s: %w\n%s", path, err, i.output())
+	}
+	i.answer = answer
+	return nil
+}
+
+// output is what the run has written so far, for a failing step.
+func (i *interrupter) output() string {
+	stdout, stderr := i.running.output()
+	return "stdout:\n" + stdout + "\nstderr:\n" + stderr
+}
+
+// responseSays is whether the last answer had status and its body holds
+// says.
+func (i *interrupter) responseSays(status int, says string) error {
+	if i.answer.status != status || !strings.Contains(string(i.answer.body), says) {
+		return fmt.Errorf("the response is %d with the body:\n%s\nnot %d saying %q", i.answer.status, i.answer.body, status, says)
+	}
+	return nil
+}
+
+// responseIsGraph is whether the last answer is 200, JSON, holding the
+// graph's version, nodes and edges.
+func (i *interrupter) responseIsGraph() error {
+	var graph struct {
+		Version *int             `json:"version"`
+		Nodes   *json.RawMessage `json:"nodes"`
+		Edges   *json.RawMessage `json:"edges"`
+	}
+	err := json.Unmarshal(i.answer.body, &graph)
+	if i.answer.status != http.StatusOK || !strings.HasPrefix(i.answer.contentType, "application/json") || err != nil ||
+		graph.Version == nil || graph.Nodes == nil || graph.Edges == nil {
+		return fmt.Errorf("the response is %d, %s, not JSON with the version, nodes and edges (%v):\n%s", i.answer.status, i.answer.contentType, err, i.answer.body)
+	}
+	return nil
 }
 
 // signal sends the run send, as each system sends it, and waits for it to

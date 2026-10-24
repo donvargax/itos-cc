@@ -62,6 +62,20 @@ func (b binary) Build(dir string, how Build) (Built, error) {
 		}
 		err := goCommand(tree, nil, "build", "-trimpath", "-o", bin, "./cmd/itos-cc")
 		return Built{Binary: bin}, err
+	case "viewer":
+		// What a release copies viewer/dist into before it builds (slice-42),
+		// a page and an asset in server/ui; the build reads no git.
+		tree := filepath.Join(dir, "tree")
+		if err := b.copyModule(tree); err != nil {
+			return Built{}, err
+		}
+		for name, text := range map[string]string{"index.html": ViewerPage(how.Viewer), "assets/app.js": "console.log(\"the viewer\");\n"} {
+			if err := b.Write(filepath.Join(tree, "server", "ui", filepath.FromSlash(name)), []byte(text)); err != nil {
+				return Built{}, err
+			}
+		}
+		err := goCommand(tree, nil, "build", "-trimpath", "-buildvcs=false", "-o", bin, "./cmd/itos-cc")
+		return Built{Binary: bin}, err
 	}
 	return Built{}, fmt.Errorf("no build %q", how.How)
 }
@@ -184,10 +198,21 @@ func modulePath(root string) (string, error) {
 	return "", errors.New("go.mod declares no module")
 }
 
+// ViewerPage is the index.html of a viewer that says says.
+func ViewerPage(says string) string {
+	return "<!doctype html>\n<html><body><p>" + says + "</p></body></html>\n"
+}
+
+// embeddedViewer is the folder whose files the binary embeds as its viewer
+// (slice-42), the release copying viewer/dist there: the module holds only
+// its .gitignore, without which the embed matches nothing and no build
+// compiles.
+const embeddedViewer = "server/ui/.gitignore"
+
 // moduleFiles are the files of the module at root a build needs, by
-// slash-separated path: go.mod, go.sum and each Go source that is no test,
-// outside hidden folders, node_modules, vendor, testdata and folders of
-// other modules.
+// slash-separated path: go.mod, go.sum, each Go source that is no test and
+// the embedded viewer's .gitignore, outside hidden folders, node_modules,
+// vendor, testdata and folders of other modules.
 func (b binary) moduleFiles() ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(b.root, func(p string, d fs.DirEntry, err error) error {
@@ -212,7 +237,7 @@ func (b binary) moduleFiles() ([]string, error) {
 			}
 			return nil
 		}
-		if rel == "go.mod" || rel == "go.sum" || strings.HasSuffix(rel, ".go") && !strings.HasSuffix(rel, "_test.go") {
+		if rel == "go.mod" || rel == "go.sum" || rel == embeddedViewer || strings.HasSuffix(rel, ".go") && !strings.HasSuffix(rel, "_test.go") {
 			files = append(files, rel)
 		}
 		return nil

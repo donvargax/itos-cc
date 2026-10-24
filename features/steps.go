@@ -250,11 +250,15 @@ type Build struct {
 	// stamp with Version as a release does; "install", go install of the module at
 	// Version from a module proxy; "checkout", go build in a git checkout
 	// one commit past its release Version; "no-git", go build in a copy of
-	// the tree with no git information.
+	// the tree with no git information; "viewer", go build in a copy of the
+	// tree whose server/ui holds a viewer saying Viewer, as a release
+	// copies viewer/dist there.
 	How string
 	// Version is the version the build is stamped or tagged with, "" for
 	// a build with no git information.
 	Version string
+	// Viewer is what the index.html of a "viewer" build's viewer says.
+	Viewer string
 }
 
 // Built is what a build made: the binary, and for a checkout's build the
