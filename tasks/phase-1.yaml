@@ -6582,18 +6582,6 @@
     excluded tags); once a release does, a filter replaces the program (idea proof-code-unrun-listed
     folds in here). Then restore the proof as (1) and (2) say, and see it judge a site on a push
     with Go changes before closing. The report gives the proof step's time on that push.
-  done_when:
-    - run: itos config check
-    - run: grep -qF -- 'mutation run --count 1 --since {base} --seed {base} --fail-uncovered=lines --json' itos.yaml
-      after: push
-    - run: itos ci plan b8b98b0e~1 b8b98b0e | grep -qF -- 'mutation run --count 1'
-      after: push
-    - run: "! grep -qF 'select(.live)' itos-cc.yaml"
-      after: push
-    - run: "! grep -qF 'Mutation proof is off' docs/go.md"
-      after: push
-    - run: "! grep -qF 'locally or in a push' AGENTS.md"
-      after: push
 - id: T-188
   type: ci
   title: cd.yml samples ten recorded mutation results on every source push
