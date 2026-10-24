@@ -5680,8 +5680,8 @@ items:
   - id: slice-51
     title: Plain per-file lines that no CI problem matcher reads as errors
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
