@@ -5793,3 +5793,14 @@ items:
       the GRAPH scenarios against the command (re-cut T-102..T-104), tag the rest @wip one by one;
       SNAP-01 and SNAP-09 gain graph rows. Draft: .git/itos/draft-graph-snapshot.md on the
       coordinator's machine. After the move task.
+  - id: graph-nightly
+    title: The nightly commits .metrics/graph.json beside crap, dry and scrap
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [graph-command]
+    kind: idea
+    why: >
+      graph-snapshot item 3 (q-95): the nightly's snapshots job runs itos-cc graph after crap and
+      dry (it reads both), commits graph.json with them, and .gitignore keeps it tracked. After
+      graph-command.
