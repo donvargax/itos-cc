@@ -4258,6 +4258,9 @@
     including dynamic Python, TypeScript aliases/extends/references, Kotlin implicit dependencies
     and external imports. Candidate-resolution assertions can use controlled fixture arrangements
     and observed graph results; do not expose a new diagnostic flag merely for tests.
+    ADR-0060 (q-86, 2026-10-24): the graph becomes a .metrics snapshot the web app only reads (idea
+    graph-snapshot), so this task is re-cut against that file contract before serve's move starts;
+    its HTTP-adapter and kong parts may no longer apply.
   done_when:
     - run: go test ./features -count=1 -scenarios="@ID-GRAPH-(0[1-9]|1[0-4])$"
 - id: T-103
@@ -4288,6 +4291,9 @@
     wildcard/method matching and ignored vague/non-HTTP calls. Use real graph output of controlled
     source fixtures, not a duplicate route matcher in a step. Same observable normalized
     route/method values and edge counts as existing rules.
+    ADR-0060 (q-86, 2026-10-24): the graph becomes a .metrics snapshot the web app only reads (idea
+    graph-snapshot), so this task is re-cut against that file contract before serve's move starts;
+    its HTTP-adapter and kong parts may no longer apply.
   done_when:
     - run: go test ./features -count=1 -scenarios="@ID-GRAPH-(1[5-9]|2[01])$"
 - id: T-104
@@ -4321,6 +4327,9 @@
     caching property: retain its meaningful domain/adapter guard and bring any text correction to
     coordinator; the externally visible changed graph/version still runs through CLI. Once complete
     no GRAPH ID remains pending.
+    ADR-0060 (q-86, 2026-10-24): the graph becomes a .metrics snapshot the web app only reads (idea
+    graph-snapshot), so this task is re-cut against that file contract before serve's move starts;
+    its HTTP-adapter and kong parts may no longer apply.
   done_when:
     - run: go test ./features -count=1 -scenarios="@ID-GRAPH-(2[2-9]|[34][0-9])$"
 - id: T-105
@@ -4349,6 +4358,9 @@
     docs, remove old Go tests only when every assertion has a new holder. Focus localchecks on these
     scenarios, broad gates hooks/CI. No own-code mutation runs/worktrees/sessionmoves/agents or
     unapproved dependencies. FutureT86layout is not part of this move.
+    ADR-0060 (q-86, 2026-10-24): the graph becomes a .metrics snapshot the web app only reads (idea
+    graph-snapshot), so this task is re-cut against that file contract before serve's move starts;
+    its HTTP-adapter and kong parts may no longer apply.
   done_when:
     - run: go test ./features -count=1 -scenarios="@ID-SERVE-"
 - id: T-106
@@ -4378,6 +4390,9 @@
     cases to final-proof rather than per-task binary comparison. Focus localchecks to the domain and
     named public scenarios, full gates hooks/CI. No own-code mutation/worktrees/sessionmoves/agents
     or new dependency without recorded selection; futureT86 is separate.
+    ADR-0060 (q-86, 2026-10-24): the graph becomes a .metrics snapshot the web app only reads (idea
+    graph-snapshot), so this task is re-cut against that file contract before serve's move starts;
+    its HTTP-adapter and kong parts may no longer apply.
   done_when:
     - run: go test ./internal/architecture/...
     - run: go test ./features -count=1 -scenarios="@ID-GRAPH-(01|02|03|07|15|22|2[4-9]|3[0-1]|3[4-9]|40)$"
@@ -4410,6 +4425,9 @@
     domain coverage. Add source-mid-save, unchanged reparse, test/support edit and snapshot update
     cases to final-proof, no per-task comparison. Focus localchecks, full gates hooks/CI; no
     own-code mutation/worktrees/sessionmoves/agents or new dependency without recorded selection.
+    ADR-0060 (q-86, 2026-10-24): the graph becomes a .metrics snapshot the web app only reads (idea
+    graph-snapshot), so this task is re-cut against that file contract before serve's move starts;
+    its HTTP-adapter and kong parts may no longer apply.
   done_when:
     - run: go test ./internal/architecture/... ./internal/architecturefiles/...
     - run: go test ./features -count=1 -scenarios="@ID-GRAPH-"
@@ -4443,6 +4461,9 @@
     failure-retention cases; no per-task binary comparison. Focus localchecks to adapter/domain and
     named scenarios, broad gates hooks/CI; no own-code mutation/worktrees/sessionmoves/agents.
     FutureT86 is separate.
+    ADR-0060 (q-86, 2026-10-24): the graph becomes a .metrics snapshot the web app only reads (idea
+    graph-snapshot), so this task is re-cut against that file contract before serve's move starts;
+    its HTTP-adapter and kong parts may no longer apply.
   done_when:
     - run: go test ./internal/httpapi/... ./internal/architecture/...
     - run: go test ./features -count=1 -scenarios="@ID-SERVE-"
@@ -4479,6 +4500,9 @@
     remove their explicit in-process deferrals and run all five successfully through both
     drivers. Include those selected scenarios alongside serving scenarios in checks and
     report their actual counts.
+    ADR-0060 (q-86, 2026-10-24): the graph becomes a .metrics snapshot the web app only reads (idea
+    graph-snapshot), so this task is re-cut against that file contract before serve's move starts;
+    its HTTP-adapter and kong parts may no longer apply.
   done_when:
     - run: go test ./internal/serve/... ./internal/cli/...
     - run: go test ./features ./cmd/itos-cc -run "^Test(Features|Scenarios)$" -count=1 -scenarios="^@ID-(SERVE-.*|MUT-(134|153|154|163|207))$"
@@ -4504,6 +4528,9 @@
     91c46d9 (T-125); do not restore it. Focus local named checks and
     leftover-reference inventory, gates via hooks/CI, no own-code
     mutation/worktrees/sessionmoves/agents. Future T-86 feature-owned layout remains a follow-up.
+    ADR-0060 (q-86, 2026-10-24): the graph becomes a .metrics snapshot the web app only reads (idea
+    graph-snapshot), so this task is re-cut against that file contract before serve's move starts;
+    its HTTP-adapter and kong parts may no longer apply.
   done_when:
     - run: go test ./features ./cmd/itos-cc -run "^Test(Features|Scenarios)$" -count=1 -scenarios="@ID-(GRAPH|SERVE)-"
 - id: T-114
