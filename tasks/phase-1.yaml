@@ -6884,3 +6884,24 @@
     Between agents, the coordinator moves the pin from 8.12.11 to the newest 8.13 so the next agents
     read its guides and hooks, as T-200 did. itos upgrade edits only what each release fixes
     exactly; anything it asks by hand is applied or named in the commit.
+- id: T-205
+  type: ci
+  title: Push CI runs the viewer's tests and typecheck
+  why: >
+    ci.yml runs go vet and go test only, so a change that breaks viewer/ (vitest run, tsc --noEmit)
+    passes CI and is first seen by the nightly, if at all. Also: three Go tests in cmd/itos-cc
+    (ID-MUT-105's and ID-CRAP-14's, and crap's no-threshold one) use the viewer's Vitest and skip
+    without viewer/node_modules, which push CI never installs, so they run only on a developer's
+    machine (passed locally 2026-10-08). An npm ci of viewer/ in the test job would make them run in
+    CI too. The second paragraph above is done. T-13 gave those Go tests Node tools of their own,
+    testdata/tools/node, installed with npm ci and found through ITOS_CC_NODE_MODULES
+    (cmd/itos-cc/language_tools_test.go:27-59), and cd.yml's languages job runs them, ID-CRAP-14 and
+    ID-MUT-105 among them, on ubuntu-latest. What is left is the first paragraph. No workflow runs
+    viewer/'s vitest run or tsc --noEmit (only nightly.yml installs viewer/, and the nightly is
+    disabled), so viewer.feature's 23 live scenarios, which viewer/src/model.test.ts alone holds,
+    have no holder in CI. The viewer leaves with serve for a web app of its own (1b449af, the
+    person's decision of 2026-10-17), so this belongs to that move rather than to this repository's
+    CI.
+  done_when:
+    - run: grep -q 'npm run typecheck' .github/workflows/ci.yml
+    - run: grep -q 'npm test' .github/workflows/ci.yml
