@@ -5395,3 +5395,10 @@ items:
       list only the scenarios the in-process driver runs, or let a counted run treat a listed test
       with no data as reaching nothing, as a plain run may. Until then every Go push's ci.yml is
       red.
+  - id: T-188
+    title: cd.yml samples ten recorded mutation results on every source push
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

@@ -6589,3 +6589,21 @@
       after: push
     - run: "! grep -qF 'locally or in a push' AGENTS.md"
       after: push
+- id: T-188
+  type: ci
+  title: cd.yml samples ten recorded mutation results on every source push
+  why: >
+    The person (q-85, 2026-10-23; again after the revert, 2026-10-24): cd.yml runs itos-cc mutation
+    sample --count 10 on every source push, so a stale or hand-written kill is caught within a push
+    (decision 48: the cache keys no kill on its callees). 947882e0 added it as a sample job (Linux,
+    needs scope, skipped when docs_only, its own cancel group; builds itos-cc into RUNNER_TEMP, sets
+    up Node, npm ci in viewer/ and the itos launcher; release needs it) and 36f56be3 took it out
+    with T-187's code proof, though it was green in runs 40040529430 (40 s, 10 of 5527, 0
+    mismatched), 40041042814 and 40042092451 (3 min 36 s). Restore that job alone, with the docs
+    lines that describe it (docs/go.md's Quality checks, README), and nothing of proof.code, which
+    stays T-187's. Sample re-runs recorded outcomes and runs no counted preparation, so the listed
+    scenarios the in-process run never executes do not fail it.
+  done_when:
+    - run: itos config check
+    - run: grep -qF -- 'mutation sample --count 10' .github/workflows/cd.yml
+    - run: "! grep -qF 'proof:' itos.yaml"
