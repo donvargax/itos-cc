@@ -176,10 +176,13 @@ func (h Handler) Select(ctx context.Context, q Query) (selection.Files, error) {
 }
 
 // Found is what Handle found: every function of the sources scored, each
-// file by Name, and each build root or report coverage did not measure.
+// file by Name, each build root or report coverage did not measure, and
+// each build root whose coverage command failed after writing its report
+// as a Go package's tests timed out, which crap reads as measured.
 type Found struct {
 	Entries    []domain.Entry
 	Unmeasured []coverage.Unmeasured
+	TimedOut   []coverage.Unmeasured
 }
 
 // Handle scores every function of sources, which Select chose, by the
@@ -220,7 +223,13 @@ func (h Handler) Handle(ctx context.Context, q Query, sources []string) (Found, 
 	if failure := h.Store.Write(ctx, "crap.json", snapshotOf{Version: snapshot.Version, Entries: recorded}); failure != nil {
 		return Found{}, failure
 	}
-	return Found{Entries: entries, Unmeasured: report.Missing()}, nil
+	var timedOut []coverage.Unmeasured
+	for _, f := range report.Failed() {
+		if f.TimedOut {
+			timedOut = append(timedOut, f)
+		}
+	}
+	return Found{Entries: entries, Unmeasured: report.Missing(), TimedOut: timedOut}, nil
 }
 
 // snapshotOf is crap.json: the format version and every function scored,
@@ -288,6 +297,12 @@ func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 				problems = append(problems, ui.Problems(m)...)
 				continue
 			}
+			ui.Line("no coverage for " + m.String())
+		}
+		// Its scores stand on what the run measured before a package's
+		// tests timed out, so it is warned of too (slice-47).
+		for _, m := range found.TimedOut {
+			m.Dir = ui.Rel(m.Dir)
 			ui.Line("no coverage for " + m.String())
 		}
 		return ui.Emit(c.JSON, out, problems)

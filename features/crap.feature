@@ -137,7 +137,7 @@ Feature: CRAP scores
   # outlives a one-second limit given through GOFLAGS, so the scenario takes
   # seconds. Before this item the warning named no timeout, failing at the
   # stderr step.
-  @slice-47 @ID-CRAP-15 @wip
+  @slice-47 @ID-CRAP-15
   Scenario: A Go package whose tests time out says so in crap's warning
     Given a Go project whose package example.com/slow has a test that sleeps 3 seconds
     When itos-cc runs with "crap" and the environment "GOFLAGS=-timeout=1s"

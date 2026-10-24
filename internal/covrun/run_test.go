@@ -3,6 +3,7 @@ package covrun
 import (
 	"bytes"
 	"context"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage/port"
 )
 
@@ -280,8 +282,9 @@ func TestCoverageThatCouldNotBeMeasuredIsMissing(t *testing.T) {
 // TestHelperCoverageCommand is the coverage command of
 // TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage, run as this test
 // binary: it writes a report where HELPER_COVERAGE_REPORT says, unless that
-// is "-", empty or of the text HELPER_COVERAGE_TEXT holds, and exits 1 when
-// HELPER_COVERAGE_FAIL is set.
+// is "-", empty or of the text HELPER_COVERAGE_TEXT holds, prints what
+// HELPER_COVERAGE_OUTPUT holds, and exits 1 when HELPER_COVERAGE_FAIL is
+// set.
 func TestHelperCoverageCommand(t *testing.T) {
 	report := os.Getenv("HELPER_COVERAGE_REPORT")
 	if report == "" {
@@ -292,6 +295,7 @@ func TestHelperCoverageCommand(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	_, _ = os.Stdout.WriteString(os.Getenv("HELPER_COVERAGE_OUTPUT"))
 	if os.Getenv("HELPER_COVERAGE_FAIL") != "" {
 		os.Exit(1)
 	}
@@ -328,6 +332,72 @@ func TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage(t *testing.T) {
 		} else if !c.measures && (len(m) != 1 || m[0].Cause != (port.MeasuredNothing{})) {
 			t.Errorf("%s: missing %v, want the run that measured none of its files", c.name, m)
 		}
+	}
+}
+
+// A Go run whose output says go test stopped a package at its limit names
+// the package and the limit in its gap, Missing or Failed, and passes the
+// output on whole; another language's output is not read for it (slice-47).
+func TestAGoPackageThatTimedOutIsNamedInItsGap(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/slow\n\ngo 1.22\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	src := filepath.Join(dir, "slow.go")
+	report := filepath.Join(dir, "out", "coverage.out")
+	plan := Plan{Language: "go", Dir: dir, Sources: []string{src},
+		Commands: [][]string{{os.Args[0], "-test.run=^TestHelperCoverageCommand$"}}, Reports: []string{report}}
+	output := "panic: test timed out after 1s\n\trunning tests:\n\t\tTestPlace (1s)\n\nFAIL\texample.com/slow\t1.005s\nFAIL\n"
+	t.Setenv("HELPER_COVERAGE_OUTPUT", output)
+	t.Setenv("HELPER_COVERAGE_FAIL", "1")
+	named := "; example.com/slow timed out after 1s, go test's limit per package: raise it with GOFLAGS=-timeout=<duration>"
+
+	t.Setenv("HELPER_COVERAGE_REPORT", "-")
+	var log bytes.Buffer
+	missing := Run(t.Context(), []Plan{plan}, []string{src}, &log, nil).Missing()
+	if len(missing) != 1 || !missing[0].TimedOut || !strings.HasSuffix(missing[0].Reason, "exit status 1"+named) {
+		t.Errorf("no report: missing %q, want the run that measured nothing, naming the package", missing)
+	}
+	if !strings.Contains(log.String(), output) {
+		t.Errorf("the log lacks the command's output:\n%s", &log)
+	}
+
+	t.Setenv("HELPER_COVERAGE_REPORT", report)
+	t.Setenv("HELPER_COVERAGE_TEXT", "mode: set\nexample.com/slow/slow.go:3.26,3.40 1 0\n")
+	r := Run(t.Context(), []Plan{plan}, []string{src}, io.Discard, nil)
+	if failed := r.Failed(); len(r.Missing()) != 0 || len(failed) != 1 || !failed[0].TimedOut || !strings.HasSuffix(failed[0].Reason, "which proves nothing"+named) {
+		t.Errorf("a report of the package: missing %q, failed %q, want it failed, naming the package", r.Missing(), failed)
+	}
+
+	plan.Language = "typescript"
+	if failed := Run(t.Context(), []Plan{plan}, []string{src}, io.Discard, nil).Failed(); len(failed) > 0 && failed[0].TimedOut {
+		t.Errorf("TypeScript's output read as go test's: %q", failed)
+	}
+}
+
+// The watch reads lines split across writes, holds no line past its bound,
+// and with no log passes nothing on, reading still.
+func TestTheTimeoutWatchReadsWholeLines(t *testing.T) {
+	var log bytes.Buffer
+	w := &timeoutWatch{log: &log}
+	for _, part := range []string{"panic: test timed", " out after 2m0s\r\n", strings.Repeat("x", longestLine+1), "\nFAIL\tex", "ample.com/a\t120.1s\n"} {
+		if n, err := w.Write([]byte(part)); n != len(part) || err != nil {
+			t.Fatalf("Write(%q) = %d, %v", part, n, err)
+		}
+	}
+	if got := w.found(); len(got) != 1 || got[0] != (coverage.GoTimeout{Package: "example.com/a", Limit: "2m0s"}) || !strings.HasSuffix(log.String(), "120.1s\n") {
+		t.Errorf("found %v, log %q", got, log.String())
+	}
+	if len(w.partial) != 0 {
+		t.Errorf("the watch holds %q after the last line ended", w.partial)
+	}
+	quiet := &timeoutWatch{}
+	out := "panic: test timed out after 1s\nFAIL\tb\t1s\n"
+	if n, err := quiet.Write([]byte(out)); n != len(out) || err != nil || len(quiet.found()) != 1 {
+		t.Errorf("with no log: %d, %v, found %v", n, err, quiet.found())
+	}
+	if (*timeoutWatch)(nil).found() != nil {
+		t.Error("a nil watch found a timeout")
 	}
 }
 

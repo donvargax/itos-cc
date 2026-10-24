@@ -322,3 +322,38 @@ func TestMeasurementPrintsTheToolsOutputWhenItsCommandSucceeds(t *testing.T) {
 		t.Fatalf("a failed command logged %q, want its failure alone", log.String())
 	}
 }
+
+// A Go collector whose output says go test stopped a package at its limit
+// is classified as the real runner classifies it (slice-47): a report that
+// measured some sources is read, its root Failed, naming the package; one
+// that measured none leaves the root Missing, naming it too; one that
+// cannot be read is Unreadable.
+func TestAGoTimeoutIsFailedOrMissingAsTheRunnerHasIt(t *testing.T) {
+	output := "panic: test timed out after 1s\nFAIL\texample\t1.005s\nFAIL\n"
+	measure := func(report string) *coverage.Report {
+		t.Helper()
+		m, root, sources := fixture(t, "go", map[string]string{"a.go": "source"}, Measurement{Report: "mode: set\n"})
+		key := coverage.Unloaded{Language: "go", Dir: root}
+		d := m.Declarations[key]
+		d.Report, d.CommandExit, d.CommandOutput = report, 1, output
+		m.Declarations[key] = d
+		r, failure := m.Measure(t.Context(), port.Request{Sources: sources})
+		if failure != nil {
+			t.Fatal(failure)
+		}
+		return r
+	}
+	r := measure("mode: set\nexample/a.go:2.1,2.9 1 0\n")
+	if failed := r.Failed(); len(r.Missing()) != 0 || len(failed) != 1 || !failed[0].TimedOut ||
+		!strings.HasSuffix(failed[0].Reason, "(exit status 1) after writing its report, which proves nothing; example timed out after 1s, go test's limit per package: raise it with GOFLAGS=-timeout=<duration>") {
+		t.Errorf("a report of a.go: missing %v, failed %v; want it failed, naming the package", r.Missing(), failed)
+	}
+	r = measure("mode: set\nexample/b.go:2.1,2.9 1 0\n")
+	if missing := r.Missing(); len(missing) != 1 || !missing[0].TimedOut || len(r.Failed()) != 0 {
+		t.Errorf("a report of another file: missing %v, failed %v; want it missing, naming the package", missing, r.Failed())
+	}
+	r = measure("mode: set\nnot a block\n")
+	if missing := r.Missing(); len(missing) != 1 || missing[0].Cause != (port.Unreadable{}) {
+		t.Errorf("an unreadable report: missing %v, want it unreadable", missing)
+	}
+}

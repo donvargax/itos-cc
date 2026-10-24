@@ -131,13 +131,16 @@ type Line struct {
 }
 
 // Unmeasured is a build root or report whose coverage was not measured,
-// and why: Cause is one of the port's sealed gaps.
+// and why: Cause is one of the port's sealed gaps. TimedOut is whether a Go
+// package's tests outlived go test's limit in the run, which Reason then
+// names (GoTimeout).
 type Unmeasured struct {
 	Dir      string   `json:"dir,omitempty"`
 	Language string   `json:"language,omitempty"`
 	Report   string   `json:"report,omitempty"`
 	Cause    port.Gap `json:"cause"`
 	Reason   string   `json:"reason"`
+	TimedOut bool     `json:"-"`
 }
 
 // Error is String: an Unmeasured is an error, so a command hands it to the

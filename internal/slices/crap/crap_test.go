@@ -242,3 +242,38 @@ func TestAFailureStopsTheRun(t *testing.T) {
 		t.Errorf("an empty tree: exit %d, %+v", code, o)
 	}
 }
+
+// failedMeasurer is the project's measurer whose every report also holds
+// failed: build roots whose coverage command failed after writing it.
+type failedMeasurer struct {
+	covporttest.Measurer
+	failed []coverage.Unmeasured
+}
+
+func (m failedMeasurer) Measure(ctx context.Context, req covport.Request) (*coverage.Report, covport.Failure) {
+	r, failure := m.Measurer.Measure(ctx, req)
+	if failure == nil {
+		r.SetFailed(m.failed...)
+	}
+	return r, failure
+}
+
+// A build root whose coverage command failed after writing its report is
+// read as measured, and warned of without a threshold only when a Go
+// package's tests timed out in it, naming the package (slice-47); another
+// failure stays silent, as before, and so does a run with a threshold.
+func TestWithoutAThresholdAGoTimeoutIsWarnedOf(t *testing.T) {
+	timedOut := coverage.Unmeasured{Dir: at("src"), Language: "go", Cause: covport.MeasuredNothing{}, Reason: "its coverage command failed"}.
+		WithTimeouts([]coverage.GoTimeout{{Package: "example.com/slow", Limit: "1s"}})
+	other := coverage.Unmeasured{Dir: at(""), Language: "go", Cause: covport.MeasuredNothing{}, Reason: "its coverage command failed"}
+	m := failedMeasurer{Measurer: measurer(), failed: []coverage.Unmeasured{other, timedOut}}
+	code, _, stderr := run(t, CLI{CoverageReport: []string{"none.info"}}, handler(m, &snapporttest.Store{RootDir: at("")}))
+	want := "itos-cc: no coverage for . (go): its coverage command failed; example.com/slow timed out after 1s, go test's limit per package: raise it with GOFLAGS=-timeout=<duration>\n"
+	if code != 0 || stderr != want {
+		t.Errorf("exit %d, stderr %q; want 0 and %q", code, stderr, want)
+	}
+	_, _, stderr = run(t, CLI{CoverageReport: []string{"none.info"}, Threshold: ptr(30)}, handler(m, &snapporttest.Store{RootDir: at("")}))
+	if strings.Contains(stderr, "timed out") {
+		t.Errorf("with a threshold, stderr %q warns of the timeout", stderr)
+	}
+}

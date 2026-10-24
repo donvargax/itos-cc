@@ -127,7 +127,17 @@ func (m *Measurer) MeasureListed(ctx context.Context, req port.Request, tests *c
 			r.SetMissing(coverage.Unmeasured{Dir: root, Language: group.Language, Cause: port.ToolMissing{}, Reason: "no collector declared"})
 		case d.CommandExit != 0:
 			m.log("coverage: %s: %s (exit %d)\n", root, d.CommandOutput, d.CommandExit)
-			r.SetMissing(coverage.Unmeasured{Dir: root, Language: d.Language, Cause: port.MeasuredNothing{}, Reason: d.CommandOutput})
+			timeouts := coverage.ReadGoTimeouts(d.CommandOutput)
+			if len(timeouts) > 0 && d.Report != "" {
+				// go test stopped a package at its limit after the report
+				// was written: as the real runner, a report that measured
+				// some sources is read, its root Failed, naming each.
+				if failed := m.timedOut(ctx, root, sources, d, timeouts); failed != nil {
+					r = failed
+					break
+				}
+			}
+			r.SetMissing(coverage.Unmeasured{Dir: root, Language: d.Language, Cause: port.MeasuredNothing{}, Reason: d.CommandOutput}.WithTimeouts(timeouts))
 		case d.Report == "":
 			r.SetMissing(coverage.Unmeasured{Dir: root, Language: d.Language, Cause: port.MeasuredNothing{}, Reason: "its coverage run measured none of its files"})
 		default:
@@ -169,6 +179,24 @@ func (m *Measurer) MeasureListed(ctx context.Context, req port.Request, tests *c
 		return nil, port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	return r, nil
+}
+
+// timedOut is the report d's command wrote before go test stopped
+// timeouts' packages at its limit, its root Failed and naming each, when it
+// measured some of sources; nil when it measured none, so the root is
+// Missing. A report it cannot read is that failure's report.
+func (m *Measurer) timedOut(ctx context.Context, root string, sources []string, d Measurement, timeouts []coverage.GoTimeout) *coverage.Report {
+	entries, err := coverage.Parse(strings.NewReader(d.Report))
+	if err != nil {
+		return m.badArtifact(root, err)
+	}
+	r := coverage.Build(ctx, m.disk(), sources, root, entries)
+	if !slices.ContainsFunc(sources, r.Has) {
+		return nil
+	}
+	r.SetFailed(coverage.Unmeasured{Dir: root, Language: d.Language, Cause: port.MeasuredNothing{},
+		Reason: fmt.Sprintf("its coverage command failed (exit status %d) after writing its report, which proves nothing", d.CommandExit)}.WithTimeouts(timeouts))
+	return r
 }
 
 // listedFailure is the listed tests' coverage run that failed, as the real

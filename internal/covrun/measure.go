@@ -92,6 +92,13 @@ func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer, exe
 		}
 		failed, failedCommand := "", ""
 		var cleanup *port.CleanupFailed
+		// Go's output is read for the packages go test stopped at its
+		// limit, which the gap names; the output still goes to log whole.
+		out, watch := log, (*timeoutWatch)(nil)
+		if p.Language == "go" {
+			watch = &timeoutWatch{log: log}
+			out = watch
+		}
 		for _, args := range p.Commands {
 			if ctx.Err() != nil {
 				failed = fmt.Sprintf("; %v", context.Cause(ctx))
@@ -101,8 +108,8 @@ func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer, exe
 			cmd := exec.CommandContext(ctx, args[0], args[1:]...) //nolint:gosec // the plan's coverage commands, which this package composes for the language
 			cmd.Dir = p.Dir
 			cmd.Env = env
-			cmd.Stdout = log
-			cmd.Stderr = log
+			cmd.Stdout = out
+			cmd.Stderr = out
 			if err := runCommand(ctx, cmd, execute); err != nil {
 				logf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
 				failed = fmt.Sprintf("; %s: %v", args[0], err)
@@ -142,12 +149,13 @@ func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer, exe
 			reports = append(reports, p.measured(r, *cleanup, "its coverage command's owned process group did not end"+failed))
 			continue
 		}
-		r = p.measured(r, port.MeasuredNothing{}, "its coverage run measured none of its files"+failed)
+		timeouts := watch.found()
+		r = p.measured(r, port.MeasuredNothing{}, "its coverage run measured none of its files"+failed, timeouts...)
 		if failedCommand != "" && len(r.Missing()) == 0 && len(p.Sources) > 0 {
 			// It measured some of its files before failing: read by crap,
 			// and by a run without --fail-uncovered, never proof.
 			r.SetFailed(coverage.Unmeasured{Dir: p.Dir, Language: p.Language, Cause: port.MeasuredNothing{},
-				Reason: "its coverage command " + failedCommand + " after writing its report, which proves nothing"})
+				Reason: "its coverage command " + failedCommand + " after writing its report, which proves nothing"}.WithTimeouts(timeouts))
 		}
 		reports = append(reports, r)
 	}
@@ -199,9 +207,10 @@ func (p Plan) measures(sources []string) []string {
 }
 
 // measured is r, Missing p when r measured none of p's files: the run
-// failed, wrote an empty report, or loaded none of them. A report that
-// measured some of them leaves the rest untested, not missing.
-func (p Plan) measured(r *coverage.Report, cause port.Gap, why string) *coverage.Report {
+// failed, wrote an empty report, or loaded none of them, naming the Go
+// packages whose tests timed out in it. A report that measured some of
+// them leaves the rest untested, not missing.
+func (p Plan) measured(r *coverage.Report, cause port.Gap, why string, timeouts ...coverage.GoTimeout) *coverage.Report {
 	for _, s := range p.Sources {
 		if r.Has(s) {
 			r.SetMissing()
@@ -209,7 +218,7 @@ func (p Plan) measured(r *coverage.Report, cause port.Gap, why string) *coverage
 		}
 	}
 	if len(p.Sources) > 0 {
-		r.SetMissing(coverage.Unmeasured{Dir: p.Dir, Language: p.Language, Cause: cause, Reason: why})
+		r.SetMissing(coverage.Unmeasured{Dir: p.Dir, Language: p.Language, Cause: cause, Reason: why}.WithTimeouts(timeouts))
 	}
 	return r
 }
