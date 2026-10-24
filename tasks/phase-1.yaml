@@ -6902,6 +6902,15 @@
     have no holder in CI. The viewer leaves with serve for a web app of its own (1b449af, the
     person's decision of 2026-10-17), so this belongs to that move rather than to this repository's
     CI.
+
+    That no longer holds: slice-42 (v0.29.0) embeds the viewer in every release, and q-95 parked
+    serve's move at the lowest priority, so the viewer stays here and push CI should hold it.
+    Decided by the coordinator (2026-10-24, a routine call inside the item): ci.yml gains a job
+    viewer, beside test and gated like it on the scope job's docs_only, that runs only when the
+    push's range touches viewer/ (a paths check in the job, so a Go-only push pays a few seconds):
+    actions/setup-node pinned as cd.yml's release viewer job pins it, npm ci in viewer/, then npm
+    run typecheck and npm test. ci (the gate job) needs it, so a red viewer fails the push. No
+    product change; the nightly's viewer install stays as it is.
   done_when:
     - run: grep -q 'npm run typecheck' .github/workflows/ci.yml
     - run: grep -q 'npm test' .github/workflows/ci.yml
@@ -6919,5 +6928,11 @@
     refactored side alone, never compared with its baseline. The suite job could set up Flutter as
     cd.yml's dart job does and set ITOS_CC_FLUTTER_TOOLS, or a third matrix leg could run only the
     Dart scenarios.
+
+    Decided by the coordinator (2026-10-24, a routine call inside the item): the suite job of
+    refactor-proof.yml sets up Flutter from the root .fvmrc exactly as cd.yml's dart job does
+    (same action and pin) and sets ITOS_CC_FLUTTER_TOOLS for both sides, so the Dart scenarios run
+    on the baseline and the refactored binary alike; no third matrix leg. Its header comment says
+    the Dart scenarios are compared too. Nothing is dispatched: the next refactor proof proves it.
   done_when:
     - run: grep -q 'ITOS_CC_FLUTTER_TOOLS' .github/workflows/refactor-proof.yml
