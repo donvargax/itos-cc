@@ -6845,6 +6845,13 @@
     architecture-check for over 10 minutes until the agent killed the curl by its pid; a retry took
     seconds. A --connect-timeout and --max-time (and maybe one retry) make it fail fast with a
     message naming the download.
+
+    Decided by the coordinator (2026-10-24, a routine call inside the item): the curl at
+    tools/bin/pinned:129 gets --connect-timeout 30, --max-time 300 and --retry 2 (curl retries
+    only transient failures, a timeout among them), so a stalled download ends within about 15
+    minutes at worst instead of never, usually far sooner; die's message keeps naming the URL and
+    adds that it timed out or failed and can be run again. The script stays POSIX sh, as it
+    runs under sh on ubuntu, and keeps its checksum check unchanged. No product change.
   done_when:
     - run: grep -q -- '--connect-timeout' tools/bin/pinned
     - run: grep -q -- '--max-time' tools/bin/pinned
