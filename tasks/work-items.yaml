@@ -5619,8 +5619,8 @@ items:
   - id: T-198
     title: One refactor-proof.yml run proves the move under internal/ changed no behaviour
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-197]
     kind: task
   - id: pinned-curl-timeout
