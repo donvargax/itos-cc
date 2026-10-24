@@ -15,7 +15,6 @@ queue:
   - listed-suites
   - features-coverage-gocoverdir-leak
   - plain-output-matcher
-  - T-205
   - T-206
   - itos-cc-yaml-version
   - flaky-kills
