@@ -5605,8 +5605,8 @@ items:
   - id: T-196
     title: coverage's runner moves to internal/covrun
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-195]
     kind: task
   - id: T-197
