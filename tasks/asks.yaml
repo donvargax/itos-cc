@@ -413,5 +413,5 @@ questions:
     answer: "A snapshot the app only reads (the person, 2026-10-24), so the UI code stays simple: itos-cc writes the graph, its tree, import edges and metrics, as .metrics/graph.json beside crap, dry, scrap and mutation's snapshots, and the web app reads .metrics/ and needs none of itos-cc's code. serve's move (T-102 to T-113) is re-cut against this when it is specified; serve-embedded-viewer stays as the stopgap until then."
     decision: 60
   - id: q-87
-    item: "serve-embedded-viewer"
+    item: "slice-42"
     question: "Embedding the viewer puts elkjs 0.12.0 (the graph layout library viewer/src/layout.ts imports) into every release binary, the first non-permissive dependency it carries: elkjs is licensed EPL-2.0 OR GPL-3.0-or-later, and itos-cc is AGPL-3.0. Under which does itos-cc take it? (a, recommended) GPL-3.0-or-later: GPLv3's section 13 lets a GPLv3 work be combined with an AGPLv3 one, so the binary stays AGPL-3.0 and THIRD_PARTY_NOTICES names elkjs under GPL-3.0-or-later with its text. (b) EPL-2.0: its weak copyleft is not GPL-compatible unless the distributor names GPL as a Secondary License, which elkjs's choice already offers, so (a) is the simpler reading. (c) Do not bundle elkjs: replace it with a permissive layout library first, a larger change. The coordinator is not a lawyer; the person decides."

@@ -11,7 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
-  - serve-embedded-viewer
+  - slice-42
   - top-level-libraries-internal
   - listed-support-doublestar
   - listed-suites
@@ -5462,14 +5462,15 @@ items:
       (cancel-in-progress false with one group, a later push waiting), or let the docs-only
       judgement read ci.yml's green range. The coordinator judges cd after a wave at a quiet point
       meanwhile.
-  - id: serve-embedded-viewer
+  - id: slice-42
     title: itos-cc serve serves the viewer from its own binary, with no clone, Node or --ui
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was serve-embedded-viewer.
       The person (2026-10-24), to share the graph with a friend's TypeScript repositories before
       serve moves to a web app of its own: the release archives hold only the binary, LICENSE,
       THIRD_PARTY_NOTICES and the README (.goreleaser.yaml's archives), so serve without --ui
