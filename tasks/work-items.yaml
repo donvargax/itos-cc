@@ -153,8 +153,8 @@ items:
   - id: T-205
     title: Push CI runs the viewer's tests and typecheck
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: T-7
