@@ -5750,7 +5750,7 @@ items:
       scenarios. mutate.feature (317 of 602 scenarios, 108 step files) would need splitting too for
       the saving to matter. Re-measure hub churn after the refactor era before sizing it.
   - id: serve-static-on-kong
-    title: serve becomes a static file server on kong, serving the viewer and .metrics
+    title: The viewer reads .metrics/graph.json and serve becomes a static file server on kong
     phase: 1
     owner: null
     status: todo
@@ -5763,6 +5763,11 @@ items:
       lowest priority: done only when nothing else remains and the separate web app (the person's
       own and a friend's) has not moved out yet; if the web app has moved out, serve is removed
       instead.
+
+      The person 2026-10-24: graph-snapshot item 4 (the viewer reads the file, serve serves files
+      only, dropping /api/graph, /api/events, /api/source's handlers, the watch loop and --interval)
+      is parked here with item 5, at the same lowest priority. graph-snapshot keeps items 1 to 3
+      (the slice move, the itos-cc graph command, the nightly commit).
     deferred: >
       q-95: lowest priority, after everything else, and only if the web app has not moved to its own
       project by then.
