@@ -126,7 +126,11 @@ a `context.Context` first (decision 30); pure logic takes none.
   runner keeps `Load`,
   which opens a report, `Disk`, the `Files` port over the disk, and `Inventory`, which runs a
   static inventory command. An `Unmeasured` is an error, its `String`, so a command hands it
-  to the UI, whose classifier makes it its gap's problem. Its tests are package
+  to the UI, whose classifier makes it its gap's problem. `GoTimeouts` reads go test's output a
+  line at a time for the packages it stopped at their `-timeout` (slice-47), and an
+  `Unmeasured`'s `WithTimeouts` names each after its reason and marks it `TimedOut`: the
+  runner reads a Go plan's output through it as it passes the output on, and crap warns of a
+  `Failed` root so marked. Its tests are package
   `coverage_test`, since its `porttest` imports it.
 - `internal/coverage/port` declares `Files`, what the report-path matcher asks of the disk:
   `SameFile(ctx, path, among)`, whether a path names a regular file and which of the sources

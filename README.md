@@ -377,6 +377,13 @@ A file no test loads is untested, not unmeasured: when the coverage run for
 its language succeeded and wrote its report, its functions show 0%, even
 when it is scored alone and the run found no test for it.
 
+`go test` stops a package's tests at its `-timeout`, 10 minutes per package
+by default, and crap passes it none of its own. When go test reports a
+package timed out, crap's warning without `--threshold` names the package
+and its limit, and says to raise it through `GOFLAGS=-timeout=<duration>`,
+such as `GOFLAGS=-timeout=90m itos-cc crap`; the scores and the exit code
+stay what the run measured.
+
 A function with branches in the report is scored by the share of branches it
 took (LCOV `BRDA` blocks with two or more arms, JaCoCo branch counters,
 coverage.py with `--branch`); one without is scored by its lines. Go
