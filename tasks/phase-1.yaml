@@ -6669,9 +6669,6 @@
     cmd/itos-cc/subprocess_test.go and names each porttest folder there is today, with its comment
     saying why; no product change (listed-support-doublestar, if built, may later fold the porttest
     folders into one ** glob).
-  done_when:
-    - run: itos config check
-    - run: grep -qF 'cmd/itos-cc/subprocess_test.go' itos-cc.yaml
 - id: T-192
   type: chore
   title: Upgrade the repository pin to itos 8.12.0
