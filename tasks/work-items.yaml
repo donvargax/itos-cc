@@ -1672,7 +1672,7 @@ items:
     title: Each push judges one fresh mutation site of its changed code
     phase: 1
     owner: donvargax
-    status: todo
+    status: doing
     depends_on: [T-188]
     kind: task
   - id: T-27
