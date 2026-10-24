@@ -1,6 +1,7 @@
 package freshenv
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -38,6 +39,22 @@ func prepareFreshContext(ctx context.Context, p *FreshPlan, opt freshPreparation
 	return e.Prepare(ctx, p, opt.Scope)
 }
 
+// coverageLog is a buffer for what the coverage commands a test runs
+// print, which the test logs only when it fails (T-203): written to the
+// process's standard error, a line such as "itos-cc: coverage: go: exec:
+// ..." became the package's summary under go test -cover, which reads the
+// last line holding "coverage: ".
+func coverageLog(t *testing.T) *bytes.Buffer {
+	t.Helper()
+	var log bytes.Buffer
+	t.Cleanup(func() {
+		if t.Failed() {
+			t.Logf("coverage commands printed:\n%s", log.String())
+		}
+	})
+	return &log
+}
+
 func TestFreshPreparationReportsEveryCommandFailure(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -61,7 +78,7 @@ func TestFreshPreparationReportsEveryCommandFailure(t *testing.T) {
 		writeReport() // A usable artifact does not disguise the nonzero exit.
 		return fmt.Errorf("helper exited nonzero")
 	}
-	measured, calls, err := covrun.RunSupervised(context.Background(), []covrun.Plan{plan}, []string{source}, os.Stderr, execute)
+	measured, calls, err := covrun.RunSupervised(context.Background(), []covrun.Plan{plan}, []string{source}, coverageLog(t), execute)
 	if err == nil {
 		t.Fatal("supervised preparation accepted failed commands that wrote a report")
 	}
@@ -478,11 +495,12 @@ func TestFreshPreparationPreservesCompleteDefaults(t *testing.T) {
 	report := filepath.Join(root, "coverage.out")
 	plan := covrun.Plan{Language: "go", Dir: root, Sources: []string{source},
 		Commands: [][]string{{"legacy-helper"}}, Reports: []string{report}}
-	legacy := covrun.Run(t.Context(), []covrun.Plan{plan}, []string{source}, os.Stderr, nil)
+	log := coverageLog(t)
+	legacy := covrun.Run(t.Context(), []covrun.Plan{plan}, []string{source}, log, nil)
 	if legacy == nil || len(legacy.Missing()) == 0 {
 		t.Fatalf("legacy complete-run soft failure behavior changed: %#v", legacy)
 	}
-	if _, _, err := covrun.RunSupervised(context.Background(), []covrun.Plan{plan}, []string{source}, os.Stderr,
+	if _, _, err := covrun.RunSupervised(context.Background(), []covrun.Plan{plan}, []string{source}, log,
 		func(context.Context, *exec.Cmd) error { return errors.New("owned helper failed") }); err == nil {
 		t.Fatal("opt-in preparation must fail closed while legacy Run remains soft")
 	}
