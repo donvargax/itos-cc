@@ -5780,7 +5780,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-208]
     kind: idea
     why: >
       graph-snapshot item 2 (q-95, the person 2026-10-24): a cli.Declaration in
