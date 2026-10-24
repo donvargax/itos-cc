@@ -6724,3 +6724,29 @@
     - run: test ! -d project && test -d internal/project
     - run: "! grep -rn --include='*.go' '\"github.com/donvargax/itos-cc/project\"' ."
     - run: tools/bin/architecture-check
+- id: T-195
+  type: refactor
+  title: metrics folds into internal/metricsdir
+  why: >
+    ADR-0061, T3 of six: metrics (6 files, its Windows rename file included) folds into
+    internal/metricsdir, package metricsdir, the snapshot adapter that already wraps it (ADR-0041:
+    the bytes and atomic writes stay behind it); no identifier collides; the package comments merge.
+    graph's DirOf calls, coveragetools' Dir() and cmd's tests change their qualifier (coveragetools
+    then imports internal/metricsdir, an adapter using another's helper, accepted). Its 4 snapshots
+    move to .metrics/mutate/internal/metricsdir. depguard: metricsdir's rule allows
+    internal/snapshot and drops metrics, coveragetools names internal/metricsdir. architecture-check
+    drops metrics' row. Keep ports, ctx and domain rules whole (ADR-0047); refactor commits, no
+    behaviour change, no binary comparison per move (the proof is T-198); every package moved under
+    internal/ gets its own depguard rule in .golangci.yml and the exclusions in slices and
+    slice-fakes, or depguard reads it as a slice; git mv its .metrics/mutate snapshots with its
+    files (never hand-edit crap, dry or scrap.json: the nightly rewrites them); delete its own
+    exemption row in tools/bin/architecture-check; update docs/go.md's package and boundary lists,
+    docs/architecture.md, docs/ownership.md, README's layout table and the docs/dart path
+    references; rerun go run ./tools/bin/assemble and diff. A push whose qualifier changes touch
+    function bodies may draw a fresh mutation site and kills what it meets (ADR-0059). The plan is
+    scratchpad/plan-top-level-libraries-internal.md of the coordinator's session, its decisions now
+    ADR-0061 (q-89).
+  done_when:
+    - run: test ! -d metrics
+    - run: "! grep -rn --include='*.go' 'itos-cc/metrics\"' ."
+    - run: tools/bin/architecture-check
