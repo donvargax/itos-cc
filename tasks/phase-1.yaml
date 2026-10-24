@@ -6836,3 +6836,15 @@
     if it says pushes cancel, is corrected. No product change.
   done_when:
     - run: "test $(grep -c 'cancel-in-progress: true' .github/workflows/cd.yml) -eq 0"
+- id: T-202
+  type: build
+  title: tools/bin/pinned's download fails fast instead of hanging
+  why: >
+    Seen in T-195 (2026-10-24): tools/bin/pinned downloads golangci-lint into each new worktree's
+    .tools/, and its curl has no connect or overall timeout, so a stalled download hung
+    architecture-check for over 10 minutes until the agent killed the curl by its pid; a retry took
+    seconds. A --connect-timeout and --max-time (and maybe one retry) make it fail fast with a
+    message naming the download.
+  done_when:
+    - run: grep -q -- '--connect-timeout' tools/bin/pinned
+    - run: grep -q -- '--max-time' tools/bin/pinned

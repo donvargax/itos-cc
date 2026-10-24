@@ -14,7 +14,7 @@ queue:
   - listed-support-per-test
   - listed-suites
   - T-201
-  - pinned-curl-timeout
+  - T-202
   - counted-config-own-fix
   - mismatch-fix-quotes
   - coverage-line-stderr
@@ -5627,19 +5627,13 @@ items:
     status: done
     depends_on: [T-197]
     kind: task
-  - id: pinned-curl-timeout
+  - id: T-202
     title: tools/bin/pinned's download fails fast instead of hanging
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Seen in T-195 (2026-10-24): tools/bin/pinned downloads golangci-lint into each new worktree's
-      .tools/, and its curl has no connect or overall timeout, so a stalled download hung
-      architecture-check for over 10 minutes until the agent killed the curl by its pid; a retry
-      took seconds. A --connect-timeout and --max-time (and maybe one retry) make it fail fast with
-      a message naming the download.
+    kind: task
   - id: bug-7
     title: A timed-out mutant's reaping slack in the timing steps is tighter than the product's cleanup deadline
     phase: 1
