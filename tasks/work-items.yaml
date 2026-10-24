@@ -5606,3 +5606,10 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: T-197
+    title: config becomes mutation's settings adapter
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
