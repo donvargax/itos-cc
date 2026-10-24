@@ -74,11 +74,11 @@
         "nodes": 29
       },
       "right": {
-        "file": "internal/slices/mutation/adapters/freshenv/baseline.go",
-        "start_line": 200,
-        "end_line": 203,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/freshenv",
-        "name": "fileExists",
+        "file": "internal/project/node.go",
+        "start_line": 73,
+        "end_line": 76,
+        "namespace": "github.com/donvargax/itos-cc/internal/project",
+        "name": "exists",
         "nodes": 29
       }
     },
@@ -94,11 +94,11 @@
         "nodes": 29
       },
       "right": {
-        "file": "project/node.go",
-        "start_line": 73,
-        "end_line": 76,
-        "namespace": "github.com/donvargax/itos-cc/project",
-        "name": "exists",
+        "file": "internal/slices/mutation/adapters/freshenv/baseline.go",
+        "start_line": 200,
+        "end_line": 203,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/freshenv",
+        "name": "fileExists",
         "nodes": 29
       }
     },
@@ -386,6 +386,46 @@
       "score": 1,
       "language": "go",
       "left": {
+        "file": "internal/project/node.go",
+        "start_line": 73,
+        "end_line": 76,
+        "namespace": "github.com/donvargax/itos-cc/internal/project",
+        "name": "exists",
+        "nodes": 29
+      },
+      "right": {
+        "file": "internal/slices/mutation/adapters/freshenv/baseline.go",
+        "start_line": 200,
+        "end_line": 203,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/freshenv",
+        "name": "fileExists",
+        "nodes": 29
+      }
+    },
+    {
+      "score": 1,
+      "language": "go",
+      "left": {
+        "file": "internal/project/surroundings.go",
+        "start_line": 21,
+        "end_line": 24,
+        "namespace": "github.com/donvargax/itos-cc/internal/project.Surroundings",
+        "name": "Exists",
+        "nodes": 37
+      },
+      "right": {
+        "file": "internal/workdir/tree.go",
+        "start_line": 55,
+        "end_line": 58,
+        "namespace": "github.com/donvargax/itos-cc/internal/workdir.Tree",
+        "name": "Exists",
+        "nodes": 37
+      }
+    },
+    {
+      "score": 1,
+      "language": "go",
+      "left": {
         "file": "internal/slices/dry/dry.go",
         "start_line": 59,
         "end_line": 87,
@@ -400,26 +440,6 @@
         "namespace": "github.com/donvargax/itos-cc/internal/slices/units.CLI",
         "name": "Contract",
         "nodes": 102
-      }
-    },
-    {
-      "score": 1,
-      "language": "go",
-      "left": {
-        "file": "internal/slices/mutation/adapters/freshenv/baseline.go",
-        "start_line": 200,
-        "end_line": 203,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/freshenv",
-        "name": "fileExists",
-        "nodes": 29
-      },
-      "right": {
-        "file": "project/node.go",
-        "start_line": 73,
-        "end_line": 76,
-        "namespace": "github.com/donvargax/itos-cc/project",
-        "name": "exists",
-        "nodes": 29
       }
     },
     {
@@ -620,26 +640,6 @@
         "namespace": "github.com/donvargax/itos-cc/tools/bin/release-notes",
         "name": "plural",
         "nodes": 40
-      }
-    },
-    {
-      "score": 1,
-      "language": "go",
-      "left": {
-        "file": "internal/workdir/tree.go",
-        "start_line": 55,
-        "end_line": 58,
-        "namespace": "github.com/donvargax/itos-cc/internal/workdir.Tree",
-        "name": "Exists",
-        "nodes": 37
-      },
-      "right": {
-        "file": "project/surroundings.go",
-        "start_line": 21,
-        "end_line": 24,
-        "namespace": "github.com/donvargax/itos-cc/project.Surroundings",
-        "name": "Exists",
-        "nodes": 37
       }
     },
     {
@@ -895,8 +895,8 @@
       },
       "right": {
         "file": "tools/bin/notices/main.go",
-        "start_line": 117,
-        "end_line": 121,
+        "start_line": 168,
+        "end_line": 172,
         "namespace": "github.com/donvargax/itos-cc/tools/bin/notices",
         "name": "main",
         "nodes": 53
@@ -1327,16 +1327,16 @@
       "language": "go",
       "left": {
         "file": "internal/slices/mutation/errors.go",
-        "start_line": 264,
-        "end_line": 277,
+        "start_line": 298,
+        "end_line": 311,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "sampleError",
         "nodes": 96
       },
       "right": {
         "file": "internal/slices/mutation/errors.go",
-        "start_line": 310,
-        "end_line": 327,
+        "start_line": 344,
+        "end_line": 361,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "exceptError",
         "nodes": 127
@@ -1348,10 +1348,10 @@
       "left": {
         "file": "internal/slices/mutation/except_contract.go",
         "start_line": 6,
-        "end_line": 124,
+        "end_line": 138,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Except",
         "name": "Contract",
-        "nodes": 146
+        "nodes": 150
       },
       "right": {
         "file": "internal/slices/mutation/list_contract.go",
@@ -1366,39 +1366,19 @@
       "score": 0.825,
       "language": "go",
       "left": {
-        "file": "internal/metricsdir/store.go",
-        "start_line": 59,
-        "end_line": 67,
-        "namespace": "github.com/donvargax/itos-cc/internal/metricsdir.Store",
-        "name": "Write",
-        "nodes": 109
+        "file": "internal/project/flutter.go",
+        "start_line": 127,
+        "end_line": 134,
+        "namespace": "github.com/donvargax/itos-cc/internal/project",
+        "name": "hasGeneratedSuffix",
+        "nodes": 40
       },
       "right": {
-        "file": "internal/metricsdir/store.go",
-        "start_line": 72,
-        "end_line": 80,
-        "namespace": "github.com/donvargax/itos-cc/internal/metricsdir.Store",
-        "name": "Remove",
-        "nodes": 105
-      }
-    },
-    {
-      "score": 0.825,
-      "language": "go",
-      "left": {
         "file": "internal/slices/mutation/adapters/worktrees/worker_scratch.go",
         "start_line": 117,
         "end_line": 124,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/worktrees",
         "name": "hasWorkerPrefix",
-        "nodes": 40
-      },
-      "right": {
-        "file": "project/flutter.go",
-        "start_line": 127,
-        "end_line": 134,
-        "namespace": "github.com/donvargax/itos-cc/project",
-        "name": "hasGeneratedSuffix",
         "nodes": 40
       }
     },
@@ -1466,40 +1446,20 @@
       "score": 0.823,
       "language": "go",
       "left": {
-        "file": "internal/slices/mutation/check_contract.go",
-        "start_line": 6,
-        "end_line": 153,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Check",
-        "name": "Contract",
-        "nodes": 160
-      },
-      "right": {
-        "file": "internal/slices/mutation/except_contract.go",
-        "start_line": 6,
-        "end_line": 124,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Except",
-        "name": "Contract",
-        "nodes": 146
-      }
-    },
-    {
-      "score": 0.822,
-      "language": "go",
-      "left": {
         "file": "internal/metricsdir/store.go",
-        "start_line": 84,
-        "end_line": 93,
+        "start_line": 61,
+        "end_line": 69,
         "namespace": "github.com/donvargax/itos-cc/internal/metricsdir.Store",
-        "name": "List",
-        "nodes": 114
+        "name": "Write",
+        "nodes": 107
       },
       "right": {
-        "file": "internal/workdir/tree.go",
-        "start_line": 63,
-        "end_line": 72,
-        "namespace": "github.com/donvargax/itos-cc/internal/workdir.Tree",
-        "name": "Read",
-        "nodes": 108
+        "file": "internal/metricsdir/store.go",
+        "start_line": 74,
+        "end_line": 82,
+        "namespace": "github.com/donvargax/itos-cc/internal/metricsdir.Store",
+        "name": "Remove",
+        "nodes": 103
       }
     },
     {
@@ -1526,7 +1486,7 @@
   "groups": [
     {
       "language": "go",
-      "min_score": 0.823,
+      "min_score": 0.824,
       "max_score": 1,
       "members": [
         {
@@ -1546,20 +1506,12 @@
           "nodes": 102
         },
         {
-          "file": "internal/slices/mutation/check_contract.go",
-          "start_line": 6,
-          "end_line": 153,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Check",
-          "name": "Contract",
-          "nodes": 160
-        },
-        {
           "file": "internal/slices/mutation/except_contract.go",
           "start_line": 6,
-          "end_line": 124,
+          "end_line": 138,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Except",
           "name": "Contract",
-          "nodes": 146
+          "nodes": 150
         },
         {
           "file": "internal/slices/mutation/list_contract.go",
@@ -1576,14 +1528,6 @@
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Run",
           "name": "Contract",
           "nodes": 174
-        },
-        {
-          "file": "internal/slices/mutation/sample_contract.go",
-          "start_line": 6,
-          "end_line": 92,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Sample",
-          "name": "Contract",
-          "nodes": 136
         },
         {
           "file": "internal/slices/scrap/scrap.go",
@@ -1625,19 +1569,19 @@
           "nodes": 29
         },
         {
+          "file": "internal/project/node.go",
+          "start_line": 73,
+          "end_line": 76,
+          "namespace": "github.com/donvargax/itos-cc/internal/project",
+          "name": "exists",
+          "nodes": 29
+        },
+        {
           "file": "internal/slices/mutation/adapters/freshenv/baseline.go",
           "start_line": 200,
           "end_line": 203,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/freshenv",
           "name": "fileExists",
-          "nodes": 29
-        },
-        {
-          "file": "project/node.go",
-          "start_line": 73,
-          "end_line": 76,
-          "namespace": "github.com/donvargax/itos-cc/project",
-          "name": "exists",
           "nodes": 29
         }
       ]
@@ -2134,6 +2078,29 @@
       "max_score": 1,
       "members": [
         {
+          "file": "internal/project/surroundings.go",
+          "start_line": 21,
+          "end_line": 24,
+          "namespace": "github.com/donvargax/itos-cc/internal/project.Surroundings",
+          "name": "Exists",
+          "nodes": 37
+        },
+        {
+          "file": "internal/workdir/tree.go",
+          "start_line": 55,
+          "end_line": 58,
+          "namespace": "github.com/donvargax/itos-cc/internal/workdir.Tree",
+          "name": "Exists",
+          "nodes": 37
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "min_score": 1,
+      "max_score": 1,
+      "members": [
+        {
           "file": "internal/slices/mutation/domain/coverage.go",
           "start_line": 46,
           "end_line": 62,
@@ -2194,29 +2161,6 @@
           "namespace": "github.com/donvargax/itos-cc/tools/bin/release-notes",
           "name": "plural",
           "nodes": 40
-        }
-      ]
-    },
-    {
-      "language": "go",
-      "min_score": 1,
-      "max_score": 1,
-      "members": [
-        {
-          "file": "internal/workdir/tree.go",
-          "start_line": 55,
-          "end_line": 58,
-          "namespace": "github.com/donvargax/itos-cc/internal/workdir.Tree",
-          "name": "Exists",
-          "nodes": 37
-        },
-        {
-          "file": "project/surroundings.go",
-          "start_line": 21,
-          "end_line": 24,
-          "namespace": "github.com/donvargax/itos-cc/project.Surroundings",
-          "name": "Exists",
-          "nodes": 37
         }
       ]
     },
@@ -2302,6 +2246,29 @@
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
           "name": "RecordedScope",
           "nodes": 26
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "min_score": 0.907,
+      "max_score": 0.907,
+      "members": [
+        {
+          "file": "internal/slices/mutation/check_contract.go",
+          "start_line": 6,
+          "end_line": 153,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Check",
+          "name": "Contract",
+          "nodes": 160
+        },
+        {
+          "file": "internal/slices/mutation/sample_contract.go",
+          "start_line": 6,
+          "end_line": 92,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Sample",
+          "name": "Contract",
+          "nodes": 136
         }
       ]
     },
@@ -2397,8 +2364,8 @@
         },
         {
           "file": "tools/bin/notices/main.go",
-          "start_line": 117,
-          "end_line": 121,
+          "start_line": 168,
+          "end_line": 172,
           "namespace": "github.com/donvargax/itos-cc/tools/bin/notices",
           "name": "main",
           "nodes": 53
@@ -2550,16 +2517,16 @@
       "members": [
         {
           "file": "internal/slices/mutation/errors.go",
-          "start_line": 264,
-          "end_line": 277,
+          "start_line": 298,
+          "end_line": 311,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "sampleError",
           "nodes": 96
         },
         {
           "file": "internal/slices/mutation/errors.go",
-          "start_line": 310,
-          "end_line": 327,
+          "start_line": 344,
+          "end_line": 361,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "exceptError",
           "nodes": 127
@@ -2572,28 +2539,13 @@
       "max_score": 0.825,
       "members": [
         {
-          "file": "internal/metricsdir/store.go",
-          "start_line": 59,
-          "end_line": 67,
-          "namespace": "github.com/donvargax/itos-cc/internal/metricsdir.Store",
-          "name": "Write",
-          "nodes": 109
+          "file": "internal/project/flutter.go",
+          "start_line": 127,
+          "end_line": 134,
+          "namespace": "github.com/donvargax/itos-cc/internal/project",
+          "name": "hasGeneratedSuffix",
+          "nodes": 40
         },
-        {
-          "file": "internal/metricsdir/store.go",
-          "start_line": 72,
-          "end_line": 80,
-          "namespace": "github.com/donvargax/itos-cc/internal/metricsdir.Store",
-          "name": "Remove",
-          "nodes": 105
-        }
-      ]
-    },
-    {
-      "language": "go",
-      "min_score": 0.825,
-      "max_score": 0.825,
-      "members": [
         {
           "file": "internal/slices/mutation/adapters/worktrees/worker_scratch.go",
           "start_line": 117,
@@ -2601,30 +2553,37 @@
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/worktrees",
           "name": "hasWorkerPrefix",
           "nodes": 40
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "min_score": 0.823,
+      "max_score": 0.823,
+      "members": [
+        {
+          "file": "internal/metricsdir/store.go",
+          "start_line": 61,
+          "end_line": 69,
+          "namespace": "github.com/donvargax/itos-cc/internal/metricsdir.Store",
+          "name": "Write",
+          "nodes": 107
         },
         {
-          "file": "project/flutter.go",
-          "start_line": 127,
-          "end_line": 134,
-          "namespace": "github.com/donvargax/itos-cc/project",
-          "name": "hasGeneratedSuffix",
-          "nodes": 40
+          "file": "internal/metricsdir/store.go",
+          "start_line": 74,
+          "end_line": 82,
+          "namespace": "github.com/donvargax/itos-cc/internal/metricsdir.Store",
+          "name": "Remove",
+          "nodes": 103
         }
       ]
     },
     {
       "language": "go",
       "min_score": 0.821,
-      "max_score": 0.822,
+      "max_score": 0.821,
       "members": [
-        {
-          "file": "internal/metricsdir/store.go",
-          "start_line": 84,
-          "end_line": 93,
-          "namespace": "github.com/donvargax/itos-cc/internal/metricsdir.Store",
-          "name": "List",
-          "nodes": 114
-        },
         {
           "file": "internal/workdir/tree.go",
           "start_line": 41,
