@@ -5640,19 +5640,6 @@ items:
     title: A timed-out mutant's reaping slack in the timing steps is tighter than the product's cleanup deadline
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: bug
-    why: >
-      cd.yml run 40079519833 (951b73df) failed on macos-latest features at ID-MUT-15 'Fast suites
-      still get the allowance': the mutant timed out after 7.2s against a bound of 7.0s (5.5s + 10
-      times the longest other run past the baseline, 0.5s, + reaping(platform), 1s off Windows and
-      3s on it, features/mutate_baseline.go:94). The product's own contract gives a timed-out
-      mutant's owned processes one shared five-second deadline to be terminated and joined (the
-      ownership scenarios, mutate.feature around 4285 and 4412), so a loaded runner may take longer
-      than 1s to reap within the contract and the step fails a run the product got right. The slack
-      follows the product's cleanup deadline (named once, shared with the ownership steps, never a
-      second number), on every platform, so the step still refuses a timeout that fires late but not
-      one that reaps within its contract; the lower bound (never before the timeout) stays. A
-      harness fix, no product change; the commit names ID-MUT-15 and the other timing scenarios
-      timesOutAfter serves.
