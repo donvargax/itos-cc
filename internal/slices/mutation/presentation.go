@@ -21,9 +21,24 @@ type Presentation struct {
 	Root     string
 	Tree     selport.Tree
 	Problems []*cli.Problem
+	// Separator is the path separator of the system that named the files
+	// given to it, which its plain lines name slash-separated (bug-9);
+	// zero is this system's, filepath.Separator.
+	Separator rune
 }
 
 func (p *Presentation) report(problem *cli.Problem) { p.Problems = append(p.Problems, problem) }
+
+// plain is the file rel as a plain line names it: slash-separated from
+// the working directory on every system (bug-9). --json and the problems'
+// messages name it as they always did.
+func (p *Presentation) plain(rel string) string {
+	separator := p.Separator
+	if separator == 0 {
+		separator = filepath.Separator
+	}
+	return Slashed(rel, separator)
+}
 
 // baselineFailed is the problem of the file rel whose baseline failed, so
 // none of its mutants was done, judged or run, before command runs again:
@@ -77,7 +92,7 @@ func (p *Presentation) Failed(rel, function string, items []mutants.Mutant, fail
 func (p *Presentation) Mutant(rel, function string, m mutants.Mutant, rule, what, verdict, fix string) {
 	if !p.JSON {
 		_, _ = fmt.Fprintf(p.UI.Stdout, "  %s %s → %s in %s, %s\n", what,
-			Quote(m.Original), Quote(m.Replacement), function, SiteAt(rel, m.Line, m.Column))
+			Quote(m.Original), Quote(m.Replacement), function, SiteAt(p.plain(rel), m.Line, m.Column))
 	}
 	problem := cli.NewProblem(cli.CodeNo, rule,
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s %s", rel, m.Line, m.Column, Quote(m.Original), Quote(m.Replacement), function, verdict),
@@ -90,7 +105,7 @@ func (p *Presentation) Mutant(rel, function string, m mutants.Mutant, rule, what
 
 func (p *Presentation) CoverageProblem(language, file, function string, line int, rule, message string) {
 	if !p.JSON {
-		_, _ = fmt.Fprintf(p.UI.Stdout, "  %s %s:%d in %s\n", strings.TrimPrefix(rule, "mutation."), file, line, function)
+		_, _ = fmt.Fprintf(p.UI.Stdout, "  %s %s:%d in %s\n", strings.TrimPrefix(rule, "mutation."), p.plain(file), line, function)
 	}
 	fix := "Add a test that executes the uncovered " + LanguageName(language) + " code, then run mutation run again."
 	if rule == "mutation.coverage-unsupported" {
@@ -104,9 +119,9 @@ func (p *Presentation) CoverageProblem(language, file, function string, line int
 
 func (p *Presentation) StaleExceptions(ctx context.Context, rel string, stale []mutants.StaleException) {
 	for _, e := range stale {
-		at, shown := fmt.Sprintf("%s:%d:%d", rel, e.Line, e.Column), SiteAt(rel, e.Line, e.Column)
+		at, shown := fmt.Sprintf("%s:%d:%d", rel, e.Line, e.Column), SiteAt(p.plain(rel), e.Line, e.Column)
 		if e.Line == 0 {
-			at, shown = rel, rel
+			at, shown = rel, p.plain(rel)
 		}
 		change := fmt.Sprintf("%s → %s in %s", Quote(e.Original), Quote(e.Replacement), e.Function)
 		var newFile string
@@ -116,7 +131,7 @@ func (p *Presentation) StaleExceptions(ctx context.Context, rel string, stale []
 		if !p.JSON {
 			why := e.Why
 			if newFile != "" {
-				why += " to " + newFile
+				why += " to " + p.plain(newFile)
 			}
 			_, _ = fmt.Fprintf(p.UI.Stdout, "  exception-stale %s, %s (%s)\n", change, shown, why)
 		}

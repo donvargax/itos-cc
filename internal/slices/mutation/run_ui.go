@@ -161,7 +161,7 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 		Progress:            selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui},
 	})
 	p := &Presentation{UI: ui, JSON: c.JSON, Root: found.Root, Tree: h.Tree}
-	result.NotBuilt = sayNotBuilt(ui, found.NotBuilt)
+	result.NotBuilt = p.sayNotBuilt(found.NotBuilt)
 	switch {
 	case found.Gaps != nil:
 		p.gaps(*found.Gaps)
@@ -194,15 +194,23 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 		result.Orphans = append(result.Orphans, Orphan{File: ui.Rel(orphan.Path), Snapshot: orphan.Snapshot, Why: orphan.Why})
 	}
 	p.Orphans(result.Orphans, "was an orphan, and is removed")
-	if stop := found.Stop; stop != nil {
-		result.Stop = &runStop{Stopped: true, Rule: stop.Rule, Subject: p.stopSubject(stop)}
-		if !c.JSON {
-			w := result.Work
-			_, _ = fmt.Fprintf(ui.Stdout, "stopped early at the first actionable failure, %s %s: %d completed, %d cancelled, %d unattempted, %d blocked; a file it cut short keeps its source as it was, and its snapshot only what was judged\n",
-				stop.Rule, describeStop(stop), w.Completed, w.Cancelled, w.Unattempted, w.Blocked)
-		}
-	}
+	p.stopped(found.Stop, &result)
 	return ui.Emit(c.JSON, result, p.Problems)
+}
+
+// stopped records stop, what stopped a fail-fast run at its first
+// actionable failure, in result, and says so on stdout, naming its file
+// slash-separated; a run nothing stopped, stop nil, records nothing.
+func (p *Presentation) stopped(stop *mutants.Stop, result *runResult) {
+	if stop == nil {
+		return
+	}
+	result.Stop = &runStop{Stopped: true, Rule: stop.Rule, Subject: p.stopSubject(stop)}
+	if !p.JSON {
+		w := result.Work
+		_, _ = fmt.Fprintf(p.UI.Stdout, "stopped early at the first actionable failure, %s %s: %d completed, %d cancelled, %d unattempted, %d blocked; a file it cut short keeps its source as it was, and its snapshot only what was judged\n",
+			stop.Rule, p.describeStop(stop), w.Completed, w.Cancelled, w.Unattempted, w.Blocked)
+	}
 }
 
 // value is the value of flag name the command line gave, nil when it gave
@@ -275,7 +283,7 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 			result.Files = append(result.Files, f)
 			if !c.JSON {
 				_, _ = fmt.Fprintf(ui.Stdout, "blocked, %s: the tests of %s, or the listed tests its mutants run, fail without any mutant (ran %d, reused %d; %d completed, %d cancelled, %d unattempted, %d blocked); cache %s\n",
-					snapshotKept(r), r.Rel, f.Ran, f.Reused, work.Completed, work.Cancelled, work.Unattempted, work.Blocked, cache)
+					snapshotKept(r), p.plain(r.Rel), f.Ran, f.Reused, work.Completed, work.Cancelled, work.Unattempted, work.Blocked, cache)
 				if r.BaselineFailed {
 					_, _ = fmt.Fprintln(ui.Stdout, HeadAndTail(r.BaselineOutput, reportedLines))
 				}
@@ -296,7 +304,7 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 			// without it: it is not decided, so neither is the file.
 			result.Files = append(result.Files, runFile{File: r.Rel, Baseline: "failed", Judged: r.Judged, Mutants: []runMutant{}})
 			if !c.JSON {
-				_, _ = fmt.Fprintf(ui.Stdout, "listed tests the mutants of %s run fail without any mutant; snapshot not updated\n", r.Rel)
+				_, _ = fmt.Fprintf(ui.Stdout, "listed tests the mutants of %s run fail without any mutant; snapshot not updated\n", p.plain(r.Rel))
 			}
 			p.FailedSelections(r.FailedSelections, reported, "mutation run")
 			p.StaleExceptions(ctx, r.Rel, r.StaleExceptions)
@@ -305,7 +313,7 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 		if r.BaselineFailed {
 			result.Files = append(result.Files, runFile{File: r.Rel, Baseline: "failed", Judged: r.Judged, Mutants: []runMutant{}})
 			if !c.JSON {
-				_, _ = fmt.Fprintf(ui.Stdout, "baseline tests of %s fail; snapshot not updated\n%s\n", r.Rel, HeadAndTail(r.BaselineOutput, reportedLines))
+				_, _ = fmt.Fprintf(ui.Stdout, "baseline tests of %s fail; snapshot not updated\n%s\n", p.plain(r.Rel), HeadAndTail(r.BaselineOutput, reportedLines))
 			}
 			p.report(p.baselineFailed(r.Rel, r.BaselineCopy, r.BaselineLeftOut, "judged", "mutation run").With("output", HeadAndTail(r.BaselineOutput, reportedLines)))
 			p.StaleExceptions(ctx, r.Rel, r.StaleExceptions)
@@ -347,13 +355,13 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 			if f.Excepted > 0 {
 				counts = fmt.Sprintf("%d killed, %d survived, %d excepted, %d uncovered", f.Killed, f.Survived, f.Excepted, f.Uncovered)
 			}
-			line := fmt.Sprintf("%s in %s (ran %d, reused %d)", counts, r.Rel, f.Ran, f.Reused)
+			line := fmt.Sprintf("%s in %s (ran %d, reused %d)", counts, p.plain(r.Rel), f.Ran, f.Reused)
 			if r.Judged != nil {
 				line += fmt.Sprintf(" (judged %d of %d functions)", len(r.Judged), r.Functions)
 			}
 			if r.Incomplete {
 				line = fmt.Sprintf("stopped early, %s: %s in %s (ran %d, reused %d); %d cancelled, %d unattempted; cache %s",
-					snapshotKept(r), counts, r.Rel, f.Ran, f.Reused, work.Cancelled, work.Unattempted, cache)
+					snapshotKept(r), counts, p.plain(r.Rel), f.Ran, f.Reused, work.Cancelled, work.Unattempted, cache)
 			}
 			_, _ = fmt.Fprintln(ui.Stdout, line)
 		}
@@ -524,19 +532,21 @@ func (p *Presentation) stopSubject(s *mutants.Stop) map[string]any {
 	return map[string]any{"file": s.File}
 }
 
-// describeStop names the stop's failure in plain output.
-func describeStop(s *mutants.Stop) string {
+// describeStop names the stop's failure in plain output, its file
+// slash-separated.
+func (p *Presentation) describeStop(s *mutants.Stop) string {
+	file := p.plain(s.File)
 	switch {
 	case s.Site != nil:
-		return fmt.Sprintf("%s → %s in %s, %s", Quote(s.Site.Original), Quote(s.Site.Replacement), s.Function, SiteAt(s.File, s.Site.Line, s.Site.Column))
+		return fmt.Sprintf("%s → %s in %s, %s", Quote(s.Site.Original), Quote(s.Site.Replacement), s.Function, SiteAt(file, s.Site.Line, s.Site.Column))
 	case s.Exception != nil && s.Exception.Line != 0:
-		return fmt.Sprintf("in %s, %s (%s)", s.Exception.Function, SiteAt(s.File, s.Exception.Line, s.Exception.Column), s.Exception.Why)
+		return fmt.Sprintf("in %s, %s (%s)", s.Exception.Function, SiteAt(file, s.Exception.Line, s.Exception.Column), s.Exception.Why)
 	case s.Exception != nil:
-		return fmt.Sprintf("%s in %s (%s)", s.File, s.Exception.Function, s.Exception.Why)
+		return fmt.Sprintf("%s in %s (%s)", file, s.Exception.Function, s.Exception.Why)
 	case s.Selection != nil:
 		return "of the listed tests " + strings.Join(s.Selection.IDs, " ")
 	case s.Function != "":
-		return fmt.Sprintf("%s:%d in %s", s.File, s.Line, s.Function)
+		return fmt.Sprintf("%s:%d in %s", file, s.Line, s.Function)
 	}
-	return "in " + s.File
+	return "in " + file
 }

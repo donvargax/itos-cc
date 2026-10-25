@@ -266,7 +266,7 @@ func TestTheSampleAsJSON(t *testing.T) {
 	for _, p := range m.Problems {
 		fromJSON = append(fromJSON, fmt.Sprintf("  mismatch %s → %s in %s, %s line %v column %v: recorded %s, now %s\n",
 			mutationslice.Quote(p["original"].(string)), mutationslice.Quote(p["replacement"].(string)), p["function"],
-			p["file"], p["line"], p["column"], p["recorded"], p["outcome"]))
+			filepath.ToSlash(p["file"].(string)), p["line"], p["column"], p["recorded"], p["outcome"]))
 	}
 	if !slices.Equal(listed, fromJSON) {
 		t.Errorf("plain output lists:\n%q\nwant the problems of --json:\n%q", listed, fromJSON)

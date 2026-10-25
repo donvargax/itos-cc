@@ -3,7 +3,6 @@ package mutation
 import (
 	"context"
 
-	"github.com/donvargax/itos-cc/internal/cli"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -28,13 +27,13 @@ type notBuiltFile struct {
 }
 
 // sayNotBuilt says on stderr, once for each, that a file is not built on
-// this platform, so not judged here, and gives them as --json lists them,
-// nil for none.
-func sayNotBuilt(ui *cli.UI, files []mutants.NotBuilt) []notBuiltFile {
+// this platform, so not judged here, naming it slash-separated, and gives
+// them as --json lists them, nil for none.
+func (p *Presentation) sayNotBuilt(files []mutants.NotBuilt) []notBuiltFile {
 	var out []notBuiltFile
 	for _, f := range files {
-		rel := ui.Rel(f.Path)
-		ui.Line("not built on " + f.Platform.String() + ", so " + rel + " is not judged here")
+		rel := p.UI.Rel(f.Path)
+		p.UI.Line("not built on " + f.Platform.String() + ", so " + p.plain(rel) + " is not judged here")
 		out = append(out, notBuiltFile{File: rel, Platform: f.Platform.String()})
 	}
 	return out

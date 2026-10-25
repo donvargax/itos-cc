@@ -45,11 +45,11 @@ func (c Check) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		result.Orphans = append(result.Orphans, Orphan{File: ui.Rel(orphan.Path), Snapshot: orphan.Snapshot, Why: orphan.Why})
 	}
 	sayExcluded(ui, found.Excluded)
-	result.NotBuilt = sayNotBuilt(ui, found.NotBuilt)
+	p := &Presentation{UI: ui, JSON: c.JSON, Root: found.Root, Tree: h.Tree}
+	result.NotBuilt = p.sayNotBuilt(found.NotBuilt)
 	if err != nil {
 		return ui.Emit(c.JSON, result, ui.Problems(readError(err, ui.Rel)))
 	}
-	p := &Presentation{UI: ui, JSON: c.JSON, Root: found.Root, Tree: h.Tree}
 	if found.NoSources {
 		ui.Line("no source files to check")
 		p.Elsewhere(ctx, found.Elsewhere)
@@ -93,10 +93,7 @@ func (c Check) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 				LeftOut: fn.LeftOut})
 		}
 		result.Files = append(result.Files, f)
-		if !c.JSON {
-			_, _ = fmt.Fprintf(ui.Stdout, "%d fresh, %d stale, %d missing in %s%s\n", count[mutants.SnapshotFresh], count[mutants.Stale], count[mutants.Missing],
-				file.Rel, testsNote(file.Functions))
-		}
+		p.FileChecked(file.Rel, count, file.Functions)
 		for _, fn := range file.Functions {
 			switch fn.State {
 			case mutants.Missing:
@@ -115,6 +112,17 @@ func (c Check) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 	return ui.Emit(c.JSON, result, p.Problems)
 }
 
+// FileChecked prints the line of file rel that check judged, "N fresh,
+// N stale, N missing in <file>", its file slash-separated after the
+// counts of its functions by state, and the test files that made them
+// stale.
+func (p *Presentation) FileChecked(rel string, count map[string]int, functions []mutants.FunctionCheck) {
+	if !p.JSON {
+		_, _ = fmt.Fprintf(p.UI.Stdout, "%d fresh, %d stale, %d missing in %s%s\n", count[mutants.SnapshotFresh], count[mutants.Stale], count[mutants.Missing],
+			p.plain(rel), testsNote(functions))
+	}
+}
+
 func (p *Presentation) LeftOut(rel string, fn mutants.FunctionCheck) {
 	if p.JSON || fn.LeftOut == 0 {
 		return
@@ -124,13 +132,13 @@ func (p *Presentation) LeftOut(rel string, fn mutants.FunctionCheck) {
 		mutants = "mutant"
 	}
 	_, _ = fmt.Fprintf(p.UI.Stdout, "  left out %s:%d in %s: %d recorded %s at sites gone, which the next mutation run drops\n",
-		rel, fn.StartLine, fn.Function, fn.LeftOut, mutants)
+		p.plain(rel), fn.StartLine, fn.Function, fn.LeftOut, mutants)
 }
 
 func (p *Presentation) Function(rel string, fn mutants.FunctionCheck, rule, verdict string) {
 	what := rule[len("mutation."):]
 	if !p.JSON {
-		_, _ = fmt.Fprintf(p.UI.Stdout, "  %s %s:%d in %s\n", what, rel, fn.StartLine, fn.Function)
+		_, _ = fmt.Fprintf(p.UI.Stdout, "  %s %s:%d in %s\n", what, p.plain(rel), fn.StartLine, fn.Function)
 	}
 	problem := cli.NewProblem(cli.CodeNo, rule, fmt.Sprintf("%s:%d: %s %s", rel, fn.StartLine, fn.Function, verdict),
 		fmt.Sprintf("Run 'itos-cc mutation run %s', and commit .metrics/mutate/ with the code.", rel)).
@@ -149,7 +157,7 @@ func (p *Presentation) Orphans(orphans []Orphan, what string) {
 		return
 	}
 	for _, o := range orphans {
-		_, _ = fmt.Fprintf(p.UI.Stdout, "snapshot %s %s: its source %s is %s\n", o.Snapshot, what, o.File, o.Why)
+		_, _ = fmt.Fprintf(p.UI.Stdout, "snapshot %s %s: its source %s is %s\n", o.Snapshot, what, p.plain(o.File), o.Why)
 	}
 }
 func uncoveredFails(enabled bool, scope mutants.LineScope, path string) func(int) bool {

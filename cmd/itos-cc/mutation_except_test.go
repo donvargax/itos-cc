@@ -162,7 +162,7 @@ func TestAnExceptedSurvivorFailsNothing(t *testing.T) {
 	}
 
 	o := mutateRun(t, boardSource)
-	if want := "1 killed, 0 survived, 1 excepted, 0 uncovered in " + boardSource + " (ran 2, reused 0)\n"; !strings.Contains(o.stdout, want) {
+	if want := "1 killed, 0 survived, 1 excepted, 0 uncovered in " + filepath.ToSlash(boardSource) + " (ran 2, reused 0)\n"; !strings.Contains(o.stdout, want) {
 		t.Errorf("stdout:\n%s\nwant it to say %q", o.stdout, want)
 	}
 	if strings.Contains(o.stdout, "  survived ") {

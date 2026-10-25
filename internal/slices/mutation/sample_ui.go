@@ -85,7 +85,8 @@ func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Writte
 		Progress: selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui},
 	})
 	result.Seed = found.Seed
-	result.NotBuilt = sayNotBuilt(ui, found.NotBuilt)
+	p := &Presentation{UI: ui, JSON: c.JSON}
+	result.NotBuilt = p.sayNotBuilt(found.NotBuilt)
 	if errors.Is(err, errNoWorkers) {
 		return ui.Emit(c.JSON, nil, ui.Problems(err))
 	}
@@ -104,7 +105,6 @@ func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Writte
 	if !c.JSON {
 		_, _ = fmt.Fprintf(ui.Stdout, "seed %s: sampled %d of %d cached mutants\n", result.Seed, min(c.Count, sampled.Cached), sampled.Cached)
 	}
-	p := &Presentation{UI: ui, JSON: c.JSON}
 	reported := map[string]bool{}
 	for _, f := range sampled.Files {
 		p.sampledFile(f, &result, reported)
@@ -120,7 +120,7 @@ func (p *Presentation) sampledFile(f mutants.SampledFile, result *sampleResult, 
 	if len(f.FailedSelections) > 0 && !f.BaselineFailed {
 		result.Files = append(result.Files, sampleFile{File: f.Rel, Baseline: "failed", Mutants: []sampledMutant{}})
 		if !p.JSON {
-			_, _ = fmt.Fprintf(p.UI.Stdout, "listed tests the sampled mutants of %s run fail without any mutant; no sampled mutant is judged\n", f.Rel)
+			_, _ = fmt.Fprintf(p.UI.Stdout, "listed tests the sampled mutants of %s run fail without any mutant; no sampled mutant is judged\n", p.plain(f.Rel))
 		}
 		p.FailedSelections(f.FailedSelections, reported, "mutation sample")
 		return
@@ -128,7 +128,7 @@ func (p *Presentation) sampledFile(f mutants.SampledFile, result *sampleResult, 
 	if f.BaselineFailed {
 		result.Files = append(result.Files, sampleFile{File: f.Rel, Baseline: "failed", Mutants: []sampledMutant{}})
 		if !p.JSON {
-			_, _ = fmt.Fprintf(p.UI.Stdout, "baseline tests of %s fail; no sampled mutant ran\n%s\n", f.Rel, HeadAndTail(f.BaselineOutput, reportedLines))
+			_, _ = fmt.Fprintf(p.UI.Stdout, "baseline tests of %s fail; no sampled mutant ran\n%s\n", p.plain(f.Rel), HeadAndTail(f.BaselineOutput, reportedLines))
 		}
 		p.report(p.baselineFailed(f.Rel, f.BaselineCopy, f.BaselineLeftOut, "run", "mutation sample").With("output", HeadAndTail(f.BaselineOutput, reportedLines)))
 		return
@@ -146,7 +146,7 @@ func (p *Presentation) sampledFile(f mutants.SampledFile, result *sampleResult, 
 	}
 	result.Files = append(result.Files, out)
 	if !p.JSON {
-		_, _ = fmt.Fprintf(p.UI.Stdout, "%d sampled, %d mismatched, %d flaky in %s\n", len(f.Mutants), verdicts[mutants.Mismatched], verdicts[mutants.Flaky], f.Rel)
+		_, _ = fmt.Fprintf(p.UI.Stdout, "%d sampled, %d mismatched, %d flaky in %s\n", len(f.Mutants), verdicts[mutants.Mismatched], verdicts[mutants.Flaky], p.plain(f.Rel))
 	}
 	for _, m := range differ {
 		if m.Verdict() == mutants.Flaky {
@@ -167,7 +167,7 @@ func (p *Presentation) Flaky(rel string, m mutants.SampledMutant) {
 	now := strings.Join(m.Outcomes, ", ")
 	if !p.JSON {
 		_, _ = fmt.Fprintf(p.UI.Stdout, "  flaky %s → %s in %s, %s: recorded %s, now %s\n",
-			Quote(m.Original), Quote(m.Replacement), m.Function, SiteAt(rel, m.Line, m.Column), m.Recorded, now)
+			Quote(m.Original), Quote(m.Replacement), m.Function, SiteAt(p.plain(rel), m.Line, m.Column), m.Recorded, now)
 	}
 	problem := cli.NewProblem(cli.CodeNo, "mutation.flaky",
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s was recorded %s, and its runs now gave %s: its tests decide it differently with nothing changed",
@@ -189,7 +189,7 @@ func (p *Presentation) Flaky(rel string, m mutants.SampledMutant) {
 func (p *Presentation) Mismatch(rel string, m mutants.SampledMutant) {
 	if !p.JSON {
 		_, _ = fmt.Fprintf(p.UI.Stdout, "  mismatch %s → %s in %s, %s: recorded %s, now %s\n",
-			Quote(m.Original), Quote(m.Replacement), m.Function, SiteAt(rel, m.Line, m.Column), m.Recorded, m.Outcome)
+			Quote(m.Original), Quote(m.Replacement), m.Function, SiteAt(p.plain(rel), m.Line, m.Column), m.Recorded, m.Outcome)
 	}
 	problem := cli.NewProblem(cli.CodeNo, "mutation.mismatch",
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s was recorded %s, and is %s now", rel, m.Line, m.Column,

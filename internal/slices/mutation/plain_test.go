@@ -41,14 +41,15 @@ func plainLines(t *testing.T, stdout *bytes.Buffer) []string {
 
 func TestAStopNamesItsSiteAfterTheChange(t *testing.T) {
 	t.Parallel()
+	p := &Presentation{}
 	site := &mutants.Stop{Rule: "mutation.survived", File: "src/board.go", Function: "board#place",
 		Site: &mutants.Site{Line: 5, Column: 9, Original: ">", Replacement: ">="}}
-	if got, want := describeStop(site), "`>` → `>=` in board#place, src/board.go line 5 column 9"; got != want {
+	if got, want := p.describeStop(site), "`>` → `>=` in board#place, src/board.go line 5 column 9"; got != want {
 		t.Errorf("a survivor's stop is described as %q, want %q", got, want)
 	}
 	stale := &mutants.StaleException{Exception: mutants.Exception{Function: "board#clear", Column: 3}, Why: mutants.ExceptionChanged, Line: 7}
 	exception := &mutants.Stop{Rule: "mutation.exception-stale", File: "src/board.go", Exception: stale}
-	if got, want := describeStop(exception), "in board#clear, src/board.go line 7 column 3 (changed)"; got != want {
+	if got, want := p.describeStop(exception), "in board#clear, src/board.go line 7 column 3 (changed)"; got != want {
 		t.Errorf("a stale exception's stop is described as %q, want %q", got, want)
 	}
 }
