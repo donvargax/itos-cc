@@ -5921,16 +5921,9 @@ items:
     title: A Go plan on macOS measures the whole module instead of the chosen packages' tests
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: bug
-    why: >
-      cd.yml runs 40168300178 (eabdeb72), 40168900495 (db60a9dd) and 40169478722 (dce26a97) fail
-      test (macos-latest, others) at internal/covrun
-      TestGoMeasuresWithTheTestsThatLoadTheChosenPackagesOrTheirOwn: both plans fall back to
-      -coverpkg=./... ./... on macOS. CD was green before slice-59 (44d5eac8), whose environment
-      change for the commands itos-cc starts (eabdeb72) is in range; Linux CI passes. Blocks the
-      release of slice-59.
   - id: go-scope-fallback-silent
     title: Say why a Go plan falls back to the whole module
     phase: 1
