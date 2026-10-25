@@ -2291,6 +2291,48 @@ Feature: Mutation testing
     # outcome, without the key. No exception takes one (mutation except
     # still takes only a survivor). Before this item MUT-345 and MUT-346 fail
     # at their flaky step and MUT-347 at check's problem step.
+    # slice-58, flaky-kills' third item (q-93, the person 2026-10-24): a
+    # flaky mutant that happens to agree with its recording on the one run
+    # sample gives it passes unseen. --repeat N (default 1) runs each
+    # sampled mutant N times; when its outcomes are not all alike it is
+    # mutation.flaky, whatever the recording says; when all N agree with each
+    # other but not with the recording, slice-50's confirmation still runs.
+    # mutation run --count takes --repeat too, for each site it judges
+    # freshly, so a per-push proof can ask for it; a flaky site there is
+    # mutation.flaky, exit 1. N below 1 is flags.value-invalid, exit 80.
+    # Killed, timeout and over-limit still agree with each other. Before this
+    # item --repeat is an unknown flag (flags.unknown), failing at each Then.
+    @slice-58 @ID-MUT-348 @wip
+    Scenario: --repeat catches a flaky mutant that agreed with its recording once
+      Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
+      But the tests kill it on one run and miss it on the next, with nothing they hash changed
+      When I run "itos-cc mutation sample --repeat 3 src/board.ts"
+      Then the problem is "mutation.flaky", with recorded "killed" and outcomes "killed", "survived", "killed"
+      And the exit code is 1
+      But without --repeat the sample passes, its one run agreeing with the recording
+
+    @slice-58 @ID-MUT-349 @wip
+    Scenario: With --repeat each sampled mutant runs that many times
+      Given fresh results for every function of src/board.ts, with killed mutants and one survivor
+      And the tests still kill and miss the same mutants
+      When I run "itos-cc mutation sample --repeat 3 src/board.ts"
+      Then each sampled mutant ran 3 times
+      And the exit code is 0
+
+    @slice-58 @ID-MUT-350 @wip
+    Scenario: A repeat below 1 is a usage error
+      When I run "itos-cc mutation sample --repeat 0"
+      Then the problem is "flags.value-invalid", with flag "--repeat" and value "0"
+      And the exit code is 80
+
+    @slice-58 @ID-MUT-351 @wip
+    Scenario: A counted run with --repeat fails on a flaky site
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      But its test kills that mutant on one run and misses it on the next, with nothing it hashes changed
+      When I run "itos-cc mutation run --count 1 --repeat 2 --json"
+      Then the problem is "mutation.flaky", with outcomes "killed", "survived"
+      And the exit code is 1
+
     @slice-57 @ID-MUT-345 @wip
     Scenario: A retried survivor its tests decide differently each run is recorded flaky
       Given the snapshot records a mutant of "Board#place" as survived
