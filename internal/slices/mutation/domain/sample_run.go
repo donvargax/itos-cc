@@ -22,7 +22,9 @@ import (
 // unless opt's TestCommand or AllTests is set, which then sets every
 // mutant's. A mutant whose outcome disagrees with the one recorded runs
 // again, in the same worker and scope, up to Reruns times, until one run
-// agrees (Classify); each keeps every outcome in run order. A mutant of
+// agrees (Classify); with opt's Repeat it runs that many times first, and
+// is flaky when those outcomes are not all alike (Repeated); each keeps
+// every outcome in run order. A mutant of
 // ScopeListed runs, once its own tests survive it,
 // the listed tests its outcome records, through opt's Listed, after the
 // baseline of that selection, which sets its timeout, as in Run. Its read
@@ -126,6 +128,7 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Sam
 				return result, err
 			}
 			r = NewExecution(s.file, s.rel, s.key, command)
+			r.Repeat(opt.Repeat)
 			runs[k] = r
 			order = append(order, r)
 		}
@@ -168,7 +171,7 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Sam
 		for _, c := range drawn[s] {
 			outcomes := runs[scoped{s, c.scope}].Outcomes(c.site)
 			f.Mutants = append(f.Mutants, SampledMutant{Site: s.sites[c.site], Function: c.function, Recorded: c.recorded,
-				Outcome: outcomes[0], Outcomes: outcomes, Scope: c.scope})
+				Outcome: outcomes[0], Outcomes: outcomes, Scope: c.scope, Repeat: opt.Repeat})
 		}
 		sort.Slice(f.Mutants, func(a, b int) bool {
 			ma, mb := f.Mutants[a], f.Mutants[b]
@@ -198,6 +201,9 @@ type SampleOptions struct {
 	AllTests                   bool
 	Listed                     *Listed
 	Progress                   Progress
+	// Repeat is how many times each sampled mutant runs at least,
+	// --repeat; below 2 it runs once, unless it disagrees.
+	Repeat int
 }
 
 // scopeCommand preserves the scope that actually decided a recorded outcome.

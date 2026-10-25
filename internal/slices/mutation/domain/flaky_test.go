@@ -25,6 +25,51 @@ func TestSettledWantsThreeRunsThatAgreeWithEachOther(t *testing.T) {
 	}
 }
 
+func TestRepeatedRunsAreFlakyWhenNotAllAlikeWhateverTheRecording(t *testing.T) {
+	for _, c := range []struct {
+		recorded string
+		outcomes []string
+		repeat   int
+		want     string
+	}{
+		{Killed, nil, 0, ""},
+		{Killed, []string{Killed}, 0, Agreed},
+		{Killed, []string{Killed}, 1, Agreed},
+		{Killed, []string{Survived}, 1, ""},
+		{Killed, []string{Survived, Survived, Killed}, 1, Flaky},
+		{Killed, []string{Survived, Survived, Survived}, 1, Mismatched},
+		{Killed, []string{Killed, Survived}, 3, ""},
+		{Killed, []string{Killed, Survived, Killed}, 3, Flaky},
+		{Survived, []string{Survived, Survived, Timeout}, 3, Flaky},
+		{Killed, []string{Killed, Timeout, OverLimit}, 3, Agreed},
+		{Killed, []string{Survived, Survived}, 2, ""},
+		{Killed, []string{Survived, Survived, Killed}, 2, Flaky},
+		{Killed, []string{Survived, Survived, Survived}, 2, Mismatched},
+		{Killed, []string{Survived, Survived, Survived}, 3, Mismatched},
+	} {
+		if got := Repeated(c.recorded, c.outcomes, c.repeat); got != c.want {
+			t.Errorf("recorded %s, runs %v, repeat %d: %q, want %q", c.recorded, c.outcomes, c.repeat, got, c.want)
+		}
+	}
+}
+
+func TestOutcomesAreAlikeWhenEachAgreesWithTheFirst(t *testing.T) {
+	for _, c := range []struct {
+		outcomes []string
+		want     bool
+	}{
+		{nil, true},
+		{[]string{Survived}, true},
+		{[]string{Killed, Timeout, OverLimit}, true},
+		{[]string{Killed, Killed, Survived}, false},
+		{[]string{Survived, Timeout}, false},
+	} {
+		if got := Alike(c.outcomes); got != c.want {
+			t.Errorf("runs %v: alike %v, want %v", c.outcomes, got, c.want)
+		}
+	}
+}
+
 func TestAnAnnotationOfFlakyMutantsAloneCountsAndListsThem(t *testing.T) {
 	snap := Snapshot{Units: []UnitResult{{Namespace: "m", Name: "a", Hash: "h1", Mutants: []Mutant{
 		{Line: 2, Offset: 20, Original: ">", Replacement: ">=", Outcome: Survived, Flaky: true, Outcomes: []string{Survived, Killed}},

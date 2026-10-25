@@ -16,14 +16,15 @@ import (
 )
 
 // CountedQuery carries a counted run's domain values once: the paths, the
-// --since ref and the seed as written, "" when omitted, the budget, the
-// scope its trials run, how uncovered sites judge and the run's limits.
+// --since ref and the seed as written, "" when omitted, the budget, how
+// many times each trial runs (--repeat), the scope its trials run, how uncovered sites judge and the run's limits.
 // Progress is where its observations go as they happen, its report among
 // them.
 type CountedQuery struct {
 	Paths                    []string
 	Since, Seed              string
 	Count                    int
+	Repeat                   int
 	AllTests                 bool
 	FailUncovered, LinesOnly bool
 	Workers                  int
@@ -265,7 +266,7 @@ func (h Handler) trials(ctx context.Context, q CountedQuery, plan *mutants.Fresh
 		WorkerFactory: factory,
 		Workers:       q.Workers, TimeoutFactor: q.TimeoutFactor, OutputFactor: q.OutputFactor, MemoryFactor: q.MemoryFactor,
 		Scope:  mutants.RunScope("", q.AllTests),
-		Listed: listed, Tree: h.Tree, Toolchain: h.Toolchain, Progress: progress})
+		Listed: listed, Tree: h.Tree, Toolchain: h.Toolchain, Progress: progress, Repeat: q.Repeat})
 	if err != nil {
 		return err
 	}
@@ -313,8 +314,16 @@ func (h Handler) trials(ctx context.Context, q CountedQuery, plan *mutants.Fresh
 			}
 			site.Reason = fmt.Sprintf("%s, and its listed tests %s fail without any mutant, so they could not judge it",
 				own, strings.Join(r.FailedSelection.IDs, " "))
+		case r.Flaky():
+			// Its runs gave outcomes not all alike: it counts as neither
+			// killed nor survived, so no exception takes it, nor goes stale
+			// by it, as a flaky mutant mutation run records.
+			site.State, site.Outcome, site.Limit, site.Scope, site.Tests = "judged", r.Outcome, r.Limit, r.Scope, r.Tests
+			site.Outcomes, site.Flaky = r.Outcomes, true
+			continue
 		default:
 			site.State, site.Outcome, site.Limit, site.Scope, site.Tests = "judged", r.Outcome, r.Limit, r.Scope, r.Tests
+			site.Outcomes = r.Outcomes
 			reason, gone := exceptions.Judge(r.Trial.Candidate, r.Outcome)
 			site.Excepted = reason
 			if gone != nil {

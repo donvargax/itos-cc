@@ -215,7 +215,11 @@ uncovered, never run and never redrawn. Every other selected site runs its
 own tests once, even when the cache holds a kill for it, and one that
 survives them runs the listed tests that reach its line, after their
 selection's clean baseline, as a complete run does: both stages are one
-trial. A site of a Python, Kotlin or Dart file no own test reaches, whose own
+trial. --repeat N runs each trial N times in the same worker (1 unless
+given); when their outcomes are not all alike, killed, timeout and
+over-limit agreeing, its tests decide the site differently with nothing
+changed: it is mutation.flaky, with "outcomes", every outcome in run order,
+counted neither killed nor survived, and no exception takes it. A site of a Python, Kotlin or Dart file no own test reaches, whose own
 tests run nothing, needs no clean baseline of them: listed tests that
 reach its line judge it alone, as in a complete run. A selection whose
 baseline fails is tests.selection-failed, and a
@@ -235,7 +239,8 @@ is not a pass of a range whose tests or measurement failed. --count runs
 on Linux and macOS, where every command it starts runs in a process group
 it owns (a command that detaches from its group or session is not
 followed); Windows is #29. It refuses --changed, --no-coverage, existing
-or raw coverage, --test-command and --mutate-all, and --seed needs it. With --all-tests the own stage runs the whole suite, and a
+or raw coverage, --test-command and --mutate-all, and --seed and --repeat
+need it. With --all-tests the own stage runs the whole suite, and a
 survivor still runs the listed tests that reach it.
 
 SIGINT or SIGTERM interrupts a run, complete or counted, as it does every
@@ -478,13 +483,15 @@ judged and no snapshot is written. Listed tests are not run with
    "listed" "tests": ["<test ID>"], for an excepted survivor "excepted":
    "its reason", "reason", and the stages its trial ran, "stages":
    [{"name": "own"|"listed-baseline"|"listed",
-   "state": "complete"|"failed"|"aborted", "outcome", "tests", "error"}]}],
+   "state": "complete"|"failed"|"aborted", "outcome", "tests", "error"}],
+   and for a site judged more than once (--repeat) "outcomes":
+   ["<outcome>", ...], with "flaky": true when they are not all alike}],
    "subjects": {"judged": [{"file", "function"}], "omitted": [...]},
    "stages": [{"name", "state": "complete"|"failed"|"skipped"|"aborted", "error"}]`,
 		Rules: []string{
 			"mutation.survived         a mutant survived: file, line, column, function, original, replacement; with --count identity, which the message names and the fix's mutation except takes",
 			"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
-			"mutation.flaky            a mutant's runs differ from the outcome recorded, then agree, or those of one recorded flaky differ: file, line, column, function, original, replacement, recorded, outcome, outcomes, scope",
+			"mutation.flaky            a mutant's runs differ from the outcome recorded, then agree, or those of one recorded flaky differ: file, line, column, function, original, replacement, recorded, outcome, outcomes, scope; with --count --repeat a site's runs are not all alike: file, line, column, function, original, replacement, identity, outcome, outcomes",
 			"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python, TypeScript, Kotlin or Dart line is uncovered: file, function, line",
 			"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript, Kotlin or Dart function lacks complete measured coverage evidence: file, function, line",
 			"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm or yarn workspace, a pnpm workspace root package or a member depending on another, or a local dependency, pnpm override, includeBuild, Maven module or pub path dependency or override outside it: file, function, line",
@@ -501,7 +508,7 @@ judged and no snapshot is written. Listed tests are not run with
 			"flags.conflict            --since with --changed: flag",
 			"flags.conflict            --fail-uncovered with --no-coverage, or strict Go, Python, TypeScript, Kotlin or Dart coverage with raw coverage flags: flag",
 			"flags.conflict            --fail-uncovered=lines without --since: flag",
-			"flags.conflict            --seed without --count, or --count with a flag it refuses, --fail-fast included: flag",
+			"flags.conflict            --seed or --repeat without --count, or --count with a flag it refuses, --fail-fast included: flag",
 			"count.platform            --count on a platform other than Linux and macOS, that is Windows (#29): platform",
 			"fail-fast.platform        --fail-fast on a platform other than Linux and macOS, that is Windows (#29), before any command runs: platform",
 			"count.no-git              --count outside a Git repository, or before its first commit",
@@ -514,7 +521,7 @@ judged and no snapshot is written. Listed tests are not run with
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "every mutant that ran was killed"},
 			{Code: 1, Meaning: "a mutant survived or is flaky, a mutant is uncovered with --fail-uncovered or coverage measured nothing where it has mutants to judge, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is not judged"},
-			{Code: cli.CodeUsage, Meaning: "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, a --count below 1, --seed without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
+			{Code: cli.CodeUsage, Meaning: "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, a --count or --repeat below 1, --seed or --repeat without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
 			{Code: cli.CodeEnvironment, Meaning: "--changed or --since outside a git repository; with --fail-uncovered, a coverage tool missing where it has mutants to judge; --count outside a Git repository with a commit, on Windows, or with a required tool missing; --fail-fast on Windows"},
 		},
 		Examples: []string{

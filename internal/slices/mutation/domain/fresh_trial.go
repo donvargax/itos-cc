@@ -46,6 +46,9 @@ type FreshTrialResult struct {
 	FailedSelection *FailedSelection
 	Elapsed         time.Duration
 	Err             error
+	// Outcomes is, for a trial run more than once (Repeat), every outcome
+	// its runs gave, in run order, Outcome their first; nil otherwise.
+	Outcomes []string
 }
 
 // FreshStage is one stage of a fresh trial: "own", the mutant under its own
@@ -79,14 +82,17 @@ type FreshTrialOptions struct {
 	Tree      selport.Tree
 	Toolchain Toolchain
 	Progress  Progress
+	// Repeat is how many times each trial runs, --repeat; below 2, once.
+	Repeat int
 }
 
 // RunFreshTrials applies each selected mutant to a private worker copy of
-// the frozen root and runs its own tests once, under the same owned process
-// supervision as complete runs, workers at a time; a survivor that listed
-// tests reach then runs them, as complete runs do, after their selection's
-// clean baseline the first time any mutant needs it. Both stages are one
-// trial. A mutant times out after its baseline's time times the factor,
+// the frozen root and runs its own tests once, under the same owned
+// process supervision as complete runs, workers at a time; a survivor that
+// listed tests reach then runs them, as complete runs do, after their
+// selection's clean baseline the first time any mutant needs it. Both
+// stages are one trial, which runs opt's Repeat times when that is 2 or
+// more, in the same worker (repeatedTrial). A mutant times out after its baseline's time times the factor,
 // plus the usual allowance, and its output and memory are capped from its
 // baseline's (Factors). Results are in the order of trials. Nothing is
 // written outside the worker copies, which are removed before it returns.
@@ -141,7 +147,7 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 		go func(ctx context.Context, w Worker) {
 			defer wg.Done()
 			for i := range queue {
-				r := runFreshTrial(ctx, w, plan, trials[i], opt, sels)
+				r := repeatedTrial(ctx, w, plan, trials[i], opt, sels)
 				mu.Lock()
 				results[i] = r
 				done++
@@ -163,6 +169,39 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 	close(queue)
 	wg.Wait()
 	return results, nil
+}
+
+// repeatedTrial runs trial in w opt.Repeat times, at least once, each run
+// a whole trial: the first run's result, with every run's outcome in run
+// order as its Outcomes once it ran more than once, and its runs' time in
+// all. A run that ends with no outcome ends the trial as its result.
+func repeatedTrial(ctx context.Context, w Worker, plan *FreshPlan, trial FreshTrial, opt FreshTrialOptions, sels *SelectionBaselines) FreshTrialResult {
+	var first FreshTrialResult
+	var outcomes []string
+	var elapsed time.Duration
+	for n := range max(1, opt.Repeat) {
+		r := runFreshTrial(ctx, w, plan, trial, opt, sels)
+		elapsed += r.Elapsed
+		if r.Outcome == "" {
+			r.Elapsed = elapsed
+			return r
+		}
+		if n == 0 {
+			first = r
+		}
+		outcomes = append(outcomes, r.Outcome)
+	}
+	first.Elapsed = elapsed
+	if len(outcomes) > 1 {
+		first.Outcomes = outcomes
+	}
+	return first
+}
+
+// Flaky reports whether the trial's runs gave outcomes not all alike
+// (Alike): its tests decide the mutant differently with nothing changed.
+func (r FreshTrialResult) Flaky() bool {
+	return !Alike(r.Outcomes)
 }
 
 // runFreshTrial runs one trial in w: the mutant under its own tests, then,

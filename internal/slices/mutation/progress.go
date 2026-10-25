@@ -37,6 +37,8 @@ func (p Progress) Report(e mutants.RunEvent) {
 			said = "not judged: " + r.Err.Error()
 		case r.FailedSelection != nil:
 			said = fmt.Sprintf("%s, then not judged: %s fail without any mutant", own, strings.Join(r.FailedSelection.IDs, " "))
+		case r.Flaky():
+			said = "flaky: " + strings.Join(r.Outcomes, ", ")
 		case r.Scope == mutants.ScopeListed:
 			said = fmt.Sprintf("%s, then %s with %s", own, overLimit(r.Outcome, r.Limit, r.Limits), strings.Join(r.Tests, " "))
 		}

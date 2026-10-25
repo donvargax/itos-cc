@@ -64,7 +64,7 @@ holds unchanged, keeps its `<file>:<line>:<column>`: a problem is printed only w
 | Code | Meaning                                                                                |
 | ---- | -------------------------------------------------------------------------------------- |
 | 0    | Success.                                                                               |
-| 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python, TypeScript, Kotlin or Dart line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a mutant its tests decide differently run to run, sampled, or recorded by `mutation run`, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails, the listed tests' coverage run that fails. |
+| 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python, TypeScript, Kotlin or Dart line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a mutant its tests decide differently run to run, sampled, recorded by `mutation run`, or judged by `mutation run --count --repeat`, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails, the listed tests' coverage run that fails. |
 | 75   | A temporary failure: the same command can pass when run again unchanged.               |
 | 80   | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor or is in an excluded source. |
 | 81   | An unknown command or subcommand.                                                      |
@@ -173,7 +173,7 @@ output of the commands it runs passes as it is.
 | `mutation.missing`           | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.stale`             | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome`, `scope` |
-| `mutation.flaky`             | 1    | mutation sample, mutation run, mutation check | a mismatch's keys and `outcomes`, every outcome its runs gave in run order; of a mutant `mutation run` records flaky, `recorded` and `outcome` are its first |
+| `mutation.flaky`             | 1    | mutation sample, mutation run, mutation check | a mismatch's keys and `outcomes`, every outcome its runs gave in run order; of a mutant `mutation run` records flaky, `recorded` and `outcome` are its first; of a site `mutation run --count --repeat` judged, `file`, `line`, `column`, `function`, `original`, `replacement`, `identity`, `outcome`, its first, and `outcomes` |
 | `mutation.baseline-failed`   | 1    | mutation run, mutation sample | `file`, `output` (the first 20 and last 20 lines of what the tests printed, whole up to 40) |
 | `tests.list-failed`          | 1    | mutation run; mutation check, sample and except when they date a kill by a fingerprint | `command`, `exit_code` |
 | `tests.coverage-failed`      | 1    | mutation run   | `command`, `exit_code`                                      |
@@ -633,6 +633,28 @@ outcome without the keys once all three agree, else records it flaky again.
 flaky mutant of `mutation run` has `"flaky": true` and `"outcomes"`, and a
 file counts its flaky mutants as `"flaky"` when it has any; a function of
 `mutation check` counts them in neither `"killed"` nor `"survived"`.
+
+`--repeat N`, 1 unless given, catches a flaky mutant whose one run happens
+to agree with its recording (slice-58). `mutation sample --repeat N` runs
+each sampled mutant N times, in the same scope; when those N outcomes are
+not all alike it is `mutation.flaky`, whatever the recorded outcome, and
+when they agree with each other but not with the recorded one, slice-50's
+confirmation holds: a mutant that ran fewer than three times runs again
+until it has, flaky if a run agrees with the recorded outcome, else
+`mutation.mismatch`. `mutation run --count --repeat N` runs each site it
+judges freshly N times, each run a whole trial in the same worker; when
+their outcomes are not all alike the site is `mutation.flaky`, exit 1,
+beside the run's survivor and uncovered problems, its fix sample's, counted
+neither killed nor survived, and no exception takes it nor goes stale by
+it. Killed, timeout and over-limit agree with each other, both ways. In
+`--json` each sampled mutant's `"outcomes"` lists every run, and a counted
+site judged more than once has `"outcomes"`, every outcome in run order,
+and `"flaky": true` when they are not all alike, both left out otherwise;
+the plain line of a flaky counted site reads `flaky <change> in
+<function>, <file> line <line> column <column>: <outcome>, <outcome>`. A
+counted run still writes nothing. `--repeat` below 1 is
+`flags.value-invalid`, exit 80, and on `mutation run` without `--count`
+`flags.conflict`, as `--seed` is.
 
 `mutation run --fail-fast` stops a complete run at the first actionable final
 judgment it observes, and reports it under the rule and exit code a run

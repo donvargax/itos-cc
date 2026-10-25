@@ -79,6 +79,11 @@ type countedSite struct {
 	Excepted    string         `json:"excepted,omitempty"`
 	Reason      string         `json:"reason,omitempty"`
 	Stages      []countedStage `json:"stages,omitempty"`
+	// Outcomes is, for a site judged more than once (--repeat), every
+	// outcome its runs gave, in run order, Outcome their first, and Flaky
+	// whether they are not all alike; left out otherwise.
+	Outcomes []string `json:"outcomes,omitempty"`
+	Flaky    bool     `json:"flaky,omitempty"`
 	// selection is, for a blocked site, the listed selection that fails
 	// without any mutant.
 	selection *mutants.FailedSelection
@@ -119,13 +124,16 @@ type countedProgress struct {
 // assembles the counted query once, then presents the report, or the
 // failure with no result object.
 func (c Run) counted(ctx context.Context, ui *cli.UI, h Handler, written Written) int {
-	if !written.given("count") {
-		return ui.Emit(c.JSON, nil, []*cli.Problem{flagConflict("--seed", "--seed seeds the selection of --count, and is given without it")})
+	for _, flag := range []struct{ name, why string }{
+		{"seed", "--seed seeds the selection of --count, and is given without it"},
+		{"repeat", "--repeat repeats the trials of --count, and is given without it"},
+	} {
+		if !written.given("count") && written.given(flag.name) {
+			return ui.Emit(c.JSON, nil, []*cli.Problem{flagConflict("--"+flag.name, flag.why)})
+		}
 	}
-	if c.Count < 1 {
-		value := written.spelling("count", "")
-		return ui.Emit(c.JSON, nil, []*cli.Problem{cli.NewProblem(cli.CodeUsage, "flags.value-invalid", fmt.Sprintf("--count needs a whole number of at least 1, and was given %q", value),
-			"Give it 1 or more.").With("flag", "--count").With("value", value)})
+	if problem := written.belowOne(map[string]int{"count": c.Count, "repeat": c.Repeat}); problem != nil {
+		return ui.Emit(c.JSON, nil, []*cli.Problem{problem})
 	}
 	if written.given("seed") && c.Seed == "" {
 		return ui.Emit(c.JSON, nil, []*cli.Problem{cli.NewProblem(cli.CodeUsage, "flags.value-invalid", "--seed needs a non-empty TEXT", "Give it a seed, or leave it out to seed with HEAD.").
@@ -151,7 +159,7 @@ func (c Run) counted(ctx context.Context, ui *cli.UI, h Handler, written Written
 			"Run it on Linux or macOS, or run mutation run without --count; native Windows support is #29.").With("platform", h.Platform)})
 	}
 	progress := &countedProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, p: &Presentation{UI: ui, JSON: c.JSON, Tree: h.Tree}}
-	err := h.Counted(ctx, CountedQuery{Paths: c.Paths, Since: c.Since, Seed: c.Seed, Count: c.Count, AllTests: c.AllTests,
+	err := h.Counted(ctx, CountedQuery{Paths: c.Paths, Since: c.Since, Seed: c.Seed, Count: c.Count, Repeat: c.Repeat, AllTests: c.AllTests,
 		FailUncovered: c.FailUncovered != nil, LinesOnly: c.FailUncovered != nil && *c.FailUncovered == "lines",
 		Workers: c.Workers, TimeoutFactor: c.TimeoutFactor, OutputFactor: c.OutputFactor, MemoryFactor: c.MemoryFactor, Progress: progress})
 	if err != nil {
@@ -259,7 +267,13 @@ func (p *Presentation) printCounted(r *countedResult) {
 		if site.Outcome != "" {
 			what = site.Outcome
 		}
+		if site.Flaky {
+			what = "flaky"
+		}
 		line := fmt.Sprintf("  %s %s → %s in %s, %s", what, Quote(site.Original), Quote(site.Replacement), site.Function, SiteAt(p.plain(site.File), site.Line, site.Column))
+		if site.Flaky {
+			line += ": " + strings.Join(site.Outcomes, ", ")
+		}
 		if site.Scope == mutants.ScopeListed {
 			line += " by listed tests " + strings.Join(site.Tests, " ")
 		}
@@ -278,7 +292,8 @@ func (p *Presentation) printCounted(r *countedResult) {
 	_, _ = fmt.Fprintln(out, countedBounds)
 }
 
-// reportCounted reports each selected site that fails the run: a survivor
+// reportCounted reports each selected site that fails the run: a flaky
+// site, whose runs under --repeat gave outcomes not all alike, a survivor
 // no valid exception excepts, an uncovered site failUncovered says fails
 // (with --fail-uncovered, every one, or with =lines one on a changed line),
 // the listed selection a blocked site needs, which fails without any
@@ -288,6 +303,12 @@ func (p *Presentation) reportCounted(r *countedResult, failUncovered func(counte
 	for _, site := range r.Selected {
 		m := mutants.Mutant{Line: site.Line, Column: site.Column, Original: site.Original, Replacement: site.Replacement}
 		switch {
+		case site.State == "judged" && site.Flaky:
+			// Its tests decide it differently with nothing changed: the fix
+			// is in them, as for a flaky mutant sample finds.
+			p.report(countedMutantProblem(site, m, "mutation.flaky",
+				fmt.Sprintf("gave %s in its %d runs: its tests decide it differently with nothing changed", strings.Join(site.Outcomes, ", "), len(site.Outcomes)),
+				flakyFix).With("outcome", site.Outcome).With("outcomes", site.Outcomes))
 		case site.State == "judged" && site.Outcome == mutants.Survived && site.Excepted == "":
 			// Its identity is in the message, which a CI log prints, and its
 			// except in the fix: no mutation run is needed to except it.

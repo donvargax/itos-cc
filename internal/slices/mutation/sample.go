@@ -21,7 +21,9 @@ type SampleQuery struct {
 	MemoryFactor  float64
 	TestCommand   string
 	AllTests      bool
-	Progress      SelectionProgress
+	// Repeat is how many times each sampled mutant runs at least.
+	Repeat   int
+	Progress SelectionProgress
 }
 
 // SelectionProgress receives the observations of sample and run while they
@@ -108,6 +110,7 @@ func (h Handler) Sample(ctx context.Context, q SampleQuery) (SampleFound, error)
 		TestCommand:   q.TestCommand,
 		AllTests:      q.AllTests,
 		Progress:      q.Progress,
+		Repeat:        q.Repeat,
 	}
 	// An outcome the listed tests decided runs them again, after its own.
 	if cfg.Tests != nil && !opt.AllTests && opt.TestCommand == "" {

@@ -73,6 +73,7 @@ type Run struct {
 	FailFast            bool        `help:"stop at the first actionable failure, cancelling the work still running; Linux and macOS"`
 	Count               int         `placeholder:"N" help:"judge at most N committed mutation sites freshly, drawn across the whole selection; Linux and macOS"`
 	Seed                string      `placeholder:"TEXT" help:"with --count, seed the draw with TEXT instead of the HEAD commit's id"`
+	Repeat              int         `placeholder:"N" default:"1" help:"with --count, run each trial N times; outcomes not all alike are mutation.flaky"`
 	JSON                bool        `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 }
 
@@ -97,6 +98,7 @@ type Sample struct {
 	Since         *string `placeholder:"REF" help:"sample only the functions the commits since REF changed (git diff REF...HEAD)"`
 	Count         int     `placeholder:"N" default:"20" help:"how many mutants to run, at least 1"`
 	Seed          *string `placeholder:"TEXT" help:"seed the draw with TEXT instead of the HEAD commit's id"`
+	Repeat        int     `placeholder:"N" default:"1" help:"run each sampled mutant N times; outcomes not all alike are mutation.flaky"`
 	Workers       int     `placeholder:"N" default:"${mutation_workers}" help:"mutants run at the same time"`
 	TimeoutFactor float64 `placeholder:"N" default:"10" help:"a mutant times out after N times the baseline duration, plus 5s"`
 	OutputFactor  float64 `placeholder:"N" default:"10" help:"a mutant is killed once its tests write more than N times the baseline's output, plus 16 MiB"`

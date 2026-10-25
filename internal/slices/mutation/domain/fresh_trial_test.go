@@ -3,6 +3,7 @@ package domain_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -73,6 +74,46 @@ func TestFreshTrialsShareListedBaselineAndPreserveStageScope(t *testing.T) {
 	}
 	if !f.Commands.Lifetimes[0].State().Released {
 		t.Fatal("trial inputs not released")
+	}
+}
+
+func TestARepeatedFreshTrialListsEveryRunsOutcome(t *testing.T) {
+	for _, c := range []struct {
+		name     string
+		repeat   int
+		cycle    []string
+		outcomes []string
+		flaky    bool
+	}{
+		{"once", 1, []string{mutants.Killed, mutants.Survived}, nil, false},
+		{"not all alike", 2, []string{mutants.Killed, mutants.Survived}, []string{mutants.Killed, mutants.Survived}, true},
+		{"alike", 3, []string{mutants.Killed, mutants.Timeout}, []string{mutants.Killed, mutants.Timeout, mutants.Killed}, false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			f, p, trial, opt := preparedFreshTrial(t)
+			command := trial.Baseline.Command
+			facts := f.Commands.Tests[command.Dir][command.String()]
+			relative, err := filepath.Rel(command.Root, filepath.Join(p.FrozenRoot, filepath.FromSlash(trial.Candidate.Path)))
+			if err != nil {
+				t.Fatal(err)
+			}
+			facts.Elapsed = time.Millisecond
+			facts.Verdicts = []porttest.Verdict{{Path: filepath.ToSlash(relative), Site: trial.Candidate.Site, Outcomes: c.cycle}}
+			f.Commands.Tests[command.Dir][command.String()] = facts
+			opt.Repeat = c.repeat
+			results, err := mutants.RunFreshTrials(t.Context(), p, []mutants.FreshTrial{trial}, opt)
+			if err != nil || len(results) != 1 {
+				t.Fatalf("trials: %+v %v", results, err)
+			}
+			r := results[0]
+			if r.Err != nil || r.Outcome != mutants.Killed || fmt.Sprint(r.Outcomes) != fmt.Sprint(c.outcomes) || (r.Outcomes == nil) != (c.outcomes == nil) || r.Flaky() != c.flaky {
+				t.Errorf("repeat %d: outcome %q, outcomes %v, flaky %v; want killed first, outcomes %v, flaky %v", c.repeat, r.Outcome, r.Outcomes, r.Flaky(), c.outcomes, c.flaky)
+			}
+			// Each run takes a millisecond at least, a timeout more.
+			if least := time.Duration(c.repeat) * time.Millisecond; r.Elapsed < least {
+				t.Errorf("repeat %d took %s in all, want %s at least", c.repeat, r.Elapsed, least)
+			}
+		})
 	}
 }
 

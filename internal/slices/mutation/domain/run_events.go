@@ -73,6 +73,11 @@ func (s *Execution) Recheck(site int, recorded string) {
 	s.recorded[site] = recorded
 }
 
+// Repeat has each mutant it rechecks against an outcome recorded run at
+// least n times, and flaky when those n outcomes are not all alike
+// (Repeated): a sample's --repeat. Below 2 it runs as Classify has it.
+func (s *Execution) Repeat(n int) { s.repeat = n }
+
 // Outcomes is every outcome the runs of site's mutant gave in a sample,
 // in run order.
 func (s *Execution) Outcomes(site int) []string { return slices.Clone(s.trials[site]) }
@@ -86,7 +91,7 @@ func (s *Execution) tried(site int, outcome string) bool {
 		return false
 	}
 	s.trials[site] = append(s.trials[site], outcome)
-	verdict := Classify(s.recorded[site], s.trials[site])
+	verdict := Repeated(s.recorded[site], s.trials[site], s.repeat)
 	if s.recorded[site] == Flaky {
 		verdict = Settled(s.trials[site])
 	}

@@ -41,6 +41,14 @@ nothing changed (unseeded randomness or timing), and it is mutation.flaky:
 neither outcome is trusted, and the fix is to make the tests deterministic.
 If both repeat the difference, it is mutation.mismatch: the cache is wrong.
 
+--repeat N runs each sampled mutant N times (1 unless given), in the same
+scope, to catch a flaky mutant whose one run happens to agree. When those
+N outcomes are not all alike, killed, timeout and over-limit agreeing, it
+is mutation.flaky, whatever the recorded outcome. When they agree with
+each other but not with the recorded one, they are confirmed as above: a
+mutant that ran fewer than three times runs again until it has, flaky if
+a run agrees with the recorded outcome, else mutation.mismatch.
+
 It chooses as mutation check does: paths, --changed, and --since REF, which
 samples only the functions the commits since REF changed (git diff
 REF...HEAD).
@@ -80,7 +88,7 @@ selection of listed tests failed.`,
    each Go file only another system builds`,
 		Rules: []string{
 			"mutation.mismatch         a sampled mutant's outcome differs from the one recorded, run after run: file, line, column, function, original, replacement, recorded, outcome, scope",
-			"mutation.flaky            a sampled mutant's runs differ from the one recorded, then agree: a mismatch's keys and outcomes, in run order",
+			"mutation.flaky            a sampled mutant's runs differ from the one recorded, then agree, or with --repeat are not all alike: a mismatch's keys and outcomes, in run order",
 			"mutation.baseline-failed  the tests fail before any mutant: file, output, the head and tail of what they printed",
 			"tests.selection-failed    a selection of listed tests fails without any mutant: ids, command, exit_code",
 			"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
@@ -92,7 +100,7 @@ selection of listed tests failed.`,
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "every sampled mutant's outcome agrees with the one recorded, or there was nothing to sample"},
 			{Code: 1, Meaning: "a sampled mutant's outcome differs from the one recorded, or its tests decide it differently run to run, a file's tests fail before any mutant, or a selection of listed tests fails without any mutant"},
-			{Code: cli.CodeUsage, Meaning: "a usage error: a bad flag or path, a --count below 1, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
+			{Code: cli.CodeUsage, Meaning: "a usage error: a bad flag or path, a --count or --repeat below 1, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
 			{Code: cli.CodeEnvironment, Meaning: "outside a git repository: with no --seed, or with --changed or --since"},
 		},
 		Examples: []string{

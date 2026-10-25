@@ -55,6 +55,8 @@ type SampledMutant struct {
 	// Scope is the scope of the tests it ran with now: the one its
 	// snapshot records, unless the sample was given one.
 	Scope string
+	// Repeat is how many times it ran at least, --repeat; 0 counts as 1.
+	Repeat int
 }
 
 // Agrees reports whether the mutant's outcome now is the one recorded.
@@ -63,9 +65,9 @@ func (m SampledMutant) Agrees() bool {
 }
 
 // Verdict is what the mutant's outcomes now say of the one recorded
-// (Classify).
+// (Repeated).
 func (m SampledMutant) Verdict() string {
-	return Classify(m.Recorded, m.Outcomes)
+	return Repeated(m.Recorded, m.Outcomes, m.Repeat)
 }
 
 // Agrees reports whether outcome, a run's, is recorded, the one a snapshot
@@ -110,6 +112,30 @@ func Classify(recorded string, outcomes []string) string {
 	return Mismatched
 }
 
+// Repeated is the verdict of the outcomes, in run order, of a mutant that
+// runs at least repeat times (--repeat) against recorded, the outcome its
+// snapshot records: "" while it has run fewer times, Flaky when those
+// first repeat outcomes are not all alike (Alike), whatever recorded
+// says, and otherwise Classify's, so outcomes alike that disagree with
+// recorded are confirmed as Classify confirms them. A repeat of 0 or 1 is
+// Classify alone; repeat is never negative.
+func Repeated(recorded string, outcomes []string, repeat int) string {
+	switch {
+	case len(outcomes) < repeat:
+		return ""
+	case !Alike(outcomes[:repeat]):
+		return Flaky
+	}
+	return Classify(recorded, outcomes)
+}
+
+// Alike reports whether outcomes, a mutant's, all agree with each other,
+// as Agrees has them: killed, timeout and over-limit agree. None, or one,
+// are alike.
+func Alike(outcomes []string) bool {
+	return !slices.ContainsFunc(outcomes, func(o string) bool { return !Agrees(outcomes[0], o) })
+}
+
 // Settled is the verdict of the outcomes, in run order, of a mutant its
 // snapshot records flaky, which no outcome recorded can be judged
 // against: Agreed once its first run and its Reruns all agree with each
@@ -119,7 +145,7 @@ func Settled(outcomes []string) string {
 	switch {
 	case len(outcomes) == 0:
 		return ""
-	case slices.ContainsFunc(outcomes, func(o string) bool { return !Agrees(outcomes[0], o) }):
+	case !Alike(outcomes):
 		return Flaky
 	case len(outcomes) <= Reruns:
 		return ""

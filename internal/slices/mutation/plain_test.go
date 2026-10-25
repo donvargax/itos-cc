@@ -144,3 +144,21 @@ func TestAFlakyMutantAStopListsCountsApart(t *testing.T) {
 		t.Errorf("problems %v, want mutation.flaky", p.Problems)
 	}
 }
+
+// MUT-351 reads a counted run's --json alone, so its flaky site's plain line
+// is held here.
+func TestACountedFlakySiteIsListedWithItsOutcomes(t *testing.T) {
+	t.Parallel()
+	var stdout bytes.Buffer
+	p := &Presentation{UI: &cli.UI{Stdout: &stdout, Stderr: &bytes.Buffer{}}}
+	p.printCounted(&countedResult{Sampling: countedSampling{Commit: "abc", Seed: "s", Algorithm: "a", Budget: 1, Eligible: 1, Selected: 1, Executed: 1},
+		Selected: []countedSite{{File: "board/board.go", Line: 5, Column: 11, Function: "board#Count", Original: "<", Replacement: "<=",
+			State: "judged", Outcome: mutants.Killed, Outcomes: []string{mutants.Killed, mutants.Survived}, Flaky: true},
+			{File: "board/board.go", Line: 6, Column: 3, Function: "board#Count", Original: "0", Replacement: "1",
+				State: "judged", Outcome: mutants.Killed, Outcomes: []string{mutants.Killed, mutants.Timeout}}}})
+	lines := plainLines(t, &stdout)
+	if len(lines) < 4 || lines[2] != "  flaky `<` → `<=` in board#Count, board/board.go line 5 column 11: killed, survived" ||
+		lines[3] != "  killed `0` → `1` in board#Count, board/board.go line 6 column 3" {
+		t.Errorf("a counted run's plain output\n%s\nwant its flaky site listed with its outcomes, and the other by its outcome", stdout.String())
+	}
+}

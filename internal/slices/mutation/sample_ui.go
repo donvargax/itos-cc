@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -56,6 +58,20 @@ func (w Written) spelling(name, value string) string {
 	return value
 }
 
+// belowOne is the refusal of the first of counts, whole-number flags by
+// name, in name order, that is below 1, flags.value-invalid quoting its
+// value as written; nil when none is.
+func (w Written) belowOne(counts map[string]int) *cli.Problem {
+	for _, name := range slices.Sorted(maps.Keys(counts)) {
+		if counts[name] < 1 {
+			value := w.spelling(name, strconv.Itoa(counts[name]))
+			return cli.NewProblem(cli.CodeUsage, "flags.value-invalid", fmt.Sprintf("--%s needs a whole number of at least 1, and was given %q", name, value),
+				"Give it 1 or more.").With("flag", "--"+name).With("value", value)
+		}
+	}
+	return nil
+}
+
 // selectionProgress shows the observations of sample and run as they
 // happen on stderr: the sources exclude left out, then the run's progress.
 type selectionProgress struct {
@@ -65,23 +81,21 @@ type selectionProgress struct {
 
 func (p selectionProgress) Excluded(n int) { sayExcluded(p.ui, n) }
 
-// Run refuses a --count below 1 before anything is observed, assembles the
-// query once, then presents the sample, or the result object as far as it
-// got beside the failure; the missing Workers binding alone gives none.
+// Run refuses a --count or --repeat below 1 before anything is observed,
+// assembles the query once, then presents the sample, or the result object
+// as far as it got beside the failure; the missing Workers binding alone
+// gives none.
 func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) int {
 	written := Written(given)
 	result := sampleResult{Files: []sampleFile{}}
-	if c.Count < 1 {
-		value := written.spelling("count", strconv.Itoa(c.Count))
-		problem := cli.NewProblem(cli.CodeUsage, "flags.value-invalid", fmt.Sprintf("--count needs a whole number of at least 1, and was given %q", value),
-			"Give it 1 or more.").With("flag", "--count").With("value", value)
+	if problem := written.belowOne(map[string]int{"count": c.Count, "repeat": c.Repeat}); problem != nil {
 		return ui.Emit(c.JSON, result, ui.Problems(problem))
 	}
 	found, err := h.Sample(ctx, SampleQuery{
 		SelectionQuery: SelectionQuery{Paths: c.Paths, Changed: c.Changed, Since: c.Since},
 		Count:          c.Count, Seed: c.Seed, Workers: c.Workers, TimeoutFactor: c.TimeoutFactor,
 		OutputFactor: c.OutputFactor, MemoryFactor: c.MemoryFactor,
-		TestCommand: c.TestCommand, AllTests: c.AllTests,
+		TestCommand: c.TestCommand, AllTests: c.AllTests, Repeat: c.Repeat,
 		Progress: selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui},
 	})
 	result.Seed = found.Seed

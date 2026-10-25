@@ -136,6 +136,9 @@ type Execution struct {
 	recorded []string
 	trials   [][]string
 	flakes   [][]string
+	// repeat is how many times at least each mutant rechecked against an
+	// outcome recorded runs (Repeat).
+	repeat int
 	// fresh is, by site of a function judged, the outcome the snapshot
 	// before this run records for it that still holds, whether or not this
 	// run reuses it, with what decided it; zero where none does. A

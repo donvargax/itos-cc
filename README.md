@@ -871,7 +871,12 @@ it alone, as in a complete run. A selection
 whose baseline fails is `tests.selection-failed`, and a site that needs it
 is blocked, with no outcome. Exceptions of the functions with a selected
 site apply as in a complete run: a valid one excepts its survivor, which is
-still drawn and run, and a stale one fails. `--json` gives `sampling`
+still drawn and run, and a stale one fails. `--repeat N` runs each trial N
+times in the same worker; a site whose outcomes are not all alike (killed,
+timeout and over-limit agreeing) is `mutation.flaky`, exit 1, its tests
+deciding it differently with nothing changed, counted neither killed nor
+survived and taken by no exception, so a per-push proof can ask for it.
+`--json` gives `sampling`
 (budget, eligible, selected, executed and omitted counts, seed, algorithm
 and commit), the `selected` sites with their `state`, outcome and the
 stages their trial ran, the judged and omitted `subjects`, and the `stages`
@@ -999,7 +1004,11 @@ survivor now killed. Killed, timeout and over-limit agree. A mutant whose
 outcome differs runs up to twice more; if one of those runs agrees with the
 recording, its tests decide it differently with nothing changed (unseeded
 randomness or timing), and it fails as `mutation.flaky` instead, its
-`outcomes` listed in run order, its fix to make the tests deterministic. It draws
+`outcomes` listed in run order, its fix to make the tests deterministic.
+`--repeat N` runs each sampled mutant N times, catching a flaky one whose
+single run happens to agree: outcomes not all alike are `mutation.flaky`
+whatever the recording says, and outcomes alike that disagree with it are
+confirmed as above. It draws
 `--count` mutants (20 by default) from the fresh entries of its selection,
 only those that ran (killed, timeout, over-limit, or survived), so no
 coverage runs; stale and missing
