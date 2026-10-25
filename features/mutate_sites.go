@@ -35,6 +35,19 @@ func (s listedSite) String() string {
 	return fmt.Sprintf("%s:%d:%d `%s` → %s in %s", s.file, s.line, s.column, s.original, replacement, s.function)
 }
 
+// Plain is the site as a plain line of mutation run, check or sample
+// names it after its verdict, the file after the change (slice-51).
+func (s listedSite) Plain() string {
+	replacement := "`" + s.replacement + "`"
+	if s.replacement == "" {
+		replacement = "(deleted)"
+	}
+	return fmt.Sprintf("`%s` → %s in %s, %s line %d column %d", s.original, replacement, s.function, s.file, s.line, s.column)
+}
+
+// plainSite is a site as Plain gives it, after a plain line's verdict.
+var plainSite = regexp.MustCompile("^`([^`]+)` → (?:`([^`]*)`|\\(deleted\\)) in (.+), (\\S+) line (\\d+) column (\\d+)$")
+
 // listedLine is one site of mutation list's plain output.
 var listedLine = regexp.MustCompile("^(\\S+):(\\d+):(\\d+) `([^`]+)` → (?:`([^`]*)`|\\(deleted\\)) in (.+)$")
 

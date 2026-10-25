@@ -157,7 +157,7 @@ func TestFreshResultsWithEveryMutantKilledPass(t *testing.T) {
 	if after, _ := os.ReadFile(inWD(t, filepath.Join(".metrics", "mutate", "src", "board.go.json"))); string(after) != string(before) {
 		t.Errorf("the snapshot changed: want mutation check to write nothing")
 	}
-	if want := boardSource + ": 2 fresh, 0 stale, 0 missing\n"; !strings.Contains(o.stdout, want) {
+	if want := "2 fresh, 0 stale, 0 missing in " + boardSource + "\n"; !strings.Contains(o.stdout, want) {
 		t.Errorf("stdout:\n%s\nwant it to say %q", o.stdout, want)
 	}
 	if o.code != 0 {
@@ -202,7 +202,7 @@ func TestARecordedSurvivorFailsTheCheck(t *testing.T) {
 	}
 
 	o := mutationCheck(t, boardSource)
-	if want := "  survived " + boardSource + ":11:11 `<` → `<=` in " + clearID + "\n"; !strings.Contains(o.stdout, want) {
+	if want := "  survived `<` → `<=` in " + clearID + ", " + boardSource + " line 11 column 11\n"; !strings.Contains(o.stdout, want) {
 		t.Errorf("stdout:\n%s\nwant it to list %q, as mutation run does", o.stdout, want)
 	}
 	if o.code != 1 {

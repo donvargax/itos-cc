@@ -34,7 +34,7 @@ func sayNotBuilt(ui *cli.UI, files []mutants.NotBuilt) []notBuiltFile {
 	var out []notBuiltFile
 	for _, f := range files {
 		rel := ui.Rel(f.Path)
-		ui.Line(rel + ": not built on " + f.Platform.String() + ", so not judged here")
+		ui.Line("not built on " + f.Platform.String() + ", so " + rel + " is not judged here")
 		out = append(out, notBuiltFile{File: rel, Platform: f.Platform.String()})
 	}
 	return out

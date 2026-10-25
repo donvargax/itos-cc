@@ -62,7 +62,8 @@ func trialsOf(stderr, file string) []trial {
 }
 
 // uncoveredListed are the mutants of file stdout lists as uncovered, as
-// --fail-uncovered lists them: "uncovered <file>:<line>:<column> `<original>` → …".
+// --fail-uncovered lists them: "uncovered `<original>` → … in <function>,
+// <file> line <line> column <column>".
 func uncoveredListed(stdout, file string) []listedSite {
 	var out []listedSite
 	for _, line := range strings.Split(strings.ReplaceAll(stdout, "\r\n", "\n"), "\n") {
@@ -70,13 +71,13 @@ func uncoveredListed(stdout, file string) []listedSite {
 		if !ok {
 			continue
 		}
-		match := listedLine.FindStringSubmatch(rest)
-		if match == nil || filepath.ToSlash(match[1]) != file {
+		match := plainSite.FindStringSubmatch(rest)
+		if match == nil || filepath.ToSlash(match[4]) != file {
 			continue
 		}
-		n, _ := strconv.Atoi(match[2])
-		column, _ := strconv.Atoi(match[3])
-		out = append(out, listedSite{file: file, line: n, column: column, original: match[4], replacement: match[5], function: match[6]})
+		n, _ := strconv.Atoi(match[5])
+		column, _ := strconv.Atoi(match[6])
+		out = append(out, listedSite{file: file, line: n, column: column, original: match[1], replacement: match[2], function: match[3]})
 	}
 	return out
 }

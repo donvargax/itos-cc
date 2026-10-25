@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"reflect"
 	"slices"
 	"strings"
@@ -499,7 +500,12 @@ func (s *sinceMutation) clearKept() error {
 	return nil
 }
 func (s *sinceMutation) survivorNotReported() error {
-	if strings.Contains(s.m.w.stdout, "survived "+s.file) || strings.Contains(s.m.w.stdout, "#clear") {
+	for _, line := range outputLines(filepath.ToSlash(s.m.w.stdout)) {
+		if t := strings.TrimSpace(line); strings.HasPrefix(t, "survived ") && strings.Contains(t, ", "+s.file+" line ") {
+			return fmt.Errorf("unjudged survivor reported\n%s", s.m.w.report())
+		}
+	}
+	if strings.Contains(s.m.w.stdout, "#clear") {
 		return fmt.Errorf("unjudged survivor reported\n%s", s.m.w.report())
 	}
 	return s.m.w.exitsWith(0)

@@ -51,7 +51,7 @@ func (s slowRun) Run(Run) (Result, error) {
 		"itos-cc: [3/5] src/board.go:6 `0` → `1` killed (1.4s)\n" +
 		fmt.Sprintf("itos-cc: [4/5] src/board.go:7 `-` → `+` timeout (%.1fs)\n", s.timeout) +
 		fmt.Sprintf("itos-cc: [5/5] src/board.go:7 `1` → `0` timeout (%.1fs)\n", s.timeout)
-	return Result{Stdout: "src/board.go: 5 killed, 0 survived, 0 uncovered (ran 5, reused 0)\n", Stderr: stderr}, nil
+	return Result{Stdout: "5 killed, 0 survived, 0 uncovered in src/board.go (ran 5, reused 0)\n", Stderr: stderr}, nil
 }
 
 // The timeout of a slow but correct run is the one its baseline sets, and

@@ -183,7 +183,7 @@ func (c *checkMutation) fresh() error {
 			if m.w.d.Exists(filepath.Join(m.w.dir, ".metrics/coverage")) {
 				return fmt.Errorf("mutation check wrote coverage")
 			}
-			return m.w.stdoutSays("src/board.ts: 2 fresh, 0 stale, 0 missing")
+			return m.w.stdoutSays("2 fresh, 0 stale, 0 missing in src/board.ts")
 		}
 	}
 	return nil

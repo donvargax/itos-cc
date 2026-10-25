@@ -667,7 +667,7 @@ A Go file only another system builds, such as `probe_windows.go` on Linux,
 is not judged here (#18): its name's `_GOOS` or `_GOARCH` suffix, or its
 `//go:build` line, rules out the `GOOS` and `GOARCH` that `go env` reports,
 whatever its other tags. `mutation run`, `check` and `sample` leave it out
-of `files`, say `itos-cc: <file>: not built on <goos>/<goarch>, so not
+of `files`, say `itos-cc: not built on <goos>/<goarch>, so <file> is not
 judged here` on stderr, list it in `--json` under `not_built` as `{"file",
 "platform"}`, a key there only when there is one, and fail nothing for it,
 `--fail-uncovered` included. Its snapshot, which a run on a system that

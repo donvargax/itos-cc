@@ -69,15 +69,15 @@ and outside a git repository none is named; the snapshot of a file
 outside the project root, named by its absolute path, is judged by that
 file, so it is none while the file exists. The snapshot of a source that
 itos-cc.yaml's exclude leaves out is an orphan too, though its file is
-there. check names an orphan, a line "<file>: gone, its snapshot
-<snapshot> is an orphan, which mutation run removes", excluded in place of
-gone for an excluded source, and in --json under "orphans", and judges
+there. check names an orphan, a line "snapshot <snapshot> is an orphan,
+which mutation run removes: its source <file> is gone", excluded in place
+of gone for an excluded source, and in --json under "orphans", and judges
 and fails nothing for it. With no paths it looks under the working directory. The next
 mutation run over its directory removes it.
 
 A Go file only another system builds, as mutation run judges it, is not
-checked here: check says "itos-cc: <file>: not built on <goos>/<goarch>,
-so not judged here" on stderr, lists it under "not_built" in --json, and
+checked here: check says "itos-cc: not built on <goos>/<goarch>, so
+<file> is not judged here" on stderr, lists it under "not_built" in --json, and
 judges none of the outcomes its snapshot records, a survivor included,
 which are that system's to judge. Its snapshot is no orphan, and the file
 fails nothing, --fail-uncovered included.
@@ -95,14 +95,14 @@ without fresh evidence, and a function with none needs no evidence.
 Survivors and exceptions are checked as before. --fail-uncovered alone is
 --fail-uncovered=functions; without --since, =lines is flags.conflict.
 
-Plain output is a line per file, "<file>: N fresh, N stale, N missing",
+Plain output is a line per file, "N fresh, N stale, N missing in <file>",
 which names the test files that changed when they made functions stale, then
 each problem, a line each:
   missing <file>:<line> in <namespace#name>
   stale <file>:<line> in <namespace#name>
-  survived <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name>
-  uncovered <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name>
-  exception-stale <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name> (<why>)
+  survived ` + "`original` → `replacement`" + ` in <namespace#name>, <file> line <line> column <column>
+  uncovered ` + "`original` → `replacement`" + ` in <namespace#name>, <file> line <line> column <column>
+  exception-stale ` + "`original` → `replacement`" + ` in <namespace#name>, <file> line <line> column <column> (<why>)
 the place being the file alone when the function or the file is gone, and
 the why "moved to <file>" when the function is in another file now. The line of a missing or stale function is where it starts now.
 A fresh function whose entry records mutants at sites it no longer holds

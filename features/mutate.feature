@@ -310,7 +310,7 @@ Feature: Mutation testing
     Scenario: A failing baseline
       Given the tests of src/board.py fail without any mutation
       When I run "itos-cc mutation run src/board.py"
-      Then stdout says "src/board.py: baseline tests fail; snapshot not updated"
+      Then stdout says "baseline tests of src/board.py fail; snapshot not updated"
       And the test output follows whole, as it is under 40 lines
       And the snapshot of src/board.py is not changed
       And the problem is "mutation.baseline-failed", with file
@@ -337,7 +337,7 @@ Feature: Mutation testing
     Scenario: A failing baseline's report keeps the head and the tail of its output
       Given the tests of src/board.py fail without any mutation, printing 100 numbered lines, the first naming the cause
       When I run "itos-cc mutation run src/board.py"
-      Then stdout says "src/board.py: baseline tests fail; snapshot not updated"
+      Then stdout says "baseline tests of src/board.py fail; snapshot not updated"
       And lines 1 to 20 follow it, then "… 60 lines left out …", then lines 81 to 100
       And the problem is "mutation.baseline-failed", with file "src/board.py"
       And its "output" in --json is those same lines
@@ -1478,7 +1478,7 @@ Feature: Mutation testing
       Given coverage shows line 12 of src/board.ts is never executed
       And every mutant on the lines the tests execute is killed
       When I run "itos-cc mutation run --fail-uncovered src/board.ts"
-      Then each mutant on line 12 is listed as "uncovered src/board.ts:12:9 `>` → `>=` in board#place"
+      Then each mutant on line 12 is listed as "uncovered `>` → `>=` in board#place, src/board.ts line 12 column 9"
       And the exit code is 1
 
     @slice-2 @ID-MUT-48
@@ -1541,8 +1541,8 @@ Feature: Mutation testing
   # - mutation run, check and sample leave such a file out of "files" and
   #   name it once in "not_built": [{"file", "platform"}] (a key added,
   #   there only when one is), with "platform" as "linux/amd64". Each
-  #   command says on stderr "itos-cc: <file>: not built on <platform>,
-  #   so not judged here". It fails nothing.
+  #   command says on stderr "itos-cc: not built on <platform>, so <file>
+  #   is not judged here", as slice-51 words it. It fails nothing.
   # - Its snapshot, written by a run on a system that builds it, is left
   #   as it is: not rewritten, not an orphan, not read. mutation check does
   #   not judge its recorded outcomes here, and mutation sample draws none
@@ -1707,7 +1707,7 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --since base"
       Then the mutants of "Board#place" run
       And no mutant of "Board#clear" runs
-      And stdout says "src/board.ts: … (judged 1 of 2 functions)"
+      And stdout says "… in src/board.ts … (judged 1 of 2 functions)"
 
     @slice-1 @ID-MUT-38
     Scenario: Functions not judged keep what their snapshot holds
@@ -1783,7 +1783,7 @@ Feature: Mutation testing
     Scenario: A file with nothing judged is left as it was
       Given a commit after "base" changed only the imports of src/board.ts
       When I run "itos-cc mutation run --since base"
-      Then stdout says "src/board.ts: … (judged 0 of 2 functions)"
+      Then stdout says "… in src/board.ts … (judged 0 of 2 functions)"
       And neither .metrics/mutate/src/board.ts.json nor src/board.ts is written
 
     # git diff -U0 prints no hunk for a file renamed without a change, so
@@ -2385,7 +2385,7 @@ Feature: Mutation testing
     # a constant in the step with a comment naming its source. The agent
     # picks the driver: binary-only if the Go fixture needs a real go.
     # Before this item each row fails at the matcher step.
-    @slice-51 @ID-MUT-343 @wip
+    @slice-51 @ID-MUT-343
     Scenario Outline: No plain line of <command> reads as a Go compiler error to a CI problem matcher
       Given the Go module "example.com/leak" with the file "leak.go":
         """
@@ -2408,8 +2408,8 @@ Feature: Mutation testing
     @ID-MUT-28
     Scenario: Summary per file
       When I run "itos-cc mutation run src/board.ts"
-      Then stdout says "src/board.ts: 14 killed, 1 survived, 2 uncovered (ran 7, reused 8)"
-      And each survivor is listed as "survived src/board.ts:5:9 `>` → `>=` in board#place"
+      Then stdout says "14 killed, 1 survived, 2 uncovered in src/board.ts (ran 7, reused 8)"
+      And each survivor is listed as "survived `>` → `>=` in board#place, src/board.ts line 5 column 9"
 
     @ID-MUT-29
     Scenario Outline: Exit codes
@@ -2667,7 +2667,7 @@ Feature: Mutation testing
     Scenario: An excepted survivor fails nothing
       Given itos-cc.yaml excepts the survivor of "Board#count", and every other mutant of src/board.ts is killed
       When I run "itos-cc mutation run src/board.ts"
-      Then stdout says "src/board.ts: 14 killed, 0 survived, 1 excepted, 0 uncovered (ran 15, reused 0)"
+      Then stdout says "14 killed, 0 survived, 1 excepted, 0 uncovered in src/board.ts (ran 15, reused 0)"
       And the exit code is 0
 
     @mutation-exceptions @ID-MUT-90

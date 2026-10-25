@@ -180,7 +180,7 @@ func (r *countedProgress) NotBuilt(files []mutants.NotBuilt) {
 		return
 	}
 	for _, f := range files {
-		_, _ = fmt.Fprintf(r.Log, "itos-cc: %s: not built on %s, so not judged here\n", f.Path, f.Platform)
+		_, _ = fmt.Fprintf(r.Log, "itos-cc: not built on %s, so %s is not judged here\n", f.Platform, f.Path)
 	}
 }
 
@@ -259,7 +259,7 @@ func (p *Presentation) printCounted(r *countedResult) {
 		if site.Outcome != "" {
 			what = site.Outcome
 		}
-		line := fmt.Sprintf("  %s %s:%d:%d %s → %s in %s", what, site.File, site.Line, site.Column, Quote(site.Original), Quote(site.Replacement), site.Function)
+		line := fmt.Sprintf("  %s %s → %s in %s, %s", what, Quote(site.Original), Quote(site.Replacement), site.Function, SiteAt(site.File, site.Line, site.Column))
 		if site.Scope == mutants.ScopeListed {
 			line += " by listed tests " + strings.Join(site.Tests, " ")
 		}

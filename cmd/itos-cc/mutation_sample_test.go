@@ -264,9 +264,9 @@ func TestTheSampleAsJSON(t *testing.T) {
 	}
 	var fromJSON []string
 	for _, p := range m.Problems {
-		fromJSON = append(fromJSON, fmt.Sprintf("  mismatch %s:%v:%v %s → %s in %s: recorded %s, now %s\n",
-			p["file"], p["line"], p["column"], mutationslice.Quote(p["original"].(string)), mutationslice.Quote(p["replacement"].(string)),
-			p["function"], p["recorded"], p["outcome"]))
+		fromJSON = append(fromJSON, fmt.Sprintf("  mismatch %s → %s in %s, %s line %v column %v: recorded %s, now %s\n",
+			mutationslice.Quote(p["original"].(string)), mutationslice.Quote(p["replacement"].(string)), p["function"],
+			p["file"], p["line"], p["column"], p["recorded"], p["outcome"]))
 	}
 	if !slices.Equal(listed, fromJSON) {
 		t.Errorf("plain output lists:\n%q\nwant the problems of --json:\n%q", listed, fromJSON)

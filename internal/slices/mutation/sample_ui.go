@@ -104,52 +104,60 @@ func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Writte
 	p := &Presentation{UI: ui, JSON: c.JSON}
 	reported := map[string]bool{}
 	for _, f := range sampled.Files {
-		if len(f.FailedSelections) > 0 && !f.BaselineFailed {
-			result.Files = append(result.Files, sampleFile{File: f.Rel, Baseline: "failed", Mutants: []sampledMutant{}})
-			if !c.JSON {
-				_, _ = fmt.Fprintf(ui.Stdout, "%s: listed tests its sampled mutants run fail without any mutant; no sampled mutant is judged\n", f.Rel)
-			}
-			p.FailedSelections(f.FailedSelections, reported, "mutation sample")
-			continue
-		}
-		if f.BaselineFailed {
-			result.Files = append(result.Files, sampleFile{File: f.Rel, Baseline: "failed", Mutants: []sampledMutant{}})
-			if !c.JSON {
-				_, _ = fmt.Fprintf(ui.Stdout, "%s: baseline tests fail; no sampled mutant ran\n%s\n", f.Rel, HeadAndTail(f.BaselineOutput, reportedLines))
-			}
-			p.report(p.baselineFailed(f.Rel, f.BaselineCopy, f.BaselineLeftOut, "run", "mutation sample").With("output", HeadAndTail(f.BaselineOutput, reportedLines)))
-			continue
-		}
-		out := sampleFile{File: f.Rel, Baseline: "passed", Mutants: []sampledMutant{}}
-		var differ []mutants.SampledMutant
-		for _, m := range f.Mutants {
-			out.Mutants = append(out.Mutants, sampledMutant{Line: m.Line, Column: m.Column, Function: m.Function,
-				Original: m.Original, Replacement: m.Replacement, Recorded: m.Recorded, Outcome: m.Outcome, Scope: m.Scope})
-			if !m.Agrees() {
-				differ = append(differ, m)
-			}
-		}
-		result.Files = append(result.Files, out)
-		if !c.JSON {
-			_, _ = fmt.Fprintf(ui.Stdout, "%s: %d sampled, %d mismatched\n", f.Rel, len(f.Mutants), len(differ))
-		}
-		for _, m := range differ {
-			p.Mismatch(f.Rel, m)
-		}
+		p.sampledFile(f, &result, reported)
 	}
 	return ui.Emit(c.JSON, result, p.Problems)
 }
 
+// sampledFile presents file f of a sample, adding it to result: a failed
+// selection of listed tests or baseline, which judges none of its sampled
+// mutants, or how many were sampled and each that mismatched. reported
+// holds the selections reported so far.
+func (p *Presentation) sampledFile(f mutants.SampledFile, result *sampleResult, reported map[string]bool) {
+	if len(f.FailedSelections) > 0 && !f.BaselineFailed {
+		result.Files = append(result.Files, sampleFile{File: f.Rel, Baseline: "failed", Mutants: []sampledMutant{}})
+		if !p.JSON {
+			_, _ = fmt.Fprintf(p.UI.Stdout, "listed tests the sampled mutants of %s run fail without any mutant; no sampled mutant is judged\n", f.Rel)
+		}
+		p.FailedSelections(f.FailedSelections, reported, "mutation sample")
+		return
+	}
+	if f.BaselineFailed {
+		result.Files = append(result.Files, sampleFile{File: f.Rel, Baseline: "failed", Mutants: []sampledMutant{}})
+		if !p.JSON {
+			_, _ = fmt.Fprintf(p.UI.Stdout, "baseline tests of %s fail; no sampled mutant ran\n%s\n", f.Rel, HeadAndTail(f.BaselineOutput, reportedLines))
+		}
+		p.report(p.baselineFailed(f.Rel, f.BaselineCopy, f.BaselineLeftOut, "run", "mutation sample").With("output", HeadAndTail(f.BaselineOutput, reportedLines)))
+		return
+	}
+	out := sampleFile{File: f.Rel, Baseline: "passed", Mutants: []sampledMutant{}}
+	var differ []mutants.SampledMutant
+	for _, m := range f.Mutants {
+		out.Mutants = append(out.Mutants, sampledMutant{Line: m.Line, Column: m.Column, Function: m.Function,
+			Original: m.Original, Replacement: m.Replacement, Recorded: m.Recorded, Outcome: m.Outcome, Scope: m.Scope})
+		if !m.Agrees() {
+			differ = append(differ, m)
+		}
+	}
+	result.Files = append(result.Files, out)
+	if !p.JSON {
+		_, _ = fmt.Fprintf(p.UI.Stdout, "%d sampled, %d mismatched in %s\n", len(f.Mutants), len(differ), f.Rel)
+	}
+	for _, m := range differ {
+		p.Mismatch(f.Rel, m)
+	}
+}
+
 // Mismatch lists sampled mutant m of file rel on stdout, as "mismatch
-// <file>:<line>:<column> <original> → <replacement> in <function>:
-// recorded <outcome>, now <outcome>", and reports it as mutation.mismatch,
+// <original> → <replacement> in <function>, <file> line <line> column
+// <column>: recorded <outcome>, now <outcome>", and reports it as mutation.mismatch,
 // with the scope it ran with and a fix that re-runs it there, its command
 // last, after a colon and in no quotes of its own, so it pastes as written
 // whatever quotes a --test-command line brings (slice-45).
 func (p *Presentation) Mismatch(rel string, m mutants.SampledMutant) {
 	if !p.JSON {
-		_, _ = fmt.Fprintf(p.UI.Stdout, "  mismatch %s:%d:%d %s → %s in %s: recorded %s, now %s\n", rel, m.Line, m.Column,
-			Quote(m.Original), Quote(m.Replacement), m.Function, m.Recorded, m.Outcome)
+		_, _ = fmt.Fprintf(p.UI.Stdout, "  mismatch %s → %s in %s, %s: recorded %s, now %s\n",
+			Quote(m.Original), Quote(m.Replacement), m.Function, SiteAt(rel, m.Line, m.Column), m.Recorded, m.Outcome)
 	}
 	problem := cli.NewProblem(cli.CodeNo, "mutation.mismatch",
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s was recorded %s, and is %s now", rel, m.Line, m.Column,

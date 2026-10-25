@@ -17,6 +17,14 @@ func Quote(s string) string {
 	return "`" + s + "`"
 }
 
+// SiteAt is a site of file rel as a plain line names it, after the
+// change: "src/board.go line 5 column 9" (slice-51, q-97). A plain line
+// never holds path:line:column, which CI problem matchers such as
+// setup-go's read as a compiler error.
+func SiteAt(rel string, line, column int) string {
+	return fmt.Sprintf("%s line %d column %d", rel, line, column)
+}
+
 // LanguageName retains the existing mutation presentation vocabulary.
 func LanguageName(language string) string {
 	switch language {

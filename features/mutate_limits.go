@@ -50,7 +50,9 @@ func capsSteps(sc *godog.ScenarioContext, m *mutateState) {
 	sc.Step(`^"itos-cc mutation check src/board\.go" counts it killed and exits 0$`, c.checkCountsKilled)
 	sc.Step(`^when it now runs past its timeout, "itos-cc mutation sample --count 20 src/board\.go" reports no problem and exits 0$`, c.sampleAgrees)
 	sc.Step(`^the tests of src/board\.py fail without any mutation, printing 100 numbered lines, the first naming the cause$`, c.hundredLines)
-	sc.Step(`^lines 1 to 20 follow it, then "… 60 lines left out …", then lines 81 to 100$`, func() error { return c.headAndTail(m.w.stdout, "baseline tests fail; snapshot not updated") })
+	sc.Step(`^lines 1 to 20 follow it, then "… 60 lines left out …", then lines 81 to 100$`, func() error {
+		return c.headAndTail(m.w.stdout, "baseline tests of src/board.py fail; snapshot not updated")
+	})
 	sc.Step(`^its "output" in --json is those same lines$`, c.jsonOutput)
 	sc.Step(`^"itos-cc mutation sample src/board\.py" reports the failing baseline with the same lines$`, c.sampleHeadAndTail)
 }
@@ -667,7 +669,7 @@ func (c *capsState) sampleHeadAndTail() error {
 	if err != nil {
 		return err
 	}
-	if err := c.headAndTail(stdout, "baseline tests fail; no sampled mutant ran"); err != nil {
+	if err := c.headAndTail(stdout, "baseline tests of src/board.py fail; no sampled mutant ran"); err != nil {
 		return fmt.Errorf("%w\nexit %d\n--- stdout\n%s--- stderr\n%s", err, code, stdout, stderr)
 	}
 	return nil

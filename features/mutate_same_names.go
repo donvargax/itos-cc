@@ -102,18 +102,18 @@ func (m *mutateState) initSites() ([]lineRange, [][]listedSite, error) {
 // summary is what mutation run says of a file on stdout.
 type summary struct{ killed, survived, uncovered, ran, reused int }
 
-var summaryLine = regexp.MustCompile(`(?m)^(\S+): (\d+) killed, (\d+) survived, (\d+) uncovered \(ran (\d+), reused (\d+)\)\r?$`)
+var summaryLine = regexp.MustCompile(`(?m)^(\d+) killed, (\d+) survived, (\d+) uncovered in (\S+) \(ran (\d+), reused (\d+)\)\r?$`)
 
 // summaryOf is what stdout, a mutation run's, says of file, and whether it
 // says anything.
 func summaryOf(stdout, file string) (summary, bool) {
 	for _, match := range summaryLine.FindAllStringSubmatch(stdout, -1) {
-		if filepath.ToSlash(match[1]) != file {
+		if filepath.ToSlash(match[4]) != file {
 			continue
 		}
 		n := make([]int, 5)
-		for i := range n {
-			n[i], _ = strconv.Atoi(match[i+2])
+		for i, at := range []int{1, 2, 3, 5, 6} {
+			n[i], _ = strconv.Atoi(match[at])
 		}
 		return summary{n[0], n[1], n[2], n[3], n[4]}, true
 	}

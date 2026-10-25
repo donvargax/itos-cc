@@ -168,7 +168,7 @@ func (q *mutationExecution) aggregateShape() error {
 	if err != nil {
 		return err
 	}
-	const want = "main.go: 2 killed, 1 survived, 0 uncovered (ran 3, reused 0)\n  survived main.go:3:34 `>` → `>=` in example.com/ownership#Weak\n"
+	const want = "2 killed, 1 survived, 0 uncovered in main.go (ran 3, reused 0)\n  survived `>` → `>=` in example.com/ownership#Weak, main.go line 3 column 34\n"
 	if plain.Exit != 1 || plain.Out != want {
 		return fmt.Errorf("aggregate exact plain output: exit%d got%q want%q", plain.Exit, plain.Out, want)
 	}
@@ -293,7 +293,7 @@ func (q *mutationExecution) aggregateBlocked() error {
 		return fmt.Errorf("aggregate blocked baseline: %+v", o)
 	}
 	plain := q.observations["aggregatePlain"]
-	if plain.Exit != 1 || !strings.Contains(plain.Out, "main.go: listed tests its mutants run fail without any mutant; snapshot not updated") {
+	if plain.Exit != 1 || !strings.Contains(plain.Out, "listed tests the mutants of main.go run fail without any mutant; snapshot not updated") {
 		return fmt.Errorf("aggregate blocked plain output: %+v", plain)
 	}
 	return nil

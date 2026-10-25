@@ -76,8 +76,8 @@ func (p *Presentation) Failed(rel, function string, items []mutants.Mutant, fail
 
 func (p *Presentation) Mutant(rel, function string, m mutants.Mutant, rule, what, verdict, fix string) {
 	if !p.JSON {
-		_, _ = fmt.Fprintf(p.UI.Stdout, "  %s %s:%d:%d %s → %s in %s\n", what, rel, m.Line, m.Column,
-			Quote(m.Original), Quote(m.Replacement), function)
+		_, _ = fmt.Fprintf(p.UI.Stdout, "  %s %s → %s in %s, %s\n", what,
+			Quote(m.Original), Quote(m.Replacement), function, SiteAt(rel, m.Line, m.Column))
 	}
 	problem := cli.NewProblem(cli.CodeNo, rule,
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s %s", rel, m.Line, m.Column, Quote(m.Original), Quote(m.Replacement), function, verdict),
@@ -104,9 +104,9 @@ func (p *Presentation) CoverageProblem(language, file, function string, line int
 
 func (p *Presentation) StaleExceptions(ctx context.Context, rel string, stale []mutants.StaleException) {
 	for _, e := range stale {
-		at := fmt.Sprintf("%s:%d:%d", rel, e.Line, e.Column)
+		at, shown := fmt.Sprintf("%s:%d:%d", rel, e.Line, e.Column), SiteAt(rel, e.Line, e.Column)
 		if e.Line == 0 {
-			at = rel
+			at, shown = rel, rel
 		}
 		change := fmt.Sprintf("%s → %s in %s", Quote(e.Original), Quote(e.Replacement), e.Function)
 		var newFile string
@@ -118,7 +118,7 @@ func (p *Presentation) StaleExceptions(ctx context.Context, rel string, stale []
 			if newFile != "" {
 				why += " to " + newFile
 			}
-			_, _ = fmt.Fprintf(p.UI.Stdout, "  exception-stale %s %s (%s)\n", at, change, why)
+			_, _ = fmt.Fprintf(p.UI.Stdout, "  exception-stale %s, %s (%s)\n", change, shown, why)
 		}
 		var message, fix string
 		switch e.Why {

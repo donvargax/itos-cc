@@ -152,16 +152,16 @@ judged, a run removes the orphans under its paths, the working directory
 when it is given none, and every directory that leaves empty under
 .metrics/mutate; it keeps every snapshot whose file exists, even a new
 file's at an old path, whose functions go stale by hash. It names each one,
-a line "<file>: gone, its snapshot <snapshot> was an orphan, and is
-removed", and in --json under "orphans". The snapshot of a source that
-itos-cc.yaml's exclude leaves out is an orphan too, though its file is
-there, named "<file>: excluded, …". A counted run writes nothing, so it
+a line "snapshot <snapshot> was an orphan, and is removed: its source
+<file> is gone", and in --json under "orphans". The snapshot of a source
+that itos-cc.yaml's exclude leaves out is an orphan too, though its file
+is there, named "…: its source <file> is excluded". A counted run writes nothing, so it
 removes nothing.
 
 A Go file only another system builds is not judged here: its name's
 _GOOS or _GOARCH suffix, or its //go:build line, rules out the GOOS and
 GOARCH go env reports, whatever its other tags. The run leaves it out,
-says "itos-cc: <file>: not built on <goos>/<goarch>, so not judged here"
+says "itos-cc: not built on <goos>/<goarch>, so <file> is not judged here"
 on stderr, lists it under "not_built" in --json, and fails nothing for
 it, --fail-uncovered included. Its snapshot, which a run on a system that
 builds it writes, is left as it is, and is no orphan; a counted run

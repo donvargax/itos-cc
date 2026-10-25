@@ -26,7 +26,7 @@ func (m *mutateState) eachListedAs(line int, text string) error {
 		return fmt.Errorf("stdout lists %d of the %d mutants on line %d as uncovered\n%s", len(listed), len(on), line, m.w.report())
 	}
 	for _, s := range listed {
-		if got := "uncovered " + s.String(); got != text {
+		if got := "uncovered " + s.Plain(); got != text {
 			return fmt.Errorf("stdout lists %q, not %q\n%s", got, text, m.w.report())
 		}
 	}

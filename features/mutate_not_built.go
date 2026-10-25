@@ -204,7 +204,7 @@ func (n *notBuiltState) notBuiltHere() error {
 
 // saysNotBuilt is whether stderr says the other file is not built here.
 func (n *notBuiltState) saysNotBuilt() error {
-	want := fmt.Sprintf("itos-cc: %s: not built on %s, so not judged here", n.other, n.platform())
+	want := fmt.Sprintf("itos-cc: not built on %s, so %s is not judged here", n.platform(), n.other)
 	if !strings.Contains(n.m.w.stderr, want) {
 		return fmt.Errorf("stderr does not say %q\n%s", want, n.m.w.report())
 	}

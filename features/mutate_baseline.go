@@ -344,7 +344,9 @@ func failingLines() string {
 // its 30 lines, under the 40 a report keeps whole, with no line left out.
 func (m *mutateState) wholeOutputFollows() error {
 	lines := outputLines(strings.ReplaceAll(m.w.stdout, "\r\n", "\n"))
-	at := slices.IndexFunc(lines, func(l string) bool { return strings.Contains(l, "baseline tests fail") })
+	at := slices.IndexFunc(lines, func(l string) bool {
+		return strings.HasPrefix(l, "baseline tests of ") && strings.Contains(l, " fail; ")
+	})
 	if at < 0 {
 		return fmt.Errorf("stdout says no baseline fails\n%s", m.w.report())
 	}

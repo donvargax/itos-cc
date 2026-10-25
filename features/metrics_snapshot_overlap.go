@@ -260,7 +260,7 @@ func (q *snapshotState) consumedReports(ctx context.Context) error {
 		return err
 	}
 	for _, file := range []string{"board.go", "other/board.go"} {
-		if !strings.Contains(a.result.Stdout, file+": 4 killed, 0 survived, 0 uncovered (ran 4, reused 0)") {
+		if !strings.Contains(a.result.Stdout, "4 killed, 0 survived, 0 uncovered in "+file+" (ran 4, reused 0)") {
 			return fmt.Errorf("mutation consumed profile %s: %s", file, a.result.Stdout)
 		}
 		v, err := q.object(".metrics/mutate/" + file + ".json")

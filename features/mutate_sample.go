@@ -514,7 +514,7 @@ func (p *sampleMutation) plainAgrees() error {
 	}
 	repeated := false
 	for _, mu := range checkProblems(obj) {
-		want = append(want, fmt.Sprintf("  mismatch %s:%v:%v %s → %s in %s: recorded %s, now %s", filepath.ToSlash(fmt.Sprint(mu["file"])), mu["line"], mu["column"], quoteSample(fmt.Sprint(mu["original"])), quoteSample(fmt.Sprint(mu["replacement"])), mu["function"], mu["recorded"], mu["outcome"]))
+		want = append(want, fmt.Sprintf("  mismatch %s → %s in %s, %s line %v column %v: recorded %s, now %s", quoteSample(fmt.Sprint(mu["original"])), quoteSample(fmt.Sprint(mu["replacement"])), mu["function"], filepath.ToSlash(fmt.Sprint(mu["file"])), mu["line"], mu["column"], mu["recorded"], mu["outcome"]))
 		// The plain output prints each problem once: a mismatch its
 		// stdout line lists is not repeated on stderr.
 		repeated = repeated || strings.Contains(stderr, fmt.Sprint(mu["message"]))

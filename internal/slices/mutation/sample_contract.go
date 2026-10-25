@@ -40,8 +40,8 @@ REF...HEAD).
 
 A Go file only another system builds, as mutation run judges it, has none
 of its recorded mutants drawn: here each would survive, unbuilt, and read
-as a mismatch. sample says "itos-cc: <file>: not built on <goos>/<goarch>,
-so not judged here" on stderr, and lists it under "not_built" in --json.
+as a mismatch. sample says "itos-cc: not built on <goos>/<goarch>, so
+<file> is not judged here" on stderr, and lists it under "not_built" in --json.
 
 Each mutant runs with the scope of the tests its outcome was recorded with:
 the file's own tests, the whole suite (--all-tests), the --test-command
@@ -56,8 +56,8 @@ outcome recorded before scopes were is the file's own tests'.
 mutant with it instead.
 
 Plain output is the seed and how many of the cached mutants were sampled,
-then a line per file, "<file>: N sampled, N mismatched", then each mismatch:
-  mismatch <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name>: recorded <outcome>, now <outcome>
+then a line per file, "N sampled, N mismatched in <file>", then each mismatch:
+  mismatch ` + "`original` → `replacement`" + ` in <namespace#name>, <file> line <line> column <column>: recorded <outcome>, now <outcome>
 With --json, each file's "mutants" holds the mutants sampled, in site order;
 it is empty, and "baseline" is "failed", when the file's baseline or a
 selection of listed tests failed.`,

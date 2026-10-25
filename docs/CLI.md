@@ -50,6 +50,12 @@ contract is a breaking change, made in a major release with the others that
 are ready (rules 42 and 43). Before 1.0 a breaking change is made in a minor
 release instead: itos-cc is at 0.x.
 
+A plain line of `mutation run`, `check` or `sample` gives its counts or verdict first and the
+file after them, and names a site as `<file> line <line> column <column>`: no such line starts
+with a path or holds `path:line:column`, which CI problem matchers, setup-go's among them, read
+as a compiler error on a passing run (slice-51, issue #21). A problem's `message`, which `--json`
+holds unchanged, keeps its `<file>:<line>:<column>`: a problem is printed only when a run fails.
+
 ### Exit codes
 
 | Code | Meaning                                                                                |
@@ -666,7 +672,7 @@ env` reports whatever its other tags, is no problem either: `mutation run`,
 `check` and `sample` leave it out of `"files"`, list it in a key of its own,
 `"not_built": [{"file", "platform"}]`, there only when there is one, with
 `file` as in `"files"` and `platform` as `go env` names it, `linux/amd64`,
-say `itos-cc: <file>: not built on <platform>, so not judged here` on
+say `itos-cc: not built on <platform>, so <file> is not judged here` on
 stderr, and fail nothing for it, `--fail-uncovered` included; a `--count`
 run lists it the same way, `file` from the repository's top as its
 `"selected"` name files. Its snapshot is no orphan and is neither rewritten

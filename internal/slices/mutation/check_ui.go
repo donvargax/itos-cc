@@ -94,8 +94,8 @@ func (c Check) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		}
 		result.Files = append(result.Files, f)
 		if !c.JSON {
-			_, _ = fmt.Fprintf(ui.Stdout, "%s: %d fresh, %d stale, %d missing%s\n", file.Rel, count[mutants.SnapshotFresh], count[mutants.Stale], count[mutants.Missing],
-				testsNote(file.Functions))
+			_, _ = fmt.Fprintf(ui.Stdout, "%d fresh, %d stale, %d missing in %s%s\n", count[mutants.SnapshotFresh], count[mutants.Stale], count[mutants.Missing],
+				file.Rel, testsNote(file.Functions))
 		}
 		for _, fn := range file.Functions {
 			switch fn.State {
@@ -149,7 +149,7 @@ func (p *Presentation) Orphans(orphans []Orphan, what string) {
 		return
 	}
 	for _, o := range orphans {
-		_, _ = fmt.Fprintf(p.UI.Stdout, "%s: %s, its snapshot %s %s\n", o.File, o.Why, o.Snapshot, what)
+		_, _ = fmt.Fprintf(p.UI.Stdout, "snapshot %s %s: its source %s is %s\n", o.Snapshot, what, o.File, o.Why)
 	}
 }
 func uncoveredFails(enabled bool, scope mutants.LineScope, path string) func(int) bool {
