@@ -15,7 +15,6 @@ queue:
   - listed-suites
   - features-coverage-gocoverdir-leak
   - T-102
-  - T-103
   - T-112
   - T-113
   - mutation-windows-ownership
@@ -2769,7 +2768,7 @@ items:
     title: Run graph HTTP-edge scenarios through the black-box harness
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: [T-102]
     kind: task
     deferred: >
