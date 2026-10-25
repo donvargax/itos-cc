@@ -18,7 +18,7 @@ queue:
   - flaky-kills-record
   - sample-repeat
   - T-208
-  - graph-command
+  - slice-56
   - graph-nightly
   - T-102
   - T-103
@@ -5733,14 +5733,15 @@ items:
     why: >
       q-93 item C (the person 2026-10-24): any disagreement among the N runs is mutation.flaky,
       catching a flake that happens to agree once; also for run --count. After slice-50.
-  - id: graph-command
+  - id: slice-56
     title: itos-cc graph writes the architecture graph as .metrics/graph.json
     phase: 1
     owner: null
     status: todo
     depends_on: [T-208]
-    kind: idea
+    kind: slice
     why: >
+      Was graph-command.
       graph-snapshot item 2 (q-95, the person 2026-10-24): a cli.Declaration in
       internal/slices/graph writing graph.json through the snapshot store (reading crap.json and
       dry.json through Store.Read): whole project, no selection flags, ignores exclude; --json
@@ -5756,7 +5757,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [graph-command]
+    depends_on: [slice-56]
     kind: idea
     why: >
       graph-snapshot item 3 (q-95): the nightly's snapshots job runs itos-cc graph after crap and
