@@ -2859,7 +2859,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-108]
+    depends_on: [serve-static-on-kong]
     kind: task
     deferred: >
       Serve leaves this repository to become its own web app, and the architecture graph is
