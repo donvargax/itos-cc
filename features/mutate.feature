@@ -618,6 +618,36 @@ Feature: Mutation testing
       Then leak.go's baseline passed and every mutant of leak.go survived
       And the exit code is 1
 
+    # slice-59, q-96 (the person 2026-10-25): GOCOVERDIR, which tells a
+    # program built with -cover where to write its counters, passed from
+    # itos-cc to every command it starts, so a project's tests run without
+    # coverage wrote counters where nobody asked, and in itos-cc's own
+    # coverage folders go tool covdata refused the mix of counter modes
+    # (T-154's seven scenarios, the measuring nightly 39719212234's nine, and
+    # crap.json partial since T-190). Decided: itos-cc removes an inherited
+    # GOCOVERDIR from the environment of every command it starts and sets one
+    # only for the coverage runs it does itself. No message (it is correct
+    # behaviour, and a note would be noise in the CI logs that measure
+    # itos-cc) and no setting (neither way itos-cc runs a project's tests
+    # wants the inherited value). itos-cc's own process keeps it, so
+    # measuring itos-cc still works. README and features/README.md say so,
+    # with the module-wide coverage recipe (GOCOVERDIR reaches TestFeatures
+    # only through an -exec wrapper). Binary-only for good: the environment
+    # is the real process's. Before this item the test sees the variable and
+    # fails, failing at the Then.
+    @slice-59 @ID-MUT-352 @binary-only @wip
+    Scenario: The tests itos-cc runs never inherit its GOCOVERDIR
+      Given the Go module "example.com/leak" with the file "leak.go":
+        """
+        package leak
+
+        func A(x int) bool { return x > 0 }
+        """
+      And its test, which checks no result, fails when GOCOVERDIR is set
+      When itos-cc runs with "mutation run --no-coverage --workers 1 --no-annotate --json leak.go" and the environment "GOCOVERDIR=<a folder of its own>"
+      Then leak.go's baseline passed and every mutant of leak.go survived
+      And the exit code is 1
+
     @slice-43 @ID-MUT-331
     Scenario Outline: A mutation.copy glob that is no pattern is a config error
       Given itos-cc.yaml holds '<yaml>'
