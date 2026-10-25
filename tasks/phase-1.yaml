@@ -6979,6 +6979,16 @@
     replaces T-106 and T-107. Proof: the moved Go tests and serve's existing Go tests pass
     unchanged; the per-push code proof judges a site of changed code as usual; no refactor-proof
     dispatch (serve is parked and its scenarios are @wip).
+
+    Amended by the coordinator (2026-10-24, the agent's stop): tools/bin/assemble -check refuses a
+    folder under internal/slices that declares no command, so the move cannot land alone without
+    weakening that gate. It lands in one push with slice-56 (graph-command, the itos-cc graph
+    command, features/graph_command.feature): T-208's refactor commits first, then slice-56's test
+    commit and feat. And graph's tests cannot all move unchanged, since architecture-check refuses
+    a slice package importing another slice's, tests included: the parity tests (graph's
+    staleness equals mutation check's, GRAPH-38, and the snapshot fixtures) move with the
+    freshness function to the mutation slice, the binding tests to cmd, graph's own tests drive a
+    fake of its port, and the tree, metrics and http edge tests move unchanged.
   done_when:
     - run: test -d internal/slices/graph
     - run: "! test -d graph"
