@@ -257,3 +257,27 @@ func TestARunOfReusedMutantsIsToldFromOneWithNone(t *testing.T) {
 		t.Errorf("a file with no mutant reported %+v, want nothing to test", events.values)
 	}
 }
+
+// A run of a file with a single site, reused, says it reused it, not that
+// the selection has no mutant (slice-48).
+func TestARunReusingASingleSiteSaysItReusedIt(t *testing.T) {
+	f := newRunFixture(t)
+	f.files[f.path] = "package board\nfunc Value() bool { return true }\n"
+	refreshRunTree(f)
+	events := &runEvents{}
+	f.options.Progress = events
+	if first := f.run(t); first[0].Ran != 1 {
+		t.Fatalf("the first run: %+v, want the one site run", first)
+	}
+	before := len(events.values)
+	if second := f.run(t); second[0].Ran != 0 || second[0].Reused != 1 {
+		t.Fatalf("the second run: %+v, want the one site reused", second)
+	}
+	var kinds []string
+	for _, e := range events.values[before:] {
+		kinds = append(kinds, e.Kind)
+	}
+	if !reflect.DeepEqual(kinds, []string{"reused"}) {
+		t.Errorf("a run reusing its one site reported %q, want reused alone", kinds)
+	}
+}
