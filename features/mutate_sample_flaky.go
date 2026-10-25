@@ -1,6 +1,7 @@
 package features
 
 import (
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -31,8 +32,16 @@ func (p *sampleMutation) flipping(outcomes ...string) error {
 // flaky is whether the last run reports one problem, a mutation.flaky of
 // the place mutant at its boundary, recorded as recorded, with outcomes,
 // in run order, and the fields of a mismatch beside them: outcome, its
-// first, and scope, the file's own tests.
+// first, and scope, the file's own tests. Through the binary the place
+// test counts its runs in the control file, so they are counted afresh
+// before the run is made again with --json: an odd number of runs would
+// start that one at another outcome.
 func (p *sampleMutation) flaky(recorded string, outcomes []string, full bool) error {
+	if p.flip != nil {
+		if err := p.writeControl(); err != nil {
+			return err
+		}
+	}
 	obj, err := p.object()
 	if err != nil {
 		return err
@@ -99,7 +108,8 @@ func (p *sampleMutation) ranThrice() error {
 	return nil
 }
 
-func (p *sampleMutation) ranOnce() error {
+// ranTimes is whether both sampled mutants ran times times.
+func (p *sampleMutation) ranTimes(times int) error {
 	ran, err := p.runsOf()
 	if err != nil {
 		return err
@@ -108,9 +118,41 @@ func (p *sampleMutation) ranOnce() error {
 		return fmt.Errorf("sampled %v, want both mutants", ran)
 	}
 	for site, n := range ran {
-		if n != 1 {
-			return fmt.Errorf("%s ran %d times, want once\n%s", site, n, p.s.m.w.report())
+		if n != times {
+			return fmt.Errorf("%s ran %d times, want %d\n%s", site, n, times, p.s.m.w.report())
 		}
+	}
+	return nil
+}
+
+// oneRunAgrees samples again without --repeat, the place test's runs
+// counted afresh: the one run of the mutant at the boundary gives the
+// first of its outcomes, which agrees with the recording, so the sample
+// exits 0 with no problem.
+func (p *sampleMutation) oneRunAgrees() error {
+	if err := p.writeControl(); err != nil {
+		return err
+	}
+	w := p.s.m.w
+	code, out, errOut, err := w.capture(w.dir, w.env(), "mutation", "sample", "--json", p.s.file)
+	if err != nil {
+		return err
+	}
+	var obj map[string]any
+	if err := json.Unmarshal([]byte(out), &obj); err != nil {
+		return fmt.Errorf("sample without --repeat printed no JSON object: %w\n%s%s", err, out, errOut)
+	}
+	boundary := 0
+	for _, mu := range sampleEntries(obj) {
+		if mu["original"] == ">" && mu["line"] == float64(5) {
+			boundary++
+			if got := fmt.Sprint(mu["outcomes"]); got != "[killed]" {
+				return fmt.Errorf("without --repeat the mutant at the boundary gave %s, want [killed]\n%s%s", got, out, errOut)
+			}
+		}
+	}
+	if code != 0 || boundary == 0 || len(checkProblems(obj)) != 0 {
+		return fmt.Errorf("sample without --repeat exited %d, sampling the boundary %d times, with problems %v\n%s%s", code, boundary, checkProblems(obj), out, errOut)
 	}
 	return nil
 }

@@ -48,6 +48,9 @@ type identityException struct {
 	w *world
 	// counted is the identity the counted run of MUT-318's Given reported.
 	counted string
+	// external is the folder outside the module of a flipping test's
+	// control file, or "".
+	external string
 }
 
 func identityExceptionSteps(sc *godog.ScenarioContext, w *world) {
@@ -56,8 +59,16 @@ func identityExceptionSteps(sc *godog.ScenarioContext, w *world) {
 		*i = identityException{w: w}
 		return ctx, nil
 	})
+	sc.After(func(ctx context.Context, _ *godog.Scenario, _ error) (context.Context, error) {
+		if i.external != "" {
+			return ctx, w.d.Remove(i.external)
+		}
+		return ctx, nil
+	})
 	sc.Step(`^a committed Go module whose "example\.com/fx/board#Count" survives its test$`, func() error { return i.module(identityTest, true) })
 	sc.Step("^a committed Go module whose test also checks Count\\(5\\), so `<` → `<=` is killed$", func() error { return i.module(identityKilling, false) })
+	sc.Step(`^its test kills that mutant on one run and misses it on the next, with nothing it hashes changed$`, func() error { return i.flipping("killed", "survived") })
+	sc.Step(`^the problem is "mutation\.flaky", with outcomes "([^"]*)", "([^"]*)"$`, func(first, second string) error { return i.countedFlaky(first, second) })
 	sc.Step(`^\.metrics/mutate holds no snapshot of board/board\.go$`, i.noSnapshot)
 	sc.Step(`^a snapshot of board/board\.go is stale, a later commit having changed board/board_test\.go$`, i.staleSnapshot)
 	sc.Step("^\"itos-cc mutation run --count 5 --json\" reported the survivor `<` → `<=` at board/board\\.go:5:11 with its identity$", i.reported)

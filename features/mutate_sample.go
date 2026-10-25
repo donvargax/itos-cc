@@ -97,8 +97,13 @@ func sampleMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMuta
 	sc.Step(`^the problem is "mutation\.flaky", with recorded "([^"]*)" and outcomes "([^"]*)", "([^"]*)"$`, func(recorded, first, second string) error {
 		return p.flaky(recorded, []string{first, second}, false)
 	})
+	sc.Step(`^the problem is "mutation\.flaky", with recorded "([^"]*)" and outcomes "([^"]*)", "([^"]*)", "([^"]*)"$`, func(recorded, first, second, third string) error {
+		return p.flaky(recorded, []string{first, second, third}, false)
+	})
+	sc.Step(`^without --repeat the sample passes, its one run agreeing with the recording$`, p.oneRunAgrees)
 	sc.Step(`^that mutant ran 3 times$`, p.ranThrice)
-	sc.Step(`^each sampled mutant ran once$`, p.ranOnce)
+	sc.Step(`^each sampled mutant ran once$`, func() error { return p.ranTimes(1) })
+	sc.Step(`^each sampled mutant ran (\d+) times$`, p.ranTimes)
 	sc.Step(`^stdout says "([^"]*)" and "([^"]*)"$`, func(first, second string) error {
 		if err := p.stdoutSays(first); err != nil {
 			return err
@@ -155,7 +160,7 @@ func sampleMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMuta
 	sc.Step(`^stdout names the seed, the HEAD commit's id$`, p.seedIsHead)
 	sc.Step(`^it samples the mutants that run sampled$`, p.seedReproduces)
 	sc.Step(`^"itos-cc mutation sample --seed 1" runs$`, p.seedOutside)
-	sc.Step(`^the problem is "flags\.value-invalid", with flag "--count" and value "0"$`, p.badCount)
+	sc.Step(`^the problem is "flags\.value-invalid", with flag "(--count|--repeat)" and value "0"$`, p.badValue)
 	sc.Step(`^only mutants of "Board#place" run$`, p.onlyPlace)
 	sc.Step(`^none of its mutants runs$`, p.noTrials)
 	sc.Step(`^each file has "mutants", each sampled one with line, column, function, original, replacement, recorded, outcome, and scope$`, p.sampleJSON)

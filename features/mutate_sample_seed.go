@@ -78,14 +78,16 @@ func (p *sampleMutation) seedOutside() error {
 	return p.ranCount(20)
 }
 
-func (p *sampleMutation) badCount() error {
+// badValue is whether the last run reports one flags.value-invalid, of
+// flag given 0.
+func (p *sampleMutation) badValue(flag string) error {
 	obj, err := p.object()
 	if err != nil {
 		return err
 	}
 	problems := checkProblems(obj)
-	if len(problems) != 1 || problems[0]["rule"] != "flags.value-invalid" || problems[0]["flag"] != "--count" || problems[0]["value"] != "0" {
-		return fmt.Errorf("invalid-count problem %v", problems)
+	if len(problems) != 1 || problems[0]["rule"] != "flags.value-invalid" || problems[0]["flag"] != flag || problems[0]["value"] != "0" {
+		return fmt.Errorf("invalid %s problem %v", flag, problems)
 	}
 	return nil
 }
