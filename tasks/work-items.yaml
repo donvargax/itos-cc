@@ -5937,3 +5937,10 @@ items:
       then reports physical paths where the working directory is reached through a symlink, as macOS
       t.TempDir under /var is. No failure seen yet; check whether any such command compares the
       paths it prints.
+  - id: T-212
+    title: Upgrade the repository pin to itos 8.19
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
