@@ -11,7 +11,11 @@ import (
 	"time"
 
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/project"
 	"github.com/donvargax/itos-cc/internal/slices/graph"
+	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
+	"github.com/donvargax/itos-cc/internal/workdir"
 	"github.com/donvargax/itos-cc/server"
 )
 
@@ -90,19 +94,30 @@ func runServe(ctx context.Context, in *invocation) (any, error) {
 	return served, nil
 }
 
-// newServer is the server of roots' graph, its first built under ctx, asking
-// mutation what check knows of their functions through a's snapshot
-// readers, toolchain and fingerprints.
+// newServer is the server of roots' graph, its first built under ctx,
+// reading them from the disk (servedFrom) and asking mutation what check
+// knows of their functions through a's snapshot readers, toolchain and
+// fingerprints.
 func newServer(ctx context.Context, roots []string, ui string, logger *log.Logger, a adapters) (*server.Server, error) {
 	mutation, err := newGraphMutation(a.SnapshotReaders, a.Toolchain, a.Fingerprints)
 	var b *graph.Builder
 	if err == nil {
-		b, err = graph.NewBuilder(roots, mutation)
+		b, err = graph.NewBuilder(roots, servedFrom(mutation))
 	}
 	if err != nil {
 		return nil, err
 	}
 	return server.New(ctx, servedGraph{b}, ui, logger)
+}
+
+// servedFrom is what serve reads repositories through: the disk, as
+// internal/workdir's tree and surroundings and internal/metricsdir's store
+// at each project root, the git top level of a repository's root
+// (project.RootOf), and mutation.
+func servedFrom(mutation graph.Mutation) graph.Reading {
+	return graph.Reading{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: func(top string) snapport.Store {
+		return metricsdir.Store{RootDir: top}
+	}, Mutation: mutation, Top: project.RootOf}
 }
 
 // servedGraph is server's Builder over the graph slice's: each graph built,

@@ -158,7 +158,7 @@ func TestServeBuildsItsGraphOverTheMutationBindings(t *testing.T) {
 	if _, err := newServer(t.Context(), []string{m.root}, "", logger, a); err != nil {
 		t.Fatal(err)
 	}
-	b, err := graph.NewBuilder([]string{m.root}, graphMutation{judge: mutation.Graph{Snapshots: inputs.Snapshots, Toolchain: inputs.Toolchain, Fingerprints: inputs.Fingerprints}, settings: func(string) (*mutation.Config, error) { return nil, errors.New("none") }})
+	b, err := graph.NewBuilder([]string{m.root}, servedFrom(graphMutation{judge: mutation.Graph{Snapshots: inputs.Snapshots, Toolchain: inputs.Toolchain, Fingerprints: inputs.Fingerprints}, settings: func(string) (*mutation.Config, error) { return nil, errors.New("none") }}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +171,7 @@ func TestServeBuildsItsGraphOverTheMutationBindings(t *testing.T) {
 		t.Error("serve built a graph without its toolchain")
 	}
 	gone := filepath.Join(m.root, "gone")
-	b, err = graph.NewBuilder([]string{gone}, graphMutation{judge: mutation.Graph{Snapshots: inputs.Snapshots, Toolchain: inputs.Toolchain, Fingerprints: inputs.Fingerprints}, settings: func(string) (*mutation.Config, error) { return nil, errors.New("none") }})
+	b, err = graph.NewBuilder([]string{gone}, servedFrom(graphMutation{judge: mutation.Graph{Snapshots: inputs.Snapshots, Toolchain: inputs.Toolchain, Fingerprints: inputs.Fingerprints}, settings: func(string) (*mutation.Config, error) { return nil, errors.New("none") }}))
 	if err != nil {
 		t.Fatal(err)
 	}

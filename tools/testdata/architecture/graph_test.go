@@ -2,10 +2,11 @@ package architecture_test
 
 import "strings"
 
-// graphAllowed is what the graph slice imports of ours: the shared domain
-// and engines it reads whole projects through, and metricsdir, whose folder
-// it watches for serve.
-var graphAllowed = []string{"internal/lang", "internal/imports", "internal/project", "internal/metricsdir"}
+// graphAllowed is what the graph slice imports of ours: the shared domains
+// and ports it reads whole projects through, the engines it resolves their
+// imports and reads its tests' fixtures with, and metricsdir, which names
+// the folder it watches for serve.
+var graphAllowed = []string{"internal/lang", "internal/lang/port", "internal/selection", "internal/selection/port", "internal/snapshot", "internal/snapshot/port", "internal/imports", "internal/project", "internal/metricsdir"}
 
 // addGraph writes the graph slice's arrow through TestArchitecture's add and
 // addAny (ADR-0051, q-95, T-208), its code and tests alike: it walks, parses

@@ -2,7 +2,6 @@ package graph
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -12,17 +11,35 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/imports"
+	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
-	"github.com/donvargax/itos-cc/internal/project"
+	"github.com/donvargax/itos-cc/internal/selection"
+	selport "github.com/donvargax/itos-cc/internal/selection/port"
+	"github.com/donvargax/itos-cc/internal/snapshot"
+	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
+
+// Reading is what a Builder reads repositories through, which cmd binds:
+// the tree it finds and reads their sources and tests in, what surrounds a
+// file, which lang asks to parse it, the snapshots under .metrics of each
+// project root (Store), mutation's judgment (Mutation), and Top, the
+// project root of a repository's root, whose snapshots it reads.
+type Reading struct {
+	Tree         selport.Tree
+	Surroundings langport.Surroundings
+	Store        func(top string) snapport.Store
+	Mutation     Mutation
+	Top          func(root string) string
+}
 
 // Builder rebuilds the graph of some repositories, reparsing only files that
 // changed since the last build, and asking mutation through its port what
 // mutation check knows of each function.
 type Builder struct {
+	reading   Reading
 	mutation  Mutation
 	roots     []string // absolute
-	projects  []string // the project root of each root, whose .metrics it reads (project.RootOf)
+	projects  []string // the project root of each root, whose .metrics it reads (Reading.Top)
 	names     []string
 	cache     map[string]cached
 	snapshots map[string]cachedSnapshot // by the snapshot's path
@@ -41,13 +58,16 @@ type cachedSnapshot struct {
 	snapshot any
 }
 
-// NewBuilder prepares a builder for repository roots, asking mutation what
-// mutation check knows of their functions.
-func NewBuilder(roots []string, mutation Mutation) (*Builder, error) {
-	if mutation == nil {
+// NewBuilder prepares a builder for repository roots, read through
+// reading. A missing binding is refused, never replaced by the disk.
+func NewBuilder(roots []string, reading Reading) (*Builder, error) {
+	if reading.Mutation == nil {
 		return nil, errors.New("graph mutation observation bindings are missing")
 	}
-	b := &Builder{mutation: mutation, cache: map[string]cached{}, snapshots: map[string]cachedSnapshot{}}
+	if reading.Tree == nil || reading.Surroundings == nil || reading.Store == nil || reading.Top == nil {
+		return nil, errors.New("graph reading bindings are missing")
+	}
+	b := &Builder{reading: reading, mutation: reading.Mutation, cache: map[string]cached{}, snapshots: map[string]cachedSnapshot{}}
 	seen := map[string]int{}
 	for _, r := range roots {
 		abs, err := filepath.Abs(r)
@@ -59,7 +79,7 @@ func NewBuilder(roots []string, mutation Mutation) (*Builder, error) {
 			name = fmt.Sprintf("%s-%d", name, seen[name])
 		}
 		b.roots = append(b.roots, abs)
-		b.projects = append(b.projects, project.RootOf(abs))
+		b.projects = append(b.projects, reading.Top(abs))
 		b.names = append(b.names, name)
 	}
 	return b, nil
@@ -75,18 +95,18 @@ func (b *Builder) Build(ctx context.Context) (*Graph, bool, error) {
 	var stamps []string
 	type repo struct {
 		name, root, top string
-		files           project.Files
+		sources, tests  []string
 		support         map[string]string // the hashes of its listed tests' support files
 	}
 	var repos []repo
 	for i, root := range b.roots {
-		files, err := project.Discover(ctx, []string{root})
-		if err != nil {
-			return nil, false, err
+		sources, tests, failure := b.reading.Tree.Discover(ctx, []string{root})
+		if failure != nil {
+			return nil, false, stopped(ctx, failure)
 		}
 		support := b.mutation.Support(ctx, b.projects[i])
-		repos = append(repos, repo{b.names[i], root, b.projects[i], files, support})
-		for _, f := range append(files.Sources, files.Tests...) {
+		repos = append(repos, repo{b.names[i], root, b.projects[i], sources, tests, support})
+		for _, f := range append(sources, tests...) {
 			stamps = append(stamps, f+"\x00"+stamp(f))
 		}
 		for f, hash := range support {
@@ -104,9 +124,9 @@ func (b *Builder) Build(ctx context.Context) (*Graph, bool, error) {
 	live := map[string]bool{}
 	var built []*repoGraph
 	for _, r := range repos {
-		overlay := loadOverlay(r.top)
+		overlay := loadOverlay(ctx, b.reading.Store(r.top))
 		var infos, tests []*fileInfo
-		for _, path := range r.files.Sources {
+		for _, path := range r.sources {
 			live[path] = true
 			info, err := b.parse(ctx, r.root, path)
 			if err != nil {
@@ -114,7 +134,7 @@ func (b *Builder) Build(ctx context.Context) (*Graph, bool, error) {
 			}
 			infos = append(infos, info)
 		}
-		for _, path := range r.files.Tests {
+		for _, path := range r.tests {
 			live[path] = true
 			info, err := b.parseTest(ctx, r.root, path)
 			if err != nil {
@@ -236,7 +256,7 @@ func (b *Builder) parse(ctx context.Context, root, path string) (*fileInfo, erro
 	if c, ok := b.cache[path]; ok && c.stamp == st {
 		return c.info.clone(), nil
 	}
-	f, err := project.ParseFile(ctx, path)
+	f, err := selection.Parse(ctx, b.reading.Tree, b.reading.Surroundings, path)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +280,7 @@ func (b *Builder) parseTest(ctx context.Context, root, path string) (*fileInfo, 
 	if c, ok := b.cache[path]; ok && c.stamp == st {
 		return c.info, nil
 	}
-	f, err := project.ParseFile(ctx, path)
+	f, err := selection.Parse(ctx, b.reading.Tree, b.reading.Surroundings, path)
 	if err != nil {
 		return nil, err
 	}
@@ -270,24 +290,21 @@ func (b *Builder) parseTest(ctx context.Context, root, path string) (*fileInfo, 
 	return info, nil
 }
 
-// snapshot is the mutation snapshot of the source file at path, in the
-// project whose root is top, as the Mutation port reads it where mutation
-// check does, or nil when there is none. It is read again only when its
-// file changed since the last build. Its path is marked live.
+// snapshot is the mutation snapshot of the source file at path, absolute,
+// in the project whose root is top, as the Mutation port reads it where
+// mutation check does, or nil when there is none. It is read again only
+// when its file changed since the last build. Its path is marked live.
 func (b *Builder) snapshot(ctx context.Context, top, path string, live map[string]bool) (any, error) {
-	rel := project.FromRootOf(top, path)
+	rel := snapshot.Key(top, path)
 	at := b.mutation.SnapshotPath(top, rel)
 	live[at] = true
 	st := stamp(at)
 	if c, ok := b.snapshots[at]; ok && c.stamp == st {
 		return c.snapshot, nil
 	}
-	var snap any
-	if st != "" {
-		var err error
-		if snap, err = b.mutation.Snapshot(ctx, top, rel); err != nil {
-			return nil, err
-		}
+	snap, err := b.mutation.Snapshot(ctx, top, rel)
+	if err != nil {
+		return nil, err
 	}
 	b.snapshots[at] = cachedSnapshot{st, snap}
 	return snap, nil
@@ -363,13 +380,12 @@ func crapScore(cc int, coverage float64) float64 {
 	return c*c*(u*u*u) + c
 }
 
-func loadOverlay(root string) overlay {
+func loadOverlay(ctx context.Context, store snapport.Store) overlay {
 	o := overlay{coverage: newKeyed[float64](), duplicates: map[string]int{}}
-	dir := metricsdir.DirOf(root)
 	var crapSnap struct {
 		Entries []crapEntry `json:"entries"`
 	}
-	if readJSON(filepath.Join(dir, "crap.json"), &crapSnap) {
+	if readSnapshot(ctx, store, "crap.json", &crapSnap) {
 		for _, e := range crapSnap.Entries {
 			cov := -1.0 // keeps occurrences aligned for functions without coverage
 			if e.Coverage != nil {
@@ -386,7 +402,7 @@ func loadOverlay(root string) overlay {
 			}
 		} `json:"candidates"`
 	}
-	if readJSON(filepath.Join(dir, "dry.json"), &drySnap) {
+	if readSnapshot(ctx, store, "dry.json", &drySnap) {
 		for _, c := range drySnap.Candidates {
 			o.duplicates[fmt.Sprintf("%s#%d", c.Left.File, c.Left.StartLine)]++
 			o.duplicates[fmt.Sprintf("%s#%d", c.Right.File, c.Right.StartLine)]++
@@ -422,7 +438,10 @@ func (o overlay) apply(info *fileInfo, marks []UnitMutation) *fileInfo {
 	return info
 }
 
-func readJSON(path string, v any) bool {
-	data, err := os.ReadFile(path) //nolint:gosec // a manifest or snapshot of a repository the person named
-	return err == nil && json.Unmarshal(data, v) == nil
+// readSnapshot decodes the snapshot name of store into v and says whether
+// it holds one: one that is not there, or cannot be read or decoded, is
+// none, so the graph still builds.
+func readSnapshot(ctx context.Context, store snapport.Store, name string, v any) bool {
+	found, failure := store.Read(ctx, name, v)
+	return found && failure == nil
 }

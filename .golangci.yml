@@ -289,19 +289,27 @@ linters:
             - pkg: github.com/donvargax/itos-cc/internal/coverage/porttest
               desc: "a slice's code links no fake (T-90): only tests may import coverage's model-bearing fake"
         # graph, the architecture graph's slice (ADR-0051, q-95), its code and
-        # tests: it walks and parses whole projects and resolves their imports
-        # through the import-resolution engine, and watches their files for
-        # serve, so slice-packages and slice-fakes, which refuse the engines,
-        # leave it out for this rule. Mutation's judgment reaches it only
-        # through its own Mutation port, which cmd binds, so it imports no
-        # package of another slice, the mutation slice's least of all, no
-        # adapter but metricsdir, whose folder it watches, and no fake.
+        # tests: it reads whole projects through selection's tree, lang's
+        # surroundings and the snapshot store, which cmd binds, resolves their
+        # imports through the import-resolution engine, and watches their
+        # files for serve, metricsdir naming the folder it watches; its tests
+        # read their fixtures from the disk through the project engine. So
+        # slice-packages and slice-fakes, which refuse the engines, leave it
+        # out for this rule. Mutation's judgment reaches it only through its
+        # own Mutation port, which cmd binds, so it imports no package of
+        # another slice, the mutation slice's least of all, no adapter but
+        # metricsdir, and no fake.
         graph:
           list-mode: lax
           files:
             - "**/internal/slices/graph/**"
           allow:
             - github.com/donvargax/itos-cc/internal/lang$
+            - github.com/donvargax/itos-cc/internal/lang/port$
+            - github.com/donvargax/itos-cc/internal/selection$
+            - github.com/donvargax/itos-cc/internal/selection/port$
+            - github.com/donvargax/itos-cc/internal/snapshot$
+            - github.com/donvargax/itos-cc/internal/snapshot/port$
             - github.com/donvargax/itos-cc/internal/imports$
             - github.com/donvargax/itos-cc/internal/project$
             - github.com/donvargax/itos-cc/internal/metricsdir$

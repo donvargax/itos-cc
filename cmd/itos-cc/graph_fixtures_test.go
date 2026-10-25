@@ -40,7 +40,7 @@ func newGraphBuilder(roots []string, inputs graphInputs) (*graph.Builder, error)
 	if err != nil {
 		return nil, err
 	}
-	return graph.NewBuilder(roots, m)
+	return graph.NewBuilder(roots, servedFrom(m))
 }
 
 func realMutationInputs() graphInputs {

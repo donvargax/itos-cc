@@ -10,11 +10,10 @@ import (
 	"github.com/donvargax/itos-cc/internal/lang"
 )
 
-// judging is a fake of the Mutation port that judges by a snapshot file's
-// presence alone: a source whose snapshot file is under its project's
-// .metrics/mutate is mutated, each of its units killing what killed says
-// of its key; any other has no results. Snapshot fails with snapshotErr and
-// Tests with testsErr when they are set.
+// judging is a fake of the Mutation port whose snapshots are killed's keys:
+// a source killed names is mutated, each of its units killing what killed
+// says of it; any other has no snapshot and no results. Snapshot fails with
+// snapshotErr and Tests with testsErr when they are set.
 type judging struct {
 	killed      map[string]int
 	snapshotErr error
@@ -28,6 +27,9 @@ func (judging) SnapshotPath(top, key string) string {
 }
 
 func (j judging) Snapshot(_ context.Context, _, key string) (any, error) {
+	if _, ok := j.killed[key]; !ok {
+		return nil, j.snapshotErr
+	}
 	return key, j.snapshotErr
 }
 
@@ -47,11 +49,21 @@ func (j judging) Judge(_ context.Context, file Judged) []UnitMutation {
 	return out
 }
 
-// A builder needs its Mutation port: none is refused, never read from the
-// disk instead.
-func TestABuilderWithoutItsMutationPortIsRefused(t *testing.T) {
-	if _, err := NewBuilder([]string{"testdata/shop"}, nil); err == nil {
-		t.Fatal("a builder without its Mutation port was made")
+// A builder needs every binding it reads through, its Mutation port among
+// them: a missing one is refused, never replaced by the disk.
+func TestABuilderWithoutItsBindingsIsRefused(t *testing.T) {
+	for name, missing := range map[string]func(*Reading){
+		"mutation":     func(r *Reading) { r.Mutation = nil },
+		"tree":         func(r *Reading) { r.Tree = nil },
+		"surroundings": func(r *Reading) { r.Surroundings = nil },
+		"store":        func(r *Reading) { r.Store = nil },
+		"top":          func(r *Reading) { r.Top = nil },
+	} {
+		r := onDisk(judging{})
+		missing(&r)
+		if _, err := NewBuilder([]string{"testdata/shop"}, r); err == nil {
+			t.Errorf("a builder without its %s was made", name)
+		}
 	}
 }
 
@@ -75,7 +87,7 @@ func TestTheMutationPortsFailuresFailTheBuild(t *testing.T) {
 	failure := errors.New("unbound")
 	for name, port := range map[string]judging{"snapshot": {snapshotErr: failure}, "tests": {testsErr: failure}} {
 		t.Run(name, func(t *testing.T) {
-			b, err := NewBuilder([]string{root}, port)
+			b, err := NewBuilder([]string{root}, onDisk(port))
 			if err != nil {
 				t.Fatal(err)
 			}
