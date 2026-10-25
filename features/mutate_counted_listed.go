@@ -182,6 +182,20 @@ func (q *countedMutation) listedCleanBaseline() error {
 	if baseline <= own || listed <= baseline {
 		return fmt.Errorf("actual clean listed baseline order own%d baseline%d listed%d", own, baseline, listed)
 	}
+	// The run's own stages report that baseline, once and complete, and
+	// none of the trial's mutation stages.
+	var names []string
+	for _, stage := range objectList(q.primary.object, "stages") {
+		switch stage["name"] {
+		case "listed-baseline":
+			names = append(names, fmt.Sprintf("%v %v", stage["name"], stage["state"]))
+		case "own", "listed":
+			names = append(names, fmt.Sprint(stage["name"]))
+		}
+	}
+	if len(names) != 1 || names[0] != "listed-baseline complete" {
+		return fmt.Errorf("the run's stages report %v, want the listed baseline once, complete: %v", names, q.primary.object)
+	}
 	return nil
 }
 func (q *countedMutation) listedKill() error {
