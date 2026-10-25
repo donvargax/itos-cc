@@ -367,7 +367,7 @@ func (q *snapshotState) checkAtRoot() error {
 	return nil
 }
 func (q *snapshotState) summaryName(file string) error {
-	if q.w.exit != 0 || !strings.HasPrefix(q.w.stdout, file+": ") {
+	if _, ok := summaryOf(q.w.stdout, file); q.w.exit != 0 || !ok {
 		return fmt.Errorf("snapshot summary name %q: %s", file, q.w.report())
 	}
 	return nil
