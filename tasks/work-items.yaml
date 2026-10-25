@@ -5743,7 +5743,7 @@ items:
     title: The nightly commits .metrics/graph.json beside crap, dry and scrap
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [slice-56]
     kind: task
   - id: changed-lines-coverage

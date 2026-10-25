@@ -7009,6 +7009,3 @@
     graph.json in its commit subject and body; .gitignore gains !.metrics/graph.json with its
     comment saying the nightly records it. Nothing else in the job changes. Its effect is seen
     on the next nightly run; no dispatch is needed to close.
-  done_when:
-    - run: grep -q 'itos-cc graph' .github/workflows/nightly.yml
-    - run: grep -qxF '!.metrics/graph.json' .gitignore
