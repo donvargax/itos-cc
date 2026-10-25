@@ -24,7 +24,9 @@ func (s memoryExceptions) Except(ctx context.Context, e mutation.Exception) (boo
 	}
 	path := filepath.Join(s.root, settings.File)
 	data, err := s.memory.Read(path)
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+	if errors.Is(err, fs.ErrNotExist) {
+		data = exceptions.Created()
+	} else if err != nil {
 		return false, memoryExceptionFailure(err)
 	}
 	updated, replaced, err := exceptions.ExceptDocument(data, e)

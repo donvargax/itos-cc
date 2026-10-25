@@ -16,7 +16,7 @@ import (
 // level; these hold the ties, the orders and the places the walk leaves to
 // decoding, which a scenario would only repeat.
 func TestAKeyTheFormatDoesNotListIsRefused(t *testing.T) {
-	const listsTop = "Remove the key, or rename it to one the top level takes: exclude, mutation."
+	const listsTop = "Remove the key, or rename it to one the top level takes: version, exclude, mutation."
 	for _, c := range []struct{ text, key, holder, name, fix string }{
 		{"excludes: [a]\n", "excludes", "the top level", "excludes", "Did you mean exclude? Rename the key, or remove it."},
 		{"{colour: red}\n", "colour", "the top level", "colour", listsTop},

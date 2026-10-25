@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -118,5 +119,46 @@ func TestExceptionsPreserveCurrentDocumentModeAndInvalidFacts(t *testing.T) {
 	}
 	if current, err = os.ReadFile(path); err != nil || string(current) != string(aliased) {
 		t.Fatalf("aliased document written: %q, %v", current, err)
+	}
+}
+
+// mutation except starts a file it creates with the version this itos-cc
+// writes, and never gives one to a file that is there without it, which
+// reads as version 1 (slice-53).
+func TestExceptStartsOnlyAFileItCreatesWithVersion(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, settings.File)
+	store := exceptions.Exceptions{RootDir: root}
+	e := mutants.Exception{File: "a.go", Function: "p#F", Hash: "hash", LineInFunction: 1, Column: 2, Original: ">", Replacement: ">=", Reason: "reviewed"}
+	if _, failure := store.Except(t.Context(), e); failure != nil {
+		t.Fatal(failure)
+	}
+	created, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, err := settings.Parse(created)
+	if !strings.HasPrefix(string(created), "version: 1\nmutation:\n") || err != nil || !slices.Equal(c.Exceptions, []mutants.Exception{e}) {
+		t.Fatalf("created %q, %v", created, err)
+	}
+	for _, text := range []string{"", "exclude: [vendor/**]\n"} {
+		if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, failure := store.Except(t.Context(), e); failure != nil {
+			t.Fatal(failure)
+		}
+		if data, err := os.ReadFile(path); err != nil || !strings.HasPrefix(string(data), text) || strings.Contains(string(data), "version") {
+			t.Errorf("%q became %q, %v; want no version given", text, data, err)
+		}
+	}
+	// A file there that cannot be read is no file to create.
+	unreadable := exceptions.Exceptions{RootDir: t.TempDir()}
+	if err := os.Mkdir(filepath.Join(unreadable.RootDir, settings.File), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	var failed mutants.ExceptionFailed
+	if _, failure := unreadable.Except(t.Context(), e); !errors.As(failure, &failed) {
+		t.Errorf("an unreadable itos-cc.yaml: %v, want an ExceptionFailed", failure)
 	}
 }

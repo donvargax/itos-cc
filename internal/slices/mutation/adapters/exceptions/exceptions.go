@@ -21,7 +21,9 @@ func (e Exceptions) Except(ctx context.Context, exception mutants.Exception) (bo
 	}
 	path := filepath.Join(e.RootDir, settings.File)
 	data, err := os.ReadFile(path) //nolint:gosec // itos-cc.yaml at the project root this adapter was given
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
+	if errors.Is(err, os.ErrNotExist) {
+		data = Created()
+	} else if err != nil {
 		return false, exceptionFailure(err)
 	}
 	updated, replaced, err := ExceptDocument(data, exception)

@@ -130,10 +130,26 @@ A key `itos-cc.yaml` does not list is `config.invalid` too, at any depth,
 so a misspelt key never passes for an option: its `key` is the path from
 the top (`mutation.exceptions[0].line_txt`), and its fix asks "Did you mean
 `line_text`?" when a listed key at that place is within two edits, or else
-names the keys listed there (`exclude, mutation` at the top level). The
-keys are `exclude` and `mutation`, which holds `exceptions`, `tests` and
-`copy`. Remove or rename each key it does not list; releases older than
-this one ignore such a key.
+names the keys listed there (`version, exclude, mutation` at the top
+level). The keys are `version`, `exclude` and `mutation`, which holds
+`exceptions`, `tests` and `copy`. Remove or rename each key it does not
+list; releases older than this one ignore such a key.
+
+`version`, a whole number, says which version of the format a file is
+written in, so an older itos-cc can tell a newer file from a mistyped one.
+There is one version, 1, and a file without the key reads as version 1, for
+good: no file needs changing. A version newer than this itos-cc reads is
+`config.invalid`, exit 80, its `key` `version`, its fix to upgrade itos-cc;
+so is a value that is not a positive integer written without quotes (`"1"`,
+`1.5`, `0`). Every key added from now on comes with a new version, and a file
+of an earlier version reads as it was written; itos-cc never rewrites a file
+to migrate it. `mutation except` starts a file it creates with `version: 1`
+and leaves a file it finds without one as it is.
+
+```yaml
+version: 1
+exclude: ["**/porttest/**"]
+```
 
 A key starting with `x-` is an extension key, as in Docker Compose and
 OpenAPI: itos-cc accepts and ignores it at any level, so another tool or a
@@ -1080,16 +1096,17 @@ each entry as a check of the whole project does, and reports each removal
 that `changed` or `moved`, for `--renew` or an edit to mend, and changes
 only the removed entries' lines, with the comment lines directly above
 each. The fix of an entry stale as `gone`, `killed` or `excluded` names it.
-Only `mutation except` writes `itos-cc.yaml`. An
+Only `mutation except` writes `itos-cc.yaml`, starting a file it creates
+with `version: 1`. An
 entry never excuses an uncovered mutant: that needs a test, not a reason, and
 `mutation except` refuses an uncovered site on purpose, as
 `exception.no-survivor`, its fix naming a test that runs the line, or routing
 the branch through code a test already reaches, such as a helper the tests
 call. An
 `itos-cc.yaml` that cannot be read, one holding an anchor, an alias, a
-merge key, a tag JSON does not have, a second document or a key it does not
-list, or an entry with no reason, is `config.invalid`, exit 80, and
-nothing is written.
+merge key, a tag JSON does not have, a second document, a `version` it does
+not read or a key it does not list, or an entry with no reason, is
+`config.invalid`, exit 80, and nothing is written.
 
 A change that leaves an excepted mutant the same, such as a rename, a
 literal or comment edit, reformatting or a line added elsewhere in its

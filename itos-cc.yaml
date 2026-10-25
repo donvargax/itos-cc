@@ -1,3 +1,5 @@
+version: 1
+
 # The sources no command measures or mutates, globs from here (decision 45):
 # the ports' fakes in porttest, test support several packages' tests share,
 # features/, whose step code is ordinary files of package features, so

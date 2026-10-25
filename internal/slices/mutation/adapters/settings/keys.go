@@ -35,6 +35,7 @@ func plain(names ...string) []listed {
 // reader walks a file against (docs/CONFIG.md rule 2), held as data so a
 // JSON Schema can be generated from it.
 var format = shape{keys: []listed{
+	{name: "version"},
 	{name: "exclude"},
 	{name: "mutation", value: shape{keys: []listed{
 		{name: "exceptions", value: shape{entry: &shape{keys: plain(

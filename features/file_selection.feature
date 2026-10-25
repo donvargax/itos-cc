@@ -469,23 +469,24 @@ Feature: Choosing which files a command looks at
   # 5. The check runs after slice-49's and bug-8's and before slice-52's
   #    unknown keys, so version is a listed key.
   # The feat is additive (no file that worked stops working), so it needs
-  # no breaking note. Before this item SEL-35, SEL-36 and SEL-37 fail at
-  # their Then (version is an unknown key, or not written); SEL-33 and
-  # SEL-34 are guardrails that pass today.
-  @slice-53 @ID-SEL-33 @wip
+  # no breaking note. Before this item SEL-35 fails at its message step
+  # (version is an unknown key) and SEL-37 at its first line (not written);
+  # SEL-33, SEL-34 and SEL-36 are guardrails that pass today, SEL-36
+  # because slice-52 refuses version as a key the file does not list.
+  @slice-53 @ID-SEL-33
   Scenario: An itos-cc.yaml with no version reads as version 1
     Given itos-cc.yaml holds 'exclude: ["**/porttest/**"]'
     And the sources src/board.go and src/port/porttest/fake.go
     When I run "itos-cc crap --no-coverage --json"
     Then src/board.go is scored, and src/port/porttest/fake.go is not
 
-  @slice-53 @ID-SEL-34 @wip
+  @slice-53 @ID-SEL-34
   Scenario: An itos-cc.yaml holding only comments is an empty config
     Given itos-cc.yaml holds '# nothing set yet'
     When I run "itos-cc crap --no-coverage"
     Then the exit code is 0
 
-  @slice-53 @ID-SEL-35 @wip
+  @slice-53 @ID-SEL-35
   Scenario: A version newer than itos-cc reads is a config error
     Given itos-cc.yaml holds '{version: 2, exclude: []}'
     When I run "itos-cc crap --no-coverage"
@@ -494,7 +495,7 @@ Feature: Choosing which files a command looks at
     And its fix says "upgrade itos-cc"
     And the exit code is 80
 
-  @slice-53 @ID-SEL-36 @wip
+  @slice-53 @ID-SEL-36
   Scenario Outline: A version that is not a positive integer is a config error
     Given itos-cc.yaml holds '<yaml>'
     When I run "itos-cc crap --no-coverage"
@@ -507,7 +508,7 @@ Feature: Choosing which files a command looks at
       | {version: 1.5, exclude: []}  |
       | {version: 0, exclude: []}    |
 
-  @slice-53 @ID-SEL-37 @wip
+  @slice-53 @ID-SEL-37
   Scenario: mutation except starts an itos-cc.yaml it creates with version: 1
     Given a committed Go module whose "example.com/fx/board#Count" survives its test
     And the module holds no itos-cc.yaml

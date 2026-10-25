@@ -30,6 +30,15 @@ func ExceptDocument(data []byte, e mutants.Exception) ([]byte, bool, error) {
 	return data, i >= 0, err
 }
 
+// Created is the text itos-cc.yaml starts with when mutation except creates
+// it, ExceptDocument writing its entry after: the version this itos-cc
+// writes (settings.Version, docs/CONFIG.md rule 5). A file that is there
+// without a version keeps reading as version 1 and is never given one, so
+// no writer rewrites a file to migrate it.
+func Created() []byte {
+	return fmt.Appendf(nil, "version: %d\n", settings.Version)
+}
+
 // RenewDocument replaces each renewal's complete Old entry, each entry once,
 // and writes only a full batch, changing only those entries' lines.
 func RenewDocument(data []byte, renewals []mutants.Renewal) ([]byte, error) {

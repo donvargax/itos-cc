@@ -1,5 +1,6 @@
 // Package settings reads itos-cc.yaml, the project's settings, kept at the
 // project root under version control and reviewed like the code. It holds
+// version, the version of the format it is written in (Version),
 // exclude, globs of the sources no command measures or mutates,
 // mutation.exceptions, the equivalent mutants a person excepted, each with
 // a reason, mutation.tests, how to list the project's tests and run a
@@ -18,7 +19,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/bmatcuk/doublestar/v4"
@@ -30,6 +33,12 @@ import (
 
 // File is the settings file's name, at the project root.
 const File = "itos-cc.yaml"
+
+// Version is the newest version of the file this itos-cc reads, and the one
+// a file it creates declares (docs/CONFIG.md rules 5 and 6, slice-53). A
+// file declaring none reads as version 1, for good; every key added later
+// comes with a version of its own.
+const Version = 1
 
 // Path is where the settings file is: at the project root (project.Root),
 // wherever a command runs.
@@ -44,7 +53,8 @@ type Config = mutants.Config
 
 // InvalidError is an itos-cc.yaml that cannot be read: not YAML, a key of
 // the wrong type, an anchor, an alias or a merge key, a tag JSON does not
-// have, a key that is not a string, a second document, a key it does not
+// have, a key that is not a string, a second document, a version that is
+// not a positive integer or is newer than Version, a key it does not
 // list, an exclude or mutation.copy glob that is no pattern, or an
 // exception that lacks a key. Key is the path from the top of the key at
 // fault, such as exclude[1], where one key is; empty
@@ -63,6 +73,9 @@ func (e *InvalidError) Error() string { return File + ": " + e.Reason }
 // so each key here is one format lists; an extension key, which no field
 // names, never reaches it.
 type raw struct {
+	// Version is checked on the node tree before the walk (version), so
+	// decoding only reads what it already accepted.
+	Version  *int     `yaml:"version"`
 	Exclude  []string `yaml:"exclude"`
 	Mutation *struct {
 		Exceptions []struct {
@@ -130,9 +143,10 @@ func Read(root string) ([]byte, error) {
 // *InvalidError, as is text holding what JSON cannot express
 // (docs/CONFIG.md rule 1), before anything else is read: an anchor, an
 // alias or a merge key, a tag written in the file other than ! and JSON's,
-// a key that is not a string, or a second document; then a key the file
-// does not list (format), at any depth, an extension key aside, before any
-// value is checked. The
+// a key that is not a string, or a second document; then a version that
+// is not a positive integer or is newer than Version, a file without one
+// reading as version 1 (version); then a key the file does not list (format), at
+// any depth, an extension key aside, before any other value is checked. The
 // text names no root, so its selection settings have none: the caller that found the
 // file gives it.
 func Parse(data []byte) (*Config, error) {
@@ -149,6 +163,9 @@ func Parse(data []byte) (*Config, error) {
 	}
 	if err := decoder.Decode(new(yaml.Node)); !errors.Is(err, io.EOF) {
 		return nil, &InvalidError{Reason: "a second document follows ---, and " + File + " holds one document alone", Fix: documentFix}
+	}
+	if err := version(doc.Content[0]); err != nil {
+		return nil, err
 	}
 	if err := unlisted(doc.Content[0], format, ""); err != nil {
 		return nil, err
@@ -211,6 +228,52 @@ func Parse(data []byte) (*Config, error) {
 		c.Tests = t
 	}
 	return c, nil
+}
+
+// version refuses the version top, the document's top level, declares
+// when it is not a positive integer as JSON writes one, plain digits with
+// no sign, quote or leading zero, or is newer than Version. A file
+// declaring none, or whose top level is not a mapping, which decoding
+// refuses, passes: it reads as version 1.
+func version(top *yaml.Node) error {
+	if top.Kind != yaml.MappingNode {
+		return nil
+	}
+	for i := 0; i < len(top.Content); i += 2 {
+		if top.Content[i].Value != "version" {
+			continue
+		}
+		v := top.Content[i+1]
+		n, err := strconv.Atoi(v.Value)
+		if v.Kind != yaml.ScalarNode || v.Tag != "!!int" || !wholeNumber.MatchString(v.Value) || err != nil {
+			return &InvalidError{Reason: fmt.Sprintf("version is %s, and %s's version is a whole number, 1 or more, written without quotes", describe(v), File),
+				Key: "version", Fix: fmt.Sprintf("Write version: %d, the version this itos-cc writes, or remove the key, which reads as version 1.", Version)}
+		}
+		if n > Version {
+			return &InvalidError{Reason: fmt.Sprintf("version is %d, newer than %d, the newest this itos-cc reads", n, Version), Key: "version",
+				Fix: fmt.Sprintf("The file was written for a newer itos-cc: upgrade itos-cc to a release that reads version %d.", n)}
+		}
+	}
+	return nil
+}
+
+// wholeNumber is a version as JSON writes a positive integer.
+var wholeNumber = regexp.MustCompile(`^[1-9][0-9]*$`)
+
+// describe is v as a message names it: a scalar as written, quoted when it
+// was, and any other value by its kind.
+func describe(v *yaml.Node) string {
+	switch {
+	case v.Kind == yaml.SequenceNode:
+		return "a list"
+	case v.Kind == yaml.MappingNode:
+		return "a mapping"
+	case v.Style&(yaml.DoubleQuotedStyle|yaml.SingleQuotedStyle) != 0:
+		return strconv.Quote(v.Value)
+	case v.Value == "":
+		return "empty"
+	}
+	return v.Value
 }
 
 // invalidYAML is err, yaml.v3's, as an *InvalidError in its own words.

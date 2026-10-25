@@ -130,7 +130,7 @@ func (e *exceptionMutation) layoutReplaced() error {
 // them: a "---" line and keys before them, and a blank line between each.
 func (e *exceptionMutation) layoutRenew() error {
 	written := e.s.m.read("itos-cc.yaml")
-	if !strings.HasPrefix(written, "mutation:\n  exceptions:\n    - file: label.go\n") {
+	if !strings.HasPrefix(written, "version: 1\nmutation:\n  exceptions:\n    - file: label.go\n") {
 		return fmt.Errorf("unexpected entries as written:\n%s", written)
 	}
 	text := "---\n# Settings laid out by hand.\n\nexclude: [ \"**/gen/**\" ]  # two spaces before this comment\n\n" +

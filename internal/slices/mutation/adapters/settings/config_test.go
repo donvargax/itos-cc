@@ -246,3 +246,54 @@ func TestJSONsYAMLIsRead(t *testing.T) {
 		}
 	}
 }
+
+// version, a positive integer as JSON writes one, is read up to Version; a
+// file without one reads as version 1, and one whose top level is not a
+// mapping is left to decoding. The scenarios hold one newer version and
+// three values that are not positive integers; these hold the rest of what
+// is refused, how each is named, and the order against the other checks
+// (docs/CONFIG.md rules 5 and 6, slice-53).
+func TestVersionIsAPositiveIntegerUpToTheOneThisItosCCReads(t *testing.T) {
+	for _, text := range []string{
+		"version: 1\n", "exclude: []\nversion: 1\n", "version: !!int 1\n", "{exclude: []}\n", "# no version\n",
+	} {
+		if _, err := Parse([]byte(text)); err != nil {
+			t.Errorf("%q: error %v, want none", text, err)
+		}
+	}
+	const notWhole = "Write version: 1, the version this itos-cc writes, or remove the key, which reads as version 1."
+	for _, c := range []struct{ text, found, fix string }{
+		{"exclude: []\nversion: 2\n", "itos-cc.yaml: version is 2, newer than 1, the newest this itos-cc reads",
+			"The file was written for a newer itos-cc: upgrade itos-cc to a release that reads version 2."},
+		{"version: \"1\"\n", `version is "1", and itos-cc.yaml's version is a whole number, 1 or more, written without quotes`, notWhole},
+		{"version: '1'\n", `version is "1"`, notWhole},
+		{"version: 1.5\n", "version is 1.5,", notWhole},
+		{"version: 0\n", "version is 0,", notWhole},
+		{"version: -1\n", "version is -1,", notWhole},
+		{"version: 01\n", "version is 01,", notWhole},
+		{"version: 0x1\n", "version is 0x1,", notWhole},
+		{"version: 99999999999999999999\n", "version is 99999999999999999999,", notWhole},
+		{"version: !!str 1\n", "version is 1,", notWhole},
+		{"version:\n", "version is empty,", notWhole},
+		{"version: [1]\n", "version is a list,", notWhole},
+		{"version: {v: 1}\n", "version is a mapping,", notWhole},
+	} {
+		_, err := Parse([]byte(c.text))
+		var invalid *InvalidError
+		if !errors.As(err, &invalid) || invalid.Key != "version" || !strings.Contains(err.Error(), c.found) || invalid.Fix != c.fix {
+			t.Errorf("%q: error %v, want an *InvalidError keyed version saying %q, its fix %q", c.text, err, c.found, c.fix)
+		}
+	}
+	// After rule 1's refusals, before a key the file does not list.
+	for _, c := range []struct{ text, key, found string }{
+		{"version: &v 2\n", "version", "carries the anchor &v"},
+		{"version: !foo 2\n", "version", "carries the tag !foo"},
+		{"{colour: red, version: 2}\n", "version", "newer than 1"},
+	} {
+		_, err := Parse([]byte(c.text))
+		var invalid *InvalidError
+		if !errors.As(err, &invalid) || invalid.Key != c.key || !strings.Contains(err.Error(), c.found) {
+			t.Errorf("%q: error %v, want an *InvalidError keyed %q saying %q", c.text, err, c.key, c.found)
+		}
+	}
+}
