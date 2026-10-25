@@ -16,7 +16,7 @@ queue:
   - features-coverage-gocoverdir-leak
   - slice-57
   - sample-repeat
-  - graph-nightly
+  - T-210
   - T-102
   - T-103
   - T-104
@@ -5738,17 +5738,13 @@ items:
     status: done
     depends_on: [T-208]
     kind: slice
-  - id: graph-nightly
+  - id: T-210
     title: The nightly commits .metrics/graph.json beside crap, dry and scrap
     phase: 1
     owner: null
     status: todo
     depends_on: [slice-56]
-    kind: idea
-    why: >
-      graph-snapshot item 3 (q-95): the nightly's snapshots job runs itos-cc graph after crap and
-      dry (it reads both), commits graph.json with them, and .gitignore keeps it tracked. After
-      graph-command.
+    kind: task
   - id: changed-lines-coverage
     title: A command reports the changed lines a coverage profile leaves unrun, before a push
     phase: 1

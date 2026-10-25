@@ -6995,3 +6995,13 @@
   why: >
     Between agents, the coordinator moves the pin from 8.16.2 to the newest patch so the next agents
     read its guides and hooks, as T-207 did.
+- id: T-210
+  type: ci
+  title: The nightly commits .metrics/graph.json beside crap, dry and scrap
+  why: >
+    graph-snapshot item 3 (q-95): the nightly's snapshots job runs itos-cc graph after crap and dry
+    (it reads both), commits graph.json with them, and .gitignore keeps it tracked. After
+    graph-command.
+  done_when:
+    - run: grep -q 'itos-cc graph' .github/workflows/nightly.yml
+    - run: grep -qxF '!.metrics/graph.json' .gitignore
