@@ -5818,8 +5818,8 @@ items:
   - id: slice-55
     title: mutation except --renew and a replacing except keep x- keys inside the entry they rewrite
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
