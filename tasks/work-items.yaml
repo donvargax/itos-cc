@@ -5785,3 +5785,17 @@ items:
       graph-snapshot item 3 (q-95): the nightly's snapshots job runs itos-cc graph after crap and
       dry (it reads both), commits graph.json with them, and .gitignore keeps it tracked. After
       graph-command.
+  - id: changed-lines-coverage
+    title: A command reports the changed lines a coverage profile leaves unrun, before a push
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Agents asked (2026-10-24, slice-51 and earlier T-197) for a tool: the per-push code proof
+      fails on a changed line no test runs (--fail-uncovered=lines), and each agent writes its own
+      script joining git diff -U0 with go cover profiles to check before pushing. itos-cc already
+      knows changed lines (--since) and coverage; a mode that reports them without mutating (e.g.
+      mutation run --since <base> --fail-uncovered=lines --count 0, or a coverage subcommand) would
+      replace those scripts.
