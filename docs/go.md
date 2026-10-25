@@ -177,9 +177,16 @@ a `context.Context` first (decision 30); pure logic takes none.
   contract suites. The `domain`, `domain-io`, `mutant-fakes` and `coverage-fakes` rules hold it,
   and `tools/bin/domain-coverage` measures it. Unlike dry's, scrap's and crap's domains it is on
   the `domain` rule's allow list, since its external tests and porttest import it, and the
-  slice's adapters, its `settings` adapter among them, and `graph` import it too; the shared
-  domains may not (`shared-domains`), nor another slice (the sibling rule). The legacy
-  `mutate` package is retired.
+  slice's adapters, its `settings` adapter among them, import it too; the shared
+  domains may not (`shared-domains`), nor another slice (the sibling rule), the graph slice
+  among them, which reaches its judgment only through a port of its own (below). `Graph` is
+  that judgment as the architecture graph shows it (T-208, q-95 D1): over a root's snapshot
+  reader, the toolchain and the fingerprints, `GraphFactsOf` names a parsed file's functions,
+  their hashes and their sites, `Snapshot` reads a file's snapshot as check does, `Support`
+  hashes the listed support files, and `Judge` pairs each function with its entry
+  (`EntriesOf`), keeps the mutants on its sites (`OnSites`) and calls it stale exactly when
+  check does (`FreshnessOf`), over the listed and broad inputs, so check's rule stays here
+  (GRAPH-38); cmd binds graph's port to it. The legacy `mutate` package is retired.
 - `internal/slices/mutation/adapters` holds the mutation slice's own adapters (ADR-0051), each
   in a subpackage of its name with a depguard rule of its own, as every adapter has:
   `testtools`, mutation's `Toolchain` and `TestLister`, and `testinputs`, its `Fingerprints`
@@ -195,9 +202,8 @@ a `context.Context` first (decision 30); pure logic takes none.
   `mutantWire`) write coverage under `go_coverage` or `line_coverage` by language and read
   legacy `go_evidence`, encoding mutants' `CoverageEvidence`, `CoverageBlock` and
   `SuiteEvidence` through their own tags (T-136), so every consumer reads and writes through
-  it without a second schema. graph keeps its own one-line copy of `MutationName`, held to
-  this one by a test, as it keeps crap's formula, so no slice's code is reachable from it
-  (ADR-0051). `exceptions`, config's writer until then, is the domain's `Exceptions` at the
+  it without a second schema. cmd's binding of graph's `Mutation` port names the file it
+  watches by this `MutationName` (T-208), so graph keeps no copy of it. `exceptions`, config's writer until then, is the domain's `Exceptions` at the
   root cmd selects: `ExceptDocument` and `RenewDocument` rewrite itos-cc.yaml's
   `mutation.exceptions` through the `settings` adapter's `Parse`, keeping its other keys,
   comments and file mode, and that adapter's `File` and `InvalidError` name the file and its
@@ -216,8 +222,8 @@ a `context.Context` first (decision 30); pure logic takes none.
   is a thin adapter of its own over `internal/imports` (T-162): its `Reach` calls the engine's
   `TestsImporting` and turns the context's cause into `InputCancelled` and the engine's error
   into `InputFailed`, since an engine imports no slice and cannot return the domain's
-  failures. It imports neither graph nor `internal/project`, so no slice reaches graph, whose import of
-  the mutation domain, for serve's staleness, is the one arrow left between them.
+  failures. It imports neither graph nor `internal/project`, and graph, a slice since T-208,
+  imports nothing of the mutation slice.
 - `internal/project` is the project and git history engine (ADR-0051, ADR-0061), the top-level
   `project` until T-194, an adapter-side engine as `internal/processes` and `internal/imports`
   are rather than a domain: it discovers a tree's sources and tests (`Discover`, `WalkDir`),
@@ -462,9 +468,9 @@ a `context.Context` first (decision 30); pure logic takes none.
   run scores, so a file it never names is untested rather than unknown. It reads nothing and
   has no port; its tests parse in memory through lang's fake. The `domain` and `domain-io`
   rules hold it as they hold the shared domains, and `tools/bin/domain-coverage` measures it.
-  `crap.json`'s entries are its `Entry`, which graph does not import: graph, legacy and outside
-  the slices, decodes the fields it reads into a type of its own and keeps its own copy of the
-  formula, `crapScore` (ADR-0051).
+  `crap.json`'s entries are its `Entry`, which graph does not import: the graph slice decodes
+  the fields it reads into a type of its own and keeps its own copy of the formula,
+  `crapScore` (ADR-0051).
 - `internal/slices/version` is the `version` command's slice, the fifth under
   `internal/slices` (T-155), with no domain of its own. `Command` declares it and `Ports` names
   what `NewHandler(ctx, p)` builds the handler over: `BuildVersion`, the version the binary says
@@ -472,6 +478,24 @@ a `context.Context` first (decision 30); pure logic takes none.
   `internal/version`. Its `Handler` holds that version, so `NewHandler` reads nothing and never
   fails, and its `CLI`'s `Run` prints `itos-cc <version>`, or with `--json` the object of its
   version alone. `--version` before any command is the same command (`cli.Dispatch`).
+- `internal/slices/graph` is the `graph` command's slice and the architecture graph serve
+  publishes (q-86, q-95, ADR-0060), `graph/` until T-208, with no domain subpackage: its
+  `Builder`, the application, keeps the parse cache and stamps of a watched build, and its tree,
+  metrics and HTTP edges are the graph itself. It reads repositories through a `Reading` cmd
+  binds: selection's `Tree`, which finds and reads their files, lang's `Surroundings`, the
+  snapshot `Store` of each project root, whose crap.json and dry.json it reads, `Top`, a
+  repository's project root, `Name`, its node's name, and `Mutation`, a port graph owns, through
+  which mutation's judgment reaches it: a parsed file's facts, its snapshot and the file it is
+  read from, the listed support and test hashes, and per unit of a file whether it is mutated,
+  its kills, survivors and uncovered mutants, and whether it is stale. cmd binds that port
+  (`graphMutation`) to the mutation domain's `Graph`, so graph imports nothing of the mutation
+  slice. Its imports resolve through `internal/imports`. `Command` declares it and `Ports` names
+  `SelectionTree`, `LangSurroundings`, `SnapshotStore`, `GraphMutation` and
+  `RepositoryOrigin`, the URL of a repository's git remote origin; its `Handle` builds the
+  project at the store's root, its repository named by that origin's last path segment without
+  `.git` or by its folder (`RepositoryName`), and writes it as `graph.json`, its version the
+  snapshot format's. serve binds the disk (`servedFrom`), and `server` takes a builder of its
+  own over the slice's `Builder`. Its own `graph` rule holds it (below).
 - `internal/cli` is the UI every slice shares, and imports nothing of ours. Its `Selection`,
   `--changed` and the path arguments, is the command line every command selects its files by,
   embedded first in each slice's kong struct (T-63). It alone turns a
@@ -543,9 +567,10 @@ a `context.Context` first (decision 30); pure logic takes none.
   on the disk: a snapshot that cannot be written is the internal 100, its message whole with
   whatever the command wrapped it in, and `scrap` warns about an unreadable last one and goes
   on. The `mutation` slice reads, writes, removes and lists its snapshots only through
-  the handler's bound readers, catalog, publication capability and store. `serve`'s
-  graph still walks `.metrics/` with the `metrics` library until S8, but receives a root-specific
-  snapshot reader and current Toolchain/Fingerprints from cmd. It selects no concrete
+  the handler's bound readers, catalog, publication capability and store. The `graph` slice
+  writes `graph.json` through the store and reads the project through the ports cmd binds;
+  `serve`'s builder reads the disk through them, with a root-specific snapshot reader and the
+  current Toolchain/Fingerprints, and watches `.metrics/` for changes (T-208). It selects no concrete
   observation adapters, and reads a complete admitted snapshot before TypeScript probes. It holds the coverage domain's classifier,
   `classifyCoverage`, one case for each gap and each failure of the port, since `crap` and
   `mutation` share the domain. `crap`'s handler measures coverage through the port,
@@ -621,6 +646,16 @@ context-as-argument a context after any other parameter, tests included.
   also refuses `itos-cc`'s binary linking any `porttest` (`go list -deps ./cmd/itos-cc`), since
   depguard sees only the imports a file names, not what a binary links through them: a fake
   enters `cmd` only through its `_test.go` files.
+- `graph`: the graph slice, `internal/slices/graph`, its code and tests (T-208), imports
+  nothing of ours but `internal/cli`, the shared domains and ports it reads projects through
+  (`internal/lang` and its port, `internal/selection` and its port, `internal/snapshot` and
+  its port), the import-resolution engine, the project engine, through which its tests read
+  their fixtures from the disk, and `internal/metricsdir`, which names the folder serve's
+  build watches. It imports no other slice, the mutation slice's domain and adapters least of
+  all, since mutation's judgment reaches it through its own `Mutation` port, which cmd binds,
+  and no fake. `slice-packages` and `slice-fakes`, which refuse those engines, leave it out;
+  `slice-adapters` holds it as every slice, and the sibling rule refuses it importing the
+  mutation domain.
 - Siblings: no package under `internal/slices/X` imports one under `internal/slices/Y`, from its
   code or its tests (ADR-0051). depguard cannot say "not a sibling", since its deny list is a
   prefix that would refuse a slice's own subpackages too, so `tools/bin/architecture-check`
@@ -628,13 +663,10 @@ context-as-argument a context after any other parameter, tests included.
   subpackages and any engine.
 - Outside: engines stay behind stable APIs the slices import, never the reverse (ADR-0051,
   T-167), so a package outside `internal/slices` imports none under it, from its code or its
-  tests, but two. `cmd`, which assembles them, imports every slice, its domains and adapters.
-  graph, the legacy serve consumer, with any subpackage under `graph/`, imports
-  `internal/slices/mutation/domain` from its code, whose judgment it reads, and mutation's
-  `settings` adapter, through which it reads the project's settings, until graph-snapshot
-  (ADR-0060), and anything under `internal/slices/mutation/` from its tests, the domain's
-  `porttest` and the adapters it builds fixtures with. `config`'s row went when it became
-  that settings adapter (T-197). depguard's `slices` rule covers
+  tests, but `cmd`, which assembles them and imports every slice, its domains and adapters.
+  `config`'s row went when it became mutation's settings adapter (T-197), and graph's when it
+  became the graph slice, reaching mutation's judgment through a port of its own (T-208).
+  depguard's `slices` rule covers
   `internal/` alone, and `server`, `features` and `tools` have
   no rule, so `tools/bin/architecture-check` holds it over the same `go list` fields as the
   sibling rule and names both packages.
@@ -643,12 +675,12 @@ context-as-argument a context after any other parameter, tests included.
   its tests, but by a row naming it. Permanent rows: `features` imports `internal/project` alone,
   since the harness asks discovery's own rules, never a copy, and `tools/bin/release-notes` and
   `tools/bin/release-version` `internal/release` alone, its `releasetest` with it, the
-  template's layout. Until graph-snapshot (ADR-0060), graph and `server`, the legacy serve
-  consumer, import what they need, the outside check holding what they import under
-  `internal/slices`. Each move under `internal/` deleted its row: `project`'s when it became
+  template's layout. Each move under `internal/` deleted its row: `project`'s when it became
   `internal/project` (T-194), `metrics`' when it folded into `internal/metricsdir` (T-195),
-  `coverage`'s when it became `internal/covrun` (T-196) and `config`'s when it became
-  `internal/slices/mutation/adapters/settings` (T-197). A new package goes under
+  `coverage`'s when it became `internal/covrun` (T-196), `config`'s when it became
+  `internal/slices/mutation/adapters/settings` (T-197), and graph's and `server`'s when graph
+  became `internal/slices/graph` and `server`, the legacy serve consumer, took a builder
+  interface of its own, which cmd binds, importing nothing under `internal/` (T-208). A new package goes under
   `internal/`, never at the top level. depguard covers `internal/` alone, so
   `tools/bin/architecture-check`'s toplevel holds it over the outside check's `go list` fields
   and names both packages, and whether from the importer's tests.
@@ -691,8 +723,8 @@ context-as-argument a context after any other parameter, tests included.
 - `imports`: the import-resolution engine, code and tests, imports nothing of ours but
   `internal/lang`, whose parsed files it resolves, `internal/project` and the `internal/covrun` runner (T-162):
   no other domain or port, slice, adapter, fake, UI or `cmd`, nor graph. It is an adapter-side engine like `processes`: the `domain` and `slices` rules
-  refuse it, of the adapters only `importgraph`'s allows it, and graph, which no rule holds,
-  imports it. `slices` and `slice-fakes` leave it out. Its rule has one deny entry, the
+  refuse it, of the adapters only `importgraph`'s allows it, and the graph slice imports it
+  by its own rule. `slices` and `slice-fakes` leave it out. Its rule has one deny entry, the
   module, since depguard looks a deny up as the one entry sorting just before the import
   (T-159).
 - `project`: the project and git history engine's code imports nothing of ours but
@@ -700,9 +732,9 @@ context-as-argument a context after any other parameter, tests included.
   T-194); its tests may use lang's fake too. It is an adapter-side engine like `processes`:
   the `domain` and `slices` rules refuse it, so no domain or slice imports it, and of the
   adapters only those wrapping it (`workdir`, `metricsdir`, `worktrees`, `testtools`,
-  `testinputs`, `githistory`, `freshenv`) and the `imports` engine allow it; `cmd`, graph and
-  the libraries still outside `internal/`, which no rule holds, import it too, and `features`
-  by its row in the top-level check. `slices` and `slice-fakes` leave it out.
+  `testinputs`, `githistory`, `freshenv`) and the `imports` engine allow it; `cmd` imports it
+  too, the graph slice's tests by its own rule, and `features` by its row in the top-level
+  check. `slices` and `slice-fakes` leave it out.
 - `covrun`: the coverage runner's code imports nothing of ours but the coverage domain and its
   port, `internal/lang` and `internal/project` (ADR-0061, T-196); its tests may use the
   coverage port's fake too. It is an adapter-side engine like `processes`: it runs processes
@@ -1008,8 +1040,8 @@ mutants plus the actual libraries it wraps. The shared contract suites live in
 `internal/slices/mutation/domain/porttest`; no production binary links them.
 
 Cmd supplies all three actual bindings and rejects missing injections at a work
-boundary. Graph receives read-only mutation inputs from composition while retaining its
-existing discovery/cache until S8. Fresh/count preparation keeps its separately supervised
+boundary. Graph reaches mutation's judgment through its own `Mutation` port, which cmd binds
+to the domain's `Graph` over those bindings (T-208), and keeps its parse cache. Fresh/count preparation keeps its separately supervised
 root-cwd Python probe; ordinary optional probing keeps the caller cwd. Existing coverage's pure
 Gradle/Maven formatting helpers forward to their single mutants implementation
 until the T-90 callers move. Python command discovery deliberately chooses the last

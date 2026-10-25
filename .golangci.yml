@@ -289,7 +289,8 @@ linters:
             - pkg: github.com/donvargax/itos-cc/internal/coverage/porttest
               desc: "a slice's code links no fake (T-90): only tests may import coverage's model-bearing fake"
         # graph, the architecture graph's slice (ADR-0051, q-95), its code and
-        # tests: it reads whole projects through selection's tree, lang's
+        # tests: the graph command, its UI on internal/cli as every slice's
+        # is, reads whole projects through selection's tree, lang's
         # surroundings and the snapshot store, which cmd binds, resolves their
         # imports through the import-resolution engine, and watches their
         # files for serve, metricsdir naming the folder it watches; its tests
@@ -304,6 +305,7 @@ linters:
           files:
             - "**/internal/slices/graph/**"
           allow:
+            - github.com/donvargax/itos-cc/internal/cli$
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/internal/lang/port$
             - github.com/donvargax/itos-cc/internal/selection$
@@ -315,7 +317,7 @@ linters:
             - github.com/donvargax/itos-cc/internal/metricsdir$
           deny:
             - pkg: github.com/donvargax/itos-cc
-              desc: "graph imports only the shared domains and ports it reads projects through, the import-resolution and project engines, metricsdir and its own port (ADR-0051, q-95): mutation's judgment reaches it through its Mutation port, which cmd binds; never another slice, adapter or fake"
+              desc: "graph imports only internal/cli, the shared domains and ports it reads projects through, the import-resolution and project engines, metricsdir and its own port (ADR-0051, q-95): mutation's judgment reaches it through its Mutation port, which cmd binds; never another slice, adapter or fake"
         # Mutation's model-bearing contract is at the domain root. Its fake is
         # allowed in tests, never in the domain's production implementation.
         mutant-fakes:

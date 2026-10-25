@@ -20,8 +20,8 @@ Never here:
 ## Black-box boundary
 
 The steps (`steps.go`, with `steps_gen.go`, which `tools/bin/assemble` writes, `units.go`, `dry.go`, `scrap.go`, `crap.go`, `complexity.go`,
-`coverage.go`, `selection.go`, `cli.go`, `metrics_snapshots.go`, and `mutate.go` with its
-pieces, `mutate_*.go`, Go, run by [godog](https://github.com/cucumber/godog)) treat itos-cc as a black
+`coverage.go`, `selection.go`, `cli.go`, `metrics_snapshots.go`, `graph_command.go`, and
+`mutate.go` with its pieces, `mutate_*.go`, Go, run by [godog](https://github.com/cucumber/godog)) treat itos-cc as a black
 box. They reach the world only through a `Driver` (`steps.go`): a fresh folder, files written and
 read, symbolic links (`Link`), git, runs of itos-cc with a folder, environment, stdin, arguments
 and programs left off the PATH (`Run.Without`), what a project's own coverage tools measure

@@ -30,7 +30,7 @@ Feature: The architecture graph as a snapshot
   "What depends on what, and where is it risky?", written once to a file that
   any viewer can read without asking itos-cc.
 
-  @slice-56 @ID-GRAPH-41 @wip
+  @slice-56 @ID-GRAPH-41
   Scenario: The graph is written as a snapshot
     Given a Go module with the packages app and app/store, app importing app/store
     When I run "itos-cc graph"
@@ -38,35 +38,35 @@ Feature: The architecture graph as a snapshot
     And .metrics/graph.json holds "version": 1, nodes and edges
     And in .metrics/graph.json the repository is a repo node, app and app/store are module nodes, and app imports app/store
 
-  @slice-56 @ID-GRAPH-42 @wip
+  @slice-56 @ID-GRAPH-42
   Scenario: The repository node is named by the git remote's repository name
     Given a Go module with the packages app and app/store, app importing app/store
     And its git remote origin is "https://example.com/acme/shop.git" while its folder is named "checkout"
     When I run "itos-cc graph"
     Then in .metrics/graph.json the repo node is named "shop"
 
-  @slice-56 @ID-GRAPH-43 @wip
+  @slice-56 @ID-GRAPH-43
   Scenario: A function's mutation state is mutation check's
     Given a Go module with the packages app and app/store, app importing app/store
     And .metrics/mutate holds a fresh snapshot for one function of app and a stale one for another
     When I run "itos-cc graph"
     Then each function in .metrics/graph.json is marked stale exactly when "itos-cc mutation check" calls it stale
 
-  @slice-56 @ID-GRAPH-44 @wip
+  @slice-56 @ID-GRAPH-44
   Scenario: The graph sees every file, whatever exclude says
     Given a Go module with the packages app and app/store, app importing app/store
     And itos-cc.yaml holds 'exclude: ["app/store/**"]'
     When I run "itos-cc graph"
     Then in .metrics/graph.json app/store is a module node
 
-  @slice-56 @ID-GRAPH-45 @wip
+  @slice-56 @ID-GRAPH-45
   Scenario: An unchanged project writes the same file
     Given a Go module with the packages app and app/store, app importing app/store
     And "itos-cc graph" has written .metrics/graph.json
     When I run "itos-cc graph" again
     Then .metrics/graph.json is byte for byte as it was
 
-  @slice-56 @ID-GRAPH-46 @wip
+  @slice-56 @ID-GRAPH-46
   Scenario: The summary for a script
     Given a Go module with the packages app and app/store, app importing app/store
     When I run "itos-cc graph --json"

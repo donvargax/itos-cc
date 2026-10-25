@@ -220,7 +220,7 @@ func TestTheModelNamesEveryCommandInOrder(t *testing.T) {
 	for _, node := range parser.Model.Children {
 		names = append(names, node.Name)
 	}
-	if want := []string{"crap", "dry", "mutation", "scrap", "serve", "units", "version"}; !slices.Equal(names, want) {
+	if want := []string{"crap", "dry", "graph", "mutation", "scrap", "serve", "units", "version"}; !slices.Equal(names, want) {
 		t.Errorf("the model's commands are %q, want %q", names, want)
 	}
 	for name, cmd := range legacy {

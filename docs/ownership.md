@@ -51,6 +51,13 @@ A slice `<x>`, `internal/slices/<x>`, owns:
   `cmd/itos-cc/crap_*_test.go`. `complexity.feature`, `coverage.feature` and
   `file_selection.feature`, which crap's command drives, are the specs of the lang, coverage
   and selection engines, with their steps (`complexity.go`, `coverage*.go`, `selection*.go`).
+- `graph`'s feature is named for what it writes: it owns `features/graph_command.feature` and
+  its steps, `features/graph_command*.go`. It owns the binding of its Mutation port to the
+  mutation slice's judgment, `cmd/itos-cc/graph_mutation.go`, and cmd's graph tests,
+  `cmd/itos-cc/graph_*_test.go`, which import that slice's adapters as no slice may (T-208):
+  among them `graph_stale_test.go` and `graph_lookup_test.go` hold the graph to mutation
+  check's verdict (GRAPH-34 to GRAPH-40), so a mutation task changing check's rule changes
+  them too. `mutation`'s `Graph`, in its domain, is mutation's.
 - `version` has no feature file: its rows are in `cli.feature`, which with `completion.feature`
   and their steps (`cli*.go`) belongs to `internal/cli`.
 
@@ -81,9 +88,10 @@ Each change to one is a task the coordinator assigns.
   `docs/architecture.md`; README's layout table and every part of it but a slice's section
   under Use; `docs/CLI.md` but a slice's cells; every other file under `docs/`, this one
   included; and `IDEAS.md`.
-- **Legacy serve**: `cmd/itos-cc/serve.go` and `cli.go`, `graph/`, `server/`, `viewer/`,
+- **Legacy serve**: `cmd/itos-cc/serve.go` and `cli.go`, `server/`, `viewer/`,
   `serve.feature`, `viewer.feature` and `architecture_graph.feature`, their snapshots, and
-  serve's deferred work (T-102 to T-113).
+  serve's deferred work (T-102 to T-113). The graph serve publishes is the graph slice's
+  (T-208).
 - **Orphaned snapshots**: a snapshot under `.metrics/mutate/` whose source is gone, today
   `.metrics/mutate/mutate/*` and `.metrics/mutate/cmd/itos-cc/`'s `mutate.go.json`,
   `shell.go.json` and `units.go.json`. A mutation run over the repository removes them; nobody
@@ -111,8 +119,8 @@ shared path, and the coordinator assigns it as a task of its own.
   needs its slice, its feature file and steps, its smoke entry and the two generated files, and
   no edit elsewhere; a new port fails `go build` until `adapters` answers it.
 - The outside-import check, `tools/bin/architecture-check`'s outside: no package outside
-  `internal/slices` imports one under it but `cmd`, and graph's and config's rows in `docs/go.md`
-  (T-167). Its sibling check keeps a slice from importing another.
+  `internal/slices` imports one under it but `cmd` (T-167; config's and graph's rows went with
+  T-197 and T-208). Its sibling check keeps a slice from importing another.
 - `TestEveryPortIsBoundOnDiskAndInProcess` (`cmd/itos-cc/adapters_test.go`): every `adapters`
   field is bound in `diskAdapters` and `inProcessAdapters`, so a new port is assembly's edit in
   all three (decision 53).

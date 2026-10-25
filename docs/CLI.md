@@ -138,7 +138,7 @@ output of the commands it runs passes as it is.
 | `flags.conflict`             | 80   | mutation run, mutation check, mutation sample, mutation except | `flag`                                        |
 | `command.unknown`            | 81   | itos-cc, mutation | `command`                                                |
 | `command.missing`            | 80   | itos-cc --json, mutation --json | none                                       |
-| `args.unexpected`            | 80   | version, help, mutation except | `argument`                                  |
+| `args.unexpected`            | 80   | version, graph, help, mutation except | `argument`                           |
 | `args.missing`               | 80   | mutation except | none                                                       |
 | `args.invalid`               | 80   | mutation except | `argument`                                                 |
 | `config.invalid`             | 80   | crap, dry, units, mutation run, mutation list, mutation check, mutation sample, mutation except | `file`, and `key` for an `exclude` or `mutation.copy` glob (`exclude[1]`, `mutation.copy[0]`) |
@@ -696,7 +696,7 @@ verdict and no exit code changes for it.
 | ---- | ----- | ------- |
 | 1 | Short lowercase program name | Follows. |
 | 2 | Lowercase subcommands with dashes | Follows. |
-| 3, 4 | Groups are singular nouns, actions imperative verbs | Follows. One group, `mutation`, a singular noun whose actions are verbs: `mutation run`, `mutation list`, `mutation check`, `mutation sample`, `mutation except`. Every other command is named for what it measures (`crap`, `dry`, `scrap`, `units`) or does (`serve`). |
+| 3, 4 | Groups are singular nouns, actions imperative verbs | Follows. One group, `mutation`, a singular noun whose actions are verbs: `mutation run`, `mutation list`, `mutation check`, `mutation sample`, `mutation except`. Every other command is named for what it measures (`crap`, `dry`, `scrap`, `units`), writes (`graph`) or does (`serve`). |
 | 5 | No two commands with similar names | Does not follow: `crap` and `scrap`. |
 | 6 | No everyday verb that points at another command | Follows. |
 | 7, 8 | No implicit default subcommand, no abbreviations | Follows: `itos-cc` alone and `itos-cc mutation` alone print help; an unknown command names the one meant. |
@@ -709,7 +709,7 @@ verdict and no exit code changes for it.
 | 15, 16 | Long flags, `-h` the only short one; standard names | Follows. |
 | 17 | A flag means the same in every command | Does not follow: `--threshold`. |
 | 18 | A flag changes an action, never selects another | Follows. |
-| 19–22 | `--flag=value` and `--flag value`; bad, missing, repeated, or switch values exit 2; a value is never a flag; no optional values | Follows, exiting decision 36's 80: `units`, `dry`, `scrap`, `crap`, `version` and the `mutation` group read their flags through kong, held to these rules by `internal/cli` (its `Flags` and `Parse`), and `serve`, on its legacy handler, from its declared spec (`cmd/itos-cc/cli.go`), in the same words. |
+| 19–22 | `--flag=value` and `--flag value`; bad, missing, repeated, or switch values exit 2; a value is never a flag; no optional values | Follows, exiting decision 36's 80: `units`, `dry`, `scrap`, `crap`, `graph`, `version` and the `mutation` group read their flags through kong, held to these rules by `internal/cli` (its `Flags` and `Parse`), and `serve`, on its legacy handler, from its declared spec (`cmd/itos-cc/cli.go`), in the same words. |
 | 23 | `--` ends the options; `-` is stdin or stdout | Follows for `--`; no command reads stdin, and the one file a command writes outside `.metrics/` is `itos-cc.yaml`, which `mutation except` edits in place. |
 | 24 | Flags in any position | Follows. |
 | 25 | Each argument checked; a bad one exits 2 | Follows with decision 36's 80: a path that is no file and no fragment of one exits 80. |

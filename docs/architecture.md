@@ -32,6 +32,7 @@ flowchart TD
   sdom --> dom
   sadp --> sdom & dom & eng
   sadp -.->|"exceptions, freshenv: mutation's settings"| sadp
+  slice -.->|"graph: imports, project, metricsdir"| eng & adp
   adp --> dom & eng
   adp -.->|"coveragetools: metricsdir's Dir"| adp
   eng --> dom
@@ -44,6 +45,7 @@ An arrow is an import the rules allow. Every arrow not drawn is refused.
 | Assembly | `cmd/itos-cc` | everything; the one place that knows every package, and with `internal/cli` the only importer of kong | `kong`; `architecture-check --outside` and `--toplevel` let it in |
 | UI | `internal/cli` | nothing of ours | `ui` |
 | Slice | `internal/slices/<x>` | the shared domains and ports, `internal/cli`, its own subpackages | `slice-packages`, `slice-adapters`, `slice-fakes`, `architecture-check --siblings` |
+| The graph slice | `internal/slices/graph` | the shared domains and ports it reads projects through, `internal/cli`, the `imports` and `project` engines and `metricsdir`; mutation's judgment only through its own `Mutation` port, which cmd binds (T-208) | `graph`, `slice-adapters`, `architecture-check --siblings` |
 | Slice's domain | `internal/slices/<x>/domain` | shared domains and their ports; no I/O, no kong | `domain`, `domain-io` |
 | Slice's adapters | `internal/slices/<x>/adapters/<name>` | its slice's domain, the pure shared domains, the libraries it wraps; mutation's `exceptions` and `freshenv` its `settings` adapter, the `config` package until T-197 | one rule each (`testtools`, `worktrees`, `settings`, …) |
 | Shared domains | `internal/selection`, `internal/lang`, `internal/snapshot`, `internal/coverage`, each with `port` and `porttest` | one another and their ports; nothing under `internal/slices` | `domain`, `domain-io`, `shared-domains` |
@@ -54,10 +56,10 @@ The rules are depguard's, in `.golangci.yml`, and `tools/bin/architecture-check`
 pinned golangci-lint over compile-valid fixtures in `tools/testdata/architecture` that each rule
 must accept and refuse. depguard matches a prefix and covers `internal/` alone, so four arrows
 it cannot hold are checks of their own over `go list ./...`: no slice imports a sibling slice
-(`--siblings`), nothing outside `internal/slices` imports a slice but `cmd` and graph
-(`--outside`), nothing outside `internal/` and `cmd/` imports a package under `internal/` but
-the rows `docs/go.md` names, `features` importing `internal/project` and the release tools
-`internal/release`, and graph and `server` until graph-snapshot (`--toplevel`, ADR-0061), and the binary links no `porttest` (`--linked`). Further rules: `mocks`
+(`--siblings`), nothing outside `internal/slices` imports a slice but `cmd` (`--outside`),
+nothing outside `internal/` and `cmd/` imports a package under `internal/` but the rows
+`docs/go.md` names, `features` importing `internal/project` and the release tools
+`internal/release` (`--toplevel`, ADR-0061), and the binary links no `porttest` (`--linked`). Further rules: `mocks`
 (no mocking library anywhere), `rapid` (the property library only in a domain's tests) and
 `kong`.
 
@@ -76,9 +78,15 @@ Inside a slice the UI is the kong struct `CLI` and its `Run(ctx, ui, h) int`; th
 a `Query` of domain values and `Handler.Handle(ctx, q)`, which only calls the domains through
 their ports. `Run` builds the `Query` from the flags, the one copy the layout accepts.
 
-`serve` and its graph stay legacy, outside the slices, until they leave for a web app of their
-own (T-102 to T-113). They keep their own copies of what they read (crap's formula,
-`MutationName`) so no slice is reachable from them.
+The architecture graph is the graph slice, `internal/slices/graph` (T-208, q-95): its command
+writes `.metrics/graph.json` through the snapshot store, reading the project through
+selection's tree, lang's surroundings and that store, and mutation's judgment reaches it only
+through its own `Mutation` port, which cmd binds to the `Graph` the mutation domain exports, so
+check's rule stays mutation's. It keeps its own copy of crap's formula and reads crap.json and
+dry.json itself, so no slice's code is reachable from it. `serve` stays legacy, outside the
+slices, until it leaves for a web app of its own (T-102 to T-113): `server` takes a builder
+interface of its own, which cmd binds over the graph slice's, so it imports nothing under
+`internal/`.
 
 ## Ports, adapters, fakes and contract suites
 

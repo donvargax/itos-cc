@@ -25,6 +25,10 @@
   scenarios:
     - id: "@ID-SEL-15"
       why: production code told from test code by each language's conventions, the split every command uses
+- file: graph_command.feature
+  scenarios:
+    - id: "@ID-GRAPH-41"
+      why: the graph written as a snapshot, its repository, modules and import edge, the file a viewer reads
 - file: metrics_snapshots.feature
   scenarios:
     - id: "@ID-SNAP-02"

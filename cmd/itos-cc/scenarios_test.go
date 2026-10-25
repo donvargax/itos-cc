@@ -566,6 +566,7 @@ func (m *memory) inProcessAdapters(r features.Run, stderr io.Writer) (adapters, 
 		Coverage:     measurer, MutationCoverage: measurer,
 		Selection: settings.Reader{Source: file},
 		Fresh:     c.Fresh, FreshWorkers: c.FreshWorkers, Repository: c.Repository, PhysicalDir: c.PhysicalDir, Platform: c.Platform,
+		Origin: m.origin,
 	}
 	finish := func() error {
 		// What the run removed from the store is gone from the memory too,
@@ -584,6 +585,16 @@ func (m *memory) inProcessAdapters(r features.Run, stderr io.Writer) (adapters, 
 		return measurer.observationErr
 	}
 	return a, finish
+}
+
+// origin is the URL of the remote origin of the fixture repository holding
+// dir, as git config set it there, "" when there is none.
+func (m *memory) origin(_ context.Context, dir string) string {
+	_, repository := m.repoOf(filepath.Clean(dir))
+	if repository == nil {
+		return ""
+	}
+	return repository.Config["remote.origin.url"]
 }
 
 // ObserveReads marks actual bound port operations. Positive controls use those

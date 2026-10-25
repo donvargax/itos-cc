@@ -85,6 +85,9 @@ type adapters struct {
 	// Platform is the system itos-cc runs on, which mutation run's --count
 	// and --fail-fast check (countedPlatform).
 	Platform string
+	// Origin is the URL of the git remote origin of the repository holding
+	// a folder, "" for none, which graph names the repository by.
+	Origin func(ctx context.Context, dir string) string
 }
 
 // SelectionTree is the selection port's tree, a slice's Ports method.
@@ -241,7 +244,7 @@ func diskAdapters(log io.Writer, hold func() (release func())) adapters {
 		return snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}
 	}, Fresh: fresh, FreshWorkers: worktrees.Workers{Platform: runtime.GOOS, Owner: owner, Prepare: freshenv.CommandEnvironment}, Exceptions: func(root string) mutation.Exceptions { return exceptions.Exceptions{RootDir: root} }, SourceStatus: sources.SourceEdits{}, SnapshotReader: snapshots.Mutations{Store: metricsdir.Store{}}, Catalog: snapshots.Mutations{Store: metricsdir.Store{}}, Presence: sources.SourceEdits{}, Snapshots: snapshots.Mutations{Store: metricsdir.Store{}}, SourceEdits: sources.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS, Hold: hold, Dir: dir, Settings: reader}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
 		Coverage: measurer, MutationCoverage: measurer, Selection: reader,
-		Repository: countedRoot, PhysicalDir: physicalDir, Platform: countedPlatform}
+		Repository: countedRoot, PhysicalDir: physicalDir, Platform: countedPlatform, Origin: project.OriginAt}
 }
 
 // diskConfig is itos-cc.yaml at the project root of the working directory.

@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"io"
 	"log"
 	"path/filepath"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/slices/graph"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
@@ -121,7 +123,7 @@ func TestTheGraphBindingReadsEachProjectsSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 	configs := map[string]*mutation.Config{root: {Tests: &mutation.Tests{Support: []string{"testdata/*.txt"}}}, "untested": {}}
-	g.settings = func(root string) (*mutation.Config, error) {
+	g.settings = func(_ context.Context, root string) (*mutation.Config, error) {
 		if c, ok := configs[root]; ok {
 			return c, nil
 		}
@@ -158,7 +160,7 @@ func TestServeBuildsItsGraphOverTheMutationBindings(t *testing.T) {
 	if _, err := newServer(t.Context(), []string{m.root}, "", logger, a); err != nil {
 		t.Fatal(err)
 	}
-	b, err := graph.NewBuilder([]string{m.root}, servedFrom(graphMutation{judge: mutation.Graph{Snapshots: inputs.Snapshots, Toolchain: inputs.Toolchain, Fingerprints: inputs.Fingerprints}, settings: func(string) (*mutation.Config, error) { return nil, errors.New("none") }}))
+	b, err := graph.NewBuilder([]string{m.root}, servedFrom(graphMutation{judge: mutation.Graph{Snapshots: inputs.Snapshots, Toolchain: inputs.Toolchain, Fingerprints: inputs.Fingerprints}, settings: func(context.Context, string) (*mutation.Config, error) { return nil, errors.New("none") }}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,11 +173,58 @@ func TestServeBuildsItsGraphOverTheMutationBindings(t *testing.T) {
 		t.Error("serve built a graph without its toolchain")
 	}
 	gone := filepath.Join(m.root, "gone")
-	b, err = graph.NewBuilder([]string{gone}, servedFrom(graphMutation{judge: mutation.Graph{Snapshots: inputs.Snapshots, Toolchain: inputs.Toolchain, Fingerprints: inputs.Fingerprints}, settings: func(string) (*mutation.Config, error) { return nil, errors.New("none") }}))
+	b, err = graph.NewBuilder([]string{gone}, servedFrom(graphMutation{judge: mutation.Graph{Snapshots: inputs.Snapshots, Toolchain: inputs.Toolchain, Fingerprints: inputs.Fingerprints}, settings: func(context.Context, string) (*mutation.Config, error) { return nil, errors.New("none") }}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, _, err := (servedGraph{b}).Build(t.Context()); err == nil {
 		t.Errorf("serve built the graph of %s, which is not there", gone)
+	}
+}
+
+// graph's port for the project the working directory is in is bound over
+// the adapters' snapshot reader, toolchain, fingerprints and settings, the
+// settings read as mutation reads them; a missing binding is refused, and
+// settings that cannot be read list no support.
+func TestTheGraphCommandsPortIsBoundOverTheAdapters(t *testing.T) {
+	root := t.TempDir()
+	inputs := &porttest.Inputs{Dir: root, Files: map[string]string{filepath.Join(root, "testdata", "a.txt"): "a"}}
+	settings := &porttest.Settings{Value: mutation.Config{Tests: &mutation.Tests{Support: []string{"testdata/*.txt"}}}}
+	a := adapters{SnapshotReader: &porttest.Snapshots{RootDir: root}, Toolchain: inputs, Fingerprints: inputs, Settings: settings}
+	m, err := a.GraphMutation()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := m.Support(t.Context(), root); got["testdata/a.txt"] == "" {
+		t.Errorf("support: %v, want testdata/a.txt's hash", got)
+	}
+	settings.Failure = &mutation.SettingsInvalid{Reason: "unreadable"}
+	if got := m.Support(t.Context(), root); got != nil {
+		t.Errorf("support of unreadable settings: %v, want none", got)
+	}
+	for name, missing := range map[string]adapters{
+		"fingerprints": {SnapshotReader: a.SnapshotReader, Toolchain: inputs, Settings: settings},
+		"settings":     {SnapshotReader: a.SnapshotReader, Toolchain: inputs, Fingerprints: inputs},
+	} {
+		if _, err := missing.GraphMutation(); err == nil {
+			t.Errorf("graph's port was bound without its %s", name)
+		}
+	}
+	a.Origin = func(_ context.Context, dir string) string { return "origin of " + dir }
+	if got := a.RepositoryOrigin(t.Context(), root); got != "origin of "+root {
+		t.Errorf("origin: %q", got)
+	}
+}
+
+// serve given a repository that cannot be read refuses it before it
+// listens, as serve.repo-unreadable.
+func TestServeRefusesARepositoryItCannotRead(t *testing.T) {
+	inputs := realMutationInputs()
+	in := &invocation{cmd: serveCommand, args: []string{filepath.Join(t.TempDir(), "gone")}, values: map[string][]string{},
+		adapters: adapters{SnapshotReaders: inputs.Snapshots, Toolchain: inputs.Toolchain, Fingerprints: inputs.Fingerprints}}
+	_, err := runServe(t.Context(), in)
+	var p *cli.Problem
+	if !errors.As(err, &p) || p.Rule != "serve.repo-unreadable" {
+		t.Errorf("serve of a repository not there: %v, want serve.repo-unreadable", err)
 	}
 }

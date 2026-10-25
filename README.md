@@ -20,6 +20,7 @@ and what has not been verified.
 | `itos-cc mutation run` | Would the tests notice if this code were wrong? |
 | `itos-cc scrap` | Which test files should an agent leave alone, table-drive, refactor, or split? |
 | `itos-cc units` | What functions and methods do the tools see? |
+| `itos-cc graph` | The architecture graph as `.metrics/graph.json`, for any viewer to read: what depends on what, and where is it risky? |
 | `itos-cc serve` | Live architecture graph for the viewer: what depends on what, and where is it risky? |
 
 The ideas come from Robert C. Martin's
@@ -1288,10 +1289,20 @@ API: `GET /api/graph` (JSON), `GET /api/events` (server-sent events carrying
 the graph version), `GET /api/source?repo=&file=` (only files in the graph).
 The server listens on localhost only.
 
+`itos-cc graph` writes the same graph, field for field, as
+`.metrics/graph.json`, so a viewer or web app reads a file and asks itos-cc
+nothing (ADR-0060). It reads the whole project, whatever `exclude` says;
+its repository node is named by the git remote origin's repository name
+(the last segment of origin's URL, without `.git`), or the folder's without
+a remote, so a clone and CI agree; and its `"version"` is the snapshot
+format's, 1. The file is sorted and holds no time, so an unchanged project
+writes it byte for byte again. `--json` prints the counts it holds:
+`"repositories"`, `"modules"`, `"functions"` and `"edges"`.
+
 ## .metrics
 
 Every command writes a JSON snapshot under `.metrics/`: `crap.json`,
-`dry.json`, `scrap.json`, and `mutate/`. `.metrics/` sits at the project
+`dry.json`, `scrap.json`, `graph.json`, and `mutate/`. `.metrics/` sits at the project
 root, the git top level of the working directory (outside a git repository,
 the working directory), wherever a command runs, and every path a snapshot
 records is relative to that root and slash-separated; paths on the command
@@ -1311,7 +1322,7 @@ describes each package and the import rules `.golangci.yml` holds them to.
 | --- | --- |
 | `cmd/itos-cc` | The command line: `main`, the one kong model of every command, and the wiring of each slice to the adapters, which `tools/bin/assemble` writes into `commands_gen.go` from each slice's declaration |
 | `internal/cli` | The UI every command shares: reading the command line, help, problems and exit codes |
-| `internal/slices/units`, `internal/slices/dry`, `internal/slices/scrap`, `internal/slices/crap`, `internal/slices/version`, `internal/slices/mutation` | The commands' slices, each under `internal/slices` (T-86), a slice's own domain in its `domain` subpackage (`internal/slices/dry/domain`, which finds duplicates, `internal/slices/scrap/domain`, which measures test code's structure, and `internal/slices/crap/domain`, which scores functions by CRAP, and `internal/slices/mutation/domain`, which owns mutation sites, results and their judgment); `serve` alone stays on its legacy handler in `cmd/itos-cc` |
+| `internal/slices/units`, `internal/slices/dry`, `internal/slices/scrap`, `internal/slices/crap`, `internal/slices/version`, `internal/slices/mutation`, `internal/slices/graph` | The commands' slices, each under `internal/slices` (T-86), a slice's own domain in its `domain` subpackage (`internal/slices/dry/domain`, which finds duplicates, `internal/slices/scrap/domain`, which measures test code's structure, and `internal/slices/crap/domain`, which scores functions by CRAP, and `internal/slices/mutation/domain`, which owns mutation sites, results and their judgment); `internal/slices/graph` builds the architecture graph, its dependencies resolved by `internal/imports`, reaching mutation's judgment through a port of its own (T-208); `serve` alone stays on its legacy handler in `cmd/itos-cc` |
 | `internal/selection`, `internal/lang`, `internal/snapshot`, `internal/coverage` | The shared domains, each reaching outside only through its ports |
 | `internal/workdir`, `internal/metricsdir`, `internal/coveragetools` | The adapters implementing those ports, `internal/metricsdir` holding the library of the snapshot files beside its `Store` |
 | `internal/slices/mutation/adapters/testtools`, `internal/slices/mutation/adapters/testinputs`, `internal/slices/mutation/adapters/worktrees`, `internal/slices/mutation/adapters/githistory`, `internal/slices/mutation/adapters/importgraph`, `internal/slices/mutation/adapters/freshenv`, `internal/slices/mutation/adapters/snapshots`, `internal/slices/mutation/adapters/exceptions`, `internal/slices/mutation/adapters/sources`, `internal/slices/mutation/adapters/settings` | A slice's own adapters, each under `internal/slices/<command>/adapters/<name>` with a rule of its own: the mutation slice's tools, its inputs' fingerprints, its workers, its committed history, its import reach over `internal/imports`, its counted fresh environments, its snapshot codec, its itos-cc.yaml exceptions writer, its source edits, and its settings, reading `itos-cc.yaml` for every command |
@@ -1319,7 +1330,7 @@ describes each package and the import rules `.golangci.yml` holds them to.
 | `internal/imports` | The import-resolution engine: each language's imports resolved into dependencies between modules, and the tests that reach each source, for the graph and the mutation slice's import reach |
 | `internal/project` | The project and git history engine: finding source and test files, what git says changed, and the disk lang's port asks: reading and parsing a file (`ParseFile`) and finding a project marker above it (`FindUp`) |
 | `internal/covrun` | The coverage runner: running each language's coverage tools, their process groups and run folders, and reading LCOV, Go profiles, and JaCoCo |
-| `graph`, `server` | The architecture graph, its dependencies resolved by `internal/imports`, its live HTTP API, and the viewer a release embeds |
+| `server` | The architecture graph's live HTTP API and the viewer a release embeds, over a builder of its own that cmd binds to the graph slice's |
 | `internal/version`, `internal/release` | The build's version, the one source the `version` command prints through cmd, and the library of the release tools in `tools/bin` |
 | `features` | The scenarios and their steps, each file of steps declaring its feature file, listed in `steps_gen.go` by `tools/bin/assemble` ([features/README.md](features/README.md)) |
 | `viewer/` | The web viewer, a separate npm project |

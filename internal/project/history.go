@@ -49,6 +49,17 @@ func (s historySurroundings) Abs(_ context.Context, path string) (string, bool) 
 	return abs, err == nil
 }
 
+// OriginAt is the URL of the remote origin of the git repository holding
+// dir, as git config names it, "" when there is no repository, no origin,
+// or git cannot be asked.
+func OriginAt(ctx context.Context, dir string) string {
+	out, err := historyCommand(ctx, dir, "config", "--get", "remote.origin.url").Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
 // HeadAt observes HEAD in dir without changing process cwd.
 func HeadAt(ctx context.Context, dir string) (string, error) {
 	if ctx.Err() != nil {

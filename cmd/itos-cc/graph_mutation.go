@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 
 	"github.com/donvargax/itos-cc/internal/lang"
@@ -20,7 +21,7 @@ import (
 // (Settings), list.
 type graphMutation struct {
 	judge    mutation.Graph
-	settings func(root string) (*mutation.Config, error)
+	settings func(ctx context.Context, root string) (*mutation.Config, error)
 }
 
 var _ graph.Mutation = graphMutation{}
@@ -33,7 +34,41 @@ func newGraphMutation(snapshotReaders func(root string) mutation.MutationSnapsho
 	if err := judge.Bound(); err != nil {
 		return graphMutation{}, err
 	}
-	return graphMutation{judge: judge, settings: settings.LoadFrom}, nil
+	return graphMutation{judge: judge, settings: settingsAt}, nil
+}
+
+// settingsAt is the settings at the project root root, read from the disk.
+// Nothing it asks a context could cancel.
+func settingsAt(_ context.Context, root string) (*mutation.Config, error) {
+	return settings.LoadFrom(root)
+}
+
+// GraphMutation is graph's Mutation port for the project the working
+// directory is in, a slice's Ports method: mutation's judgment over the
+// snapshot reader of the project's root, its toolchain and fingerprints,
+// and its settings as mutation reads them; a missing binding is refused.
+func (a adapters) GraphMutation() (graph.Mutation, error) {
+	m, err := newGraphMutation(func(string) mutation.MutationSnapshotReader { return a.SnapshotReader }, a.Toolchain, a.Fingerprints)
+	if err != nil {
+		return nil, err
+	}
+	if a.Settings == nil {
+		return nil, errors.New("graph settings binding is missing")
+	}
+	m.settings = func(ctx context.Context, _ string) (*mutation.Config, error) {
+		config, failure := a.Settings.Read(ctx)
+		if failure != nil {
+			return nil, failure
+		}
+		return config, nil
+	}
+	return m, nil
+}
+
+// RepositoryOrigin is the URL of the git remote origin of the repository
+// at root, "" for none, a slice's Ports method.
+func (a adapters) RepositoryOrigin(ctx context.Context, root string) string {
+	return a.Origin(ctx, root)
 }
 
 // Facts is f's facts, as mutation judges them.
@@ -57,7 +92,7 @@ func (g graphMutation) Snapshot(ctx context.Context, top, key string) (any, erro
 // Support is the hashes of the support files of the tests the settings at
 // top list, nil when they list none or cannot be read.
 func (g graphMutation) Support(ctx context.Context, top string) map[string]string {
-	cfg, err := g.settings(top)
+	cfg, err := g.settings(ctx, top)
 	if err != nil || cfg.Tests == nil {
 		return nil
 	}

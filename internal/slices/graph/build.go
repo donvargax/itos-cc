@@ -22,14 +22,16 @@ import (
 // Reading is what a Builder reads repositories through, which cmd binds:
 // the tree it finds and reads their sources and tests in, what surrounds a
 // file, which lang asks to parse it, the snapshots under .metrics of each
-// project root (Store), mutation's judgment (Mutation), and Top, the
-// project root of a repository's root, whose snapshots it reads.
+// project root (Store), mutation's judgment (Mutation), Top, the project
+// root of a repository's root, whose snapshots it reads, and Name, the name
+// of a repository's node, from its root; nil names it by its folder.
 type Reading struct {
 	Tree         selport.Tree
 	Surroundings langport.Surroundings
 	Store        func(top string) snapport.Store
 	Mutation     Mutation
 	Top          func(root string) string
+	Name         func(root string) string
 }
 
 // Builder rebuilds the graph of some repositories, reparsing only files that
@@ -75,6 +77,9 @@ func NewBuilder(roots []string, reading Reading) (*Builder, error) {
 			return nil, err
 		}
 		name := filepath.Base(abs)
+		if reading.Name != nil {
+			name = reading.Name(abs)
+		}
 		if seen[name]++; seen[name] > 1 {
 			name = fmt.Sprintf("%s-%d", name, seen[name])
 		}

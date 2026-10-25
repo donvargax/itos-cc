@@ -38,3 +38,5 @@ Supersedes ADR-0029.
 Amended by ADR-0053: the in-process driver's adapters, which this record says are generated, stay hand-written per port in an inProcessAdapters provider beside diskAdapters, a test holding every port bound on disk and in process. The generated command assembly and step registration stand.
 
 Amended by ADR-0061: settings, which this record names among the engines that stay where they are, is the mutation slice's adapter, internal/slices/mutation/adapters/settings (T-197), owned by mutation; its Reader implements mutation's SettingsReader and selection's, cmd gives it to every slice, and no slice imports it.
+
+Note, graph-snapshot (q-95, T-208, slice-56): graph, which this record keeps legacy outside the slices, is the slice internal/slices/graph, its command writing .metrics/graph.json (ADR-0060). Mutation's judgment reaches it only through a Mutation port it owns, which cmd binds to the Graph the mutation domain exports, so no slice imports another; it keeps its copy of crap's Score. serve stays legacy, its server taking a builder interface of its own that cmd binds.

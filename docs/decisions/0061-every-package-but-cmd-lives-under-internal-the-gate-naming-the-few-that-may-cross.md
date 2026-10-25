@@ -22,3 +22,5 @@ The person, 2026-10-24, each as recommended: project becomes internal/project, a
 ### Consequences
 
 Six tasks: the gate with named exemptions first, then project, metrics, coverage and config, each removing its exemption, and one refactor-proof.yml run. Permanent rows: features to internal/project, tools/bin/release-* to internal/release; graph and server until graph-snapshot. Amends ADR-0051's list of engines: settings is mutation's adapter now.
+
+Note, graph-snapshot (T-208): graph's and server's rows are gone. graph became the slice internal/slices/graph, under internal/ like every package, and server, still outside it, imports nothing under internal/: it takes a builder interface of its own, which cmd binds over the graph slice's.
