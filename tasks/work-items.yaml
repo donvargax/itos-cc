@@ -5377,8 +5377,8 @@ items:
   - id: T-208
     title: graph moves into internal/slices/graph, reaching mutation freshness through a port it owns
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: viewer-dependency-rule
