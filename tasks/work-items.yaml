@@ -14,7 +14,7 @@ queue:
   - listed-support-per-test
   - listed-suites
   - features-coverage-gocoverdir-leak
-  - flaky-kills-record
+  - slice-57
   - sample-repeat
   - T-208
   - slice-56
@@ -5709,14 +5709,15 @@ items:
     status: done
     depends_on: [slice-52]
     kind: slice
-  - id: flaky-kills-record
+  - id: slice-57
     title: mutation run records a flaky mutant, and check fails on it
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was flaky-kills-record.
       q-93 item B (the person 2026-10-24): run confirms a flipped survivor, or a --mutate-all kill
       that now survives, with two more runs and records an additive "flaky": true with its
       "outcomes" in the snapshot (left out when false, like stale and limit); check reports a
