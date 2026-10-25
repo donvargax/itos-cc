@@ -258,8 +258,8 @@ items:
   - id: slice-50
     title: "mutation sample tells a flaky mutant from a mismatch"
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
