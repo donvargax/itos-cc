@@ -465,6 +465,6 @@ questions:
     question: "itos-cc.yaml strictness (raised 2026-10-24 after q-94, from a side agent's note and the robustness principle): should unknown keys be refused, should a missing version be refused, and is there an escape hatch?"
     answer: "Person 2026-10-24: unknown keys stay refused at every level (slice-52). A missing version reads as version 1, permanently; only a version newer than itos-cc reads is refused, with a fix to upgrade (slice-53 changes from refusing it). Keys starting with x- are extension keys, accepted and ignored at any mapping level, as Docker Compose and OpenAPI do, their values still held to rule 1 (no anchors, aliases, merge keys or tags); a new slice before slice-52 is released."
   - id: q-99
-    item: "shared-edit-distance"
+    item: "slice-60"
     question: "shared-edit-distance: whose \"Did you mean\" rule, and may the settings adapter use kong?"
     answer: "Person 2026-10-25: kong's rule, which is friendlier: every candidate that starts with what was typed or is within two edits, several named as \"Did you mean one of A, B?\". The fork exports it (a public function over the candidates, kong's own closestCandidates and levenshtein), tagged as a new -itos version; itos-cc uses it for flags, commands, serve's hand parser and itos-cc.yaml keys, deleting internal/cli's distance and the settings adapter's edits. The architecture rules let the settings adapter import the fork for it (kong otherwise still stays in cmd and internal/cli)."

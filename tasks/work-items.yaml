@@ -5749,14 +5749,15 @@ items:
       knows changed lines (--since) and coverage; a mode that reports them without mutating (e.g.
       mutation run --since <base> --fail-uncovered=lines --count 0, or a coverage subcommand) would
       replace those scripts.
-  - id: shared-edit-distance
-    title: One Levenshtein distance for the CLI guesses and itos-cc.yaml keys
+  - id: slice-60
+    title: Every "Did you mean" uses kong's rule, from the fork, for flags, commands and itos-cc.yaml keys
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was shared-edit-distance.
       slice-52 added settings.edits for the did-you-mean of an unlisted itos-cc.yaml key;
       internal/cli/guess.go has its own distance for flags and commands. depguard keeps the settings
       adapter from internal/cli, so the two copies stand; a small pure package both may import would
