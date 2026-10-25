@@ -6989,3 +6989,11 @@
     staleness equals mutation check's, GRAPH-38, and the snapshot fixtures) move with the
     freshness function to the mutation slice, the binding tests to cmd, graph's own tests drive a
     fake of its port, and the tree, metrics and http edge tests move unchanged.
+- id: T-209
+  type: chore
+  title: Upgrade the repository pin to itos 8.16.3
+  why: >
+    Between agents, the coordinator moves the pin from 8.16.2 to the newest patch so the next agents
+    read its guides and hooks, as T-207 did.
+  done_when:
+    - run: itos version --check

@@ -5834,3 +5834,10 @@ items:
       byte-for-byte rerun scenario (GRAPH-45), but SNAP-01 (each command writes its snapshot) and
       SNAP-09 (paths stay relative) in metrics_snapshots.feature still list only crap, dry, scrap
       and mutation run. Add graph rows so every snapshot is held by the same outlines.
+  - id: T-209
+    title: Upgrade the repository pin to itos 8.16.3
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
