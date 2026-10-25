@@ -5730,24 +5730,9 @@ items:
     title: Every "Did you mean" uses kong's rule, from the fork, for flags, commands and itos-cc.yaml keys
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was shared-edit-distance.
-      slice-52 added settings.edits for the did-you-mean of an unlisted itos-cc.yaml key;
-      internal/cli/guess.go has its own distance for flags and commands. depguard keeps the settings
-      adapter from internal/cli, so the two copies stand; a small pure package both may import would
-      hold one, or a library chosen in the spec.
-
-      Settled with the person 2026-10-25: three copies today, kong's own (levenshtein.go in the
-      fork, filling UnknownFlagError and UnexpectedArgumentError Candidates, ADR-0035),
-      internal/cli/guess.go (Closest and distance, used by unknownFlag, UnknownCommand and serve's
-      hand parser) and the settings adapter's edits (keys.go, slice-52). Move Closest and its
-      distance into one leaf package under internal/ with no imports, allowed by both internal/cli's
-      and the settings adapter's depguard rules, so flags, commands and itos-cc.yaml keys share one
-      "within two edits" rule; leave kong's copy alone and do not switch to its Candidates (its
-      selection may differ and would change suggestions). No behaviour change; no fork change.
   - id: bug-9
     title: A failing baseline's plain line names its file with backslashes on Windows
     phase: 1
