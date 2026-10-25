@@ -7009,3 +7009,11 @@
     graph.json in its commit subject and body; .gitignore gains !.metrics/graph.json with its
     comment saying the nightly records it. Nothing else in the job changes. Its effect is seen
     on the next nightly run; no dispatch is needed to close.
+- id: T-211
+  type: chore
+  title: Upgrade the repository pin to itos 8.17
+  why: >
+    Between agents, the coordinator moves the pin from 8.16.3 to the newest 8.17 so the next agents
+    read its guides and hooks, as T-209 did.
+  done_when:
+    - run: itos version --check

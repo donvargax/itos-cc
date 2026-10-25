@@ -5877,3 +5877,10 @@ items:
       as --seed is, and run --count --repeat 0 is flags.value-invalid; only sample's --repeat 0 has
       one (MUT-350). Add the two scenarios so the behaviour is specified, red-first being moot
       (guardrails that pass today).
+  - id: T-211
+    title: Upgrade the repository pin to itos 8.17
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
