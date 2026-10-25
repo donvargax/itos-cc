@@ -4,7 +4,8 @@
 // mutation.exceptions, the equivalent mutants a person excepted, each with
 // a reason, mutation.tests, how to list the project's tests and run a
 // selection of them, and mutation.copy, globs of what a worker's copy
-// leaves out that it brings back; it refuses any key it does not list. It
+// leaves out that it brings back; it refuses any key it does not list but
+// an extension key, starting with x-, which it ignores. It
 // is the mutation slice's settings adapter, its Reader implementing mutation's SettingsReader and selection's, which cmd
 // gives every slice (ADR-0061), and the one reading codec: the slice's
 // exceptions adapter writes mutation.exceptions through its Parse.
@@ -59,7 +60,8 @@ func (e *InvalidError) Error() string { return File + ": " + e.Reason }
 
 // raw is the file as decoded, with pointers to tell a missing key from an
 // empty value. Parse refuses a key format does not list before decoding,
-// so each key here is one format lists.
+// so each key here is one format lists; an extension key, which no field
+// names, never reaches it.
 type raw struct {
 	Exclude  []string `yaml:"exclude"`
 	Mutation *struct {
@@ -129,7 +131,8 @@ func Read(root string) ([]byte, error) {
 // (docs/CONFIG.md rule 1), before anything else is read: an anchor, an
 // alias or a merge key, a tag written in the file other than ! and JSON's,
 // a key that is not a string, or a second document; then a key the file
-// does not list (format), at any depth, before any value is checked. The
+// does not list (format), at any depth, an extension key aside, before any
+// value is checked. The
 // text names no root, so its selection settings have none: the caller that found the
 // file gives it.
 func Parse(data []byte) (*Config, error) {

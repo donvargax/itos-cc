@@ -291,3 +291,40 @@ func TestPruneDocumentRemovesOnlyItsEntriesAndTheCommentsAboveThem(t *testing.T)
 		t.Error("removing an entry that is no longer there: no error")
 	}
 }
+
+// slice-54: an extension key, at the top level, in mutation or in an entry
+// none of them writes, is kept byte for byte by except, --renew and
+// --prune, as every byte they do not write is; the scenario holds a prune
+// that writes nothing.
+func TestTheWritersKeepExtensionKeys(t *testing.T) {
+	kept := "    - {file: src/b.go, function: m/src#g, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: kept, x-seen: [1, {a: b}]}\n"
+	head := "x-owner: platform-team  # theirs\nmutation:\n  x-note:\n    reviewed: true\n  exceptions:\n" + kept
+	tail := "x-links: [a, b]\n"
+	added, _, err := exceptions.ExceptDocument([]byte(head+tail), entry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(string(added), head) || !strings.HasSuffix(string(added), "\n"+tail) {
+		t.Fatalf("except lost an extension key:\n%s", added)
+	}
+	c, err := settings.Parse(added)
+	if err != nil {
+		t.Fatal(err)
+	}
+	renewed := c.Exceptions[1]
+	renewed.Hash = "fedcba9876543210"
+	data, err := exceptions.RenewDocument(added, []mutants.Renewal{{Old: c.Exceptions[1], New: renewed}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(string(data), head) || !strings.HasSuffix(string(data), "\n"+tail) {
+		t.Errorf("--renew lost an extension key:\n%s", data)
+	}
+	data, err = exceptions.PruneDocument(added, []mutants.Exception{c.Exceptions[1]})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != head+tail {
+		t.Errorf("itos-cc.yaml after --prune\n%s\nwant\n%s", data, head+tail)
+	}
+}

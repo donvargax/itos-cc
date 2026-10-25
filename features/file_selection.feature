@@ -531,7 +531,7 @@ Feature: Choosing which files a command looks at
   # Additive, so no breaking note; it lands before slice-52 is released, so
   # no release refuses x- keys. Before this item SEL-38 and SEL-39 fail at
   # their Then (an unknown key); SEL-40 is a guardrail once slice-52 is in.
-  @slice-54 @ID-SEL-38 @wip
+  @slice-54 @ID-SEL-38
   Scenario Outline: A key starting with x- is accepted and ignored at any level
     Given itos-cc.yaml holds '<yaml>'
     And the sources src/board.go and src/port/porttest/fake.go
@@ -544,14 +544,14 @@ Feature: Choosing which files a command looks at
       | {exclude: ["**/porttest/**"], mutation: {x-note: {reviewed: true}}}  |
       | {exclude: ["**/porttest/**"], x-links: [a, b]}                       |
 
-  @slice-54 @ID-SEL-39 @wip
+  @slice-54 @ID-SEL-39
   Scenario: mutation except --prune keeps an extension key byte for byte
     Given itos-cc.yaml holds '{x-owner: platform-team, mutation: {exceptions: []}}'
     When I run "itos-cc mutation except --prune"
     Then the exit code is 0
     And itos-cc.yaml is byte for byte as it was
 
-  @slice-54 @ID-SEL-40 @wip
+  @slice-54 @ID-SEL-40
   Scenario Outline: A key that only looks like an extension is still refused
     Given itos-cc.yaml holds '<yaml>'
     When I run "itos-cc crap --no-coverage"

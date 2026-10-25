@@ -135,6 +135,20 @@ keys are `exclude` and `mutation`, which holds `exceptions`, `tests` and
 `copy`. Remove or rename each key it does not list; releases older than
 this one ignore such a key.
 
+A key starting with `x-` is an extension key, as in Docker Compose and
+OpenAPI: itos-cc accepts and ignores it at any level, so another tool or a
+person can keep notes beside its settings, and `mutation except`, `--renew`
+and `--prune` keep it byte for byte. Its value may be anything JSON can
+express, with no anchor, alias, merge key or tag; `X-` and `x_` keys are
+not extension keys and are refused.
+
+```yaml
+x-owner: platform-team
+exclude: ["**/porttest/**"]
+mutation:
+  x-note: {reviewed: true}
+```
+
 A worker's copy of the project leaves out what git ignores (see Parallel
 workers), so a file a test or a coverage run left in the project never
 reaches it. A project whose tests read an ignored file, such as generated

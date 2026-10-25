@@ -46,14 +46,26 @@ var format = shape{keys: []listed{
 	}}},
 }}
 
+// extension is the prefix of an extension key, as Docker Compose and
+// OpenAPI allow: a mapping at any level may hold keys starting with it,
+// which the walk and the decoder leave unread, so other tools and people
+// can keep their own data in itos-cc.yaml (docs/CONFIG.md rule 2,
+// slice-54). Their values are still held to rule 1 (spelled). The prefix
+// is exact: X- and x_ are keys like any other.
+const extension = "x-"
+
 // unlisted refuses the first key in n, in document order, that s, the
-// shape of n's place, does not list there; at is n's key, "" for the top
-// level. A value whose shape differs from s's is left to decoding.
+// shape of n's place, does not list there, an extension key aside; at is
+// n's key, "" for the top level. A value whose shape differs from s's is
+// left to decoding.
 func unlisted(n *yaml.Node, s shape, at string) error {
 	switch {
 	case n.Kind == yaml.MappingNode && s.keys != nil:
 		for i := 0; i < len(n.Content); i += 2 {
 			name := n.Content[i].Value
+			if strings.HasPrefix(name, extension) {
+				continue
+			}
 			key := name
 			if at != "" {
 				key = at + "." + name

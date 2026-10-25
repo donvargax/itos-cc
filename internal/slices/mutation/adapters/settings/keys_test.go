@@ -45,6 +45,34 @@ func TestAKeyTheFormatDoesNotListIsRefused(t *testing.T) {
 	}
 }
 
+// An extension key, starting with x-, is accepted and ignored at every
+// level the format lists keys at, the deeper ones included, which the
+// scenarios hold at the top level and mutation alone; its value is still
+// held to rule 1, and a key that only looks like one is refused (slice-54).
+func TestAnExtensionKeyIsIgnoredAtAnyLevel(t *testing.T) {
+	for _, text := range []string{
+		"{x-: 1, x-owner: team}\n",
+		"mutation: {exceptions: [{file: a.go, function: f, hash: h, line_in_function: 1, column: 1, original: '<', replacement: '>', reason: r, x-seen: [1, {a: b}]}]}\n",
+		"mutation: {tests: {list: l, run: 'r {pattern}', ids_pattern: '{ids}', join: {each: '{id}', sep: ' ', x-why: none}, x-note: n}}\n",
+	} {
+		if _, err := Parse([]byte(text)); err != nil {
+			t.Errorf("%q: error %v, want none", text, err)
+		}
+	}
+	for _, c := range []struct{ text, key, found string }{
+		{"{x-owner: &a team}\n", "x-owner", "x-owner carries the anchor &a"},
+		{"mutation: {x-note: !foo n}\n", "mutation.x-note", "mutation.x-note carries the tag !foo"},
+		{"mutation: {exceptions: [{X-seen: 1}]}\n", "mutation.exceptions[0].X-seen", "does not list"},
+		{"mutation: {tests: {x_note: n}}\n", "mutation.tests.x_note", "does not list"},
+	} {
+		_, err := Parse([]byte(c.text))
+		var invalid *InvalidError
+		if !errors.As(err, &invalid) || invalid.Key != c.key || !strings.Contains(err.Error(), c.found) {
+			t.Errorf("%q: error %v, want an *InvalidError keyed %q saying %q", c.text, err, c.key, c.found)
+		}
+	}
+}
+
 // edits counts the letters inserted, deleted or replaced, whichever word
 // is the longer.
 func TestEditsIsTheLevenshteinDistance(t *testing.T) {
