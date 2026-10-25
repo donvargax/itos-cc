@@ -5817,3 +5817,14 @@ items:
       slice-51 moved the file into the middle of plain lines; this one (and likely its siblings:
       listed-tests, blocked, stopped-early, orphan, not-built lines) must name the file
       slash-separated from the working directory on every system, as every other output does.
+  - id: slice-54
+    title: itos-cc.yaml accepts and ignores keys starting with x-
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: slice
+    why: >
+      q-98 (the person 2026-10-24): extension keys, as Docker Compose and OpenAPI allow, so other
+      tools or people can keep notes in itos-cc.yaml without itos-cc refusing them; specified in
+      features/file_selection.feature.
