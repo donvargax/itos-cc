@@ -13,7 +13,7 @@ phases:
 queue:
   - listed-support-per-test
   - listed-suites
-  - features-coverage-gocoverdir-leak
+  - slice-59
   - T-112
   - T-113
   - mutation-windows-ownership
@@ -3968,14 +3968,15 @@ items:
       step whose mutation run runs exit 0 in src/api, which the fake Workers refuses as undeclared;
       its step needs to declare those Tests, and its recorded reason (crap and mutation still
       hand-parsed) is stale since T-100 and T-152.
-  - id: features-coverage-gocoverdir-leak
-    title: Keep the binary driver's coverage build from leaking GOCOVERDIR into the project's commands
+  - id: slice-59
+    title: The commands itos-cc starts never inherit its GOCOVERDIR
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was features-coverage-gocoverdir-leak.
       T-154 (docs/binary-only-reach.md): with GOCOVERDIR set, the binary driver builds itos-cc with
       -cover and passes GOCOVERDIR to every command a scenario starts, and seven scenarios that pass
       without it failed: ID-MUT-123, a -cover itos-cc wrote atomic counters into the per-test folder
