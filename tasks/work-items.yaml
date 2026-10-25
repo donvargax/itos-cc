@@ -5820,14 +5820,6 @@ items:
     title: mutation except --renew and a replacing except keep x- keys inside the entry they rewrite
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was renew-keeps-entry-extensions.
-      Found in slice-54 (2026-10-24): except --renew rewrites the entry it renews whole, and except
-      replacing an entry does the same, so an x- extension key a person or tool keeps inside that
-      entry is dropped; slice-54 kept every byte the writers do not write, which this is not. The
-      person's reason for x- keys (room for another tool's data beside itos-cc's, slice-54's
-      comment) says notes must survive itos-cc's own writes: carry the entry's x- keys over when it
-      is rewritten. A scenario first.
