@@ -11,9 +11,9 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
+  - slice-59
   - listed-support-per-test
   - listed-suites
-  - slice-59
   - T-112
   - T-113
   - mutation-windows-ownership
