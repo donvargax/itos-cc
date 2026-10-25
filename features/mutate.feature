@@ -3918,6 +3918,28 @@ Feature: Mutation testing
       When I run "itos-cc mutation except --renew --json"
       Then only the lines of the renewed entry changed in itos-cc.yaml
 
+    # slice-55 (2026-10-24, after slice-54 and q-98): --renew rewrote the
+    # entry it renews whole, and mutation except replacing an entry did the
+    # same, so an x- extension key kept inside that entry was dropped. The
+    # person's reason for x- keys (room for another tool's data beside
+    # itos-cc's, slice-54's comment in features/file_selection.feature) means
+    # a note survives itos-cc's own writes: a rewritten entry keeps its x-
+    # keys, with their values and the comments above them, after the keys
+    # itos-cc writes. A coordinator's call inside q-98. Before this item the
+    # note is gone, failing at the Then.
+    @slice-55 @ID-MUT-344 @wip
+    Scenario Outline: A renewed or replaced entry keeps its x- keys
+      Given a Go project with a reviewed exception for an equivalent mutant in a function
+      And that entry in itos-cc.yaml also holds "x-ticket: QA-12"
+      And <change>
+      When I run "<command>"
+      Then that entry in itos-cc.yaml still holds "x-ticket: QA-12"
+
+      Examples:
+        | change                                                                                                      | command                                          |
+        | a commit that renames a string literal on another line of that function, and the mutant still survives      | itos-cc mutation except --renew --json           |
+        | the mutant still survives at the same site                                                                  | itos-cc mutation except that site --reason 'still equivalent' |
+
     # slice-22, issue #50: an exception whose own line changed is never
     # renewed, by design (MUT-227), and the only way on was to except the
     # mutant at its new site, typing the reason again, which added a second
