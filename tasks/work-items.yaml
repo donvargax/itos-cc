@@ -16,7 +16,6 @@ queue:
   - features-coverage-gocoverdir-leak
   - slice-57
   - slice-58
-  - T-210
   - T-102
   - T-103
   - T-104
