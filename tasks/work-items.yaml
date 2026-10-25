@@ -3795,6 +3795,15 @@ items:
       skip files in CI. mutation run --count reads HEAD's file, so a commit's verdict stays the same
       on every machine. docs/CLI.md rules 34-35's note gains a sentence saying exclude is file-only
       too, for the same reason.
+
+      Settled with the person 2026-10-25: no koanf. kong (the fork) resolves the operational
+      settings, flag then ITOS_CC_ environment (env tags) then itos-cc.yaml then a user-level file,
+      through a Resolver over what our settings reader parsed plus kong.Configuration for the user
+      file; our reader stays the only parser of itos-cc.yaml (its strict rules: anchors, tags,
+      unknown keys by path, x- keys, byte-preserving writers, which koanf's map decoding would
+      lose), and koanf's mapstructure errors would undo ADR-0035's typed errors. The one fork change
+      needed: errors naming which source a bad value came from (flag, environment, file), as
+      ADR-0035 typed the others.
   - id: T-149
     title: Move the Go toolchain to go1.27.3 for GO-2026-6809
     phase: 1
