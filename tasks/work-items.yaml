@@ -5956,3 +5956,19 @@ items:
       --max-time 300, holding architecture-check over ten minutes (T-202's bound, c2a7c019). Add
       --speed-limit 1024 --speed-time 30 so a stall fails in about 30 s; --max-time stays the outer
       bound. Commented on go-template-itos#15 for the backport.
+  - id: windows-output-cap-race
+    title: The output-cap scenario on Windows is killed by its timeout before its output cap
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      cd.yml test (windows-latest, features), 'A mutant whose tests write output without end is
+      killed over its output cap': its outcome is timeout, not over-limit with output, in runs
+      40169478722 (dce26a97) and 40207453484 (213901b1); it passed in eabdeb72, b81790de and
+      99dda6a0's runs, and in every run before 2026-10-25 06:00. bug-10's agent read it as a race on
+      a slow runner: the 30 MiB printer with --output-factor 1 hit its 7.2 s timeout before writing
+      past the 18 MiB cap, while the other printer reached the cap in 4.8 s. Make the scenario
+      deterministic (a timeout far above the time to the cap, or a printer that reaches it sooner),
+      never by retrying. Each red CD holds a release.
