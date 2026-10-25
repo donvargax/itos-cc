@@ -5736,21 +5736,9 @@ items:
     title: itos-cc graph writes the architecture graph as .metrics/graph.json
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-208]
     kind: slice
-    why: >
-      Was graph-command.
-      graph-snapshot item 2 (q-95, the person 2026-10-24): a cli.Declaration in
-      internal/slices/graph writing graph.json through the snapshot store (reading crap.json and
-      dry.json through Store.Read): whole project, no selection flags, ignores exclude; --json
-      prints a summary (schema, ok, repositories, modules, functions, edges); exit 0 whatever it
-      finds; "version" the snapshot format version 1; the repository node named by the git remote's
-      repository name (origin's URL, last path segment without .git), the folder name with no
-      remote; sorted and deterministic. Drop architecture_graph.feature's feature-level @wip, revive
-      the GRAPH scenarios against the command (re-cut T-102..T-104), tag the rest @wip one by one;
-      SNAP-01 and SNAP-09 gain graph rows. Draft: .git/itos/draft-graph-snapshot.md on the
-      coordinator's machine. After the move task.
   - id: graph-nightly
     title: The nightly commits .metrics/graph.json beside crap, dry and scrap
     phase: 1
