@@ -16,6 +16,7 @@ queue:
   - listed-suites
   - features-coverage-gocoverdir-leak
   - slice-53
+  - slice-55
   - flaky-kills-record
   - sample-repeat
   - T-208
