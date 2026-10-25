@@ -5822,3 +5822,15 @@ items:
       "itos-cc …" step is shared; the agent wrapped w.prepare to replace the words. A shared
       substitution in runWith (named fixture values a Given sets, replaced in the command line)
       would let any scenario say it plainly.
+  - id: graph-snapshot-rows
+    title: The snapshot scenarios cover graph.json like the other snapshots
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-56 (2026-10-24) added itos-cc graph writing .metrics/graph.json and its own
+      byte-for-byte rerun scenario (GRAPH-45), but SNAP-01 (each command writes its snapshot) and
+      SNAP-09 (paths stay relative) in metrics_snapshots.feature still list only crap, dry, scrap
+      and mutation run. Add graph rows so every snapshot is held by the same outlines.
