@@ -5927,3 +5927,15 @@ items:
       measured itos-cc meets it, but it costs the nightly's integration coverage of listed-test
       scenarios; decide whether the harness, the wrapper or the conversion keeps itos-cc's own
       counters out.
+  - id: command-env-guard
+    title: A check that every command itos-cc starts takes its environment from project.InheritedEnv
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-59 routed every exec.Command of the product through project.InheritedEnv by hand, about
+      thirty starts in seven packages; a new start with a nil Env silently inherits GOCOVERDIR
+      again. An architecture or lint rule (a start's Env set from InheritedEnv or NoBytecodeEnv, or
+      a nolint naming why) would hold it.
