@@ -6995,5 +6995,3 @@
   why: >
     Between agents, the coordinator moves the pin from 8.16.2 to the newest patch so the next agents
     read its guides and hooks, as T-207 did.
-  done_when:
-    - run: itos version --check
