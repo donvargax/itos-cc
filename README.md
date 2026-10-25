@@ -958,7 +958,11 @@ left out. Raw profiles and reports cannot be stamped with current
 hashes. `mutation sample` runs a few cached mutants
 again, in CI say, and fails with `mutation.mismatch` when an outcome differs
 from the one recorded, whichever way: a kill that now survives, or a
-survivor now killed. Killed, timeout and over-limit agree. It draws
+survivor now killed. Killed, timeout and over-limit agree. A mutant whose
+outcome differs runs up to twice more; if one of those runs agrees with the
+recording, its tests decide it differently with nothing changed (unseeded
+randomness or timing), and it fails as `mutation.flaky` instead, its
+`outcomes` listed in run order, its fix to make the tests deterministic. It draws
 `--count` mutants (20 by default) from the fresh entries of its selection,
 only those that ran (killed, timeout, over-limit, or survived), so no
 coverage runs; stale and missing

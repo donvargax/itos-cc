@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"iter"
 	"sync"
 	"time"
 )
@@ -74,6 +75,7 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 				// judge it alone.
 				if s.reach == nil || len(s.reach[i]) == 0 {
 					s.outcomes[i] = Uncovered
+					s.tried(i, Uncovered)
 					continue
 				}
 				if !st.stopped() {
@@ -149,13 +151,16 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 	queue := make(chan job)
 	var mu sync.Mutex
 	var firstErr error
-	done := 0
+	done, total := 0, len(jobs)
 	var wg sync.WaitGroup
 	for _, w := range workers {
 		wg.Add(1)
 		go func(ctx context.Context, w Worker) {
 			defer wg.Done()
-			for j := range queue {
+			// A mutant a sample runs again goes on in this worker,
+			// adding a run to the total.
+			var again []job
+			for j := range queued(queue, &again) {
 				r, err := runMutant(ctx, w, j, limits[j.state.command.Key()], sels)
 				mu.Lock()
 				if err != nil && firstErr == nil {
@@ -193,13 +198,17 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 				}
 				if r.failed == nil {
 					j.state.result.Ran++
+					if err == nil && j.state.tried(j.site, r.outcome) {
+						again = append(again, j)
+						total++
+					}
 				}
 				done++
 				kind := "judged"
 				if r.failed != nil {
 					kind = "selection-blocked"
 				}
-				report(opt.Progress, RunEvent{Kind: kind, Done: done, Total: len(jobs), File: j.state.rel, Site: site, Outcome: r.outcome, Limit: r.limit, Limits: r.limits,
+				report(opt.Progress, RunEvent{Kind: kind, Done: done, Total: total, File: j.state.rel, Site: site, Outcome: r.outcome, Limit: r.limit, Limits: r.limits,
 					IDs: r.ids, Elapsed: r.elapsed, Listed: r.listed})
 				if st != nil && err == nil {
 					if r.failed != nil {
@@ -225,6 +234,27 @@ dispatch:
 	close(queue)
 	wg.Wait()
 	return st.result(), firstErr
+}
+
+// queued yields the jobs of queue as they come, each job again holds
+// first: a mutant a sample runs again, once more, in the worker that ran
+// it, before that worker takes another.
+func queued(queue <-chan job, again *[]job) iter.Seq[job] {
+	return func(yield func(job) bool) {
+		for {
+			for len(*again) > 0 {
+				j := (*again)[0]
+				*again = (*again)[1:]
+				if !yield(j) {
+					return
+				}
+			}
+			j, ok := <-queue
+			if !ok || !yield(j) {
+				return
+			}
+		}
+	}
 }
 
 // mutantRun is how a mutant's runs went.

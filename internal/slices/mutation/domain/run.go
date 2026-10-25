@@ -127,6 +127,11 @@ type Execution struct {
 	// StateBlocked, or "" (see stateOf).
 	failFast  bool
 	undecided []string
+	// recorded is, by site, the outcome a sample's snapshot records for
+	// the mutant it runs again (Recheck), and nil outside a sample;
+	// trials, by site, every outcome its runs gave, in run order.
+	recorded []string
+	trials   [][]string
 	// fresh is, by site of a function judged, the outcome the snapshot
 	// before this run records for it that still holds, whether or not this
 	// run reuses it, with what decided it; zero where none does. A

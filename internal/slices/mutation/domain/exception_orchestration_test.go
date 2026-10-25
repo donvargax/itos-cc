@@ -105,6 +105,60 @@ func TestDomainSampleUsesRecordedScopesDrawAndActualWorkerFacts(t *testing.T) {
 		t.Fatal("listed sample missing site")
 	}
 }
+func TestDomainSampleRunsADisagreeingMutantAgainToTellAFlakeFromAMismatch(t *testing.T) {
+	for _, c := range []struct {
+		name              string
+		decided, outcomes []string
+		verdict           string
+	}{
+		{"agreeing runs once", []string{mutants.Survived, mutants.Killed}, []string{mutants.Survived}, mutants.Agreed},
+		{"a later run agreeing is flaky", []string{mutants.Killed, mutants.Survived}, []string{mutants.Killed, mutants.Survived}, mutants.Flaky},
+		{"the last run agreeing is flaky", []string{mutants.Timeout, mutants.Killed, mutants.Survived}, []string{mutants.Timeout, mutants.Killed, mutants.Survived}, mutants.Flaky},
+		{"two reruns disagreeing are a mismatch", []string{mutants.Killed, mutants.Timeout, mutants.Killed, mutants.Survived}, []string{mutants.Killed, mutants.Timeout, mutants.Killed}, mutants.Mismatched},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			f, site := survivingFixture(t)
+			for command, facts := range f.workers.Tests[f.root] {
+				for i, v := range facts.Verdicts {
+					if v.Site.Key() == site.Key() {
+						facts.Verdicts[i] = porttest.Verdict{Path: v.Path, Site: v.Site, Outcomes: c.decided}
+					}
+				}
+				f.workers.Tests[f.root][command] = facts
+			}
+			sampled, err := mutants.Sample(t.Context(), []string{f.path}, 100, "seed", sampleOptions(f))
+			if err != nil || len(sampled.Files) != 1 {
+				t.Fatalf("sample: %+v %v", sampled, err)
+			}
+			for _, m := range sampled.Files[0].Mutants {
+				want, verdict := []string{mutants.Survived}, mutants.Agreed
+				if m.Key() == site.Key() {
+					want, verdict = c.outcomes, c.verdict
+				}
+				if !reflect.DeepEqual(m.Outcomes, want) || m.Outcome != want[0] || m.Verdict() != verdict {
+					t.Errorf("%s: outcome %s, outcomes %v, verdict %s; want %v, %s", m.Key(), m.Outcome, m.Outcomes, m.Verdict(), want, verdict)
+				}
+			}
+		})
+	}
+}
+func TestARecheckedMutantNoTestReachesIsUncoveredWithoutRunning(t *testing.T) {
+	f := newRunFixture(t)
+	parsed, err := selected.Parse(t.Context(), f.options.Tree, f.inputs, f.path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer parsed.Close()
+	e := mutants.NewExecution(parsed, "board.go", "board.go", mutants.Command{})
+	e.Pending(0, nil)
+	e.Recheck(0, mutants.Killed)
+	if _, err := mutants.Execute(t.Context(), []*mutants.Execution{e}, mutants.Options{WorkerFactory: f.workers, Workers: 1}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := e.Outcomes(0); e.Outcome(0) != mutants.Uncovered || !reflect.DeepEqual(got, []string{mutants.Uncovered}) || mutants.Classify(mutants.Killed, got) == mutants.Agreed {
+		t.Fatalf("outcome %s, outcomes %v", e.Outcome(0), got)
+	}
+}
 func TestDomainSampleRetainsBaselineFailureAndUnusedWorkersBypass(t *testing.T) {
 	f, _ := survivingFixture(t)
 	opt := sampleOptions(f)

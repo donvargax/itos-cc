@@ -58,6 +58,32 @@ func (s *Execution) Pending(site int, ids []string) {
 func (s *Execution) Result() *FileResult     { return s.result }
 func (s *Execution) Outcome(site int) string { return s.outcomes[site] }
 
+// Recheck has a sample judge site's mutant against recorded, the outcome
+// its snapshot records: it runs again, in the same worker and scope,
+// while its outcomes leave it undecided (Classify), each kept in run
+// order (Outcomes).
+func (s *Execution) Recheck(site int, recorded string) {
+	if s.recorded == nil {
+		s.recorded, s.trials = make([]string, len(s.sites)), make([][]string, len(s.sites))
+	}
+	s.recorded[site] = recorded
+}
+
+// Outcomes is every outcome the runs of site's mutant gave in a sample,
+// in run order.
+func (s *Execution) Outcomes(site int) []string { return slices.Clone(s.trials[site]) }
+
+// tried keeps outcome, of a run of site's mutant, among its trials in a
+// sample, and says whether it runs again: while its outcomes leave it
+// undecided. Outside a sample it keeps nothing, and no mutant runs again.
+func (s *Execution) tried(site int, outcome string) bool {
+	if s.recorded == nil {
+		return false
+	}
+	s.trials[site] = append(s.trials[site], outcome)
+	return Classify(s.recorded[site], s.trials[site]) == ""
+}
+
 // Execute runs already-admitted judgments. It does no planning/publication and
 // is shared with the temporary legacy sample caller.
 func Execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast) (*Stop, error) {

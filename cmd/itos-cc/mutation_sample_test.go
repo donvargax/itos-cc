@@ -46,7 +46,7 @@ type sampledJSON struct {
 }
 
 // sampledKeys are the keys of each sampled mutant.
-var sampledKeys = []string{"column", "function", "line", "original", "outcome", "recorded", "replacement", "scope"}
+var sampledKeys = []string{"column", "function", "line", "original", "outcome", "outcomes", "recorded", "replacement", "scope"}
 
 type sampleJSON struct {
 	OK    bool    `json:"ok"`
@@ -216,7 +216,7 @@ func TestARerunOfOneCommitSamplesTheSameMutants(t *testing.T) {
 	}
 }
 
-// @ID-MUT-84. Kept: each sampled mutant holds exactly its eight keys, where
+// @ID-MUT-84. Kept: each sampled mutant holds exactly its nine keys, where
 // the scenario asserts only that each is there.
 func TestTheSampleAsJSON(t *testing.T) {
 	t.Parallel()

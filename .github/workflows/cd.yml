@@ -407,7 +407,9 @@ jobs:
   # itos-cc mutation sample draws ten of .metrics/mutate/'s fresh kills and
   # survivors, each re-run in the scope of the tests that decided it, and
   # fails with mutation.mismatch when an outcome differs from the one
-  # recorded. A kill whose function is unchanged stays fresh even when a
+  # recorded, run after run, or mutation.flaky when a re-run of a differing
+  # one agrees (slice-50): tests deciding it differently with nothing
+  # changed, fixed by making them deterministic, not by re-running. A kill whose function is unchanged stays fresh even when a
   # function it calls changes (the cache keys no kill on its callees,
   # decision 48), so a kill gone stale is caught within a push rather than
   # never. Sample's default seed, the HEAD commit, fixed per push, so a rerun

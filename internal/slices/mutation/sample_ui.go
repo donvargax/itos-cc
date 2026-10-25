@@ -25,6 +25,9 @@ type sampledMutant struct {
 	Replacement string `json:"replacement"`
 	Recorded    string `json:"recorded"`
 	Outcome     string `json:"outcome"`
+	// Outcomes is every outcome its runs gave, in run order: more than
+	// one when it disagreed with the one recorded and ran again.
+	Outcomes []string `json:"outcomes"`
 	// Scope is the scope of the tests it ran with now.
 	Scope string `json:"scope"`
 }
@@ -132,20 +135,49 @@ func (p *Presentation) sampledFile(f mutants.SampledFile, result *sampleResult, 
 	}
 	out := sampleFile{File: f.Rel, Baseline: "passed", Mutants: []sampledMutant{}}
 	var differ []mutants.SampledMutant
+	verdicts := map[string]int{}
 	for _, m := range f.Mutants {
 		out.Mutants = append(out.Mutants, sampledMutant{Line: m.Line, Column: m.Column, Function: m.Function,
-			Original: m.Original, Replacement: m.Replacement, Recorded: m.Recorded, Outcome: m.Outcome, Scope: m.Scope})
-		if !m.Agrees() {
+			Original: m.Original, Replacement: m.Replacement, Recorded: m.Recorded, Outcome: m.Outcome, Outcomes: m.Outcomes, Scope: m.Scope})
+		if verdict := m.Verdict(); verdict != mutants.Agreed {
 			differ = append(differ, m)
+			verdicts[verdict]++
 		}
 	}
 	result.Files = append(result.Files, out)
 	if !p.JSON {
-		_, _ = fmt.Fprintf(p.UI.Stdout, "%d sampled, %d mismatched in %s\n", len(f.Mutants), len(differ), f.Rel)
+		_, _ = fmt.Fprintf(p.UI.Stdout, "%d sampled, %d mismatched, %d flaky in %s\n", len(f.Mutants), verdicts[mutants.Mismatched], verdicts[mutants.Flaky], f.Rel)
 	}
 	for _, m := range differ {
+		if m.Verdict() == mutants.Flaky {
+			p.Flaky(f.Rel, m)
+			continue
+		}
 		p.Mismatch(f.Rel, m)
 	}
+}
+
+// Flaky lists sampled mutant m of file rel on stdout, as "flaky
+// <original> → <replacement> in <function>, <file> line <line> column
+// <column>: recorded <outcome>, now <outcome>, <outcome>", every outcome
+// its runs gave in run order, and reports it as mutation.flaky, with the
+// fields of a mismatch and "outcomes": its tests decided it differently
+// with nothing changed, so the fix is in them, not in a mutation run.
+func (p *Presentation) Flaky(rel string, m mutants.SampledMutant) {
+	now := strings.Join(m.Outcomes, ", ")
+	if !p.JSON {
+		_, _ = fmt.Fprintf(p.UI.Stdout, "  flaky %s → %s in %s, %s: recorded %s, now %s\n",
+			Quote(m.Original), Quote(m.Replacement), m.Function, SiteAt(rel, m.Line, m.Column), m.Recorded, now)
+	}
+	problem := cli.NewProblem(cli.CodeNo, "mutation.flaky",
+		fmt.Sprintf("%s:%d:%d: %s → %s in %s was recorded %s, and its runs now gave %s: its tests decide it differently with nothing changed",
+			rel, m.Line, m.Column, Quote(m.Original), Quote(m.Replacement), m.Function, m.Recorded, now),
+		"Make its tests deterministic, seeding their randomness and settling their timing, and commit them.").
+		With("file", rel).With("line", m.Line).With("column", m.Column).With("function", m.Function).
+		With("original", m.Original).With("replacement", m.Replacement).
+		With("recorded", m.Recorded).With("outcome", m.Outcome).With("outcomes", m.Outcomes).With("scope", m.Scope)
+	problem.Shown = true
+	p.report(problem)
 }
 
 // Mismatch lists sampled mutant m of file rel on stdout, as "mismatch

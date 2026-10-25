@@ -30,9 +30,16 @@ repository, --seed is needed.
 
 An outcome that differs from the recorded one fails, whichever way it went:
 a kill that now survives, or a survivor now killed. Killed, timeout and
-over-limit agree, since each means the tests noticed. A recorded survivor
-that still survives is no failure here: failing on survivors is mutation
-check's.
+over-limit agree, since each means the tests noticed; a timeout against a
+recorded survivor differs. A recorded survivor that still survives is no
+failure here: failing on survivors is mutation check's.
+
+A mutant whose outcome differs runs up to twice more, in the same scope,
+stopping at a run that agrees; one that agrees runs once. If one of those
+runs agrees with the recorded outcome, its tests decide it differently with
+nothing changed (unseeded randomness or timing), and it is mutation.flaky:
+neither outcome is trusted, and the fix is to make the tests deterministic.
+If both repeat the difference, it is mutation.mismatch: the cache is wrong.
 
 It chooses as mutation check does: paths, --changed, and --since REF, which
 samples only the functions the commits since REF changed (git diff
@@ -56,19 +63,24 @@ outcome recorded before scopes were is the file's own tests'.
 mutant with it instead.
 
 Plain output is the seed and how many of the cached mutants were sampled,
-then a line per file, "N sampled, N mismatched in <file>", then each mismatch:
+then a line per file, "N sampled, N mismatched, N flaky in <file>", then
+each mismatch and each flaky mutant, in site order:
   mismatch ` + "`original` → `replacement`" + ` in <namespace#name>, <file> line <line> column <column>: recorded <outcome>, now <outcome>
-With --json, each file's "mutants" holds the mutants sampled, in site order;
+  flaky ` + "`original` → `replacement`" + ` in <namespace#name>, <file> line <line> column <column>: recorded <outcome>, now <outcome>, <outcome>
+With --json, each file's "mutants" holds the mutants sampled, in site order,
+each with "outcomes", every outcome its runs gave in run order;
 it is empty, and "baseline" is "failed", when the file's baseline or a
 selection of listed tests failed.`,
 		JSON: `"seed", "files": [{"file", "baseline": "passed"|"failed",
    "mutants": [{"line", "column", "function", "original", "replacement",
    "recorded", "outcome": "killed"|"survived"|"timeout"|"over-limit",
+   "outcomes": ["<outcome>", ...],
    "scope": "own"|"all-tests"|"listed"|"<test command>"}]}], and when
    there is any, "not_built": [{"file", "platform": "<goos>/<goarch>"}],
    each Go file only another system builds`,
 		Rules: []string{
-			"mutation.mismatch         a sampled mutant's outcome differs from the one recorded: file, line, column, function, original, replacement, recorded, outcome, scope",
+			"mutation.mismatch         a sampled mutant's outcome differs from the one recorded, run after run: file, line, column, function, original, replacement, recorded, outcome, scope",
+			"mutation.flaky            a sampled mutant's runs differ from the one recorded, then agree: a mismatch's keys and outcomes, in run order",
 			"mutation.baseline-failed  the tests fail before any mutant: file, output, the head and tail of what they printed",
 			"tests.selection-failed    a selection of listed tests fails without any mutant: ids, command, exit_code",
 			"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
@@ -79,7 +91,7 @@ selection of listed tests failed.`,
 		},
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "every sampled mutant's outcome agrees with the one recorded, or there was nothing to sample"},
-			{Code: 1, Meaning: "a sampled mutant's outcome differs from the one recorded, a file's tests fail before any mutant, or a selection of listed tests fails without any mutant"},
+			{Code: 1, Meaning: "a sampled mutant's outcome differs from the one recorded, or its tests decide it differently run to run, a file's tests fail before any mutant, or a selection of listed tests fails without any mutant"},
 			{Code: cli.CodeUsage, Meaning: "a usage error: a bad flag or path, a --count below 1, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
 			{Code: cli.CodeEnvironment, Meaning: "outside a git repository: with no --seed, or with --changed or --since"},
 		},

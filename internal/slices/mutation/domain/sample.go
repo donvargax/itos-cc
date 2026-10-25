@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"path/filepath"
+	"slices"
 )
 
 // Sampled is a sample of cached mutants run again.
@@ -41,22 +42,72 @@ type SampledFile struct {
 }
 
 // SampledMutant is a mutant run again: the outcome its snapshot records
-// and the outcome it has now.
+// and the outcomes it has now.
 type SampledMutant struct {
 	Site
 	Function string // namespace#name
 	Recorded string
+	// Outcome is the outcome of its first run now, and Outcomes every
+	// outcome its runs gave, in run order: one when it agrees with
+	// Recorded, more when it ran again (Classify).
 	Outcome  string
+	Outcomes []string
 	// Scope is the scope of the tests it ran with now: the one its
 	// snapshot records, unless the sample was given one.
 	Scope string
 }
 
 // Agrees reports whether the mutant's outcome now is the one recorded.
-// Killed, timeout and over-limit agree: each means the tests noticed, and
-// a slower machine turns one into another.
 func (m SampledMutant) Agrees() bool {
-	return m.Recorded == m.Outcome || Noticed(m.Recorded) && Noticed(m.Outcome)
+	return Agrees(m.Recorded, m.Outcome)
+}
+
+// Verdict is what the mutant's outcomes now say of the one recorded
+// (Classify).
+func (m SampledMutant) Verdict() string {
+	return Classify(m.Recorded, m.Outcomes)
+}
+
+// Agrees reports whether outcome, a run's, is recorded, the one a snapshot
+// records. Killed, timeout and over-limit agree: each means the tests
+// noticed, and a slower machine turns one into another.
+func Agrees(recorded, outcome string) bool {
+	return recorded == outcome || Noticed(recorded) && Noticed(outcome)
+}
+
+// The verdicts of Classify.
+const (
+	// Agreed is a mutant whose first run agrees with its recording.
+	Agreed = "agreed"
+	// Flaky is a mutant whose first run disagrees with its recording and
+	// a later one agrees: its tests decide it differently with nothing
+	// changed, so neither outcome is trusted.
+	Flaky = "flaky"
+	// Mismatched is a mutant all of whose runs disagree with its
+	// recording.
+	Mismatched = "mismatched"
+)
+
+// Reruns is how many times a sample runs again a mutant whose outcome
+// disagrees with its recording, to tell a flaky one from a mismatch.
+const Reruns = 2
+
+// Classify is the verdict of a sampled mutant's outcomes, in run order,
+// against recorded, the outcome its snapshot records: Agreed when the
+// first agrees, Flaky when a later one does, Mismatched when the first and
+// its Reruns all disagree, and "" while it needs another run.
+func Classify(recorded string, outcomes []string) string {
+	switch {
+	case len(outcomes) == 0:
+		return ""
+	case Agrees(recorded, outcomes[0]):
+		return Agreed
+	case slices.ContainsFunc(outcomes[1:], func(o string) bool { return Agrees(recorded, o) }):
+		return Flaky
+	case len(outcomes) <= Reruns:
+		return ""
+	}
+	return Mismatched
 }
 
 // rank orders a candidate in the draw of seed: the SHA-256 of the seed, the

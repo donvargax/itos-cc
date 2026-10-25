@@ -61,7 +61,7 @@ holds unchanged, keeps its `<file>:<line>:<column>`: a problem is printed only w
 | Code | Meaning                                                                                |
 | ---- | -------------------------------------------------------------------------------------- |
 | 0    | Success.                                                                               |
-| 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python, TypeScript, Kotlin or Dart line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails, the listed tests' coverage run that fails. |
+| 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python, TypeScript, Kotlin or Dart line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, or that its tests decide differently run to run, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails, the listed tests' coverage run that fails. |
 | 75   | A temporary failure: the same command can pass when run again unchanged.               |
 | 80   | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor or is in an excluded source. |
 | 81   | An unknown command or subcommand.                                                      |
@@ -170,6 +170,7 @@ output of the commands it runs passes as it is.
 | `mutation.missing`           | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.stale`             | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome`, `scope` |
+| `mutation.flaky`             | 1    | mutation sample | a mismatch's keys and `outcomes`, every outcome its runs gave in run order |
 | `mutation.baseline-failed`   | 1    | mutation run, mutation sample | `file`, `output` (the first 20 and last 20 lines of what the tests printed, whole up to 40) |
 | `tests.list-failed`          | 1    | mutation run; mutation check, sample and except when they date a kill by a fingerprint | `command`, `exit_code` |
 | `tests.coverage-failed`      | 1    | mutation run   | `command`, `exit_code`                                      |

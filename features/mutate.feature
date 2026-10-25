@@ -2221,7 +2221,7 @@ Feature: Mutation testing
     # MUT-341 and MUT-342 fail at the mutation.flaky step, MUT-339 at the
     # ran-3-times step and MUT-340 at the ran-once step; MUT-72 and MUT-73
     # stay guardrails.
-    @slice-50 @ID-MUT-337 @wip
+    @slice-50 @ID-MUT-337
     Scenario: A recorded kill its tests decide differently each run is flaky, not a mismatch
       Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
       But the tests miss it on one run and kill it on the next, with nothing they hash changed
@@ -2231,7 +2231,7 @@ Feature: Mutation testing
       And .metrics/mutate/src/board.ts.json and src/board.ts are unchanged
       And the exit code is 1
 
-    @slice-50 @ID-MUT-338 @wip
+    @slice-50 @ID-MUT-338
     Scenario: A recorded survivor its tests decide differently each run is flaky too
       Given the snapshot records a mutant of "Board#place" as survived
       But the tests kill it on one run and miss it on the next, with nothing they hash changed
@@ -2239,7 +2239,7 @@ Feature: Mutation testing
       Then the problem is "mutation.flaky", with recorded "survived" and outcomes "killed", "survived"
       And the exit code is 1
 
-    @slice-50 @ID-MUT-339 @wip
+    @slice-50 @ID-MUT-339
     Scenario: A mismatch its re-runs repeat stays a mismatch
       Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
       But the tests no longer kill it
@@ -2248,7 +2248,7 @@ Feature: Mutation testing
       And that mutant ran 3 times
       And the exit code is 1
 
-    @slice-50 @ID-MUT-340 @wip
+    @slice-50 @ID-MUT-340
     Scenario: An outcome that agrees runs once
       Given fresh results for every function of src/board.ts, with killed mutants and one survivor
       And the tests still kill and miss the same mutants
@@ -2256,7 +2256,7 @@ Feature: Mutation testing
       Then each sampled mutant ran once
       And the exit code is 0
 
-    @slice-50 @ID-MUT-341 @wip
+    @slice-50 @ID-MUT-341
     Scenario: A survivor that runs past its timeout on one run and survives the next is flaky
       Given the snapshot records a mutant of "Board#place" as survived
       But it runs past its timeout on one run and survives the next
@@ -2264,7 +2264,7 @@ Feature: Mutation testing
       Then the problem is "mutation.flaky", with recorded "survived" and outcomes "timeout", "survived"
       And the exit code is 1
 
-    @slice-50 @ID-MUT-342 @wip
+    @slice-50 @ID-MUT-342
     Scenario: A flaky mutant in the plain output and as JSON
       Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
       But the tests miss it on one run and kill it on the next, with nothing they hash changed

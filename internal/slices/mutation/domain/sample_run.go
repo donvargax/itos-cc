@@ -20,7 +20,10 @@ import (
 // moved. Each mutant runs
 // in the scope its snapshot records, one baseline per scope's command,
 // unless opt's TestCommand or AllTests is set, which then sets every
-// mutant's. A mutant of ScopeListed runs, once its own tests survive it,
+// mutant's. A mutant whose outcome disagrees with the one recorded runs
+// again, in the same worker and scope, up to Reruns times, until one run
+// agrees (Classify); each keeps every outcome in run order. A mutant of
+// ScopeListed runs, once its own tests survive it,
 // the listed tests its outcome records, through opt's Listed, after the
 // baseline of that selection, which sets its timeout, as in Run. Its read
 // and execution bindings apply as in Run; it holds no publication capability.
@@ -131,6 +134,7 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Sam
 			ids = nil
 		}
 		r.Pending(c.site, ids)
+		r.Recheck(c.site, c.recorded)
 		drawn[c.state] = append(drawn[c.state], c)
 	}
 	if _, err := Execute(ctx, order, Options{WorkerFactory: opt.WorkerFactory, Workers: opt.Workers, TimeoutFactor: opt.TimeoutFactor,
@@ -162,9 +166,9 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Sam
 			continue
 		}
 		for _, c := range drawn[s] {
-			outcome := runs[scoped{s, c.scope}].Outcome(c.site)
+			outcomes := runs[scoped{s, c.scope}].Outcomes(c.site)
 			f.Mutants = append(f.Mutants, SampledMutant{Site: s.sites[c.site], Function: c.function, Recorded: c.recorded,
-				Outcome: outcome, Scope: c.scope})
+				Outcome: outcomes[0], Outcomes: outcomes, Scope: c.scope})
 		}
 		sort.Slice(f.Mutants, func(a, b int) bool {
 			ma, mb := f.Mutants[a], f.Mutants[b]
