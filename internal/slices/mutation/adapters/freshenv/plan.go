@@ -227,9 +227,9 @@ func (e Environment) gitAtEnv(ctx context.Context, dir string, env []string, arg
 		return nil, err
 	}
 	cmd := exec.CommandContext(ctx, "git", args...) //nolint:gosec // run only the fixed Git program with the admitted metadata/export arguments under the owned executor
-	cmd.Dir = dir
-	if env != nil {
-		cmd.Env = env
+	cmd.Dir, cmd.Env = dir, env
+	if env == nil {
+		cmd.Env = project.InheritedEnv()
 	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -299,7 +299,7 @@ func (e Environment) committedBuildOutput(ctx context.Context, frozen string) (f
 
 func cleanGitEnvironment(emptyConfig string) []string {
 	var env []string
-	for _, item := range os.Environ() {
+	for _, item := range project.InheritedEnv() {
 		key, _, _ := strings.Cut(item, "=")
 		if strings.HasPrefix(key, "GIT_") {
 			continue

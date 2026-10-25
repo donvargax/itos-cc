@@ -295,6 +295,10 @@ when `GOCOVERDIR` is set; one that does not measures as before. `go test`
 replaces `GOCOVERDIR` in each test binary's environment with a directory of
 its own, so itos-cc runs each test binary itself (`go test -exec`), with
 `GOCOVERDIR` set to the run's directory.
+A `GOCOVERDIR` set where itos-cc runs is itos-cc's own, for measuring
+itos-cc: no command itos-cc starts inherits it, so a project's tests run
+without coverage never write counters where nobody asked or take the run
+for a coverage run, and only the coverage runs itos-cc makes itself set one.
 
 Python code that tests reach by starting another Python process (a
 `subprocess.run([sys.executable, "cli.py"])`, the installed CLI) counts too.

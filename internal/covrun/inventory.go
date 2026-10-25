@@ -114,7 +114,7 @@ func Inventory(ctx context.Context, r *coverage.Report, language string, log io.
 		logf(log, "itos-cc: coverage %s$ %s (static inventory, no test runs) %s\n", dir, args[0], strings.Join(relativeTo(dir, files), " "))
 		var stdout bytes.Buffer
 		cmd := exec.CommandContext(ctx, args[0], args[1:]...) //nolint:gosec // the language's static inventory command, which inventory composes
-		cmd.Dir, cmd.Env = dir, project.NoBytecodeEnv(os.Environ())
+		cmd.Dir, cmd.Env = dir, project.NoBytecodeEnv(nil)
 		cmd.Stdout, cmd.Stderr = &stdout, log
 		if report != "" {
 			cmd.Stdout = log

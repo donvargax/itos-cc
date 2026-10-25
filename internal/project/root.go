@@ -2,7 +2,6 @@ package project
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -37,7 +36,7 @@ func RootOf(dir string) string {
 		return r.(string)
 	}
 	root := abs
-	cmd := exec.Command("git", "rev-parse", "--show-cdup")
+	cmd := gitCommand("rev-parse", "--show-cdup")
 	cmd.Dir = abs
 	if out, err := cmd.Output(); err == nil {
 		root = filepath.Join(abs, filepath.FromSlash(strings.TrimSpace(string(out))))

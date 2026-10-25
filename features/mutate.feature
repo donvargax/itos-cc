@@ -635,7 +635,7 @@ Feature: Mutation testing
     # only through an -exec wrapper). Binary-only for good: the environment
     # is the real process's. Before this item the test sees the variable and
     # fails, failing at the Then.
-    @slice-59 @ID-MUT-352 @binary-only @wip
+    @slice-59 @ID-MUT-352 @binary-only
     Scenario: The tests itos-cc runs never inherit its GOCOVERDIR
       Given the Go module "example.com/leak" with the file "leak.go":
         """

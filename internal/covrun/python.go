@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strings"
 	"unicode"
+
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // pytestRunner is how a coverage plan runs pytest: without its cache
@@ -100,20 +102,27 @@ func pythonPlan(dir, out string, tests []string) Plan {
 	py := pythonFor(dir)
 	data := filepath.Join(out, ".coverage")
 	report := filepath.Join(out, "lcov.info")
-	runner := pythonRunner(exec.Command(py, "-c", "import pytest").Run() == nil, tests) //nolint:gosec // probe the project's own Python, never a downloaded executable
+	runner := pythonRunner(pythonImports(py, "pytest"), tests)
 	plan := Plan{
 		Language: "python",
 		Dir:      dir,
 		Reports:  []string{report},
 		Existing: []string{report, filepath.Join(dir, "lcov.info"), filepath.Join(dir, "coverage", "lcov.info")},
 	}
-	if exec.Command(py, "-c", "import coverage").Run() != nil { //nolint:gosec // probe the project's own Python, never a downloaded executable
+	if !pythonImports(py, "coverage") {
 		plan.Unsupported = fmt.Sprintf("coverage.py is not installed for %s; install it there, or measure with --coverage-command", py)
 		return plan
 	}
 	plan.Commands = pythonCommands(py, dir, data, report, runner)
 	pythonIntegration(&plan, py, dir, out)
 	return plan
+}
+
+// pythonImports is whether py, the project's own Python, imports module.
+func pythonImports(py, module string) bool {
+	cmd := exec.Command(py, "-c", "import "+module) //nolint:gosec // probe the project's own Python, never a downloaded executable
+	cmd.Env = project.InheritedEnv()
+	return cmd.Run() == nil
 }
 
 // pythonCommands is the commands of a Python coverage plan: coverage run
@@ -135,7 +144,7 @@ func pythonPlanSupervised(ctx context.Context, dir, out string, tests []string, 
 	var executions []CommandExecution
 	probe := func(ctx context.Context, module string) error {
 		cmd := exec.CommandContext(ctx, py, "-c", "import "+module) //nolint:gosec // probe the project's own Python for a module this package names
-		cmd.Dir, cmd.Stdout, cmd.Stderr = dir, io.Discard, io.Discard
+		cmd.Dir, cmd.Env, cmd.Stdout, cmd.Stderr = dir, project.InheritedEnv(), io.Discard, io.Discard
 		err := execute(ctx, cmd)
 		executions = append(executions, CommandExecution{Args: append([]string{}, cmd.Args...), Dir: dir, Err: err})
 		return err

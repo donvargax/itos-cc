@@ -353,7 +353,7 @@ func GoScope(dir string, sources []string) (pkgs, testing []string) {
 		return nil, nil
 	}
 	cmd := exec.Command("go", "list", "-test", "-f", "{{.ImportPath}}\t{{.Dir}}\t{{join .Deps \" \"}}", "./...")
-	cmd.Dir = dir
+	cmd.Dir, cmd.Env = dir, project.InheritedEnv()
 	listing, err := cmd.Output()
 	if err != nil {
 		return nil, nil
@@ -421,7 +421,7 @@ func goScopeSupervised(ctx context.Context, dir string, sources []string, execut
 		return nil, nil, nil, nil
 	}
 	cmd := exec.CommandContext(ctx, "go", "list", "-test", "-f", "{{.ImportPath}}\t{{.Dir}}\t{{join .Deps \" \"}}", "./...")
-	cmd.Dir = dir
+	cmd.Dir, cmd.Env = dir, project.InheritedEnv()
 	var listing bytes.Buffer
 	cmd.Stdout = &listing
 	cmd.Stderr = io.Discard

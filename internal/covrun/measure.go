@@ -63,7 +63,7 @@ func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer, exe
 		}
 		// A folder it cannot make fails the commands below, which are logged.
 		_ = os.MkdirAll(filepath.Dir(p.Reports[0]), 0o755) //nolint:gosec // the report's folder keeps its 0755; narrowing it would change what the run creates
-		env := project.NoBytecodeEnv(os.Environ())
+		env := project.NoBytecodeEnv(nil)
 		var noIntegration []coverage.Unmeasured
 		if p.CollectorMissing != "" {
 			noIntegration = append(noIntegration, p.noIntegration(p.CollectorMissing, log))

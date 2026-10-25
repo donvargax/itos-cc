@@ -4,11 +4,11 @@ package testinputs
 
 import (
 	"context"
-	"os"
 	"runtime"
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/project"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -17,7 +17,7 @@ import (
 // toolchain (go env GOVERSION).
 func CurrentRuntime() mutants.RuntimeInputs {
 	env := map[string]string{}
-	for _, v := range os.Environ() {
+	for _, v := range project.InheritedEnv() {
 		k, value, _ := strings.Cut(v, "=")
 		env[k] = value
 	}

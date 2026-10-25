@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // Go's integration coverage: a binary built with go build -cover writes
@@ -62,8 +64,10 @@ func ExecTest(args []string) int {
 	}
 	cmd := exec.Command(args[0], args[1:]...) //nolint:gosec // the test binary and arguments go test -exec hands this wrapper
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	// Without the directory, the GOCOVERDIR go test -cover gave the test
+	// binary reaches it unchanged: that run is go test's own.
 	if dir := os.Getenv(coverDirEnv); dir != "" {
-		cmd.Env = append(os.Environ(), "GOCOVERDIR="+dir)
+		cmd.Env = append(project.InheritedEnv(), "GOCOVERDIR="+dir)
 	}
 	err := cmd.Run()
 	if exit := (*exec.ExitError)(nil); errors.As(err, &exit) {

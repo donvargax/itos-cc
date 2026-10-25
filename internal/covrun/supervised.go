@@ -75,7 +75,7 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 			failures = append(failures, fmt.Errorf("prepare report directory for %s: %w", p.Language, err))
 			continue
 		}
-		env := project.NoBytecodeEnv(os.Environ())
+		env := project.NoBytecodeEnv(nil)
 		var noIntegration []coverage.Unmeasured
 		if p.CollectorMissing != "" {
 			noIntegration = append(noIntegration, p.noIntegration(p.CollectorMissing, log))
@@ -217,7 +217,7 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 		}
 		cmd := exec.CommandContext(ctx, name, flag, line) //nolint:gosec // the person's own listed-test command line, run through the platform shell
 		cmd.Dir = p.Root
-		cmd.Env = setEnv(project.NoBytecodeEnv(os.Environ()), env...)
+		cmd.Env = setEnv(project.NoBytecodeEnv(nil), env...)
 		cmd.Stdout, cmd.Stderr = log, log
 		err := execute(ctx, cmd)
 		args := append([]string{name, flag, line}, env...)
@@ -275,7 +275,7 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 			args, profile := c.convert(d, filepath.Join(dir, ".profiles", strconv.Itoa(i)+"."+c.language))
 			cmd := exec.CommandContext(ctx, args[0], args[1:]...) //nolint:gosec // the collector's conversion of a listed test's data, which this package names
 			cmd.Dir, cmd.Stdout, cmd.Stderr = c.dir, log, log
-			cmd.Env = unsetEnv(project.NoBytecodeEnv(os.Environ()), c.vars...)
+			cmd.Env = unsetEnv(project.NoBytecodeEnv(nil), c.vars...)
 			err := execute(ctx, cmd)
 			executions = append(executions, CommandExecution{Args: args, Dir: c.dir, Err: err})
 			if err != nil {

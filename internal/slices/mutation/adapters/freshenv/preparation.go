@@ -491,7 +491,7 @@ func installFrozenRuntimeGit(ctx context.Context, plan *mutants.FreshPlan, execu
 
 func withoutGitOverrides(env []string) []string {
 	if env == nil {
-		env = os.Environ()
+		env = project.InheritedEnv()
 	}
 	blocked := map[string]bool{
 		"GIT_DIR": true, "GIT_WORK_TREE": true, "GIT_INDEX_FILE": true,

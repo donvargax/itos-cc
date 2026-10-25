@@ -1,8 +1,10 @@
 package testtools_test
 
 import (
+	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
@@ -31,4 +33,20 @@ func TestRealToolchainContract(t *testing.T) {
 		}
 		return porttest.InputBindings{Root: root, Toolchain: testtools.Toolchain{Dir: root, Env: vars}}
 	})
+}
+
+// Where go env cannot run, here in a folder that is not there, the
+// platform is the GOOS and GOARCH the toolchain's environment sets, an
+// empty one left to the system itos-cc runs on. No scenario can arrange
+// it: every Go fixture needs go env to run.
+func TestGoPlatformWithoutGoEnvIsWhatTheEnvironmentSets(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "missing")
+	tools := testtools.Toolchain{Env: []string{"GOOS=plan9", "GOARCH="}}
+	got, failure := tools.GoPlatform(context.Background(), missing)
+	if failure != nil {
+		t.Fatal(failure)
+	}
+	if got.OS != "plan9" || got.Arch != runtime.GOARCH {
+		t.Errorf("the platform is %s/%s, not plan9/%s", got.OS, got.Arch, runtime.GOARCH)
+	}
 }

@@ -26,7 +26,7 @@ func (e *NoGitError) Error() string { return "not a git repository: " + e.Reason
 // repository, or a *NoGitError when it is in none or the repository has no
 // commit yet.
 func Head() (string, error) {
-	out, err := exec.Command("git", "rev-parse", "--verify", "HEAD^{commit}").Output()
+	out, err := gitCommand("rev-parse", "--verify", "HEAD^{commit}").Output()
 	if err != nil {
 		return "", &NoGitError{gitError(nil, err)}
 	}
@@ -197,8 +197,7 @@ func DeletedSinceAt(ctx context.Context, dir, ref string) ([]string, error) {
 }
 
 func deletedSinceCommand(ref string) ([]string, error) {
-	//nolint:gosec // only the fixed git program; ref is the revision the person named with --since
-	out, err := exec.Command("git", "-c", "core.quotePath=false", "diff", "--name-only", "-z", "-M", "--no-color",
+	out, err := gitCommand("-c", "core.quotePath=false", "diff", "--name-only", "-z", "-M", "--no-color",
 		"--relative", "--diff-filter=D", ref+"...HEAD").Output()
 	return deletedNames(out, err, "", ref)
 }

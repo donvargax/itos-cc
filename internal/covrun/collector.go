@@ -289,7 +289,7 @@ func (p Plan) removeCoverDir() error {
 // convertEnv is the environment of p's Convert commands: none of CoverEnv's
 // variables, so the conversion measures nothing itself.
 func (p Plan) convertEnv() []string {
-	return unsetEnv(project.NoBytecodeEnv(os.Environ()), p.CoverEnv...)
+	return unsetEnv(project.NoBytecodeEnv(nil), p.CoverEnv...)
 }
 
 // displayArgs is args as a log line shows them: a script python -c runs as

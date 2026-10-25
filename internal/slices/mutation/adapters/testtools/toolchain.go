@@ -79,10 +79,7 @@ func (t Toolchain) Observe(ctx context.Context, r mutants.CommandRequest) (mutan
 		}
 		f.Interpreter = PythonInterpreter(f.Root)
 		probe := exec.CommandContext(ctx, f.Interpreter, "-c", "import pytest") //nolint:gosec // probe the project's observed interpreter, never a downloaded executable
-		probe.Dir = t.Dir
-		if t.Env != nil {
-			probe.Env = t.Env
-		}
+		probe.Dir, probe.Env = t.Dir, t.env()
 		f.Pytest = probe.Run() == nil
 	case "kotlin":
 		f.Module = Base(ctx, r.Path, "build.gradle.kts", "build.gradle", "pom.xml")
@@ -172,6 +169,15 @@ func (t Toolchain) CoverageRunner(ctx context.Context, source string, related bo
 	return runner, nil
 }
 
+// env is the environment the toolchain's probes run in: Env, or
+// itos-cc's own as the commands it starts inherit it when Env is nil.
+func (t Toolchain) env() []string {
+	if t.Env != nil {
+		return t.Env
+	}
+	return project.InheritedEnv()
+}
+
 // GoPlatform is the GOOS and GOARCH go env reports in dir, in the
 // toolchain's environment. Where go env cannot say, go not installed, it is
 // the GOOS and GOARCH that environment sets, else the system itos-cc runs
@@ -182,10 +188,7 @@ func (t Toolchain) GoPlatform(ctx context.Context, dir string) (mutants.Platform
 		return mutants.Platform{}, mutants.InputCancelled{Cause: err}
 	}
 	cmd := exec.CommandContext(ctx, "go", "env", "GOOS", "GOARCH")
-	cmd.Dir = dir
-	if t.Env != nil {
-		cmd.Env = t.Env
-	}
+	cmd.Dir, cmd.Env = dir, t.env()
 	out, err := cmd.Output()
 	if cause := context.Cause(ctx); cause != nil {
 		return mutants.Platform{}, mutants.InputCancelled{Cause: cause}
@@ -193,10 +196,7 @@ func (t Toolchain) GoPlatform(ctx context.Context, dir string) (mutants.Platform
 	if fields := strings.Fields(string(out)); err == nil && len(fields) == 2 {
 		return mutants.Platform{OS: fields[0], Arch: fields[1]}, nil
 	}
-	env := t.Env
-	if env == nil {
-		env = os.Environ()
-	}
+	env := t.env()
 	p := mutants.Platform{OS: runtime.GOOS, Arch: runtime.GOARCH}
 	for _, kv := range env {
 		switch name, value, _ := strings.Cut(kv, "="); {

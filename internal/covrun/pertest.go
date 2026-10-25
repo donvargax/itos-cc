@@ -168,7 +168,7 @@ func startTestCollectors(ctx context.Context, collectors []testCollector, log io
 			continue
 		}
 		p := Plan{Language: c.language, Dir: c.dir, Prepare: c.prepare, CoverEnv: c.vars}
-		why, call, err := p.start(ctx, project.NoBytecodeEnv(os.Environ()), log, execute)
+		why, call, err := p.start(ctx, project.NoBytecodeEnv(nil), log, execute)
 		calls = append(calls, call)
 		if err != nil && strict {
 			return nil, calls, err
@@ -289,7 +289,7 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 			_ = os.MkdirAll(filepath.Join(dir, ".profiles"), 0o755) //nolint:gosec // the converted profiles' folder keeps its 0755; narrowing it would change what the run creates
 			args, profile := c.convert(d, filepath.Join(dir, ".profiles", strconv.Itoa(i)+"."+c.language))
 			cmd := exec.Command(args[0], args[1:]...) //nolint:gosec // the collector's conversion of a listed test's data, which this package names
-			cmd.Dir, cmd.Env = c.dir, unsetEnv(project.NoBytecodeEnv(os.Environ()), c.vars...)
+			cmd.Dir, cmd.Env = c.dir, unsetEnv(project.NoBytecodeEnv(nil), c.vars...)
 			if out, err := cmd.CombinedOutput(); err != nil {
 				logf(log, "itos-cc: coverage: %s: %s: %v\n%s", id, displayArgs(args), err, out)
 				continue
@@ -357,7 +357,7 @@ func runShell(ctx context.Context, line, dir string, env []string, log io.Writer
 		cmd = shellCommandContext(ctx, line)
 	}
 	cmd.Dir = dir
-	cmd.Env = setEnv(project.NoBytecodeEnv(os.Environ()), env...)
+	cmd.Env = setEnv(project.NoBytecodeEnv(nil), env...)
 	var out bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &out
 	err := runCommand(ctx, cmd, execute)
@@ -370,6 +370,7 @@ func runShell(ctx context.Context, line, dir string, env []string, log io.Writer
 // written to log.
 func Shell(line string, log io.Writer) error {
 	cmd := shellCommand(line)
+	cmd.Env = project.InheritedEnv()
 	cmd.Stdout = log
 	cmd.Stderr = log
 	return cmd.Run()

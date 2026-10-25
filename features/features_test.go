@@ -54,9 +54,16 @@
 // test's. The build keys on GOCOVERDIR alone: a -cover binary run without it
 // writes "warning: GOCOVERDIR not set, no coverage data emitted" to its
 // stderr, which breaks every scenario that reads stderr, and only
-// GOCOVERDIR's being set guarantees every command a scenario starts has it.
+// GOCOVERDIR's being set guarantees every itos-cc a scenario starts has it.
 // The binary driver's environment passes it on unchanged, every environment
 // a step runs a command in is that one with the scenario's variables set.
+// itos-cc keeps it to itself: the commands it starts never inherit it
+// (slice-59, ID-MUT-352), so the projects' tests it runs write nothing
+// there, and its own coverage runs set their own. Measuring the whole
+// module at once, go test -cover -coverpkg=./... ./..., gives every test
+// binary a GOCOVERDIR of go test's own, whatever the environment says, so
+// GOCOVERDIR reaches TestFeatures only through an -exec wrapper that sets
+// it for features.test alone (features/README.md, Running them).
 // Never ITOS_CC_TEST_COVERDIR, which itos-cc sets alone for a listed test's
 // first coverage run and the driver's environment drops with every ITOS_
 // variable. With GOCOVERDIR

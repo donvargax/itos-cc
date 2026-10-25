@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/donvargax/itos-cc/internal/project"
 )
 
 // countedPlatform is the platform counted mode and --fail-fast check: both
@@ -24,6 +26,7 @@ var hostPlatform = runtime.GOOS
 // slice words as count.no-git.
 func countedRoot(context.Context) (string, error) {
 	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	cmd.Env = project.InheritedEnv()
 	out, err := cmd.Output()
 	if err != nil {
 		return "", err

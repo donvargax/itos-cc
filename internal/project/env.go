@@ -1,0 +1,54 @@
+package project
+
+import (
+	"os"
+	"os/exec"
+	"strings"
+)
+
+// coverDirVariable tells a program built with -cover where to write its
+// coverage counters.
+const coverDirVariable = "GOCOVERDIR"
+
+// InheritedEnv is itos-cc's own environment as every command it starts
+// inherits it: without GOCOVERDIR, its name's case ignored as Windows
+// ignores it (slice-59, q-96). A GOCOVERDIR set for itos-cc says where
+// itos-cc's own counters go, when it is built with -cover; passed on, the
+// project's tests run without coverage would write counters where nobody
+// asked, and read it as a coverage run. itos-cc's own process keeps it, so
+// measuring itos-cc still works, and the coverage runs itos-cc makes
+// itself set their own on top of this. Every command itos-cc starts begins
+// from it, alone or through NoBytecodeEnv.
+func InheritedEnv() []string {
+	env := os.Environ()
+	out := make([]string, 0, len(env))
+	for _, kv := range env {
+		if name, _, _ := strings.Cut(kv, "="); !strings.EqualFold(name, coverDirVariable) {
+			out = append(out, kv)
+		}
+	}
+	return out
+}
+
+// NoBytecodeEnv is env, or InheritedEnv when env is nil, with Python told
+// to write no bytecode. Python takes the bytecode in __pycache__ as fresh
+// while its source keeps the mtime, in whole seconds, and the size it was
+// compiled from, so a mutant of the same size written within the second a
+// run compiled its source would run the unmutated code. Every test and
+// coverage command itos-cc runs gets it: one that writes no bytecode can
+// leave none stale, and leaves no __pycache__ in the project's own tree. A
+// command that is not Python ignores it, and a shell line may start Python
+// without itos-cc knowing.
+func NoBytecodeEnv(env []string) []string {
+	if env == nil {
+		env = InheritedEnv()
+	}
+	return append(env[:len(env):len(env)], "PYTHONDONTWRITEBYTECODE=1")
+}
+
+// gitCommand is git with args, in InheritedEnv.
+func gitCommand(args ...string) *exec.Cmd {
+	cmd := exec.Command("git", args...) //nolint:gosec // only the fixed git program, with the arguments this package builds
+	cmd.Env = InheritedEnv()
+	return cmd
+}

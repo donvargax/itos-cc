@@ -7,6 +7,7 @@ import (
 	"io"
 	"os/exec"
 
+	"github.com/donvargax/itos-cc/internal/project"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -26,7 +27,7 @@ func (l Lister) List(ctx context.Context, c mutants.Command) (mutants.TestListin
 		name, flag = "cmd", "/C"
 	}
 	cmd := exec.CommandContext(ctx, name, flag, c.Shell) //nolint:gosec // execute the explicitly configured listing through its platform shell
-	cmd.Dir = c.Dir
+	cmd.Dir, cmd.Env = c.Dir, project.InheritedEnv()
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = l.Log

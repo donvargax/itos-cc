@@ -236,13 +236,13 @@ func diskAdapters(log io.Writer, hold func() (release func())) adapters {
 	owner := &processes.OwnedExecutor{Platform: runtime.GOOS, Hold: hold}
 	coverageRun := &processes.OwnedExecutor{Platform: runtime.GOOS, Hold: hold}
 	measurer := coveragetools.Measurer{Log: log, Execute: coverageCommand(coverageRun)}
-	tools := testtools.Toolchain{Dir: dir, Env: os.Environ()}
+	tools := testtools.Toolchain{Dir: dir, Env: project.InheritedEnv()}
 	fingerprints := testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}
 	fresh := freshenv.Environment{Platform: runtime.GOOS, Log: log, Execute: owner.Run, Command: ownedCommand(owner), Measure: ownedCommand(owner), Toolchain: tools, Fingerprints: fingerprints, Reach: importgraph.Reach{}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}}
 	reader := settings.Reader{Source: diskConfig{}}
 	return adapters{Settings: reader, SnapshotReaders: func(root string) mutation.MutationSnapshotReader {
 		return snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}
-	}, Fresh: fresh, FreshWorkers: worktrees.Workers{Platform: runtime.GOOS, Owner: owner, Prepare: freshenv.CommandEnvironment}, Exceptions: func(root string) mutation.Exceptions { return exceptions.Exceptions{RootDir: root} }, SourceStatus: sources.SourceEdits{}, SnapshotReader: snapshots.Mutations{Store: metricsdir.Store{}}, Catalog: snapshots.Mutations{Store: metricsdir.Store{}}, Presence: sources.SourceEdits{}, Snapshots: snapshots.Mutations{Store: metricsdir.Store{}}, SourceEdits: sources.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS, Hold: hold, Dir: dir, Settings: reader}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
+	}, Fresh: fresh, FreshWorkers: worktrees.Workers{Platform: runtime.GOOS, Owner: owner, Prepare: freshenv.CommandEnvironment}, Exceptions: func(root string) mutation.Exceptions { return exceptions.Exceptions{RootDir: root} }, SourceStatus: sources.SourceEdits{}, SnapshotReader: snapshots.Mutations{Store: metricsdir.Store{}}, Catalog: snapshots.Mutations{Store: metricsdir.Store{}}, Presence: sources.SourceEdits{}, Snapshots: snapshots.Mutations{Store: metricsdir.Store{}}, SourceEdits: sources.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: project.InheritedEnv()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS, Hold: hold, Dir: dir, Settings: reader}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
 		Coverage: measurer, MutationCoverage: measurer, Selection: reader,
 		Repository: countedRoot, PhysicalDir: physicalDir, Platform: countedPlatform, Origin: project.OriginAt}
 }

@@ -129,7 +129,7 @@ func runFreshBaselines(ctx context.Context, baselines []FreshBaseline, log io.Wr
 		}
 		cmd := exec.CommandContext(ctx, c.Args[0], c.Args[1:]...) //nolint:gosec // run the admitted frozen baseline with its unchanged command argv
 		cmd.Dir = c.Dir
-		cmd.Env = project.NoBytecodeEnv(os.Environ())
+		cmd.Env = project.NoBytecodeEnv(nil)
 		if c.PathEnv != "" {
 			var paths []string
 			for _, p := range c.PathDirs {

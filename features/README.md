@@ -69,6 +69,9 @@ Commands run in a clean environment: no `GIT_*`, `ITOS_*`, `ITOS_CC_*`, `GITHUB_
 `GH_*` or `CI` variable of the caller's, no global or system git config, a fixed author, and none
 of the caller's claude, itos or its extensions on the PATH. A `GOCOVERDIR` that exists builds the
 binary with `-cover` and collects what each run did, for itos-cc to merge with `go test`'s.
+itos-cc keeps the variable to itself: the commands it starts never inherit it (slice-59,
+`ID-MUT-352`), so the projects' tests it runs write nothing there and never take a run for a
+coverage run, and its own coverage runs set their own.
 
 `ITOS_CC_FEATURES_BINARY` names an itos-cc binary built elsewhere, which `TestFeatures` runs in
 place of the one it builds, as T-132 runs today's scenarios against the binary of the commit
@@ -250,6 +253,29 @@ go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-DRY-'   #
 ITOS_CC_TEST_COVERDIR=$d go test ./cmd/itos-cc -count=1 -cover -coverpkg=./... -run '^TestScenarios$'   # each apart, its coverage in $d/<ID>
 itos tests smoke run scenario                        # exactly the smoke set, both ways opted in
 ```
+
+Measuring the whole module at once, `go test -cover -coverpkg=./... ./...`, gives every test
+binary a `GOCOVERDIR` of go test's own, whatever the environment says, and reads back only the
+test binary's own data from it. So `GOCOVERDIR` reaches `TestFeatures` only through an `-exec`
+wrapper that sets it for the features test binary alone, the other packages' tests running as
+they would without it (T-154 measured this way, `docs/binary-only-reach.md`; itos-cc's own Go
+coverage runs do the same through `itos-cc __exec-with-gocoverdir`):
+
+```sh
+cat > "$wrap" <<'EOF'
+#!/bin/sh
+case "$1" in
+  */features.test) export GOCOVERDIR="$FEATURES_GOCOVERDIR" ;;
+esac
+exec "$@"
+EOF
+chmod +x "$wrap"
+FEATURES_GOCOVERDIR=$d ITOS_CC_FEATURES_BINARY_DRIVER=1 \
+  go test -count=1 -covermode=set -coverpkg=./... -coverprofile=module.out -exec "$wrap" ./...
+go tool covdata textfmt -i="$d" -o=binary.out   # what the scenarios' itos-cc ran
+```
+
+A block is covered when either profile covers it.
 
 `-scenarios` takes a regular expression over each tag, `@` included. It exists because godog's
 own tag filter takes exact tags joined by commas, while itos merges selections into one regular

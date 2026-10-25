@@ -414,7 +414,7 @@ func (w *worker) runIn(parent context.Context, c Command, root string, limits mu
 // preparation applied.
 func (w *worker) prepared(cmd *exec.Cmd, c Command, root string) {
 	cmd.Dir = filepath.Join(root, strings.TrimPrefix(c.Dir, c.Root))
-	cmd.Env = project.NoBytecodeEnv(os.Environ())
+	cmd.Env = project.NoBytecodeEnv(nil)
 	if c.PathEnv != "" {
 		var paths []string
 		for _, p := range c.PathDirs {
