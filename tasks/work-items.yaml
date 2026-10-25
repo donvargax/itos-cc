@@ -5884,3 +5884,18 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: revive-graph-scenarios
+    title: architecture_graph.feature runs against itos-cc graph
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Replaces T-102 to T-104 (dropped 2026-10-25, the person agreeing): architecture_graph.feature
+      is @wip as a whole since T-189, describing serve. Since slice-56 (itos-cc graph writes
+      .metrics/graph.json) most of its GRAPH scenarios can run against the command: "When the graph
+      is built" becomes running itos-cc graph and the Thens read .metrics/graph.json (GRAPH-01..05,
+      07, 08, 13-15, 22, 24-31, 34-40, per the graph-snapshot draft); the parser-level ones (09-12,
+      17-21) need small fixtures; GRAPH-06 and 16 (several repositories) and 23, 32, 33 (live
+      rebuild) stay @wip with serve. Drop the feature-level @wip and tag what stays.
