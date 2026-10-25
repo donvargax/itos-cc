@@ -5707,8 +5707,8 @@ items:
   - id: slice-53
     title: "itos-cc.yaml requires version: 1"
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [slice-52]
     kind: slice
     why: >
