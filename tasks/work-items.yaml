@@ -5822,3 +5822,16 @@ items:
     status: done
     depends_on: []
     kind: slice
+  - id: scenario-fixture-words
+    title: The scenario harness puts a fixture's values into a command's words
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found in slice-55 (2026-10-24): a scenario wanting to run a command on "that site" (a site the
+      fixture made) cannot add a matching step, since godog runs Strict and the generic I run
+      "itos-cc …" step is shared; the agent wrapped w.prepare to replace the words. A shared
+      substitution in runWith (named fixture values a Given sets, replaced in the command line)
+      would let any scenario say it plainly.
