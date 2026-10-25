@@ -67,6 +67,23 @@ Feature: Command line
         | crapp       | crapp  | . Did you mean 'crap'?    |
         | help nosuch | nosuch | .                         |
 
+    # slice-60, q-99 (the person 2026-10-25): every "Did you mean" follows
+    # kong's rule, which the person finds friendlier: each candidate that
+    # starts with what was typed or is within two edits of it, in the order
+    # the candidates are declared, one named as "Did you mean X?" and
+    # several as "Did you mean one of X, Y?". The kong fork exports the rule
+    # (a new -itos tag) and itos-cc uses it for commands, flags, serve's hand
+    # parser and itos-cc.yaml keys (SEL-41), deleting its own two copies; the
+    # architecture rules let the settings adapter import the fork for it.
+    # Plain output and the fix's wording change for the inputs the rule now
+    # matches more of; the problem's rule and fields do not, so no breaking
+    # note. Before this item "s" names no command, failing at the stderr step.
+    @slice-60 @ID-CLI-30 @wip
+    Scenario: A prefix of several commands names them all
+      When I run "itos-cc s"
+      Then stderr says "itos-cc: there is no command \"s\". Did you mean one of 'scrap', 'serve'? Run 'itos-cc --help' for the commands."
+      And the exit code is 81
+
     # Binary-only for good, as ID-CLI-03: each row builds itos-cc as a
     # release or go install makes it. Issue #19: the release archive said
     # 1.2.3 and go install v1.2.3. Every version printed loses a leading v,

@@ -563,3 +563,16 @@ Feature: Choosing which files a command looks at
       | yaml                      | key     |
       | {X-owner: platform-team}  | X-owner |
       | {x_owner: platform-team}  | x_owner |
+
+  # slice-60 (q-99): itos-cc.yaml's unknown-key fix follows the same rule as
+  # the command line's (CLI-30), from the kong fork: a key that is the start
+  # of a listed one is suggested too. Before this item mut is more than two
+  # edits from mutation, so the fix names every top-level key instead,
+  # failing at the fix step.
+  @slice-60 @ID-SEL-41 @wip
+  Scenario: A key that starts a listed one is suggested
+    Given itos-cc.yaml holds '{mut: {}}'
+    When I run "itos-cc crap --no-coverage"
+    Then the problem is "config.invalid", with key "mut"
+    And its fix suggests "mutation"
+    And the exit code is 80
