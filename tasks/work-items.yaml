@@ -5814,8 +5814,8 @@ items:
   - id: slice-54
     title: itos-cc.yaml accepts and ignores keys starting with x-
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
