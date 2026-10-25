@@ -16,7 +16,6 @@ queue:
   - features-coverage-gocoverdir-leak
   - T-102
   - T-103
-  - T-104
   - T-112
   - T-113
   - mutation-windows-ownership
@@ -2784,7 +2783,7 @@ items:
     title: Run graph metric, freshness and rebuild scenarios through the black-box harness
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: [T-103]
     kind: task
     deferred: >
