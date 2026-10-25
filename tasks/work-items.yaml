@@ -5940,7 +5940,7 @@ items:
   - id: T-212
     title: Upgrade the repository pin to itos 8.19
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
