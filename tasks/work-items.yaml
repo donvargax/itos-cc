@@ -15,7 +15,7 @@ queue:
   - listed-suites
   - features-coverage-gocoverdir-leak
   - slice-51
-  - itos-cc-yaml-unknown-keys
+  - slice-52
   - itos-cc-yaml-version-key
   - slice-50
   - flaky-kills-record
@@ -5713,14 +5713,15 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: itos-cc-yaml-unknown-keys
+  - id: slice-52
     title: itos-cc.yaml refuses a key it does not list, at any depth, with did-you-mean
     phase: 1
     owner: null
     status: todo
     depends_on: [slice-49]
-    kind: idea
+    kind: slice
     why: >
+      Was itos-cc-yaml-unknown-keys.
       q-94 item B (the person 2026-10-24): unknown keys refused at every level, keyed by path
       (mutation.exceptions[0].line_txt), fix "Did you mean X?" within 2 edits else the keys allowed
       there, through an own walk over a key table held as data so a JSON Schema can be generated
@@ -5732,7 +5733,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [itos-cc-yaml-unknown-keys]
+    depends_on: [slice-52]
     kind: idea
     why: >
       q-94 item C (the person 2026-10-24): version, a JSON integer, 1; a missing one refused with
