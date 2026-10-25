@@ -16,7 +16,6 @@ queue:
   - features-coverage-gocoverdir-leak
   - slice-57
   - sample-repeat
-  - T-208
   - slice-56
   - graph-nightly
   - T-102
