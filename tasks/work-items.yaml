@@ -5710,16 +5710,9 @@ items:
     title: mutation run records a flaky mutant, and check fails on it
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was flaky-kills-record.
-      q-93 item B (the person 2026-10-24): run confirms a flipped survivor, or a --mutate-all kill
-      that now survives, with two more runs and records an additive "flaky": true with its
-      "outcomes" in the snapshot (left out when false, like stale and limit); check reports a
-      recorded flaky mutant as mutation.flaky, exit 1; run's summary and annotation list it with the
-      survivors. After slice-50.
   - id: slice-58
     title: mutation sample --repeat N runs each sampled mutant N times
     phase: 1
