@@ -5920,8 +5920,8 @@ items:
   - id: bug-10
     title: A Go plan on macOS measures the whole module instead of the chosen packages' tests
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: bug
     why: >
