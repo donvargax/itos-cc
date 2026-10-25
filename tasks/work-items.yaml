@@ -5730,8 +5730,8 @@ items:
   - id: slice-60
     title: Every "Did you mean" uses kong's rule, from the fork, for flags, commands and itos-cc.yaml keys
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
