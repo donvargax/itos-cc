@@ -2269,7 +2269,7 @@ Feature: Mutation testing
       Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
       But the tests miss it on one run and kill it on the next, with nothing they hash changed
       When I run "itos-cc mutation sample src/board.ts"
-      Then stdout says "1 sampled, 0 mismatched, 1 flaky" and "flaky" with src/board.ts:5:9, Board#place and "recorded killed, now survived, killed"
+      Then stdout says "1 sampled, 0 mismatched, 1 flaky" and "flaky `>` → `>=` in Board#place, src/board.ts line 5 column 9: recorded killed, now survived, killed"
       And with --json the sampled mutant has "outcomes": ["survived", "killed"]
       And the problem's fix says to make the tests deterministic and names no mutation run
 
