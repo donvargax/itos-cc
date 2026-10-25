@@ -5822,3 +5822,16 @@ items:
       q-98 (the person 2026-10-24): extension keys, as Docker Compose and OpenAPI allow, so other
       tools or people can keep notes in itos-cc.yaml without itos-cc refusing them; specified in
       features/file_selection.feature.
+  - id: flip-count-reset
+    title: The binary driver resets a flipping test's run counts per invocation
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found in slice-50 (2026-10-24): through the binary driver the vitest fixture counts each
+      mutant's runs in its control file to flip outcomes, and every lastObject step re-runs itos-cc
+      with --json, so the counts carry over between invocations; it works only because every flaky
+      scenario uses an even two-step cycle. Reset the counts at each itos-cc invocation the harness
+      starts, so a cycle of any length stays deterministic.
