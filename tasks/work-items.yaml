@@ -14,7 +14,6 @@ queue:
   - listed-support-per-test
   - listed-suites
   - features-coverage-gocoverdir-leak
-  - T-102
   - T-112
   - T-113
   - mutation-windows-ownership
@@ -2754,7 +2753,7 @@ items:
     title: Run graph node and import scenarios through the black-box harness
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: [T-101]
     kind: task
     deferred: >
