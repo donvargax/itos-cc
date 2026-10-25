@@ -74,3 +74,9 @@ Stage only your own files, by explicit path: untracked files you did not make ar
   revision performed later as retrospective, not evidence obtained earlier.
   Guardrails may already pass and should be reported separately.
   Recorded 2026-10-08; last seen 2026-10-09; exit: permanent (judgment).
+- A commit that names a task in its Task: footer makes CI run that task's
+  checks, so a docs commit editing an unfinished task's ledger entry names
+  no task (docs need none): naming one whose checks cannot pass yet turns
+  main red, and a revert, which must name it too, reruns them. Give the task
+  back to clear it. Recorded 2026-10-24 (T-208, ci 40152891755; T-187 the
+  same day); last seen 2026-10-24; exit: permanent (judgment).
