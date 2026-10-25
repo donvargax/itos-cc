@@ -107,6 +107,12 @@ func sampleMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMuta
 	})
 	sc.Step(`^with --json the sampled mutant has "outcomes": \["survived", "killed"\]$`, p.outcomesListed)
 	sc.Step(`^the problem's fix says to make the tests deterministic and names no mutation run$`, p.deterministicFix)
+	sc.Step(`^that mutant is recorded with "flaky": true and "outcomes" \["([^"]*)", "([^"]*)"\]$`, func(first, second string) error {
+		return p.recordedFlaky(first, second)
+	})
+	sc.Step(`^stdout lists it on a "flaky" line, and src/board\.ts's summary counts 1 flaky$`, p.flakyListed)
+	sc.Step(`^the snapshot records a mutant of "Board#place" as flaky, with outcomes killed and survived$`, p.recordFlaky)
+	sc.Step(`^once the tests kill it on every run, "itos-cc mutation run src/board\.ts" records it killed with no "flaky" key, and check exits 0$`, p.settled)
 	sc.Step(`^the snapshot records a mutant of "Board#place" as killed$`, func() error {
 		if err := p.record(""); err != nil {
 			return err

@@ -111,10 +111,10 @@ func (p *sampleMutation) project() error {
 	p.control = filepath.Join(p.external, "control.json")
 	p.trace = filepath.Join(p.external, "executions.jsonl")
 	p.controls = map[string]bool{}
-	if slices.Contains([]string{"73", "111", "338", "341"}, p.id) {
+	if slices.Contains([]string{"73", "111", "338", "341", "345"}, p.id) {
 		p.controls["place_weak"] = true
 	}
-	if slices.Contains([]string{"109", "110", "112", "113"}, p.id) {
+	if slices.Contains([]string{"109", "110", "112", "113", "347"}, p.id) {
 		p.controls["clear_strong"] = true
 	}
 	if err := p.writeControl(); err != nil {
