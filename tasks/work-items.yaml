@@ -5849,3 +5849,14 @@ items:
       --fail-fast stop or an interrupt that cancels a re-run then records that first, unconfirmed
       outcome without the flaky key, so a flaky mutant can pass as a plain kill or survivor until a
       later run. Leaving it undecided keeps what the snapshot held (preserved).
+  - id: check-flaky-count
+    title: Count flaky mutants in mutation check's --json functions
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-57: a flaky mutant counts in neither killed nor survived, and mutation run's --json file
+      counts it as flaky, but mutation check's functions give no flaky count, so their counts no
+      longer add up to the sites recorded; Check.Run has no package-level test to hold the line yet.
