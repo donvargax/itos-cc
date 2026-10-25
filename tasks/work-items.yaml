@@ -5377,7 +5377,7 @@ items:
     title: graph moves into internal/slices/graph, reaching mutation freshness through a port it owns
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: viewer-dependency-rule

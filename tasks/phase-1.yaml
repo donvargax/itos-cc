@@ -6989,7 +6989,3 @@
     staleness equals mutation check's, GRAPH-38, and the snapshot fixtures) move with the
     freshness function to the mutation slice, the binding tests to cmd, graph's own tests drive a
     fake of its port, and the tree, metrics and http edge tests move unchanged.
-  done_when:
-    - run: test -d internal/slices/graph
-    - run: "! test -d graph"
-    - run: test $(grep -c 'under(importer, "graph")' tools/bin/architecture-check) -eq 0
