@@ -3,6 +3,7 @@ package project
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -30,6 +31,23 @@ func InheritedEnv() []string {
 	return out
 }
 
+// InheritedEnvIn is InheritedEnv for a command that starts in dir, with
+// PWD naming dir, as os/exec names it when it builds a command's
+// environment itself, and only then. Go's own tools take PWD as their
+// working directory when it names the directory they run in, so a dir
+// reached through a symbolic link, as macOS's temporary folder /var is
+// /private/var, keeps in what they print the form the caller gave it:
+// without it, go list printed physical directories that matched no source
+// and a coverage run measured the whole module (bug-10). An empty dir is
+// the working directory, whose PWD InheritedEnv already holds.
+func InheritedEnvIn(dir string) []string {
+	env := InheritedEnv()
+	if abs, err := filepath.Abs(dir); dir != "" && err == nil {
+		env = append(env, "PWD="+abs)
+	}
+	return env
+}
+
 // NoBytecodeEnv is env, or InheritedEnv when env is nil, with Python told
 // to write no bytecode. Python takes the bytecode in __pycache__ as fresh
 // while its source keeps the mtime, in whole seconds, and the size it was
@@ -46,9 +64,10 @@ func NoBytecodeEnv(env []string) []string {
 	return append(env[:len(env):len(env)], "PYTHONDONTWRITEBYTECODE=1")
 }
 
-// gitCommand is git with args, in InheritedEnv.
-func gitCommand(args ...string) *exec.Cmd {
+// gitCommand is git with args, started in dir, the working directory when
+// empty, in InheritedEnvIn.
+func gitCommand(dir string, args ...string) *exec.Cmd {
 	cmd := exec.Command("git", args...) //nolint:gosec // only the fixed git program, with the arguments this package builds
-	cmd.Env = InheritedEnv()
+	cmd.Dir, cmd.Env = dir, InheritedEnvIn(dir)
 	return cmd
 }

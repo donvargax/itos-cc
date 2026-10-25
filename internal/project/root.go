@@ -36,9 +36,7 @@ func RootOf(dir string) string {
 		return r.(string)
 	}
 	root := abs
-	cmd := gitCommand("rev-parse", "--show-cdup")
-	cmd.Dir = abs
-	if out, err := cmd.Output(); err == nil {
+	if out, err := gitCommand(abs, "rev-parse", "--show-cdup").Output(); err == nil {
 		root = filepath.Join(abs, filepath.FromSlash(strings.TrimSpace(string(out))))
 	}
 	roots.Store(abs, root)

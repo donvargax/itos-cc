@@ -79,7 +79,7 @@ func (t Toolchain) Observe(ctx context.Context, r mutants.CommandRequest) (mutan
 		}
 		f.Interpreter = PythonInterpreter(f.Root)
 		probe := exec.CommandContext(ctx, f.Interpreter, "-c", "import pytest") //nolint:gosec // probe the project's observed interpreter, never a downloaded executable
-		probe.Dir, probe.Env = t.Dir, t.env()
+		probe.Dir, probe.Env = t.Dir, t.env(t.Dir)
 		f.Pytest = probe.Run() == nil
 	case "kotlin":
 		f.Module = Base(ctx, r.Path, "build.gradle.kts", "build.gradle", "pom.xml")
@@ -169,13 +169,14 @@ func (t Toolchain) CoverageRunner(ctx context.Context, source string, related bo
 	return runner, nil
 }
 
-// env is the environment the toolchain's probes run in: Env, or
-// itos-cc's own as the commands it starts inherit it when Env is nil.
-func (t Toolchain) env() []string {
+// env is the environment the toolchain's probes run in, started in dir:
+// Env, or itos-cc's own as a command started in dir inherits it when Env
+// is nil.
+func (t Toolchain) env(dir string) []string {
 	if t.Env != nil {
 		return t.Env
 	}
-	return project.InheritedEnv()
+	return project.InheritedEnvIn(dir)
 }
 
 // GoPlatform is the GOOS and GOARCH go env reports in dir, in the
@@ -188,7 +189,7 @@ func (t Toolchain) GoPlatform(ctx context.Context, dir string) (mutants.Platform
 		return mutants.Platform{}, mutants.InputCancelled{Cause: err}
 	}
 	cmd := exec.CommandContext(ctx, "go", "env", "GOOS", "GOARCH")
-	cmd.Dir, cmd.Env = dir, t.env()
+	cmd.Dir, cmd.Env = dir, t.env(dir)
 	out, err := cmd.Output()
 	if cause := context.Cause(ctx); cause != nil {
 		return mutants.Platform{}, mutants.InputCancelled{Cause: cause}
@@ -196,7 +197,7 @@ func (t Toolchain) GoPlatform(ctx context.Context, dir string) (mutants.Platform
 	if fields := strings.Fields(string(out)); err == nil && len(fields) == 2 {
 		return mutants.Platform{OS: fields[0], Arch: fields[1]}, nil
 	}
-	env := t.env()
+	env := t.env(dir)
 	p := mutants.Platform{OS: runtime.GOOS, Arch: runtime.GOARCH}
 	for _, kv := range env {
 		switch name, value, _ := strings.Cut(kv, "="); {

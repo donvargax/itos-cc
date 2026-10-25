@@ -27,7 +27,7 @@ func (l Lister) List(ctx context.Context, c mutants.Command) (mutants.TestListin
 		name, flag = "cmd", "/C"
 	}
 	cmd := exec.CommandContext(ctx, name, flag, c.Shell) //nolint:gosec // execute the explicitly configured listing through its platform shell
-	cmd.Dir, cmd.Env = c.Dir, project.InheritedEnv()
+	cmd.Dir, cmd.Env = c.Dir, project.InheritedEnvIn(c.Dir)
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = l.Log

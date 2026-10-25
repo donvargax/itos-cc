@@ -144,7 +144,7 @@ func pythonPlanSupervised(ctx context.Context, dir, out string, tests []string, 
 	var executions []CommandExecution
 	probe := func(ctx context.Context, module string) error {
 		cmd := exec.CommandContext(ctx, py, "-c", "import "+module) //nolint:gosec // probe the project's own Python for a module this package names
-		cmd.Dir, cmd.Env, cmd.Stdout, cmd.Stderr = dir, project.InheritedEnv(), io.Discard, io.Discard
+		cmd.Dir, cmd.Env, cmd.Stdout, cmd.Stderr = dir, project.InheritedEnvIn(dir), io.Discard, io.Discard
 		err := execute(ctx, cmd)
 		executions = append(executions, CommandExecution{Args: append([]string{}, cmd.Args...), Dir: dir, Err: err})
 		return err

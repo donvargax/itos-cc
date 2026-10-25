@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 
@@ -247,6 +248,35 @@ func TestGoMeasuresWithTheTestsThatLoadTheChosenPackagesOrTheirOwn(t *testing.T)
 	whole := strings.Join(goPlan(dir, "/out", nil, false).Commands[0], " ")
 	if !strings.HasSuffix(whole, " -coverpkg=./... ./...") {
 		t.Errorf("with no sources: %s, want the whole module", whole)
+	}
+}
+
+// A module reached through a symbolic link, as macOS's temporary folder
+// /var is /private/var, is listed in the form its sources name it: go list
+// takes PWD as its working directory only when PWD names the directory it
+// starts in, else it lists the physical path, which matches no source and
+// measured the whole module (bug-10).
+func TestGoScopeListsAModuleReachedThroughASymlinkByItsSources(t *testing.T) {
+	real := filepath.Join(t.TempDir(), "real")
+	writeFiles(t, real, map[string]string{
+		"go.mod":      "module example.com/m\n\ngo 1.22\n",
+		"a/a.go":      "package a\n\nfunc A() int { return 1 }\n",
+		"a/a_test.go": "package a\n\nimport \"testing\"\n\nfunc TestA(t *testing.T) { A() }\n",
+	})
+	dir := filepath.Join(t.TempDir(), "link")
+	if err := os.Symlink(real, dir); err != nil {
+		t.Skipf("no symbolic link here: %v", err)
+	}
+	sources := []string{filepath.Join(dir, "a", "a.go")}
+	want := []string{"example.com/m/a"}
+
+	if pkgs, tests := GoScope(dir, sources); !slices.Equal(pkgs, want) || !slices.Equal(tests, want) {
+		t.Errorf("GoScope: %q tested by %q, want %q by %q", pkgs, tests, want, want)
+	}
+	execute := func(_ context.Context, cmd *exec.Cmd) error { return cmd.Run() }
+	pkgs, tests, _, err := goScopeSupervised(t.Context(), dir, sources, execute)
+	if err != nil || !slices.Equal(pkgs, want) || !slices.Equal(tests, want) {
+		t.Errorf("goScopeSupervised: %q tested by %q (%v), want %q by %q", pkgs, tests, err, want, want)
 	}
 }
 

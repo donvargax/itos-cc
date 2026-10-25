@@ -49,9 +49,7 @@ func gitIgnores(ctx context.Context, dir string) bool {
 	if ctx.Err() != nil {
 		return false
 	}
-	cmd := gitCommand("check-ignore", "-q", dir)
-	cmd.Dir = filepath.Dir(dir)
-	return cmd.Run() == nil
+	return gitCommand(filepath.Dir(dir), "check-ignore", "-q", dir).Run() == nil
 }
 
 // IsBuildOutputWithIgnore reports whether dir is a known build directory
@@ -153,11 +151,11 @@ func Changed() ([]string, error) {
 		{"diff", "--name-only", "-z", "--relative", "--diff-filter=AMR", "HEAD"},
 		{"ls-files", "-z", "--others", "--exclude-standard"},
 	} {
-		out, err := gitCommand(args...).Output()
+		out, err := gitCommand("", args...).Output()
 		if err != nil {
 			// A repository without commits has no HEAD; fall back to the index.
 			if args[0] == "diff" {
-				out, err = gitCommand("diff", "--name-only", "-z", "--relative", "--cached").Output()
+				out, err = gitCommand("", "diff", "--name-only", "-z", "--relative", "--cached").Output()
 			}
 			if err != nil {
 				return nil, err

@@ -34,8 +34,35 @@ func TestInheritedEnvLeavesOutGOCOVERDIR(t *testing.T) {
 	if dir, _ := lookup(NoBytecodeEnv(append(InheritedEnv(), "GOCOVERDIR="+own)), "GOCOVERDIR"); dir != own {
 		t.Errorf("an own coverage run's environment holds GOCOVERDIR=%q, not %q", dir, own)
 	}
-	if got := gitCommand("version").Env; !slices.Equal(got, InheritedEnv()) {
+	if got := gitCommand("", "version").Env; !slices.Equal(got, InheritedEnv()) {
 		t.Errorf("git runs in %q, not InheritedEnv", got)
+	}
+}
+
+// A command that starts in a directory of its own gets PWD naming it, as
+// os/exec gives one whose environment it builds itself, so Go's tools print
+// the directory in the form it was given, a symbolic link unresolved
+// (bug-10). One that starts in the working directory keeps InheritedEnv.
+func TestInheritedEnvInNamesTheDirectoryACommandStartsIn(t *testing.T) {
+	t.Setenv("GOCOVERDIR", t.TempDir())
+	t.Setenv("PWD", t.TempDir())
+	dir := t.TempDir()
+
+	env := InheritedEnvIn(dir)
+	if pwd, _ := lookup(env, "PWD"); pwd != dir {
+		t.Errorf("InheritedEnvIn(%s) holds PWD=%s", dir, pwd)
+	}
+	if got, ok := lookup(env, "GOCOVERDIR"); ok {
+		t.Errorf("InheritedEnvIn holds GOCOVERDIR=%s", got)
+	}
+	if got := InheritedEnvIn(""); !slices.Equal(got, InheritedEnv()) {
+		t.Errorf("InheritedEnvIn(\"\") is %q, not InheritedEnv", got)
+	}
+	if cmd := gitCommand(dir, "version"); cmd.Dir != dir || !slices.Equal(cmd.Env, env) {
+		t.Errorf("git starts in %q with %q, want %s with InheritedEnvIn", cmd.Dir, cmd.Env, dir)
+	}
+	if cmd := historyCommand(t.Context(), dir, "version"); cmd.Dir != dir || !slices.Equal(cmd.Env, env) {
+		t.Errorf("history's git starts in %q with %q, want %s with InheritedEnvIn", cmd.Dir, cmd.Env, dir)
 	}
 }
 
