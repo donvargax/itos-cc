@@ -5802,15 +5802,9 @@ items:
     title: A failing baseline's plain line names its file with backslashes on Windows
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: bug
-    why: >
-      CD 40146968989 (head 8753a007, after slice-51) failed test (windows-latest, cmd-b) at
-      ID-MUT-303: stdout did not say "baseline tests of src/board.py fail; snapshot not updated".
-      slice-51 moved the file into the middle of plain lines; this one (and likely its siblings:
-      listed-tests, blocked, stopped-early, orphan, not-built lines) must name the file
-      slash-separated from the working directory on every system, as every other output does.
   - id: slice-54
     title: itos-cc.yaml accepts and ignores keys starting with x-
     phase: 1
