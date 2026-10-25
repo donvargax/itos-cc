@@ -5944,3 +5944,15 @@ items:
     status: doing
     depends_on: []
     kind: task
+  - id: pinned-stall-speed-limit
+    title: tools/bin/pinned aborts a stalled download within seconds, not at the 300 s cap
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      2026-10-25, slice-60: golangci-lint's download stalled partway twice, each run to curl's
+      --max-time 300, holding architecture-check over ten minutes (T-202's bound, c2a7c019). Add
+      --speed-limit 1024 --speed-time 30 so a stall fails in about 30 s; --max-time stays the outer
+      bound. Commented on go-template-itos#15 for the backport.
