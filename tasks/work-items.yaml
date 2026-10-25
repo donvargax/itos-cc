@@ -5708,17 +5708,9 @@ items:
     title: itos-cc.yaml refuses a key it does not list, at any depth, with did-you-mean
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [slice-49]
     kind: slice
-    why: >
-      Was itos-cc-yaml-unknown-keys.
-      q-94 item B (the person 2026-10-24): unknown keys refused at every level, keyed by path
-      (mutation.exceptions[0].line_txt), fix "Did you mean X?" within 2 edits else the keys allowed
-      there, through an own walk over a key table held as data so a JSON Schema can be generated
-      later; rule-1 refusals come first. Fixture features/mutate_except_fixture.go:196 writes other:
-      {kept: true} and must change. A minor release with BREAKING-CHANGE and Upgrading. Draft:
-      .git/itos/draft-itos-cc-yaml-version.md on the coordinator's machine.
   - id: itos-cc-yaml-version-key
     title: "itos-cc.yaml requires version: 1"
     phase: 1
