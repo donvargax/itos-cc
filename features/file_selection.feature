@@ -449,3 +449,73 @@ Feature: Choosing which files a command looks at
     Then the problem is "config.invalid", with key "other"
     And the exit code is 80
     And itos-cc.yaml is byte for byte as it was
+
+  # slice-53, itos-cc-yaml-version's third item (q-94, the person
+  # 2026-10-24; docs/CONFIG.md rules 5 and 6): itos-cc.yaml carries no
+  # version, so an older itos-cc reads a newer file's keys as nothing. Now:
+  # 1. version, a JSON integer, 1. A file without one is config.invalid,
+  #    exit 80, keyed version, its fix to add version: 1 as the first line;
+  #    a file that is missing, empty or holds only comments needs none and
+  #    is an empty config, as before. Today's itos-cc ignores the key, so a
+  #    person adds it before moving their pin.
+  # 2. A version newer than this itos-cc reads is config.invalid, keyed
+  #    version, its message naming both versions and its fix to upgrade
+  #    itos-cc. A value that is not an integer ("1", 1.5) is config.invalid,
+  #    keyed version.
+  # 3. From this release every key added later bumps the version; a file
+  #    of version 1 is read as written for good. itos-cc never rewrites a
+  #    file to migrate it.
+  # 4. mutation except, creating itos-cc.yaml, starts it with version: 1.
+  #    This repository's own itos-cc.yaml gains it.
+  # 5. The check runs after slice-49's and bug-8's and before slice-52's
+  #    unknown keys, so version is a listed key.
+  # The harness adds version: 1 to every itos-cc.yaml a fixture or a Given
+  # writes that names none, except where the Given says "with no version",
+  # so the scenarios before this item keep their text (a coordinator's call
+  # inside the item). The feat is a BREAKING-CHANGE with an Upgrading footer
+  # (add version: 1 as itos-cc.yaml's first line, before moving the pin), in
+  # a minor release; counted runs read the file HEAD commits, so it must be
+  # committed too. Before this item SEL-33, SEL-35, SEL-36 and SEL-37 fail
+  # at their Then; SEL-34 is a guardrail that passes today.
+  @slice-53 @ID-SEL-33 @wip
+  Scenario: An itos-cc.yaml with no version is a config error
+    Given itos-cc.yaml holds, with no version, 'exclude: ["**/porttest/**"]'
+    When I run "itos-cc crap --no-coverage"
+    Then the problem is "config.invalid", with key "version"
+    And its fix says "version: 1"
+    And the exit code is 80
+
+  @slice-53 @ID-SEL-34 @wip
+  Scenario: An itos-cc.yaml holding only comments needs no version
+    Given itos-cc.yaml holds, with no version, '# nothing set yet'
+    When I run "itos-cc crap --no-coverage"
+    Then the exit code is 0
+
+  @slice-53 @ID-SEL-35 @wip
+  Scenario: A version newer than itos-cc reads is a config error
+    Given itos-cc.yaml holds '{version: 2, exclude: []}'
+    When I run "itos-cc crap --no-coverage"
+    Then the problem is "config.invalid", with key "version"
+    And its message says "2"
+    And its fix says "upgrade itos-cc"
+    And the exit code is 80
+
+  @slice-53 @ID-SEL-36 @wip
+  Scenario Outline: A version that is not an integer is a config error
+    Given itos-cc.yaml holds '<yaml>'
+    When I run "itos-cc crap --no-coverage"
+    Then the problem is "config.invalid", with key "version"
+    And the exit code is 80
+
+    Examples:
+      | yaml                         |
+      | {version: "1", exclude: []}  |
+      | {version: 1.5, exclude: []}  |
+
+  @slice-53 @ID-SEL-37 @wip
+  Scenario: mutation except starts an itos-cc.yaml it creates with version: 1
+    Given a committed Go module whose "example.com/fx/board#Count" survives its test
+    And the module holds no itos-cc.yaml
+    When I run "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason 'x is never 5'"
+    Then the exit code is 0
+    And itos-cc.yaml's first line is "version: 1"
