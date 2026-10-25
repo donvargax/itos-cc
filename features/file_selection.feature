@@ -519,7 +519,11 @@ Feature: Choosing which files a command looks at
   # itos-cc.yaml does not list. A key starting with x- is an extension key,
   # as Docker Compose and OpenAPI allow: accepted and ignored at any mapping
   # level (the top level, mutation, an exception entry, mutation.tests), so
-  # other tools and people can keep notes there. Its value may be anything
+  # other tools and people can keep notes there. Why (the person): a tool
+  # that deploys or reports from this file needs room for its own data
+  # beside itos-cc's, as the person once needed in docker-compose.yml for an
+  # ECS deploy tool before Compose allowed x- keys; refusing that pushes such
+  # tools into side files and a worse experience. Keep the hatch open. Its value may be anything
   # JSON can express and is still held to slice-49's and bug-8's checks (no
   # anchor, alias, merge key or tag). A key that only looks like one (X-,
   # x_) is not one. mutation except, --renew and --prune keep extension keys
