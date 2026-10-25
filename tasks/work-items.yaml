@@ -17,7 +17,6 @@ queue:
   - T-102
   - T-103
   - T-104
-  - T-105
   - T-112
   - T-113
   - mutation-windows-ownership
@@ -2799,7 +2798,7 @@ items:
     title: Run serving and HTTP stream scenarios through the black-box harness
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: [T-104]
     kind: task
     deferred: >
