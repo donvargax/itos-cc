@@ -5785,6 +5785,9 @@ items:
       with --json, so the counts carry over between invocations; it works only because every flaky
       scenario uses an even two-step cycle. Reset the counts at each itos-cc invocation the harness
       starts, so a cycle of any length stays deterministic.
+
+      slice-58 (2026-10-24) made its own flaky steps reset the binary fixture's counter; slice-50's
+      steps still rely on even cycles. Generalise the reset into the harness.
   - id: slice-55
     title: mutation except --renew and a replacing except keep x- keys inside the entry they rewrite
     phase: 1
