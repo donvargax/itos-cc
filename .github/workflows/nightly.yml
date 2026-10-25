@@ -219,9 +219,15 @@ jobs:
         id: scrap
         if: ${{ !cancelled() }}
         run: '"$RUNNER_TEMP/itos-cc" scrap'
+      # Reads crap.json and dry.json for its risk bands and duplicates, so it
+      # runs after both, and even when they failed; it exits 0 whatever it finds.
+      - name: graph
+        id: graph
+        if: ${{ !cancelled() }}
+        run: '"$RUNNER_TEMP/itos-cc" graph'
 
       # Commits the snapshot of each command that succeeded, and only those
-      # three files: raw coverage under .metrics/coverage/ stays ignored.
+      # four files: raw coverage under .metrics/coverage/ stays ignored.
       # Mutate pushes to main too, so it rebases and retries as mutate's
       # commit step does.
       - name: Commit the snapshots
@@ -231,13 +237,14 @@ jobs:
           CRAP: ${{ steps.crap.outcome }}
           DRY: ${{ steps.dry.outcome }}
           SCRAP: ${{ steps.scrap.outcome }}
+          GRAPH: ${{ steps.graph.outcome }}
         run: |
           if [ "$GITHUB_REF" != refs/heads/main ]; then
             echo "Not on main ($GITHUB_REF): the snapshots are not committed."
             exit 0
           fi
           set --
-          for pair in "crap:$CRAP" "dry:$DRY" "scrap:$SCRAP"; do
+          for pair in "crap:$CRAP" "dry:$DRY" "scrap:$SCRAP" "graph:$GRAPH"; do
             name=${pair%%:*}
             if [ "${pair#*:}" = success ]; then
               set -- "$@" ".metrics/$name.json"
@@ -257,12 +264,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
           cat > "$RUNNER_TEMP/message" <<MESSAGE
-          chore: record the nightly crap, dry and scrap snapshots
+          chore: record the nightly crap, dry, scrap and graph snapshots
 
-          The nightly runs of itos-cc crap, dry and scrap over the whole
-          repository wrote $*.
+          The nightly runs of itos-cc crap, dry, scrap and graph over the
+          whole repository wrote $*.
           Committing them gives every clone serve's CRAP bands and duplicates,
-          and scrap's next run its comparison, without running them by hand.
+          graph.json for any viewer to read, and scrap's next run its
+          comparison, without running them by hand.
           No threshold is set, so findings never fail the job; the run:
           $RUN_URL
 
