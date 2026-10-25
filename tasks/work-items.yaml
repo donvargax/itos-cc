@@ -3981,31 +3981,9 @@ items:
     title: The commands itos-cc starts never inherit its GOCOVERDIR
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was features-coverage-gocoverdir-leak.
-      T-154 (docs/binary-only-reach.md): with GOCOVERDIR set, the binary driver builds itos-cc with
-      -cover and passes GOCOVERDIR to every command a scenario starts, and seven scenarios that pass
-      without it failed: ID-MUT-123, a -cover itos-cc wrote atomic counters into the per-test folder
-      itos-cc set for a listed test and go tool covdata refused the mixed folder; ID-MUT-178, 179,
-      182, 184, 197 and 211, their fixtures read the inherited GOCOVERDIR as a coverage run where
-      itos-cc gives none. The fixtures' builds also wrote 14 set-mode metadata files beside
-      itos-cc's, so covdata textfmt over the folder fails until split by metadata file. Separately,
-      go test -cover replaces every test binary's GOCOVERDIR, so GOCOVERDIR with go test
-      -coverpkg=./... ./... reaches TestFeatures only through an -exec wrapper; features_test.go's
-      package comment and features/README.md do not say so. Decide whether itos-cc drops an
-      inherited GOCOVERDIR from the commands it runs without coverage, or the harness keeps its own
-      out of them, and document the module-wide recipe.
-
-      T-46's measuring nightly 39719212234 (2026-10-22) hit the same leak in mutation run
-      --all-tests's own whole-suite coverage run, whose -exec itos-cc __exec-with-gocoverdir wrapper
-      sets GOCOVERDIR for TestFeatures: nine binary-driver scenarios failed there (listed-test
-      coverage runs refusing a folder with atomic and set metadata, among them 'Without the
-      harness's help, coverage takes one run per test'), and covdata textfmt over the run's own
-      gocoverdir failed with the counter mode clash, so every nightly measures coverage with a red
-      suite and loses itos-cc's integration coverage. The run went on with what it had.
   - id: T-157
     title: Move internal/mutation into internal/slices/mutation, assembled from its declaration
     phase: 1
