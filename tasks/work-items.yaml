@@ -5644,17 +5644,9 @@ items:
     title: Plain per-file lines that no CI problem matcher reads as errors
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was plain-output-matcher.
-      Split from plain-output-wording (2026-10-24), issue #21: mutation sample, run and check print
-      per-file summaries shaped <file>.go: <counts>, and mismatch/survivor lines holding
-      <file>.go:<line>:<col>, which setup-go's problem matcher turns into ##[error] annotations on a
-      passing run (seen on cd.yml's green sample, and in itos-template run 37729734336). Reshaping
-      them changes visible output of three commands and many scenarios' stdout lines: q-97 asks the
-      shape.
     refs: ["#21"]
   - id: mismatch-fix-plain
     title: A plain mutation sample prints no mismatch fix
