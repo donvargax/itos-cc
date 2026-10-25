@@ -5861,3 +5861,16 @@ items:
       counted.go's case stage.Name == "listed-baseline": MUT-178 killed the mutant in process, yet
       the proof never ran it. Taking a case line as reached by the tests that reach its body, or the
       switch's first block, would let the listed scenarios judge it.
+  - id: repeat-flag-scenarios
+    title: Scenarios hold --repeat without --count and run --count --repeat 0
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-58 (2026-10-24) built two refusals no scenario specifies: mutation run --repeat without
+      --count is flags.conflict ("--repeat repeats the trials of --count, and is given without it"),
+      as --seed is, and run --count --repeat 0 is flags.value-invalid; only sample's --repeat 0 has
+      one (MUT-350). Add the two scenarios so the behaviour is specified, red-first being moot
+      (guardrails that pass today).
