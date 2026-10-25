@@ -7002,6 +7002,13 @@
     graph-snapshot item 3 (q-95): the nightly's snapshots job runs itos-cc graph after crap and dry
     (it reads both), commits graph.json with them, and .gitignore keeps it tracked. After
     graph-command.
+
+    Decided by the coordinator (2026-10-24, a routine call inside q-95's item 3): the snapshots
+    job in .github/workflows/nightly.yml runs itos-cc graph after crap and dry (graph reads both),
+    adds graph to its commit loop beside crap, dry and scrap (the "crap:$CRAP" pairs), and names
+    graph.json in its commit subject and body; .gitignore gains !.metrics/graph.json with its
+    comment saying the nightly records it. Nothing else in the job changes. Its effect is seen
+    on the next nightly run; no dispatch is needed to close.
   done_when:
     - run: grep -q 'itos-cc graph' .github/workflows/nightly.yml
     - run: grep -qxF '!.metrics/graph.json' .gitignore
