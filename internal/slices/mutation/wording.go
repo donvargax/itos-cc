@@ -70,6 +70,17 @@ func CoverageEvidenceName(language string) string {
 	return LanguageName(language) + " line coverage"
 }
 
+// FlakyIn is how many of items are flaky.
+func FlakyIn(items []mutants.Mutant) int {
+	n := 0
+	for _, m := range items {
+		if m.Flaky {
+			n++
+		}
+	}
+	return n
+}
+
 // ExceptedIn retains the existing mutation presentation vocabulary.
 func ExceptedIn(items []mutants.Mutant) int {
 	n := 0

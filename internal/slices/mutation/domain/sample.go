@@ -110,6 +110,23 @@ func Classify(recorded string, outcomes []string) string {
 	return Mismatched
 }
 
+// Settled is the verdict of the outcomes, in run order, of a mutant its
+// snapshot records flaky, which no outcome recorded can be judged
+// against: Agreed once its first run and its Reruns all agree with each
+// other, Flaky as soon as one disagrees with the first, and "" while it
+// needs another run.
+func Settled(outcomes []string) string {
+	switch {
+	case len(outcomes) == 0:
+		return ""
+	case slices.ContainsFunc(outcomes, func(o string) bool { return !Agrees(outcomes[0], o) }):
+		return Flaky
+	case len(outcomes) <= Reruns:
+		return ""
+	}
+	return Agreed
+}
+
 // rank orders a candidate in the draw of seed: the SHA-256 of the seed, the
 // file's slash-separated path from the project root, the function, and the
 // site's key, which stay the same while the function is unchanged, on every

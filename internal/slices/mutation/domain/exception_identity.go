@@ -215,7 +215,7 @@ func recordedSurvivor(ctx context.Context, f *lang.File, path string, unit int, 
 		}
 		for _, m := range fn.Mutants {
 			if m.Key() == s.Key() {
-				if err := survived(m.Outcome); err != nil {
+				if err := survived(m.Outcome, m.Flaky); err != nil {
 					err.Line, err.Column = s.Line, s.Column
 					return err
 				}
@@ -226,12 +226,15 @@ func recordedSurvivor(ctx context.Context, f *lang.File, path string, unit int, 
 }
 
 // survived refuses a mutant recorded as outcome unless it survived: an
-// uncovered one on purpose, as no exception covers it.
-func survived(outcome string) *NoSurvivorError {
-	switch outcome {
-	case Survived:
+// uncovered one on purpose, as no exception covers it, and a flaky one,
+// whose survival is not trusted.
+func survived(outcome string, flaky bool) *NoSurvivorError {
+	switch {
+	case flaky:
+		return &NoSurvivorError{Reason: "its mutant is recorded flaky, which its tests must settle, and only a survivor is excepted"}
+	case outcome == Survived:
 		return nil
-	case Uncovered:
+	case outcome == Uncovered:
 		return &NoSurvivorError{Reason: "its mutant is recorded uncovered", Uncovered: true}
 	}
 	return &NoSurvivorError{Reason: fmt.Sprintf("its mutant is recorded %s, and only a survivor is excepted", outcome)}

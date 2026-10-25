@@ -179,7 +179,7 @@ func Survivor(ctx context.Context, path string, line, column int, opt CheckOptio
 				if m.Key() != s.Key() {
 					continue
 				}
-				if err := survived(m.Outcome); err != nil {
+				if err := survived(m.Outcome, m.Flaky); err != nil {
 					return Exception{}, err
 				}
 				return Exception{File: c.Key, Function: fn.Function, Hash: UnitHash(f, u),

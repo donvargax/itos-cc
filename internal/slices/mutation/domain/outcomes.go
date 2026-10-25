@@ -28,6 +28,10 @@ type MutantResult struct {
 	// otherwise why it is not; empty in other runs, where every mutant
 	// listed has its outcome.
 	State string
+	// Outcomes is, for a mutant this run found flaky, every outcome its
+	// runs gave, in run order, Outcome their first; nil for any other
+	// (Mutant.Flaky).
+	Outcomes []string
 }
 
 // skipped marks a site of a function not judged that has no outcome to keep:

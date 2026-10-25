@@ -140,12 +140,14 @@ func OnSites(entry *UnitResult, hash string, sites []Site) *UnitResult {
 			continue
 		}
 		out.Sites--
-		switch m.Outcome {
-		case Killed, Timeout, OverLimit:
+		switch {
+		case m.Flaky:
+			// Counted neither killed nor survived.
+		case Noticed(m.Outcome):
 			out.Killed--
-		case Survived:
+		case m.Outcome == Survived:
 			out.Survived--
-		case Uncovered:
+		case m.Outcome == Uncovered:
 			out.Uncovered--
 		}
 	}
@@ -209,8 +211,8 @@ type FunctionCheck struct {
 
 // NeedsMutationCoverage reports whether Run must test at least one mutant.
 // Fresh kills, timeouts, runs over a limit, uncovered outcomes and
-// excepted survivors are reusable; a changed/missing function or ordinary
-// survivor is not.
+// excepted survivors are reusable; a changed/missing function, an ordinary
+// survivor or a flaky mutant is not.
 func NeedsMutationCoverage(checks []FileCheck, mutateAll bool) bool {
 	if mutateAll {
 		return true
@@ -221,7 +223,7 @@ func NeedsMutationCoverage(checks []FileCheck, mutateAll bool) bool {
 				return true
 			}
 			for _, mutant := range function.Mutants {
-				if mutant.Outcome == Survived && mutant.Excepted == "" {
+				if mutant.Flaky || mutant.Outcome == Survived && mutant.Excepted == "" {
 					return true
 				}
 			}

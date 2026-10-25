@@ -157,6 +157,10 @@ func (p *Presentation) sampledFile(f mutants.SampledFile, result *sampleResult, 
 	}
 }
 
+// flakyFix is the fix of a flaky mutant, sampled or recorded: no mutation
+// run helps it, only tests that decide it the same way every run.
+const flakyFix = "Make its tests deterministic, seeding their randomness and settling their timing, and commit them."
+
 // Flaky lists sampled mutant m of file rel on stdout, as "flaky
 // <original> → <replacement> in <function>, <file> line <line> column
 // <column>: recorded <outcome>, now <outcome>, <outcome>", every outcome
@@ -172,7 +176,7 @@ func (p *Presentation) Flaky(rel string, m mutants.SampledMutant) {
 	problem := cli.NewProblem(cli.CodeNo, "mutation.flaky",
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s was recorded %s, and its runs now gave %s: its tests decide it differently with nothing changed",
 			rel, m.Line, m.Column, Quote(m.Original), Quote(m.Replacement), m.Function, m.Recorded, now),
-		"Make its tests deterministic, seeding their randomness and settling their timing, and commit them.").
+		flakyFix).
 		With("file", rel).With("line", m.Line).With("column", m.Column).With("function", m.Function).
 		With("original", m.Original).With("replacement", m.Replacement).
 		With("recorded", m.Recorded).With("outcome", m.Outcome).With("outcomes", m.Outcomes).With("scope", m.Scope)

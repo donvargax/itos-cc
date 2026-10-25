@@ -83,6 +83,7 @@ func plan(ctx context.Context, files []string, opt Options) ([]*Execution, error
 		s.limits = make([]string, len(s.sites))
 		s.ran = make([][]string, len(s.sites))
 		s.fresh = make([]freshOutcome, len(s.sites))
+		s.flakes = make([][]string, len(s.sites))
 		scope := ScopeForCommand(opt.TestCommand, opt.AllTests, s.command)
 		for i, site := range s.sites {
 			// A kept outcome keeps the scope it was decided with.
@@ -93,7 +94,7 @@ func plan(ctx context.Context, files []string, opt Options) ([]*Execution, error
 				s.outcomes[i] = Skipped
 				if outcome := prev[site.Unit][site.Key()]; outcome != "" {
 					d := prevScopes[site.Unit][site.Key()]
-					s.outcomes[i], s.scopes[i], s.limits[i], s.ran[i] = outcome, d.Scope, d.Limit, d.Tests
+					s.outcomes[i], s.scopes[i], s.limits[i], s.ran[i], s.flakes[i] = outcome, d.Scope, d.Limit, d.Tests, d.Flaky
 				}
 				continue
 			}
@@ -104,16 +105,35 @@ func plan(ctx context.Context, files []string, opt Options) ([]*Execution, error
 			broad := Mutant{Scope: d.Scope, SuiteEvidence: d.Evidence}
 			broadStale := len(BroadChanges(broad, s.suite.Of(broad.TestScope()), opt.Support)) > 0
 			if outcome := prev[site.Unit][site.Key()]; outcome != "" && !restsOnChange && !broadStale {
-				s.fresh[i] = freshOutcome{outcome: outcome, scope: d.Scope, limit: d.Limit, tests: d.Tests}
+				s.fresh[i] = freshOutcome{outcome: outcome, scope: d.Scope, limit: d.Limit, tests: d.Tests, flaky: d.Flaky}
 			}
-			if outcome, ok := prev.Kept(f, site, excepted); ok && !opt.MutateAll && !restsOnChange && !broadStale {
+			// A flaky mutant is never reused: it is judged again.
+			if outcome, ok := prev.Kept(f, site, excepted); ok && d.Flaky == nil && !opt.MutateAll && !restsOnChange && !broadStale {
 				s.outcomes[i], s.scopes[i], s.limits[i], s.ran[i] = outcome, d.Scope, d.Limit, d.Tests
 				s.reused[i] = true
 				s.result.Reused++
+				continue
 			}
+			s.recheck(i)
 		}
 	}
 	return states, nil
+}
+
+// recheck has site i's mutant, which runs, judged against the outcome its
+// snapshot records that still holds, as a sample judges it (slice-57): a
+// survivor, or a kill --mutate-all runs again, whose outcome now
+// disagrees runs again up to Reruns times, and is flaky when one of those
+// runs agrees (Classify); one recorded flaky runs until its first run and
+// its Reruns agree, and is flaky again once one does not (Settled). Any
+// other mutant runs once.
+func (s *Execution) recheck(i int) {
+	switch f := s.fresh[i]; {
+	case f.flaky != nil:
+		s.Recheck(i, Flaky)
+	case f.outcome == Survived || Noticed(f.outcome):
+		s.Recheck(i, f.outcome)
+	}
 }
 
 // coverageEvidence is the measured coverage evidence of each unit of the
@@ -164,6 +184,10 @@ func (s *Execution) decided() []MutantResult {
 			continue
 		}
 		reason, stale := s.excepted.Judge(i, site, s.outcomes[i])
+		if s.flaky(i) != nil {
+			// No exception takes a flaky mutant, nor goes stale by it.
+			reason, stale = "", nil
+		}
 		if stale != nil {
 			s.result.StaleExceptions = append(s.result.StaleExceptions, *stale)
 		}
@@ -187,7 +211,7 @@ func (s *Execution) decided() []MutantResult {
 			limit = s.limits[i]
 		}
 		out = append(out, MutantResult{Site: site, Function: id, Outcome: s.outcomes[i], Limit: limit, Reused: s.reused[i], Scope: scope,
-			Excepted: reason, Coverage: covered, Tests: ran, State: state})
+			Excepted: reason, Coverage: covered, Tests: ran, State: state, Outcomes: slices.Clone(s.flaky(i))})
 	}
 	slices.SortStableFunc(out, func(a, b MutantResult) int { return LineOrder(a.Site, b.Site) })
 	return out

@@ -76,3 +76,28 @@ func TestAnOverLimitOutcomeRecordsItsCap(t *testing.T) {
 		t.Errorf("a timed-out mutant written as %s", killed)
 	}
 }
+
+// A flaky mutant is written with "flaky" and its "outcomes", and reads
+// back so; any other mutant is written with neither, as before.
+func TestAFlakyMutantKeepsItsOutcomesAndAnotherHasNeitherKey(t *testing.T) {
+	flaky := mutants.Mutant{Line: 5, Column: 9, Original: ">", Replacement: ">=", Outcome: mutants.Killed, Flaky: true,
+		Outcomes: []string{mutants.Killed, mutants.Survived}}
+	data, err := json.Marshal(MutantJSON(flaky))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), `"flaky":true,"outcomes":["killed","survived"]`) {
+		t.Errorf("flaky mutant written as %s", data)
+	}
+	var read mutants.Mutant
+	if err := ReadMutantJSON(data, &read); err != nil || !reflect.DeepEqual(read, flaky) {
+		t.Errorf("read back %+v, %v; want %+v", read, err, flaky)
+	}
+	data, err = json.Marshal(MutantJSON(mutants.Mutant{Original: ">", Replacement: ">=", Outcome: mutants.Killed}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), "flaky") || strings.Contains(string(data), "outcomes") {
+		t.Errorf("a mutant that is not flaky written as %s", data)
+	}
+}

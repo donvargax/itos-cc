@@ -467,7 +467,11 @@ test. What keeps `mutation run` fast:
   test file that imports the function's file. Killed mutants of unchanged
   functions stay killed while those tests are unchanged too, as do the
   survivors `itos-cc.yaml` excepts; other survivors, changed functions, and
-  every function of a file whose tests changed rerun.
+  every function of a file whose tests changed rerun. A survivor that is
+  now killed, or with `--mutate-all` a kill that now survives, runs up to
+  twice more: if one of those runs agrees with the recording, its tests
+  decide it differently with nothing changed, and it is recorded flaky
+  (below).
 - **Coverage first.** Mutants on lines no test executes are reported as
   uncovered and never run.
 - **Narrow, fail-fast test runs.** The file's own Go package (`-failfast`),
@@ -929,8 +933,9 @@ commits changed needs results for its code as committed. A function with no
 entry in `.metrics/mutate/` is `mutation.missing`, one changed since its
 entry is `mutation.stale` (a move is not a change), as is every function of
 a file whose tests changed (below), and a fresh entry fails
-on a recorded survivor, or an uncovered mutant with `--fail-uncovered`; each
-exits 1. A mutant an entry records at a site its unchanged function no
+on a recorded survivor, on a recorded flaky mutant as `mutation.flaky`, with
+its outcomes and the fix to make its tests deterministic, or on an
+uncovered mutant with `--fail-uncovered`; each exits 1. A mutant an entry records at a site its unchanged function no
 longer holds, as when a newer itos-cc removes a mutation operator, is not in
 the code: `mutation check` leaves it out of the verdict and the counts, and
 the next `mutation run` drops it from the entry, reusing the rest; `mutation
@@ -1191,16 +1196,24 @@ so its survivors run them (T-46). Raw coverage under
 
 Results go to `.metrics/mutate/<file>.json`, and a summary comment is kept at
 the end of each source file (`--no-annotate` turns it off): its counts, each
-survivor, and each survivor `itos-cc.yaml` excepts, counted and listed apart
-with its reason, whichever functions the run judged. Each line names its
+survivor, each flaky mutant, and each survivor `itos-cc.yaml` excepts,
+counted and listed apart with its reason, whichever functions the run
+judged. Each line names its
 function, a method with its class (`Board#count`) and a function at the
-file's top level by its bare name. A surviving
-mutant, an uncovered one with `--fail-uncovered`, or tests that fail before
-any mutant, exits 1. `--json` lists each file's `mutants` in site order,
+file's top level by its bare name. A flaky mutant, one whose runs in this run disagreed with its
+recording and then agreed, is recorded with `"flaky": true` and its
+`"outcomes"` in run order, counts as neither killed nor survived, is
+listed after the survivors as `flaky … : killed, survived`, and fails as
+`mutation.flaky`; no exception takes it. It is never reused: the next run
+judges it again, up to three times, and records it without the keys once
+all three agree. A surviving
+mutant, a flaky one, an uncovered one with `--fail-uncovered`, or tests
+that fail before any mutant, exits 1. `--json` lists each file's `mutants` in site order,
 each with the keys `mutation list` gives a site, its `outcome` (`killed`,
 `survived`, `timeout` or `over-limit`, which count as killed, the latter
 with its `limit`, or `uncovered`), and `reused`,
-true when the outcome came from the snapshot without running; with
+true when the outcome came from the snapshot without running, a flaky one
+with `flaky` and its `outcomes`, the file counting them as `flaky`; with
 `--since`, only the judged functions' mutants, and none for a file whose
 baseline failed. Each file's `baseline` says whether this run ran its own
 tests without any mutant: `passed` means they ran and passed in this run,

@@ -150,6 +150,12 @@ type mutantWire struct {
 	// as a run or a check judged it; never written to the snapshot, which
 	// records the survivor as it is.
 	Excepted string `json:"-"`
+	// Flaky marks a mutant its tests decided differently from run to run
+	// in one mutation run, Outcomes holding every outcome its runs gave,
+	// in run order; both left out when it is not flaky, so a snapshot
+	// written before reads and is written as before.
+	Flaky    bool     `json:"flaky,omitempty"`
+	Outcomes []string `json:"outcomes,omitempty"`
 }
 
 // UnmarshalJSON reads a mutant, its evidence under suite_evidence or, as Go
@@ -265,6 +271,8 @@ func mutantWireOf(v mutants.Mutant) mutantWire {
 	out.Tests = v.Tests
 	out.SuiteEvidence = v.SuiteEvidence
 	out.Excepted = v.Excepted
+	out.Flaky = v.Flaky
+	out.Outcomes = v.Outcomes
 	return out
 }
 
@@ -281,6 +289,8 @@ func (v mutantWire) domain() mutants.Mutant {
 	out.Tests = v.Tests
 	out.SuiteEvidence = v.SuiteEvidence
 	out.Excepted = v.Excepted
+	out.Flaky = v.Flaky
+	out.Outcomes = v.Outcomes
 	return out
 }
 

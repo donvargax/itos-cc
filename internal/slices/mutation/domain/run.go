@@ -127,11 +127,15 @@ type Execution struct {
 	// StateBlocked, or "" (see stateOf).
 	failFast  bool
 	undecided []string
-	// recorded is, by site, the outcome a sample's snapshot records for
-	// the mutant it runs again (Recheck), and nil outside a sample;
-	// trials, by site, every outcome its runs gave, in run order.
+	// recorded is, by site, the outcome the snapshot records for a mutant
+	// its outcome now is judged against (Recheck), Flaky for one it
+	// records flaky, "" for any other, and nil when there is none;
+	// trials, by site, every outcome its runs gave, in run order; flakes,
+	// by site, those outcomes once they say it is flaky, or, for a site
+	// of a function not judged, those its snapshot records it flaky with.
 	recorded []string
 	trials   [][]string
+	flakes   [][]string
 	// fresh is, by site of a function judged, the outcome the snapshot
 	// before this run records for it that still holds, whether or not this
 	// run reuses it, with what decided it; zero where none does. A
@@ -145,6 +149,8 @@ type Execution struct {
 type freshOutcome struct {
 	outcome, scope, limit string
 	tests                 []string
+	// flaky is the outcomes it is recorded flaky with, or nil.
+	flaky []string
 }
 
 // Run mutates files and writes their snapshots. It returns one FileResult per
@@ -272,11 +278,12 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 		// and what still holds of the snapshot before (ADR-0022), and
 		// without its summary comment.
 		incomplete := s.failFast && s.incomplete()
-		outcomes, scopes, limits, ran := s.outcomes, s.scopes, s.limits, s.ran
+		outcomes, scopes, limits, ran, flakes := s.outcomes, s.scopes, s.limits, s.ran, s.flakes
 		if incomplete {
-			outcomes, scopes, limits, ran = s.preserved()
+			outcomes, scopes, limits, ran, flakes = s.preserved()
 		}
 		s.result.Snapshot = BuildLimited(s.file, s.key, s.tests, s.sites, outcomes, scopes, limits, ran)
+		MarkFlaky(&s.result.Snapshot, s.sites, flakes)
 		if (opt.StatementCoverage != nil || opt.CachedCoverage != nil) && StrictCoverage(s.file.Spec.Name) {
 			evidence, err := s.coverageEvidence(ctx, opt)
 			if err != nil {

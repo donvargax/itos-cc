@@ -15,11 +15,14 @@ type runFile struct {
 	Killed   int    `json:"killed"`
 	Survived int    `json:"survived"`
 	// Excepted is the survivors itos-cc.yaml excepts, not in Survived.
-	Excepted  int    `json:"excepted"`
-	Uncovered int    `json:"uncovered"`
-	Ran       int    `json:"ran"`
-	Reused    int    `json:"reused"`
-	Baseline  string `json:"baseline"`
+	Excepted  int `json:"excepted"`
+	Uncovered int `json:"uncovered"`
+	// Flaky is the mutants its tests decided differently from run to run,
+	// in neither Killed nor Survived; left out when there are none.
+	Flaky    int    `json:"flaky,omitempty"`
+	Ran      int    `json:"ran"`
+	Reused   int    `json:"reused"`
+	Baseline string `json:"baseline"`
 	// Judged is there only with --since, empty when no function changed.
 	Judged []string `json:"judged,omitzero"`
 	// Mutants is every mutant of the functions judged, in site order;
@@ -95,6 +98,11 @@ type runMutant struct {
 	// State is there with --fail-fast only: "completed", "cancelled",
 	// "unattempted" or "blocked".
 	State string `json:"state,omitempty"`
+	// Flaky and Outcomes are there only for a mutant its tests decided
+	// differently from run to run: every outcome its runs gave, in run
+	// order, Outcome their first.
+	Flaky    bool     `json:"flaky,omitempty"`
+	Outcomes []string `json:"outcomes,omitempty"`
 }
 
 type runResult struct {
@@ -346,14 +354,18 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 			f.Survived += u.Survived - excepted
 			f.Excepted += excepted
 			f.Uncovered += u.Uncovered
+			f.Flaky += FlakyIn(u.Mutants)
 		}
 		result.Files = append(result.Files, f)
 		if !c.JSON {
-			// "excepted" only where there is one, so a project with no
-			// exceptions reads as it always did.
+			// "excepted" and "flaky" only where there is one, so a
+			// project with neither reads as it always did.
 			counts := fmt.Sprintf("%d killed, %d survived, %d uncovered", f.Killed, f.Survived, f.Uncovered)
 			if f.Excepted > 0 {
 				counts = fmt.Sprintf("%d killed, %d survived, %d excepted, %d uncovered", f.Killed, f.Survived, f.Excepted, f.Uncovered)
+			}
+			if f.Flaky > 0 {
+				counts += fmt.Sprintf(", %d flaky", f.Flaky)
 			}
 			line := fmt.Sprintf("%s in %s (ran %d, reused %d)", counts, p.plain(r.Rel), f.Ran, f.Reused)
 			if r.Judged != nil {
@@ -370,8 +382,7 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 		}
 		if r.Incomplete {
 			for _, m := range r.Mutants {
-				p.Failed(r.Rel, m.Function, []mutants.Mutant{{Line: m.Line, Column: m.Column, Original: m.Original,
-					Replacement: m.Replacement, Outcome: m.Outcome, Excepted: m.Excepted}}, uncoveredFails(failUncovered, scope, r.Rel))
+				p.Failed(r.Rel, m.Function, []mutants.Mutant{incompleteMutant(m)}, uncoveredFails(failUncovered, scope, r.Rel))
 			}
 		}
 		p.StaleExceptions(ctx, r.Rel, r.StaleExceptions)
@@ -453,13 +464,20 @@ func snapshotKept(r mutants.FileResult) string {
 	return "snapshot not updated"
 }
 
+// incompleteMutant is m, a mutant a fail-fast stop's file lists, as a
+// snapshot records it, flaky when this run found it so.
+func incompleteMutant(m mutants.MutantResult) mutants.Mutant {
+	return mutants.Mutant{Line: m.Line, Column: m.Column, Original: m.Original, Replacement: m.Replacement, Outcome: m.Outcome,
+		Scope: mutants.RecordedScope(m.Scope), Excepted: m.Excepted, Flaky: m.Outcomes != nil, Outcomes: m.Outcomes}
+}
+
 // jsonMutants is the --json form of mutants.
 func jsonMutants(items []mutants.MutantResult) []runMutant {
 	out := []runMutant{}
 	for _, m := range items {
 		out = append(out, runMutant{Line: m.Line, Column: m.Column, Function: m.Function,
 			Original: m.Original, Replacement: m.Replacement, Outcome: m.Outcome, Limit: m.Limit, Reused: m.Reused, Scope: m.Scope, Excepted: m.Excepted,
-			Coverage: m.Coverage, Tests: m.Tests, State: m.State})
+			Coverage: m.Coverage, Tests: m.Tests, State: m.State, Flaky: m.Outcomes != nil, Outcomes: m.Outcomes})
 	}
 	return out
 }
@@ -470,6 +488,8 @@ func jsonMutants(items []mutants.MutantResult) []runMutant {
 func countMutants(f *runFile, items []mutants.MutantResult) {
 	for _, m := range items {
 		switch {
+		case m.Outcomes != nil:
+			f.Flaky++
 		case mutants.Noticed(m.Outcome):
 			f.Killed++
 		case m.Outcome == mutants.Survived && m.Excepted != "":

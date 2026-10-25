@@ -21,8 +21,8 @@ mutation run runs only those; a mutant an entry records at a site the
 unchanged function no longer holds, as when a newer itos-cc removes a
 mutation operator, is not in the code: it is left out of the verdict and
 the counts, and mutation run drops it from the entry, reusing the rest; and
-a fresh entry fails on each survivor it records, and
-with --fail-uncovered on each uncovered mutant it records. A function with no
+a fresh entry fails on each survivor it records, on each flaky mutant
+it records, and with --fail-uncovered on each uncovered mutant it records. A function with no
 mutation site needs no mutation results, but with --fail-uncovered every
 judged Go function also needs fresh independent executable coverage evidence,
 including zero-site functions. Uncovered executable blocks and missing or
@@ -49,6 +49,14 @@ with that fingerprint, whatever else its file holds and whichever file
 names it, and its kill is stale, naming the test, when the fingerprint
 changed or the test is no longer listed. The list command runs, once, only
 when the file of such a test changed; one that fails is tests.list-failed.
+
+A flaky mutant is one whose tests decided it differently from run to run
+in one mutation run, with nothing changed: its entry records "flaky": true
+and "outcomes", every outcome its runs gave in run order. It counts as
+neither killed nor survived, and fails as mutation.flaky, with the outcome
+recorded, its first, and its outcomes, until a mutation run judges it the
+same way three times; its fix is to make its tests deterministic and
+commit them. No exception takes one.
 
 A survivor that itos-cc.yaml excepts (see mutation except) fails nothing.
 An exception that no longer holds fails as mutation.exception-stale, as in
@@ -102,6 +110,7 @@ each problem, a line each:
   stale <file>:<line> in <namespace#name>
   survived ` + "`original` → `replacement`" + ` in <namespace#name>, <file> line <line> column <column>
   uncovered ` + "`original` → `replacement`" + ` in <namespace#name>, <file> line <line> column <column>
+  flaky ` + "`original` → `replacement`" + ` in <namespace#name>, <file> line <line> column <column>: <outcome>, <outcome>
   exception-stale ` + "`original` → `replacement`" + ` in <namespace#name>, <file> line <line> column <column> (<why>)
 the place being the file alone when the function or the file is gone, and
 the why "moved to <file>" when the function is in another file now. The line of a missing or stale function is where it starts now.
@@ -111,7 +120,8 @@ gets a note, which fails nothing:
 the line being where it starts now. With --json,
 "functions" holds the functions checked, in the file's order, with the
 counts their entry records, less mutants at sites gone, zero when missing; an excepted survivor counts
-in "excepted", not "survived"; and "left_out" counts a fresh function's
+in "excepted", not "survived", and a flaky mutant in neither; and
+"left_out" counts a fresh function's
 mutants at sites gone, when it has any.`,
 		JSON: `"files": [{"file", "functions": [{"function",
    "state": "fresh"|"stale"|"missing", "killed", "survived", "excepted",
@@ -127,6 +137,7 @@ mutants at sites gone, when it has any.`,
 			"mutation.stale            a function, or a test that imports its file, changed since its results, or they never recorded one of its sites: file, line, function",
 			"mutation.survived         its results record a survivor: file, line, column, function, original, replacement",
 			"mutation.uncovered        with --fail-uncovered, its results record an uncovered mutant: file, line, column, function, original, replacement",
+			"mutation.flaky            its results record a flaky mutant: file, line, column, function, original, replacement, recorded, outcome, outcomes, scope",
 			"mutation.uncovered-statement with --fail-uncovered, a measured Go coverage block or Python, TypeScript, Kotlin or Dart line is uncovered: file, function, line",
 			"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript, Kotlin or Dart function lacks complete measured coverage evidence: file, function, line",
 			"mutation.coverage-stale    with --fail-uncovered, Go, Python, TypeScript, Kotlin or Dart coverage inputs changed since measurement: file, function, line",
@@ -139,8 +150,8 @@ mutants at sites gone, when it has any.`,
 			"flags.conflict            --since with --changed, or --fail-uncovered=lines without --since: flag",
 		},
 		Exits: []cli.Exit{
-			{Code: 0, Meaning: "every function checked has fresh results, and none records a survivor"},
-			{Code: 1, Meaning: "a function's results are missing or stale, or record a survivor itos-cc.yaml does not except, or an uncovered mutant, Go executable block or Python, TypeScript, Kotlin or Dart line, or missing/stale Go, Python, TypeScript, Kotlin or Dart coverage evidence with --fail-uncovered; or an exception is stale; or the list command of mutation.tests failed"},
+			{Code: 0, Meaning: "every function checked has fresh results, and none records a survivor or a flaky mutant"},
+			{Code: 1, Meaning: "a function's results are missing or stale, or record a survivor itos-cc.yaml does not except, a flaky mutant, or an uncovered mutant, Go executable block or Python, TypeScript, Kotlin or Dart line, or missing/stale Go, Python, TypeScript, Kotlin or Dart coverage evidence with --fail-uncovered; or an exception is stale; or the list command of mutation.tests failed"},
 			{Code: cli.CodeUsage, Meaning: "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, or an itos-cc.yaml that cannot be read"},
 			{Code: cli.CodeEnvironment, Meaning: "--changed or --since outside a git repository"},
 		},

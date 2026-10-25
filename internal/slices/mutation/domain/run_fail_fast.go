@@ -161,13 +161,17 @@ func coverageStop(ctx context.Context, states []*Execution, opt Options, ff *Fai
 	return nil, nil
 }
 
-// actionable is the stop the outcome of site i makes final, or nil: an
-// unexcepted survivor, or an excepted mutant the tests now kill, whose
-// exception no longer holds.
+// actionable is the stop the outcome of site i makes final, or nil: a
+// flaky mutant, an unexcepted survivor, or an excepted mutant the tests
+// now kill, whose exception no longer holds.
 func (s *Execution) actionable(i int) *Stop {
 	site := s.sites[i]
 	u := s.file.Units[site.Unit]
 	e, excepted := s.excepted.Held[i]
+	if s.flaky(i) != nil {
+		// Neither of its outcomes is trusted, and no exception takes it.
+		return &Stop{Rule: "mutation.flaky", File: s.rel, Function: UnitID(u.Namespace, u.Name), Site: &site}
+	}
 	switch s.outcomes[i] {
 	case Survived:
 		if !excepted {
@@ -219,14 +223,14 @@ func (s *Execution) incomplete() bool {
 // decided it, so a stop never overwrites a valid CommandResult with nothing, a
 // cancelled --mutate-all rerun's included. A site with neither stays
 // undecided, which leaves it out of the snapshot.
-func (s *Execution) preserved() (outcomes, scopes, limits []string, ran [][]string) {
-	outcomes, scopes, limits, ran = slices.Clone(s.outcomes), slices.Clone(s.scopes), slices.Clone(s.limits), slices.Clone(s.ran)
+func (s *Execution) preserved() (outcomes, scopes, limits []string, ran, flakes [][]string) {
+	outcomes, scopes, limits, ran, flakes = slices.Clone(s.outcomes), slices.Clone(s.scopes), slices.Clone(s.limits), slices.Clone(s.ran), slices.Clone(s.flakes)
 	for i, o := range outcomes {
 		if f := s.fresh[i]; o == "" && f.outcome != "" {
-			outcomes[i], scopes[i], limits[i], ran[i] = f.outcome, f.scope, f.limit, f.tests
+			outcomes[i], scopes[i], limits[i], ran[i], flakes[i] = f.outcome, f.scope, f.limit, f.tests, f.flaky
 		}
 	}
-	return outcomes, scopes, limits, ran
+	return outcomes, scopes, limits, ran, flakes
 }
 
 // judgedAnew says whether the run decided a site of a function judged

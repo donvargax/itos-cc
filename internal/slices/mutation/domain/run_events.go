@@ -58,13 +58,17 @@ func (s *Execution) Pending(site int, ids []string) {
 func (s *Execution) Result() *FileResult     { return s.result }
 func (s *Execution) Outcome(site int) string { return s.outcomes[site] }
 
-// Recheck has a sample judge site's mutant against recorded, the outcome
-// its snapshot records: it runs again, in the same worker and scope,
-// while its outcomes leave it undecided (Classify), each kept in run
-// order (Outcomes).
+// Recheck has a sample or a run judge site's mutant against recorded,
+// the outcome its snapshot records, or Flaky for one it records flaky: it
+// runs again, in the same worker and scope, while its outcomes leave it
+// undecided (Classify, or Settled for Flaky), each kept in run order
+// (Outcomes).
 func (s *Execution) Recheck(site int, recorded string) {
 	if s.recorded == nil {
 		s.recorded, s.trials = make([]string, len(s.sites)), make([][]string, len(s.sites))
+	}
+	if s.flakes == nil {
+		s.flakes = make([][]string, len(s.sites))
 	}
 	s.recorded[site] = recorded
 }
@@ -73,15 +77,38 @@ func (s *Execution) Recheck(site int, recorded string) {
 // in run order.
 func (s *Execution) Outcomes(site int) []string { return slices.Clone(s.trials[site]) }
 
-// tried keeps outcome, of a run of site's mutant, among its trials in a
-// sample, and says whether it runs again: while its outcomes leave it
-// undecided. Outside a sample it keeps nothing, and no mutant runs again.
+// tried keeps outcome, of a run of site's mutant, among its trials when
+// it is rechecked, and says whether it runs again: while its outcomes
+// leave it undecided. Once they say it is flaky, they are its flakes. A
+// mutant not rechecked keeps nothing, and never runs again.
 func (s *Execution) tried(site int, outcome string) bool {
-	if s.recorded == nil {
+	if s.recorded == nil || s.recorded[site] == "" {
 		return false
 	}
 	s.trials[site] = append(s.trials[site], outcome)
-	return Classify(s.recorded[site], s.trials[site]) == ""
+	verdict := Classify(s.recorded[site], s.trials[site])
+	if s.recorded[site] == Flaky {
+		verdict = Settled(s.trials[site])
+	}
+	if verdict == Flaky {
+		s.flakes[site] = slices.Clone(s.trials[site])
+	}
+	return verdict == ""
+}
+
+// flaky is the outcomes site's mutant is flaky with, or nil.
+func (s *Execution) flaky(site int) []string {
+	if s.flakes == nil {
+		return nil
+	}
+	return s.flakes[site]
+}
+
+// again says whether site's mutant ran before in this run: a run again
+// only adds its outcome to the mutant's trials, the first run's outcome
+// being the one it records.
+func (s *Execution) again(site int) bool {
+	return s.trials != nil && len(s.trials[site]) > 0
 }
 
 // Execute runs already-admitted judgments. It does no planning/publication and

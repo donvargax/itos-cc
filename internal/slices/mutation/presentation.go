@@ -75,9 +75,13 @@ func (p *Presentation) baselineFailed(rel, copied string, leftOut []string, done
 		"If its tests read what it left out, name it in mutation.copy in itos-cc.yaml, such as mutation: {copy: ["+example+"]}; else they read something outside "+name+", which the copy holds alone.").With("file", rel)
 }
 
+// Failed reports each survivor of items, mutants of function in the file
+// rel, and, with failUncovered, each uncovered mutant on a line it fails,
+// then each flaky one, which is neither (flaky).
 func (p *Presentation) Failed(rel, function string, items []mutants.Mutant, failUncovered func(line int) bool) {
 	for _, m := range items {
 		switch {
+		case m.Flaky:
 		case m.Outcome == mutants.Survived && m.Excepted == "":
 			p.Mutant(rel, function, m, "mutation.survived", "survived", "survived",
 				fmt.Sprintf("Add a test that fails with this change. If no test can, as the change changes no behaviour, except it with 'itos-cc mutation except %s:%d:%d --reason …'.",
@@ -87,6 +91,35 @@ func (p *Presentation) Failed(rel, function string, items []mutants.Mutant, fail
 				"Add a test that executes this line and fails with this change.")
 		}
 	}
+	for _, m := range items {
+		if m.Flaky {
+			p.flaky(rel, function, m)
+		}
+	}
+}
+
+// flaky lists m, a flaky mutant of function in the file rel, on stdout,
+// as "flaky <original> → <replacement> in <function>, <file> line <line>
+// column <column>: <outcome>, <outcome>", every outcome its runs gave in
+// run order, and reports it as mutation.flaky, with a sampled mutant's
+// fields: recorded and outcome its first outcome, outcomes, and scope. Its
+// tests decide it differently with nothing changed, so the fix is
+// sample's, in them.
+func (p *Presentation) flaky(rel, function string, m mutants.Mutant) {
+	now := strings.Join(m.Outcomes, ", ")
+	if !p.JSON {
+		_, _ = fmt.Fprintf(p.UI.Stdout, "  flaky %s → %s in %s, %s: %s\n",
+			Quote(m.Original), Quote(m.Replacement), function, SiteAt(p.plain(rel), m.Line, m.Column), now)
+	}
+	problem := cli.NewProblem(cli.CodeNo, "mutation.flaky",
+		fmt.Sprintf("%s:%d:%d: %s → %s in %s is flaky: its runs gave %s, so its tests decide it differently with nothing changed",
+			rel, m.Line, m.Column, Quote(m.Original), Quote(m.Replacement), function, now),
+		flakyFix).
+		With("file", rel).With("line", m.Line).With("column", m.Column).With("function", function).
+		With("original", m.Original).With("replacement", m.Replacement).
+		With("recorded", m.Outcome).With("outcome", m.Outcome).With("outcomes", m.Outcomes).With("scope", m.TestScope())
+	problem.Shown = true
+	p.report(problem)
 }
 
 func (p *Presentation) Mutant(rel, function string, m mutants.Mutant, rule, what, verdict, fix string) {

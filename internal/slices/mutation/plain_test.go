@@ -90,3 +90,57 @@ func TestASampledFileWhoseListedTestsFailNamesItAfterTheVerdict(t *testing.T) {
 		t.Errorf("files %+v, problems %v: want src/board.go's baseline failed and tests.selection-failed", result.Files, p.Problems)
 	}
 }
+
+func TestARunsFlakyMutantCountsApartAndIsListedAfterTheSurvivors(t *testing.T) {
+	t.Parallel()
+	var stdout bytes.Buffer
+	p := &Presentation{UI: &cli.UI{Stdout: &stdout, Stderr: &bytes.Buffer{}}}
+	flaky := mutants.Mutant{Line: 5, Column: 9, Original: ">", Replacement: ">=", Outcome: mutants.Survived, Flaky: true,
+		Outcomes: []string{mutants.Survived, mutants.Killed}}
+	survivor := mutants.Mutant{Line: 6, Column: 3, Original: "<", Replacement: "<=", Outcome: mutants.Survived}
+	found := RunFound{Results: []mutants.FileResult{{Rel: "src/board.go", Ran: 3, Snapshot: mutants.Snapshot{Units: []mutants.UnitResult{
+		{Namespace: "board", Name: "place", Survived: 1, Mutants: []mutants.Mutant{flaky, survivor}}}},
+		Mutants: []mutants.MutantResult{{Site: mutants.Site{Line: 5, Column: 9, Original: ">", Replacement: ">="}, Function: "board#place",
+			Outcome: mutants.Survived, Outcomes: flaky.Outcomes}}}}}
+	result := runResult{}
+	Run{}.present(t.Context(), p, found, &result, false)
+	wantLines(t, "plain output", plainLines(t, &stdout),
+		"0 killed, 1 survived, 0 uncovered, 1 flaky in src/board.go (ran 3, reused 0)",
+		"  survived `<` → `<=` in board#place, src/board.go line 6 column 3",
+		"  flaky `>` → `>=` in board#place, src/board.go line 5 column 9: survived, killed",
+	)
+	if f := result.Files[0]; f.Flaky != 1 || f.Survived != 1 || !f.Mutants[0].Flaky || len(f.Mutants[0].Outcomes) != 2 {
+		t.Errorf("--json file %+v, want 1 flaky beside 1 survived and the mutant flaky with its outcomes", f)
+	}
+	if len(p.Problems) != 2 || p.Problems[0].Rule != "mutation.survived" || p.Problems[1].Rule != "mutation.flaky" {
+		t.Fatalf("problems %v, want mutation.survived, then mutation.flaky", p.Problems)
+	}
+	problem := p.Problems[1]
+	for key, want := range map[string]any{"file": "src/board.go", "line": 5, "column": 9, "function": "board#place", "original": ">",
+		"replacement": ">=", "recorded": mutants.Survived, "outcome": mutants.Survived, "scope": mutants.ScopeOwn} {
+		if got := problem.Subject(key); got != want {
+			t.Errorf("mutation.flaky's %s is %v, want %v", key, got, want)
+		}
+	}
+	if problem.Fix != flakyFix {
+		t.Errorf("mutation.flaky's fix %q, want sample's", problem.Fix)
+	}
+}
+
+func TestAFlakyMutantAStopListsCountsApart(t *testing.T) {
+	t.Parallel()
+	var stdout bytes.Buffer
+	p := &Presentation{UI: &cli.UI{Stdout: &stdout, Stderr: &bytes.Buffer{}}}
+	flaky := mutants.MutantResult{Site: mutants.Site{Line: 5, Column: 9, Original: ">", Replacement: ">="},
+		Function: "board#place", Outcome: mutants.Killed, Outcomes: []string{mutants.Killed, mutants.Survived}, State: mutants.StateCompleted}
+	found := RunFound{Results: []mutants.FileResult{{Rel: "src/board.go", Incomplete: true, Ran: 2, Mutants: []mutants.MutantResult{flaky}}}}
+	result := runResult{Work: &runWork{}}
+	Run{}.present(t.Context(), p, found, &result, true)
+	wantLines(t, "plain output", plainLines(t, &stdout),
+		"stopped early, snapshot not updated: 0 killed, 0 survived, 0 uncovered, 1 flaky in src/board.go (ran 2, reused 0); 0 cancelled, 0 unattempted; cache incomplete",
+		"  flaky `>` → `>=` in board#place, src/board.go line 5 column 9: killed, survived",
+	)
+	if len(p.Problems) != 1 || p.Problems[0].Rule != "mutation.flaky" {
+		t.Errorf("problems %v, want mutation.flaky", p.Problems)
+	}
+}

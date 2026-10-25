@@ -88,7 +88,20 @@ so neither bytecode nor a .pytest_cache is written into the project; a
 Results are cached in .metrics/mutate/<file>.json, which is meant to be
 committed: later runs reuse killed mutants of unchanged functions, and the
 survivors itos-cc.yaml excepts, and retry only other survivors and changed
-functions. Each snapshot also records the SHA-256
+functions. A survivor retried that the tests now notice (killed, timed
+out or over a cap), or with --mutate-all a recorded kill that now
+survives, runs up to twice more, in the same scope, stopping at a run
+that agrees with the recorded outcome. If one does, its tests decide it
+differently with nothing changed (unseeded randomness or timing): it is
+flaky, recorded with "flaky": true and "outcomes", every outcome its runs
+gave in run order, its outcome their first, and counts as neither killed
+nor survived. It fails as mutation.flaky, listed after the survivors as
+"flaky <change> in <function>, <file> line <line> column <column>:
+<outcome>, <outcome>"; no exception takes it, and its fix is to make its
+tests deterministic. It is never reused: the next run judges it again,
+up to three times, and records it as their outcome, without "flaky" or
+"outcomes", once all three agree, else as flaky again. If both re-runs
+repeat the new outcome, it is recorded as it went. Each snapshot also records the SHA-256
 of every test file that reaches its file: in TypeScript, Python, Kotlin and
 Dart the tests whose imports reach it, directly or through other modules, as
 vitest related and jest --findRelatedTests select them, and through the
@@ -111,8 +124,8 @@ stale once. Vitest runs a project whose package.json declares vitest, or
 where a vitest resolves from its node_modules/.bin and its test script
 names vitest, vp or vite or a vite.config.* or vitest.config.* sits beside
 its package.json; Jest runs one that declares jest. A summary comment is kept at
-the end of each source file; it lists each survivor, and each one itos-cc.yaml
-excepts apart, with its reason.
+the end of each source file; it lists each survivor, then each flaky
+mutant, and each one itos-cc.yaml excepts apart, with its reason.
 
 For Go outcomes recorded with --all-tests or --test-command, freshness also
 depends on every _test.go file beneath the source's nearest go.mod (nested
@@ -239,7 +252,7 @@ the run's other problems, one for each group.
 
 --fail-fast stops a complete run at the first actionable failure it
 observes, in the order judgments finish, for a quick fix-and-retry loop:
-an unexcepted survivor, once the listed tests that reach it failed to kill
+a flaky mutant, once its runs are done; an unexcepted survivor, once the listed tests that reach it failed to kill
 it too; with --fail-uncovered, an uncovered mutant or a strict Go, Python,
 TypeScript, Kotlin or Dart coverage finding; an exception that no longer holds; a file whose tests fail before
 any mutant; or a selection of listed tests that fails without any mutant.
@@ -433,7 +446,9 @@ judged and no snapshot is written. Listed tests are not run with
    "scope": "own"|"all-tests"|"listed"|"<test command>", for an
    excepted survivor "excepted": "its reason", where this run's coverage
    executed its line "coverage": ["in-process", "integration"], either or
-   both, and with scope "listed" "tests": ["<test ID>"]}], and with
+   both, with scope "listed" "tests": ["<test ID>"], and for a flaky
+   mutant "flaky": true and "outcomes": ["<outcome>", ...]}], when it has
+   any "flaky", how many, in neither "killed" nor "survived", and with
    --since
    "judged": ["namespace#name"], and with --fail-fast "state":
    "completed"|"stopped"|"unattempted"|"blocked", "work",
@@ -469,6 +484,7 @@ judged and no snapshot is written. Listed tests are not run with
 		Rules: []string{
 			"mutation.survived         a mutant survived: file, line, column, function, original, replacement; with --count identity, which the message names and the fix's mutation except takes",
 			"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
+			"mutation.flaky            a mutant's runs differ from the outcome recorded, then agree, or those of one recorded flaky differ: file, line, column, function, original, replacement, recorded, outcome, outcomes, scope",
 			"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python, TypeScript, Kotlin or Dart line is uncovered: file, function, line",
 			"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript, Kotlin or Dart function lacks complete measured coverage evidence: file, function, line",
 			"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm or yarn workspace, a pnpm workspace root package or a member depending on another, or a local dependency, pnpm override, includeBuild, Maven module or pub path dependency or override outside it: file, function, line",
@@ -497,7 +513,7 @@ judged and no snapshot is written. Listed tests are not run with
 		},
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "every mutant that ran was killed"},
-			{Code: 1, Meaning: "a mutant survived, a mutant is uncovered with --fail-uncovered or coverage measured nothing where it has mutants to judge, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is not judged"},
+			{Code: 1, Meaning: "a mutant survived or is flaky, a mutant is uncovered with --fail-uncovered or coverage measured nothing where it has mutants to judge, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is not judged"},
 			{Code: cli.CodeUsage, Meaning: "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, a --count below 1, --seed without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
 			{Code: cli.CodeEnvironment, Meaning: "--changed or --since outside a git repository; with --fail-uncovered, a coverage tool missing where it has mutants to judge; --count outside a Git repository with a commit, on Windows, or with a required tool missing; --fail-fast on Windows"},
 		},

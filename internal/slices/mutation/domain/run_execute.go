@@ -157,8 +157,8 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 		wg.Add(1)
 		go func(ctx context.Context, w Worker) {
 			defer wg.Done()
-			// A mutant a sample runs again goes on in this worker,
-			// adding a run to the total.
+			// A mutant rechecked that runs again goes on in this
+			// worker, adding a run to the total.
 			var again []job
 			for j := range queued(queue, &again) {
 				r, err := runMutant(ctx, w, j, limits[j.state.command.Key()], sels)
@@ -181,6 +181,7 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 					mu.Unlock()
 					continue
 				}
+				rerun := j.state.again(j.site)
 				switch {
 				case r.failed != nil:
 					// Undecided: its outcome stays pending, it counts as no
@@ -190,15 +191,18 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 					if st != nil {
 						j.state.leave(j.site, StateBlocked)
 					}
+				case rerun:
+					// A run again only adds to its trials.
 				case r.ids != nil:
 					j.state.outcomes[j.site], j.state.limits[j.site] = r.outcome, r.limit
 					j.state.scopes[j.site], j.state.ran[j.site] = ScopeListed, r.ids
 				default:
 					j.state.outcomes[j.site], j.state.limits[j.site] = r.outcome, r.limit
 				}
+				more := false
 				if r.failed == nil {
 					j.state.result.Ran++
-					if err == nil && j.state.tried(j.site, r.outcome) {
+					if more = err == nil && j.state.tried(j.site, r.outcome); more {
 						again = append(again, j)
 						total++
 					}
@@ -210,7 +214,8 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 				}
 				report(opt.Progress, RunEvent{Kind: kind, Done: done, Total: total, File: j.state.rel, Site: site, Outcome: r.outcome, Limit: r.limit, Limits: r.limits,
 					IDs: r.ids, Elapsed: r.elapsed, Listed: r.listed})
-				if st != nil && err == nil {
+				// A mutant that runs again is not judged yet.
+				if st != nil && err == nil && !more {
 					if r.failed != nil {
 						st.trigger(&Stop{Rule: "tests.selection-failed", File: j.state.rel, Selection: r.failed})
 					} else if stop := j.state.actionable(j.site); stop != nil {
@@ -237,8 +242,8 @@ dispatch:
 }
 
 // queued yields the jobs of queue as they come, each job again holds
-// first: a mutant a sample runs again, once more, in the worker that ran
-// it, before that worker takes another.
+// first: a mutant rechecked that runs again, once more, in the worker
+// that ran it, before that worker takes another.
 func queued(queue <-chan job, again *[]job) iter.Seq[job] {
 	return func(yield func(job) bool) {
 		for {

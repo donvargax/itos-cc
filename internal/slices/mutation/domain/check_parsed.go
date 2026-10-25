@@ -114,7 +114,8 @@ func CheckParsed(ctx context.Context, f *lang.File, path string, opt CheckOption
 		for j := range fn.Mutants {
 			m := &fn.Mutants[j]
 			i, ok := at[fmt.Sprint(fn.Unit, "\x00", m.Key())]
-			if !ok {
+			if !ok || m.Flaky {
+				// No exception takes a flaky mutant, nor goes stale by it.
 				continue
 			}
 			reason, stale := x.Judge(i, all[i], m.Outcome)

@@ -22,25 +22,30 @@ var AnnotationMarkers = [][2]string{
 }
 
 // Annotation is the summary comment for snap, the results of file: totals,
-// then each survivor, which is what a reader can act on, then each survivor
-// itos-cc.yaml excepts, with its reason, each in its function as
-// CommentName names it. excepted holds those reasons by exceptedKey; a
-// survivor with none is listed as survived. "excepted" is counted only
-// where there is one, as mutation run's summary line counts it, so a file
-// with none reads as it always did. A file without sites gets none.
+// then each survivor, which is what a reader can act on, then each flaky
+// mutant, as actionable, then each survivor itos-cc.yaml excepts, with its
+// reason, each in its function as CommentName names it. excepted holds
+// those reasons by exceptedKey; a survivor with none is listed as
+// survived. "excepted" and "flaky" are counted only where there is one, as
+// mutation run's summary line counts them, so a file with neither reads as
+// it always did. A file without sites gets none.
 func Annotation(snap Snapshot, file *lang.File, excepted map[string]string) string {
 	comment := file.Spec.Comment
 	var killed, survived, uncovered int
-	var survivors, exceptions []string
+	var survivors, flaky, exceptions []string
 	for _, u := range snap.Units {
 		killed += u.Killed
 		survived += u.Survived
 		uncovered += u.Uncovered
 		for _, m := range u.Mutants {
+			site := fmt.Sprintf("line %d %s → %s in %s", m.Line, Show(m.Original), Show(m.Replacement), CommentName(file, u))
+			if m.Flaky {
+				flaky = append(flaky, fmt.Sprintf("%s flaky: %s", comment, site))
+				continue
+			}
 			if m.Outcome != Survived {
 				continue
 			}
-			site := fmt.Sprintf("line %d %s → %s in %s", m.Line, Show(m.Original), Show(m.Replacement), CommentName(file, u))
 			if reason, ok := excepted[ExceptedKey(UnitID(u.Namespace, u.Name), u.Hash, m.Key())]; ok {
 				exceptions = append(exceptions, fmt.Sprintf("%s excepted: %s: %s", comment, site, OneLine(reason)))
 				continue
@@ -48,7 +53,7 @@ func Annotation(snap Snapshot, file *lang.File, excepted map[string]string) stri
 			survivors = append(survivors, fmt.Sprintf("%s survived: %s", comment, site))
 		}
 	}
-	if killed+survived+uncovered == 0 {
+	if killed+survived+uncovered+len(flaky) == 0 {
 		return ""
 	}
 	survived -= len(exceptions)
@@ -56,8 +61,12 @@ func Annotation(snap Snapshot, file *lang.File, excepted map[string]string) stri
 	if len(exceptions) > 0 {
 		counts = fmt.Sprintf("%d killed, %d survived, %d excepted, %d uncovered", killed, survived, len(exceptions), uncovered)
 	}
+	if len(flaky) > 0 {
+		counts += fmt.Sprintf(", %d flaky", len(flaky))
+	}
 	lines := []string{fmt.Sprintf("%s %s %s", comment, AnnotationStart, counts)}
 	lines = append(lines, survivors...)
+	lines = append(lines, flaky...)
 	lines = append(lines, exceptions...)
 	lines = append(lines, comment+" "+AnnotationEnd)
 	return strings.Join(lines, "\n") + "\n"

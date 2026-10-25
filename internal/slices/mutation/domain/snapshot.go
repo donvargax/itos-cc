@@ -189,6 +189,15 @@ type Mutant struct {
 	// as a run or a check judged it; never written to the snapshot, which
 	// records the survivor as it is.
 	Excepted string
+	// Flaky marks a mutant its tests decided differently from run to run
+	// in one mutation run, with nothing changed: a run again after its
+	// outcome disagreed with the one recorded agreed (Classify). Outcomes
+	// is every outcome its runs gave, in run order, Outcome their first.
+	// Neither is trusted: it counts neither killed nor survived, no
+	// exception takes it, and it is never reused, so the next run judges
+	// it again. Both are left out of the snapshot when it is not flaky.
+	Flaky    bool
+	Outcomes []string
 }
 
 // SuiteEvidence is the complete freshness evidence of a broad-scope
@@ -236,6 +245,39 @@ func RecordedScope(scope string) string {
 		return ""
 	}
 	return scope
+}
+
+// flakes is the outcomes of the mutant when it is recorded flaky, else
+// nil.
+func (m Mutant) flakes() []string {
+	if !m.Flaky {
+		return nil
+	}
+	return slices.Clone(m.Outcomes)
+}
+
+// MarkFlaky marks each mutant of snap at a site of sites whose flakes, by
+// site, holds its outcomes as flaky, with those outcomes, and counts it
+// neither killed nor survived (Mutant.Flaky).
+func MarkFlaky(snap *Snapshot, sites []Site, flakes [][]string) {
+	for i, s := range sites {
+		if flakes[i] == nil {
+			continue
+		}
+		u := &snap.Units[s.Unit]
+		for j := range u.Mutants {
+			m := &u.Mutants[j]
+			if m.Key() != s.Key() {
+				continue
+			}
+			m.Flaky, m.Outcomes = true, slices.Clone(flakes[i])
+			if Noticed(m.Outcome) {
+				u.Killed--
+			} else {
+				u.Survived--
+			}
+		}
+	}
 }
 
 func (m Mutant) Key() string {
@@ -322,6 +364,9 @@ type DecidedBy struct {
 	Evidence *SuiteEvidence
 	// Limit is the cap an OverLimit outcome went over.
 	Limit string
+	// Flaky is the outcomes of a mutant recorded flaky, in run order, and
+	// nil for any other (Mutant.Flaky).
+	Flaky []string
 }
 
 func UnitID(namespace, name string) string { return namespace + "#" + name }
@@ -425,7 +470,7 @@ func RememberedWithScopes(s *Snapshot, f *lang.File) (Previous, PreviousScopes) 
 		outcomes, decided := map[string]string{}, map[string]DecidedBy{}
 		for _, m := range u.Mutants {
 			outcomes[m.Key()] = m.Outcome
-			decided[m.Key()] = DecidedBy{Scope: m.TestScope(), Tests: m.Tests, Evidence: m.SuiteEvidence, Limit: m.Limit}
+			decided[m.Key()] = DecidedBy{Scope: m.TestScope(), Tests: m.Tests, Evidence: m.SuiteEvidence, Limit: m.Limit, Flaky: m.flakes()}
 		}
 		prev[i], scopes[i] = outcomes, decided
 	}

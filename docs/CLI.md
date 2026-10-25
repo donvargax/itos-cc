@@ -43,7 +43,8 @@ Scripts can rely on three things only, as with itos (its decision 35):
   `itos-cc.yaml`, the project's settings, which `mutation except` writes
   and a person may write too. A release only adds keys to them: to the
   snapshots under `.metrics/mutate/` without changing their `version`, as
-  `tests` was added, and to `itos-cc.yaml` each with a new `version`, so an
+  `tests` was added, and a mutant's `flaky` and `outcomes` (slice-57), both
+  left out of a mutant that is not flaky, and to `itos-cc.yaml` each with a new `version`, so an
   older itos-cc refuses a newer file rather than misread it, while every
   earlier version reads as it was written.
 
@@ -63,7 +64,7 @@ holds unchanged, keeps its `<file>:<line>:<column>`: a problem is printed only w
 | Code | Meaning                                                                                |
 | ---- | -------------------------------------------------------------------------------------- |
 | 0    | Success.                                                                               |
-| 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python, TypeScript, Kotlin or Dart line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, or that its tests decide differently run to run, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails, the listed tests' coverage run that fails. |
+| 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python, TypeScript, Kotlin or Dart line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a mutant its tests decide differently run to run, sampled, or recorded by `mutation run`, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails, the listed tests' coverage run that fails. |
 | 75   | A temporary failure: the same command can pass when run again unchanged.               |
 | 80   | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor or is in an excluded source. |
 | 81   | An unknown command or subcommand.                                                      |
@@ -172,7 +173,7 @@ output of the commands it runs passes as it is.
 | `mutation.missing`           | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.stale`             | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome`, `scope` |
-| `mutation.flaky`             | 1    | mutation sample | a mismatch's keys and `outcomes`, every outcome its runs gave in run order |
+| `mutation.flaky`             | 1    | mutation sample, mutation run, mutation check | a mismatch's keys and `outcomes`, every outcome its runs gave in run order; of a mutant `mutation run` records flaky, `recorded` and `outcome` are its first |
 | `mutation.baseline-failed`   | 1    | mutation run, mutation sample | `file`, `output` (the first 20 and last 20 lines of what the tests printed, whole up to 40) |
 | `tests.list-failed`          | 1    | mutation run; mutation check, sample and except when they date a kill by a fingerprint | `command`, `exit_code` |
 | `tests.coverage-failed`      | 1    | mutation run   | `command`, `exit_code`                                      |
@@ -612,6 +613,26 @@ a README say, is no input of the run and is not named. Its `--json`
 sampling object lists those paths as `"uncommitted"`, slash paths from the
 repository root, sorted, and an empty list when there are none. The
 warning changes neither the judgment nor the exit code (#41).
+
+A survivor `mutation run` retries that the tests now notice (killed, timed
+out or over a cap), or with `--mutate-all` a recorded kill that now
+survives, runs up to twice more in the same scope, as `mutation sample` runs
+a mutant that disagrees with its recording (slice-50, slice-57). If one of
+those runs agrees with the recording, its tests decide it differently with
+nothing changed, and the snapshot records the mutant with `"flaky": true`
+and `"outcomes"`, every outcome its runs gave in run order, its `outcome`
+their first; both keys are left out of a mutant that is not flaky. A flaky
+mutant counts as neither killed nor survived, in the snapshot's counts, the
+run's summary line (`…, 1 flaky in <file>`) and the summary comment, which
+list it after the survivors. It is `mutation.flaky` in `mutation run` and
+`mutation check`, exit 1, with `mutation sample`'s keys and fix; no exception
+takes it, and `mutation except` refuses it as no survivor. It is never
+reused: the next run judges it again, up to three times, and records their
+outcome without the keys once all three agree, else records it flaky again.
+`--fail-fast` stops at a flaky mutant once its runs are done. In `--json` a
+flaky mutant of `mutation run` has `"flaky": true` and `"outcomes"`, and a
+file counts its flaky mutants as `"flaky"` when it has any; a function of
+`mutation check` counts them in neither `"killed"` nor `"survived"`.
 
 `mutation run --fail-fast` stops a complete run at the first actionable final
 judgment it observes, and reports it under the rule and exit code a run
