@@ -15,7 +15,7 @@ queue:
   - listed-suites
   - features-coverage-gocoverdir-leak
   - slice-57
-  - sample-repeat
+  - slice-58
   - T-210
   - T-102
   - T-103
@@ -5721,14 +5721,15 @@ items:
       "outcomes" in the snapshot (left out when false, like stale and limit); check reports a
       recorded flaky mutant as mutation.flaky, exit 1; run's summary and annotation list it with the
       survivors. After slice-50.
-  - id: sample-repeat
+  - id: slice-58
     title: mutation sample --repeat N runs each sampled mutant N times
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was sample-repeat.
       q-93 item C (the person 2026-10-24): any disagreement among the N runs is mutation.flaky,
       catching a flake that happens to agree once; also for run --count. After slice-50.
   - id: slice-56
