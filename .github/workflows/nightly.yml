@@ -219,8 +219,9 @@ jobs:
         id: scrap
         if: ${{ !cancelled() }}
         run: '"$RUNNER_TEMP/itos-cc" scrap'
-      # Reads crap.json and dry.json for its risk bands and duplicates, so it
-      # runs after both, and even when they failed; it exits 0 whatever it finds.
+      # itos-cc graph reads crap.json and dry.json for its risk bands and
+      # duplicates, so it runs after both, and even when they failed; it exits
+      # 0 whatever it finds.
       - name: graph
         id: graph
         if: ${{ !cancelled() }}
