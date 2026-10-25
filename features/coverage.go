@@ -392,7 +392,9 @@ func coverageSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^the report is built$`, c.computed)
 	sc.Step(`^that entry is ignored$`, c.entryIgnored)
 	sc.Step(`^a Flutter app whose test loads (\S+) and no test loads (\S+) or (\S+)$`, c.unloadedApp)
-	sc.Step(`^(\S+)'s first line is "([^"]*)"$`, c.firstLine)
+	// A Dart source's, which this Given writes; itos-cc.yaml's first line is
+	// a Then of file_selection.feature (slice-53).
+	sc.Step(`^(\S+\.dart)'s first line is "([^"]*)"$`, c.firstLine)
 	sc.Step(`^(\S+)'s functions are at (\d+)% coverage$`, c.functionsAt)
 	sc.Step(`^(\S+)'s functions have no CRAP score$`, c.functionsUnscored)
 

@@ -179,6 +179,15 @@ func selectionSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^itos-cc\.yaml is a directory, so it cannot be read$`, func() error {
 		return s.w.d.Mkdir(filepath.Join(s.w.dir, "itos-cc.yaml"))
 	})
+	// itos-cc.yaml's version (slice-53): a file the fixture never wrote, and
+	// the line a writer starts a file it creates with.
+	sc.Step(`^the module holds no itos-cc\.yaml$`, func() error {
+		if s.w.d.Exists(filepath.Join(s.w.dir, "itos-cc.yaml")) {
+			return fmt.Errorf("the fixture wrote itos-cc.yaml")
+		}
+		return nil
+	})
+	sc.Step(`^itos-cc\.yaml's first line is "([^"]*)"$`, s.configFirstLine)
 	sc.Step(`^the sources (\S+) and (\S+)$`, func(a, b string) error {
 		if err := s.write(a, sourceFor(a)); err != nil {
 			return err
@@ -195,6 +204,20 @@ func selectionSteps(sc *godog.ScenarioContext, w *world) {
 func (s *selectionState) write(name, text string) error {
 	s.files[name] = text
 	return s.w.write(name, text)
+}
+
+// configFirstLine is whether itos-cc.yaml's first line, less its line
+// ending, is want.
+func (s *selectionState) configFirstLine(want string) error {
+	data, err := s.w.readIn(s.w.dir, "itos-cc.yaml")
+	if err != nil {
+		return fmt.Errorf("%v\n%s", err, s.w.report())
+	}
+	first, _, _ := strings.Cut(string(data), "\n")
+	if first = strings.TrimSuffix(first, "\r"); first != want {
+		return fmt.Errorf("itos-cc.yaml's first line is %q, not %q:\n%s\n%s", first, want, data, s.w.report())
+	}
+	return nil
 }
 
 // remove removes name, a slash-separated path in the scratch folder.
