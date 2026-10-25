@@ -261,15 +261,9 @@ items:
     title: "mutation sample tells a flaky mutant from a mismatch"
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was flaky-kills.
-      Tests with random inputs and no fixed seed can kill a mutant in one run and not the next, so a
-      cached kill flips with no code or test change and mutation check and the planned sample mode
-      cannot trust it. A run that re-runs a cached kill with the same function and tests hashes and
-      gets another outcome reports it as flaky rather than trusting either outcome.
   - id: property-tests
     title: Seeded property-based tests where only the whole suite kills mutants
     phase: 1
