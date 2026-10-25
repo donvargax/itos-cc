@@ -417,8 +417,9 @@ Feature: Choosing which files a command looks at
   # true} keeps a comment and a listed key instead. The feat is a
   # BREAKING-CHANGE with an Upgrading footer (remove or rename each key
   # itos-cc.yaml does not list), in a minor release. Before this item every
-  # row exits 0 with no problem, failing at the problem step.
-  @slice-52 @ID-SEL-30 @wip
+  # row fails at the problem step: most exit 0 with no problem, and SEL-30's
+  # line_txt and ids_patern rows exit 80 at a value check naming no key.
+  @slice-52 @ID-SEL-30
   Scenario Outline: A key itos-cc.yaml does not list is a config error, at any depth
     Given itos-cc.yaml holds '<yaml>'
     When I run "itos-cc crap --no-coverage"
@@ -433,7 +434,7 @@ Feature: Choosing which files a command looks at
       | mutation: {exceptions: [{line_txt: x}]}   | mutation.exceptions[0].line_txt | line_text   |
       | mutation: {tests: {ids_patern: x}}        | mutation.tests.ids_patern       | ids_pattern |
 
-  @slice-52 @ID-SEL-31 @wip
+  @slice-52 @ID-SEL-31
   Scenario: A key far from every listed one names the keys allowed there
     Given itos-cc.yaml holds '{colour: red}'
     When I run "itos-cc crap --no-coverage"
@@ -441,7 +442,7 @@ Feature: Choosing which files a command looks at
     And its fix says "exclude, mutation"
     And the exit code is 80
 
-  @slice-52 @ID-SEL-32 @wip
+  @slice-52 @ID-SEL-32
   Scenario: A writer refuses a key itos-cc.yaml does not list, and writes nothing
     Given itos-cc.yaml holds '{mutation: {exceptions: []}, other: {kept: true}}'
     When I run "itos-cc mutation except --prune"

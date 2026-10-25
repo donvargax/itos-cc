@@ -1,0 +1,133 @@
+package settings
+
+import (
+	"fmt"
+	"strings"
+
+	"go.yaml.in/yaml/v3"
+)
+
+// shape is what a value of itos-cc.yaml holds, as far as its keys go: a
+// mapping lists the keys it takes, in the order the docs name them; a list
+// of mappings gives the shape of each entry; any other value takes no key.
+// It describes nothing of a value's type, which decoding checks.
+type shape struct {
+	keys  []listed
+	entry *shape
+}
+
+// listed is a key the format lists, and the shape of its value.
+type listed struct {
+	name  string
+	value shape
+}
+
+// plain is listed keys, each holding a value with no keys of its own.
+func plain(names ...string) []listed {
+	keys := make([]listed, len(names))
+	for i, name := range names {
+		keys[i] = listed{name: name}
+	}
+	return keys
+}
+
+// format is every key itos-cc.yaml takes, from the top: the one table the
+// reader walks a file against (docs/CONFIG.md rule 2), held as data so a
+// JSON Schema can be generated from it.
+var format = shape{keys: []listed{
+	{name: "exclude"},
+	{name: "mutation", value: shape{keys: []listed{
+		{name: "exceptions", value: shape{entry: &shape{keys: plain(
+			"file", "function", "hash", "line_in_function", "column", "original", "replacement", "reason", "line_text")}}},
+		{name: "tests", value: shape{keys: append(plain("list", "run", "ids_pattern"),
+			listed{name: "join", value: shape{keys: plain("each", "sep")}},
+			listed{name: "whole"}, listed{name: "support"})}},
+		{name: "copy"},
+	}}},
+}}
+
+// unlisted refuses the first key in n, in document order, that s, the
+// shape of n's place, does not list there; at is n's key, "" for the top
+// level. A value whose shape differs from s's is left to decoding.
+func unlisted(n *yaml.Node, s shape, at string) error {
+	switch {
+	case n.Kind == yaml.MappingNode && s.keys != nil:
+		for i := 0; i < len(n.Content); i += 2 {
+			name := n.Content[i].Value
+			key := name
+			if at != "" {
+				key = at + "." + name
+			}
+			value, ok := s.value(name)
+			if !ok {
+				return unlistedError(at, key, name, s)
+			}
+			if err := unlisted(n.Content[i+1], value, key); err != nil {
+				return err
+			}
+		}
+	case n.Kind == yaml.SequenceNode && s.entry != nil:
+		for i, item := range n.Content {
+			if err := unlisted(item, *s.entry, fmt.Sprintf("%s[%d]", at, i)); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// value is the shape of the key name s lists, and whether it lists it.
+func (s shape) value(name string) (shape, bool) {
+	for _, k := range s.keys {
+		if k.name == name {
+			return k.value, true
+		}
+	}
+	return shape{}, false
+}
+
+// unlistedError is the *InvalidError of key, holding name, which s, the
+// shape of the mapping at at, does not list. Its fix names the listed key
+// within two edits of name, the first of the nearest in s's order, or else
+// every key s lists.
+func unlistedError(at, key, name string, s shape) error {
+	what := at
+	if what == "" {
+		what = "the top level"
+	}
+	names := make([]string, len(s.keys))
+	best, bestDist := "", 3
+	for i, k := range s.keys {
+		names[i] = k.name
+		if d := edits(name, k.name); d < bestDist {
+			best, bestDist = k.name, d
+		}
+	}
+	fix := fmt.Sprintf("Did you mean %s? Rename the key, or remove it.", best)
+	if best == "" {
+		fix = fmt.Sprintf("Remove the key, or rename it to one %s takes: %s.", what, strings.Join(names, ", "))
+	}
+	return &InvalidError{Reason: fmt.Sprintf("%s holds the key %s, which %s does not list", what, name, File), Key: key, Fix: fix}
+}
+
+// edits is the Levenshtein distance between a and b: the fewest letters
+// inserted, deleted or replaced that make one the other.
+func edits(a, b string) int {
+	prev := make([]int, len(b)+1)
+	for j := range prev {
+		prev[j] = j
+	}
+	for i := 1; i <= len(a); i++ {
+		cur := make([]int, len(b)+1)
+		cur[0] = i
+		for j := 1; j <= len(b); j++ {
+			cost := 1
+			if a[i-1] == b[j-1] {
+				cost = 0
+			}
+			cur[j] = min(prev[j]+1, cur[j-1]+1, prev[j-1]+cost)
+		}
+		prev = cur
+	}
+	return prev[len(b)]
+}

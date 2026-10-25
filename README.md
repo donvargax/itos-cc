@@ -126,6 +126,15 @@ second document after `---`, naming the file alone (a `---` before the
 first document is fine). Remove each such tag and any `---` after the first
 document. Releases older than these read them.
 
+A key `itos-cc.yaml` does not list is `config.invalid` too, at any depth,
+so a misspelt key never passes for an option: its `key` is the path from
+the top (`mutation.exceptions[0].line_txt`), and its fix asks "Did you mean
+`line_text`?" when a listed key at that place is within two edits, or else
+names the keys listed there (`exclude, mutation` at the top level). The
+keys are `exclude` and `mutation`, which holds `exceptions`, `tests` and
+`copy`. Remove or rename each key it does not list; releases older than
+this one ignore such a key.
+
 A worker's copy of the project leaves out what git ignores (see Parallel
 workers), so a file a test or a coverage run left in the project never
 reaches it. A project whose tests read an ignored file, such as generated
@@ -1060,8 +1069,8 @@ entry never excuses an uncovered mutant: that needs a test, not a reason, and
 the branch through code a test already reaches, such as a helper the tests
 call. An
 `itos-cc.yaml` that cannot be read, one holding an anchor, an alias, a
-merge key, a tag JSON does not have or a second document, or an entry with
-no reason, is `config.invalid`, exit 80, and
+merge key, a tag JSON does not have, a second document or a key it does not
+list, or an entry with no reason, is `config.invalid`, exit 80, and
 nothing is written.
 
 A change that leaves an excepted mutant the same, such as a rename, a
