@@ -402,3 +402,49 @@ Feature: Choosing which files a command looks at
       | exclude: [! "**/porttest/**"]           |
       | exclude: !!seq [!!str "**/porttest/**"] |
       | --- {exclude: ["**/porttest/**"]}       |
+
+  # slice-52, itos-cc-yaml-version's second item (q-94, the person
+  # 2026-10-24; docs/CONFIG.md rule 2): a key itos-cc.yaml does not list was
+  # ignored at every level, so a misspelt key passed for an option it never
+  # set. Now every command refuses it as config.invalid, exit 80, keyed by
+  # its path from the top (mutation.exceptions[0].line_txt), after slice-49's
+  # and bug-8's checks and before any value is checked. The fix says "Did
+  # you mean <key>?" when a listed key at that place is within two edits,
+  # else names the keys allowed there. The listed keys are held as data, one
+  # table the reader walks the node tree against, so a JSON Schema can be
+  # generated from it later. The writers read through settings.Parse first,
+  # so they refuse it unwritten; the except fixture that wrote other: {kept:
+  # true} keeps a comment and a listed key instead. The feat is a
+  # BREAKING-CHANGE with an Upgrading footer (remove or rename each key
+  # itos-cc.yaml does not list), in a minor release. Before this item every
+  # row exits 0 with no problem, failing at the problem step.
+  @slice-52 @ID-SEL-30 @wip
+  Scenario Outline: A key itos-cc.yaml does not list is a config error, at any depth
+    Given itos-cc.yaml holds '<yaml>'
+    When I run "itos-cc crap --no-coverage"
+    Then the problem is "config.invalid", with key "<key>"
+    And its fix suggests "<listed>"
+    And the exit code is 80
+
+    Examples:
+      | yaml                                      | key                             | listed      |
+      | excludes: ["**/porttest/**"]              | excludes                        | exclude     |
+      | mutation: {exceptons: []}                 | mutation.exceptons              | exceptions  |
+      | mutation: {exceptions: [{line_txt: x}]}   | mutation.exceptions[0].line_txt | line_text   |
+      | mutation: {tests: {ids_patern: x}}        | mutation.tests.ids_patern       | ids_pattern |
+
+  @slice-52 @ID-SEL-31 @wip
+  Scenario: A key far from every listed one names the keys allowed there
+    Given itos-cc.yaml holds '{colour: red}'
+    When I run "itos-cc crap --no-coverage"
+    Then the problem is "config.invalid", with key "colour"
+    And its fix says "exclude, mutation"
+    And the exit code is 80
+
+  @slice-52 @ID-SEL-32 @wip
+  Scenario: A writer refuses a key itos-cc.yaml does not list, and writes nothing
+    Given itos-cc.yaml holds '{mutation: {exceptions: []}, other: {kept: true}}'
+    When I run "itos-cc mutation except --prune"
+    Then the problem is "config.invalid", with key "other"
+    And the exit code is 80
+    And itos-cc.yaml is byte for byte as it was
