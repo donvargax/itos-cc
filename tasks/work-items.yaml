@@ -5807,8 +5807,8 @@ items:
   - id: bug-9
     title: A failing baseline's plain line names its file with backslashes on Windows
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: bug
     why: >
