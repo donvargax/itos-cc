@@ -206,6 +206,7 @@ linters:
             - "!**/internal/slices/crap/domain/**" # a slice's domain, held by domain
             - "!**/internal/slices/mutation/domain/**" # a slice's domain, held by domain
             - "!**/internal/slices/mutation/adapters/**" # a slice's adapters, each held by its own rule
+            - "!**/internal/slices/graph/**" # the graph slice, held by graph
           allow:
             - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/selection/
@@ -262,6 +263,7 @@ linters:
             - "!**/internal/coverage/**" # a domain and its ports
             - "!**/internal/slices/mutation/domain/**" # a slice's domain, its porttest importing other ports' fakes
             - "!**/internal/slices/mutation/adapters/**" # a slice's adapters, each held by its own rule
+            - "!**/internal/slices/graph/**" # the graph slice, held by graph
             - "!**/internal/workdir/**" # an adapter, held by workdir
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
@@ -286,6 +288,26 @@ linters:
               desc: "a slice's code links no fake (T-88): only tests may import mutation's Workers fake"
             - pkg: github.com/donvargax/itos-cc/internal/coverage/porttest
               desc: "a slice's code links no fake (T-90): only tests may import coverage's model-bearing fake"
+        # graph, the architecture graph's slice (ADR-0051, q-95), its code and
+        # tests: it walks and parses whole projects and resolves their imports
+        # through the import-resolution engine, and watches their files for
+        # serve, so slice-packages and slice-fakes, which refuse the engines,
+        # leave it out for this rule. Mutation's judgment reaches it only
+        # through its own Mutation port, which cmd binds, so it imports no
+        # package of another slice, the mutation slice's least of all, no
+        # adapter but metricsdir, whose folder it watches, and no fake.
+        graph:
+          list-mode: lax
+          files:
+            - "**/internal/slices/graph/**"
+          allow:
+            - github.com/donvargax/itos-cc/internal/lang$
+            - github.com/donvargax/itos-cc/internal/imports$
+            - github.com/donvargax/itos-cc/internal/project$
+            - github.com/donvargax/itos-cc/internal/metricsdir$
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "graph imports only the shared domains and ports it reads projects through, the import-resolution and project engines, metricsdir and its own port (ADR-0051, q-95): mutation's judgment reaches it through its Mutation port, which cmd binds; never another slice, adapter or fake"
         # Mutation's model-bearing contract is at the domain root. Its fake is
         # allowed in tests, never in the domain's production implementation.
         mutant-fakes:

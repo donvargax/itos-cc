@@ -14,22 +14,13 @@ import (
 	"github.com/donvargax/itos-cc/internal/imports"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/internal/project"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
-	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Builder rebuilds the graph of some repositories, reparsing only files that
-// changed since the last build.
-// MutationInputs is graph's actual read-only mutation observation bundle.
-// Snapshots constructs a root-specific reader without performing I/O.
-type MutationInputs struct {
-	Snapshots    func(root string) mutants.MutationSnapshotReader
-	Toolchain    mutants.Toolchain
-	Fingerprints mutants.Fingerprints
-}
-
+// changed since the last build, and asking mutation through its port what
+// mutation check knows of each function.
 type Builder struct {
-	mutation  MutationInputs
+	mutation  Mutation
 	roots     []string // absolute
 	projects  []string // the project root of each root, whose .metrics it reads (project.RootOf)
 	names     []string
@@ -47,15 +38,16 @@ type cached struct {
 
 type cachedSnapshot struct {
 	stamp    string
-	snapshot *mutants.Snapshot
+	snapshot any
 }
 
-// NewBuilder prepares a builder for repository roots.
-func NewBuilder(roots []string, inputs MutationInputs) (*Builder, error) {
-	if inputs.Snapshots == nil || inputs.Toolchain == nil || inputs.Fingerprints == nil {
+// NewBuilder prepares a builder for repository roots, asking mutation what
+// mutation check knows of their functions.
+func NewBuilder(roots []string, mutation Mutation) (*Builder, error) {
+	if mutation == nil {
 		return nil, errors.New("graph mutation observation bindings are missing")
 	}
-	b := &Builder{mutation: inputs, cache: map[string]cached{}, snapshots: map[string]cachedSnapshot{}}
+	b := &Builder{mutation: mutation, cache: map[string]cached{}, snapshots: map[string]cachedSnapshot{}}
 	seen := map[string]int{}
 	for _, r := range roots {
 		abs, err := filepath.Abs(r)
@@ -92,7 +84,7 @@ func (b *Builder) Build(ctx context.Context) (*Graph, bool, error) {
 		if err != nil {
 			return nil, false, err
 		}
-		support := supportHashes(ctx, b.mutation.Fingerprints, b.projects[i])
+		support := b.mutation.Support(ctx, b.projects[i])
 		repos = append(repos, repo{b.names[i], root, b.projects[i], files, support})
 		for _, f := range append(files.Sources, files.Tests...) {
 			stamps = append(stamps, f+"\x00"+stamp(f))
@@ -131,7 +123,7 @@ func (b *Builder) Build(ctx context.Context) (*Graph, bool, error) {
 			tests = append(tests, info)
 		}
 		importing := imports.Reach(ctx, r.root, importFiles(infos), importFiles(tests))
-		hashes := testHashes(ctx, b.mutation.Fingerprints, r.top)
+		hashes := testHashes(ctx, b.mutation, r.top)
 		for i, info := range infos {
 			now, err := hashes(importing[info.Abs])
 			if err != nil {
@@ -141,7 +133,7 @@ func (b *Builder) Build(ctx context.Context) (*Graph, bool, error) {
 			if snapshotErr != nil {
 				return nil, false, snapshotErr
 			}
-			infos[i] = overlay.apply(ctx, info, now, snap, mutants.ListedChangedWithInputs(ctx, snap, r.top, r.support, b.mutation.Fingerprints), r.top, r.support, b.mutation.Fingerprints)
+			infos[i] = overlay.apply(info, b.mutation.Judge(ctx, Judged{Top: r.top, Path: info.Abs, Snapshot: snap, Facts: info.mutation, Tests: now, Support: r.support}))
 		}
 		rg := newRepoGraph(ctx, r.name, r.root, infos)
 		// A stopped build resolves no further: what it left unresolved is
@@ -199,15 +191,15 @@ func stamp(path string) string {
 // testHashes returns what a snapshot records of some test files of the
 // project whose root is root, as mutation check computes it, hashing each
 // file once however many sources its tests import.
-func testHashes(ctx context.Context, inputs mutants.Fingerprints, root string) func(tests []string) (map[string]string, error) {
+func testHashes(ctx context.Context, mutation Mutation, root string) func(tests []string) (map[string]string, error) {
 	seen := map[string]map[string]string{}
 	return func(tests []string) (map[string]string, error) {
 		out := map[string]string{}
 		for _, t := range tests {
 			h, ok := seen[t]
 			if !ok {
-				var err mutants.InputFailure
-				if h, err = inputs.Tests(ctx, root, []string{t}); err != nil {
+				var err error
+				if h, err = mutation.Tests(ctx, root, []string{t}); err != nil {
 					return nil, err
 				}
 				seen[t] = h
@@ -249,16 +241,12 @@ func (b *Builder) parse(ctx context.Context, root, path string) (*fileInfo, erro
 		return nil, err
 	}
 	defer f.Close()
-	info := &fileInfo{File: imports.Of(root, f)}
+	info := &fileInfo{File: imports.Of(root, f), mutation: b.mutation.Facts(f)}
 	info.serves, info.calls = f.Endpoints()
-	sites := map[int][]mutants.Site{}
-	for _, s := range mutants.Sites(f) {
-		sites[s.Unit] = append(sites[s.Unit], s)
-	}
-	for i, u := range f.Units {
+	for _, u := range f.Units {
 		info.units = append(info.units, Unit{
 			Name: u.Name, Namespace: u.Namespace, File: info.Rel, Line: u.StartLine, EndLine: u.EndLine,
-			Complexity: f.Complexity(u), hash: mutants.UnitHash(f, u), sites: sites[i],
+			Complexity: f.Complexity(u),
 		})
 	}
 	b.cache[path] = cached{st, info}
@@ -283,25 +271,23 @@ func (b *Builder) parseTest(ctx context.Context, root, path string) (*fileInfo, 
 }
 
 // snapshot is the mutation snapshot of the source file at path, in the
-// project whose root is top, looked up where mutation check looks it up
-// (mutants.LoadSnapshotOf), or nil when there is none. One that cannot be
-// read is none too, so the graph still builds. It is read again only when
-// its file changed since the last build. Its path is marked live.
-func (b *Builder) snapshot(ctx context.Context, top, path string, live map[string]bool) (*mutants.Snapshot, error) {
+// project whose root is top, as the Mutation port reads it where mutation
+// check does, or nil when there is none. It is read again only when its
+// file changed since the last build. Its path is marked live.
+func (b *Builder) snapshot(ctx context.Context, top, path string, live map[string]bool) (any, error) {
 	rel := project.FromRootOf(top, path)
-	at := filepath.Join(metricsdir.DirOf(top), mutationName(rel))
+	at := b.mutation.SnapshotPath(top, rel)
 	live[at] = true
 	st := stamp(at)
 	if c, ok := b.snapshots[at]; ok && c.stamp == st {
 		return c.snapshot, nil
 	}
-	var snap *mutants.Snapshot
+	var snap any
 	if st != "" {
-		reader := b.mutation.Snapshots(top)
-		if reader == nil {
-			return nil, errors.New("graph mutation snapshot reader is missing")
+		var err error
+		if snap, err = b.mutation.Snapshot(ctx, top, rel); err != nil {
+			return nil, err
 		}
-		snap, _ = mutants.LoadSnapshot(ctx, reader, rel, b.mutation.Toolchain)
 	}
 	b.snapshots[at] = cachedSnapshot{st, snap}
 	return snap, nil
@@ -314,33 +300,13 @@ func (f *fileInfo) clone() *fileInfo {
 }
 
 // overlay is what the snapshots in .metrics know about each function,
-// coverage and duplicates; a function's mutation results come from its
-// file's own snapshot (Builder.snapshot). Coverage is matched by file,
+// coverage and duplicates; a function's mutation results are what the
+// Mutation port judges of its file's own snapshot (Builder.snapshot). Coverage is matched by file,
 // namespace, name, and which same-named function of the file it is: a Go
 // package has an init per file, and overloads share a name.
 type overlay struct {
 	coverage   keyed[float64]
 	duplicates map[string]int // file#line → candidate pairs it is in
-}
-
-// mutationEntries is the entry of snap, info's file's snapshot, of each of
-// info's units, nil for none: paired as mutation check pairs them, by name
-// and hash (mutants.EntriesOf).
-func mutationEntries(info *fileInfo, snap *mutants.Snapshot) []*mutants.UnitResult {
-	out := make([]*mutants.UnitResult, len(info.units))
-	if snap == nil {
-		return out
-	}
-	ids, hashes := make([]string, len(info.units)), make([]string, len(info.units))
-	for i, u := range info.units {
-		ids[i], hashes[i] = u.Namespace+"#"+u.Name, u.hash
-	}
-	for i, j := range mutants.EntriesOf(ids, hashes, snap.Units) {
-		if j >= 0 {
-			out[i] = &snap.Units[j]
-		}
-	}
-	return out
 }
 
 type keyed[T any] struct {
@@ -397,12 +363,6 @@ func crapScore(cc int, coverage float64) float64 {
 	return c*c*(u*u*u) + c
 }
 
-// mutationName is the name under .metrics/ of the mutation snapshot of the
-// source file whose key is key, its path from the project root, as the
-// mutation slice's snapshots adapter names it (MutationName). graph keeps
-// this copy of it rather than import the slice's adapter (ADR-0051).
-func mutationName(key string) string { return filepath.Join("mutate", filepath.ToSlash(key)+".json") }
-
 func loadOverlay(root string) overlay {
 	o := overlay{coverage: newKeyed[float64](), duplicates: map[string]int{}}
 	dir := metricsdir.DirOf(root)
@@ -435,23 +395,13 @@ func loadOverlay(root string) overlay {
 	return o
 }
 
-// apply joins the snapshots onto a file's units, snap being its mutation
-// snapshot, nil for none. CRAP is recomputed from the live complexity and
-// the last measured coverage, so it moves as you edit. A function's
-// mutation entry is paired as mutation check pairs it, by name and hash
-// (mutants.EntriesOf), so of functions sharing a name, reordering them
-// changes nothing and editing one makes only that one stale. Its results
-// are stale exactly when mutation check calls them stale, by check's own
-// rule (mutants.FreshnessOf), tests being the hashes of the test files that
-// import its file now, and listed how the files its listed outcomes rest
-// on changed; a function with no entry, which check calls missing, carries
-// none.
-func (o overlay) apply(ctx context.Context, info *fileInfo, tests map[string]string, snap *mutants.Snapshot, listed *mutants.ListedChange, root string, support map[string]string, inputs mutants.Fingerprints) *fileInfo {
-	entries := mutationEntries(info, snap)
-	var moduleTests map[string]string
-	if snap != nil && mutants.HasBroadOutcome(snap.Units) {
-		moduleTests, _ = inputs.Suite(ctx, info.Abs, root)
-	}
+// apply joins the snapshots onto a file's units, marks being what the
+// Mutation port judged of each, in their order. CRAP is recomputed from the
+// live complexity and the last measured coverage, so it moves as you edit.
+// A function's mutation results, and whether they are stale, are mutation
+// check's own verdict (Mutation.Judge); a function no snapshot entry
+// records carries none.
+func (o overlay) apply(info *fileInfo, marks []UnitMutation) *fileInfo {
 	occurrence := map[string]int{}
 	for i := range info.units {
 		u := &info.units[i]
@@ -463,30 +413,13 @@ func (o overlay) apply(ctx context.Context, info *fileInfo, tests map[string]str
 			score := float64(int(crapScore(u.Complexity, c/100)*10+0.5)) / 10
 			u.Coverage, u.CRAP = &c, &score
 		}
-		if m := mutants.OnSites(entries[i], u.hash, u.sites); m != nil {
-			u.Mutated = true
-			u.Stale = mutants.FreshnessOf(m, u.hash, snap.TestsChanged(tests), listed,
-				mutants.BroadChangesForUnit(m.Mutants, moduleTests, support), u.sites).State == mutants.Stale
+		if m := marks[i]; m.Mutated {
+			u.Mutated, u.Stale = true, m.Stale
 			u.Killed, u.Survived, u.Uncovered = m.Killed, m.Survived, m.Uncovered
 		}
 		u.Duplicates = o.duplicates[fmt.Sprintf("%s#%d", u.File, u.Line)]
 	}
 	return info
-}
-
-// supportHashes is the hashes of the support files of the tests the
-// itos-cc.yaml at root lists, hashed as a snapshot records them; nil when
-// it lists none or cannot be read.
-func supportHashes(ctx context.Context, inputs mutants.Fingerprints, root string) map[string]string {
-	cfg, err := settings.LoadFrom(root)
-	if err != nil || cfg.Tests == nil {
-		return nil
-	}
-	support, failed := inputs.Support(ctx, root, cfg.Tests.Support)
-	if failed != nil {
-		return nil
-	}
-	return support
 }
 
 func readJSON(path string, v any) bool {

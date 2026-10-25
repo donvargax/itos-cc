@@ -17,13 +17,29 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/donvargax/itos-cc/graph"
 )
+
+// Builder is what the server publishes from, which cmd binds to the
+// graph slice's builder, so the server imports nothing under internal/:
+// Build is the current graph and whether it changed since the last call,
+// built under ctx, and Roots the absolute repository roots, by name.
+type Builder interface {
+	Build(ctx context.Context) (Graph, bool, error)
+	Roots() map[string]string
+}
+
+// Graph is a built graph as the server publishes it: its version, what
+// /api/graph answers, as JSON, and the files of each repository, by name,
+// which /api/source may serve.
+type Graph struct {
+	Version int
+	Body    any
+	Files   map[string][]string
+}
 
 // Server holds the latest graph and the clients listening for changes.
 type Server struct {
-	builder *graph.Builder
+	builder Builder
 	ui      string // directory of a built viewer to serve at / instead of the built-in one, or ""
 	log     *log.Logger
 
@@ -34,12 +50,8 @@ type Server struct {
 	listeners map[chan int]bool
 }
 
-// New builds the first graph of roots, under ctx.
-func New(ctx context.Context, roots []string, ui string, logger *log.Logger, inputs graph.MutationInputs) (*Server, error) {
-	b, err := graph.NewBuilder(roots, inputs)
-	if err != nil {
-		return nil, err
-	}
+// New builds b's first graph, under ctx.
+func New(ctx context.Context, b Builder, ui string, logger *log.Logger) (*Server, error) {
 	s := &Server{builder: b, ui: ui, log: logger, listeners: map[chan int]bool{}}
 	if err := s.rebuild(ctx); err != nil {
 		return nil, err
@@ -54,14 +66,13 @@ func (s *Server) rebuild(ctx context.Context) error {
 	if err != nil || !changed {
 		return err
 	}
-	body, err := json.Marshal(g)
+	body, err := json.Marshal(g.Body)
 	if err != nil {
 		return err
 	}
 	files := map[string]bool{}
-	for _, n := range g.Nodes {
-		repo, _, _ := strings.Cut(n.ID, "/")
-		for _, f := range n.Files {
+	for repo, list := range g.Files {
+		for _, f := range list {
 			files[repo+"\x00"+f] = true
 		}
 	}

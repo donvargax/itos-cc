@@ -7,13 +7,11 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
-
-	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 )
 
 func build(t *testing.T) *Graph {
 	t.Helper()
-	b, err := NewBuilder([]string{"testdata/shop"}, realMutationInputs())
+	b, err := NewBuilder([]string{"testdata/shop"}, judging{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +101,7 @@ func TestTreeAndModules(t *testing.T) {
 }
 
 func TestUnchangedSourcesDoNotRebuild(t *testing.T) {
-	b, _ := NewBuilder([]string{"testdata/shop"}, realMutationInputs())
+	b, _ := NewBuilder([]string{"testdata/shop"}, judging{})
 	first, _, _ := b.Build(t.Context())
 	again, changed, err := b.Build(t.Context())
 	if err != nil || changed || again.Version != first.Version {
@@ -121,17 +119,6 @@ func TestCrapScoreIsTheCRAPFormula(t *testing.T) {
 	}{{4, 0.5, 6}, {3, 0, 12}, {5, 1, 5}} {
 		if got := crapScore(c.cc, c.coverage); math.Abs(got-c.want) > 1e-9 {
 			t.Errorf("crapScore(%d, %v) = %v, want %v", c.cc, c.coverage, got, c.want)
-		}
-	}
-}
-
-// graph's copy of the mutation snapshot's name names the file the mutation
-// slice's snapshots adapter reads and writes, for a key of a nested source,
-// of one at the root and of one whose path is absolute.
-func TestMutationNameIsTheSnapshotsAdapters(t *testing.T) {
-	for _, key := range []string{"src/board.go", "board.go", "/work/board.go", "D:/work/board.go"} {
-		if got, want := mutationName(key), snapshots.MutationName(key); got != want {
-			t.Errorf("mutationName(%q) = %q, want %q", key, got, want)
 		}
 	}
 }
@@ -175,7 +162,7 @@ func TestMetricsMatchTheirOwnFile(t *testing.T) {
 	write(".metrics/crap.json", `{"version":1,"entries":[
 		{"namespace":"example.com/p","name":"init","file":"a.go","complexity":1,"coverage":100,"crap":1},
 		{"namespace":"example.com/p","name":"init","file":"b.go","complexity":1,"coverage":0,"crap":2}]}`)
-	b, _ := NewBuilder([]string{root}, realMutationInputs())
+	b, _ := NewBuilder([]string{root}, judging{killed: map[string]int{"a.go": 2}})
 	g, _, err := b.Build(t.Context())
 	if err != nil {
 		t.Fatal(err)

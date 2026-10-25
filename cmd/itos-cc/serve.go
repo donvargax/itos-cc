@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/donvargax/itos-cc/graph"
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/slices/graph"
 	"github.com/donvargax/itos-cc/server"
 )
 
@@ -63,7 +63,7 @@ func runServe(ctx context.Context, in *invocation) (any, error) {
 		roots = []string{"."}
 	}
 	logger := log.New(os.Stderr, "itos-cc: ", 0)
-	srv, err := server.New(ctx, roots, in.str("ui"), logger, graph.MutationInputs{Snapshots: in.adapters.SnapshotReaders, Toolchain: in.adapters.Toolchain, Fingerprints: in.adapters.Fingerprints})
+	srv, err := newServer(ctx, roots, in.str("ui"), logger, in.adapters)
 	if err != nil {
 		return nil, cli.NewProblem(cli.CodeUsage, "serve.repo-unreadable", err.Error(), "Name repositories that exist.")
 	}
@@ -88,6 +88,35 @@ func runServe(ctx context.Context, in *invocation) (any, error) {
 		return served, context.Cause(ctx)
 	}
 	return served, nil
+}
+
+// newServer is the server of roots' graph, its first built under ctx, asking
+// mutation what check knows of their functions through a's snapshot
+// readers, toolchain and fingerprints.
+func newServer(ctx context.Context, roots []string, ui string, logger *log.Logger, a adapters) (*server.Server, error) {
+	mutation, err := newGraphMutation(a.SnapshotReaders, a.Toolchain, a.Fingerprints)
+	var b *graph.Builder
+	if err == nil {
+		b, err = graph.NewBuilder(roots, mutation)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return server.New(ctx, servedGraph{b}, ui, logger)
+}
+
+// servedGraph is server's Builder over the graph slice's: each graph built,
+// with the files of each repository the source endpoint may serve.
+type servedGraph struct{ *graph.Builder }
+
+// Build is the builder's current graph and whether it changed, built under
+// ctx.
+func (s servedGraph) Build(ctx context.Context) (server.Graph, bool, error) {
+	g, changed, err := s.Builder.Build(ctx)
+	if err != nil {
+		return server.Graph{}, false, err
+	}
+	return server.Graph{Version: g.Version, Body: g, Files: g.Files()}, changed, nil
 }
 
 // shutdownWhenDone shuts srv down once ctx is done, giving what it is

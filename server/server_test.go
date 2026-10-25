@@ -1,8 +1,11 @@
 package server
 
 import (
+	"context"
+	"errors"
 	"io"
 	"io/fs"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -94,5 +97,62 @@ func TestHandlerWithoutAViewer(t *testing.T) {
 	}
 	if code, _ := get(t, &Server{}, "/shop/web"); code != http.StatusNotFound {
 		t.Errorf("GET /shop/web = %d, want 404", code)
+	}
+}
+
+// built is a fake Builder: graph is what each build gives, changed
+// whether it changed, err its failure, and roots the repositories' roots.
+type built struct {
+	graph   Graph
+	changed bool
+	err     error
+	roots   map[string]string
+}
+
+func (b *built) Build(context.Context) (Graph, bool, error) { return b.graph, b.changed, b.err }
+
+func (b *built) Roots() map[string]string { return b.roots }
+
+// The server publishes its builder's graph as JSON, and serves the files of
+// each repository the graph lists, from the repository's root, and no other.
+func TestTheServerPublishesItsBuildersGraph(t *testing.T) {
+	root := t.TempDir()
+	for name, text := range map[string]string{"a.go": "package a\n", "b.go": "package b\n"} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(text), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	b := &built{graph: Graph{Version: 1, Body: map[string]int{"version": 1}, Files: map[string][]string{"shop": {"a.go"}}}, changed: true, roots: map[string]string{"shop": root}}
+	s, err := New(t.Context(), b, "", log.New(io.Discard, "", 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code, body := get(t, s, "/api/graph"); code != http.StatusOK || body != `{"version":1}` {
+		t.Errorf("GET /api/graph = %d %q, want the builder's graph", code, body)
+	}
+	if code, body := get(t, s, "/api/source?repo=shop&file=a.go"); code != http.StatusOK || body != "package a\n" {
+		t.Errorf("GET a.go = %d %q, want its text", code, body)
+	}
+	for _, query := range []string{"repo=shop&file=b.go", "repo=other&file=a.go"} {
+		if code, _ := get(t, s, "/api/source?"+query); code != http.StatusNotFound {
+			t.Errorf("GET /api/source?%s = %d, want 404", query, code)
+		}
+	}
+
+	// A build that changed nothing, or failed, keeps the graph published.
+	b.graph, b.changed = Graph{Version: 2, Body: map[string]int{"version": 2}}, false
+	if err := s.rebuild(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	b.err = errors.New("mid-save")
+	if err := s.rebuild(t.Context()); !errors.Is(err, b.err) {
+		t.Errorf("rebuild: %v, want the build's failure", err)
+	}
+	if code, body := get(t, s, "/api/graph"); code != http.StatusOK || body != `{"version":1}` {
+		t.Errorf("GET /api/graph = %d %q, want the first graph kept", code, body)
+	}
+	b.err = errors.New("unreadable")
+	if _, err := New(t.Context(), b, "", log.New(io.Discard, "", 0)); !errors.Is(err, b.err) {
+		t.Errorf("New: %v, want the first build's failure", err)
 	}
 }

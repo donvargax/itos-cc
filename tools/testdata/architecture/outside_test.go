@@ -8,21 +8,19 @@ import (
 
 // checkOutside runs architecture-check --outside over TestArchitecture's
 // fixtures in dir, the temporary module, with env, its environment: cmd
-// and graph's row accepted, every other import refused. config's row went
-// when it became mutation's settings adapter under internal/slices.
+// accepted, every other import refused. config's row went when it became
+// mutation's settings adapter under internal/slices, and graph's when it
+// became a slice (T-208).
 func checkOutside(t *testing.T, check, dir string, env []string, module string) {
 	t.Helper()
 	outsideCases := []struct{ pkg, imported, from string }{
 		{"./cmd/probe/...", "", ""},
 		{"./cmd/slices", "", ""},
-		{"./graph/mutation", "", ""},
-		{"./graph/settings", "", ""},
-		{"./graph/testtools", "", ""},
 		{"./internal/project/units", "units", ""},
 		{"./internal/covrun/mutation_domain", "mutation/domain", " from its tests"},
 		{"./features/dry_domain", "dry/domain", ""},
-		{"./graph/crap_domain", "crap/domain", ""},
-		{"./graph/snapshots", "mutation/adapters/snapshots", ""},
+		{"./server/toplevel_graph_code", "graph", ""},
+		{"./server/toplevel_graph_test", "graph", " from its tests"},
 	}
 	for _, c := range outsideCases {
 		t.Run("outside "+c.pkg, func(t *testing.T) {
@@ -32,7 +30,7 @@ func checkOutside(t *testing.T, check, dir string, env []string, module string) 
 			output, err := run.CombinedOutput()
 			if c.imported == "" {
 				if err != nil {
-					t.Errorf("refused cmd or a legacy consumer importing what its row allows: %v\n%s", err, output)
+					t.Errorf("refused cmd importing the slices: %v\n%s", err, output)
 				}
 				return
 			}

@@ -18,16 +18,18 @@ type toplevelFixture struct {
 // outside internal/ and cmd/ imports none under it, from its code or its
 // tests, but the rows docs/go.md names: features internal/project alone,
 // tools/bin/release-notes and release-version internal/release alone, its
-// releasetest with it, and, until graph-snapshot, graph and server
-// whatever they import; metrics', coverage's and config's rows went when
-// they moved under internal/.
+// releasetest with it; metrics', coverage's and config's rows went when
+// they moved under internal/, and graph's and server's when graph became a
+// slice and server took a builder of its own (T-208).
 var toplevelFixtures = []toplevelFixture{
 	{"features", "toplevel_project_code", "internal/project", false, false},
 	{"features", "toplevel_project_test", "internal/project", true, false},
 	{"tools/bin/release-notes", "toplevel_release_code", "internal/release", false, false},
 	{"tools/bin/release-version", "toplevel_releasetest_test", "internal/release/releasetest", true, false},
-	{"server", "toplevel_lang_code", "internal/lang", false, false},
-	{"server", "toplevel_lang_test", "internal/lang", true, false},
+	{"server", "toplevel_lang_code", "internal/lang", false, true},
+	{"server", "toplevel_lang_test", "internal/lang", true, true},
+	{"server", "toplevel_graph_code", "internal/slices/graph", false, true},
+	{"server", "toplevel_graph_test", "internal/slices/graph", true, true},
 	{"library", "toplevel_lang_code", "internal/lang", false, true},
 	{"library", "toplevel_lang_test", "internal/lang", true, true},
 	{"features", "toplevel_lang_code", "internal/lang", false, true},
@@ -53,7 +55,7 @@ func addToplevel(module string, add func(name, layer, imported, symbol, rule str
 // what is under internal/ and each named row accepted, the rest refused,
 // naming both packages and whether from the importer's tests. Beside
 // toplevelFixtures it runs over the fixtures the other checks wrote:
-// cmd/probe importing every package under internal/, graph's row, and
+// cmd/probe importing every package under internal/, the graph slice, and
 // features importing dry's domain.
 func checkToplevel(t *testing.T, check, dir string, env []string, module string) {
 	t.Helper()
@@ -61,7 +63,7 @@ func checkToplevel(t *testing.T, check, dir string, env []string, module string)
 	runs := []run{
 		{"./cmd/probe/...", "", ""},
 		{"./internal/slices/units/...", "", ""},
-		{"./graph/...", "", ""},
+		{"./internal/slices/graph/...", "", ""},
 		{"./features/dry_domain", "internal/slices/dry/domain", ""},
 	}
 	for _, fixture := range toplevelFixtures {

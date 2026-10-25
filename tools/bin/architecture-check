@@ -56,15 +56,12 @@ siblings() {
 
 # outside <package>...: refuse a package outside internal/slices importing
 # one under it, from its code or its tests, unless the importer is under
-# cmd/, which assembles the slices, or a legacy consumer importing what its
-# row allows (ADR-0051, T-167): engines stay behind stable APIs the slices
-# import, never the reverse. depguard's slices rule covers internal/** only,
-# and server, features and tools/ have no rule,
-# so this holds it over the same go list fields as siblings. graph, the
-# legacy serve consumer, its fixture subpackages with it, reads the
-# mutation domain's judgment and, through mutation's settings adapter, the
-# project's settings in its code, and its tests build fixtures with
-# anything under internal/slices/mutation/, until graph-snapshot (ADR-0060).
+# cmd/, which assembles the slices (ADR-0051, T-167): engines stay behind
+# stable APIs the slices import, never the reverse. depguard's slices rule
+# covers internal/** only, and server, features and tools/ have no rule,
+# so this holds it over the same go list fields as siblings. graph's row
+# went when it became the graph slice, reaching mutation's judgment
+# through a port of its own (T-208).
 outside() {
 	module=$(go list -m)
 	listed=$(go list -f '{{$p := .ImportPath}}{{range .Imports}}{{$p}} code {{.}}{{"\n"}}{{end}}{{range .TestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}{{range .XTestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}' "$@")
@@ -72,16 +69,10 @@ outside() {
 		function under(path, folder) {
 			return path == module "/" folder || index(path, module "/" folder "/") == 1
 		}
-		function allowed(importer, kind, imported, domain) {
-			if (index(importer, module "/cmd/") == 1) return 1
-			domain = module "/internal/slices/mutation/domain"
-			if (under(importer, "graph")) {
-				if (imported == domain || imported == module "/internal/slices/mutation/adapters/settings") return 1
-				return kind == "tests" && index(imported, module "/internal/slices/mutation/") == 1
-			}
-			return 0
+		function allowed(importer) {
+			return index(importer, module "/cmd/") == 1
 		}
-		NF == 3 && !under($1, "internal/slices") && under($3, "internal/slices") && !allowed($1, $2, $3) {
+		NF == 3 && !under($1, "internal/slices") && under($3, "internal/slices") && !allowed($1) {
 			if (seen[$1 " " $3]++) next
 			from = ""
 			if ($2 == "tests") from = " from its tests"
@@ -89,7 +80,7 @@ outside() {
 		}')
 	[ -z "$refused" ] && return 0
 	printf '%s\n' "$refused" | while IFS= read -r line; do
-		echo "architecture-check: $line; only cmd imports any package under internal/slices, graph only what its row in docs/go.md allows (ADR-0051)" >&2
+		echo "architecture-check: $line; only cmd imports any package under internal/slices (ADR-0051)" >&2
 	done
 	return 1
 }
@@ -101,12 +92,12 @@ outside() {
 # internal/project alone, a package under it with it, since the harness asks
 # discovery's own rules, never a copy; tools/bin/release-notes and
 # release-version import internal/release alone, its releasetest with it,
-# as the template lays the release tools out. Until graph-snapshot
-# (ADR-0060), graph and server, the legacy serve consumer, import what they
-# need, outside holding what they import under internal/slices; project's,
-# metrics', coverage's and config's rows went with them under internal/
-# (T-194 to T-197). depguard covers internal/** only, so this holds it over
-# the same go list fields as outside.
+# as the template lays the release tools out. project's, metrics',
+# coverage's and config's rows went with them under internal/ (T-194 to
+# T-197), and graph's and server's when graph became a slice and server
+# took a builder of its own, which cmd binds (T-208). depguard covers
+# internal/** only, so this holds it over the same go list fields as
+# outside.
 toplevel() {
 	module=$(go list -m)
 	listed=$(go list -f '{{$p := .ImportPath}}{{range .Imports}}{{$p}} code {{.}}{{"\n"}}{{end}}{{range .TestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}{{range .XTestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}' "$@")
@@ -118,8 +109,6 @@ toplevel() {
 			if (under(importer, "cmd") || under(importer, "internal")) return 1
 			if (under(importer, "features")) return under(imported, "internal/project")
 			if (under(importer, "tools/bin/release-notes") || under(importer, "tools/bin/release-version")) return under(imported, "internal/release")
-			# Until graph-snapshot (ADR-0060).
-			if (under(importer, "graph") || under(importer, "server")) return 1
 			return 0
 		}
 		NF == 3 && under($3, "internal") && !allowed($1, $3) {

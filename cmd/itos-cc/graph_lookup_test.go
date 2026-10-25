@@ -1,4 +1,4 @@
-package graph
+package main
 
 import (
 	"os/exec"
@@ -6,7 +6,8 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
-	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	"github.com/donvargax/itos-cc/internal/slices/graph"
+	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // The scenarios of graph-snapshot-lookup: each builds a Go module in a git
@@ -15,12 +16,12 @@ import (
 
 // kotlinModule is the module, its git repository made, with init's entry as
 // a run that killed every mutant records it.
-func kotlinModule(t *testing.T) (module, []mutants.UnitResult) {
+func kotlinModule(t *testing.T) (graphModule, []mutation.UnitResult) {
 	t.Helper()
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git is not installed")
 	}
-	m := newModule(t)
+	m := newGraphModule(t)
 	m.write("lang/kotlin.go", "package lang\n\nvar n int\n\nfunc init() {\n\tn = 1 + 1\n}\n")
 	// A fixture repository never runs git's automatic maintenance or gc.
 	for _, args := range [][]string{{"init", "-q"}, {"config", "maintenance.auto", "false"}, {"config", "gc.auto", "0"}} {
@@ -35,7 +36,7 @@ func kotlinModule(t *testing.T) (module, []mutants.UnitResult) {
 
 // initUnit is the init function of lang/kotlin.go in a graph of m built
 // afresh.
-func initUnit(t *testing.T, m module) Unit {
+func initUnit(t *testing.T, m graphModule) graph.Unit {
 	t.Helper()
 	for _, n := range m.build().Nodes {
 		for _, u := range n.Units {
@@ -45,7 +46,7 @@ func initUnit(t *testing.T, m module) Unit {
 		}
 	}
 	t.Fatal("no init in lang/kotlin.go")
-	return Unit{}
+	return graph.Unit{}
 }
 
 // @ID-GRAPH-39
@@ -70,7 +71,7 @@ func TestAMutationSnapshotNamingAnotherPathDoesNotMatch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(checks) != 1 || len(checks[0].Functions) != 1 || checks[0].Functions[0].State != mutants.Missing {
+	if len(checks) != 1 || len(checks[0].Functions) != 1 || checks[0].Functions[0].State != mutation.Missing {
 		t.Errorf("mutation check: %+v, want init missing", checks)
 	}
 }

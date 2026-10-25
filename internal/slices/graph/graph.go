@@ -14,7 +14,6 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/imports"
 	"github.com/donvargax/itos-cc/internal/lang"
-	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Node is one box: a repository, a directory, or a module.
@@ -49,9 +48,6 @@ type Unit struct {
 	Mutated    bool     `json:"mutated"`
 	Stale      bool     `json:"stale"` // its mutation results are stale, as mutation check calls them
 	Duplicates int      `json:"duplicates"`
-
-	hash  string
-	sites []mutants.Site // its mutation sites, which a fresh entry records
 }
 
 // Edge is a dependency between modules. An import edge counts From's import
@@ -72,13 +68,27 @@ type Graph struct {
 	Edges   []Edge  `json:"edges"`
 }
 
+// Files is the files of each repository of g, by its name, as its nodes
+// list them, each repository-relative: a node's id starts with its
+// repository's name.
+func (g *Graph) Files() map[string][]string {
+	out := map[string][]string{}
+	for _, n := range g.Nodes {
+		repo, _, _ := strings.Cut(n.ID, "/")
+		out[repo] = append(out[repo], n.Files...)
+	}
+	return out
+}
+
 // fileInfo is what the graph needs from one parsed source file: what import
-// resolution needs of it, and its units and endpoints.
+// resolution needs of it, its units and endpoints, and the facts the
+// Mutation port made of it (Mutation.Facts), which graph never reads.
 type fileInfo struct {
 	imports.File
-	units  []Unit
-	serves []lang.Endpoint
-	calls  []lang.Endpoint
+	units    []Unit
+	serves   []lang.Endpoint
+	calls    []lang.Endpoint
+	mutation any
 }
 
 // repoGraph builds one repository's nodes and edges. Node ids are prefixed

@@ -83,7 +83,7 @@ func TestArchitecture(t *testing.T) {
 	// internal/release/releasetest is what the release tools' tests may
 	// import from outside internal/, and internal/project what features
 	// may (ADR-0061).
-	for _, path := range []string{"internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", "internal/slices/mutation/domain", "internal/coverage", "internal/coverage/port", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/slices/mutation/adapters/worktrees", "internal/processes", "internal/imports", "internal/slices/mutation/adapters/testtools", "internal/slices/mutation/adapters/testinputs", "internal/slices/mutation/adapters/importgraph", "internal/slices/mutation/adapters/githistory", "internal/slices/mutation/adapters/freshenv", "internal/slices/mutation/adapters/snapshots", "internal/slices/mutation/adapters/exceptions", "internal/slices/mutation/adapters/sources", "internal/slices/mutation/adapters/settings", "internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/slices/version", "internal/slices/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "internal/release/releasetest", "internal/project", "cmd/probe", "internal/covrun", "graph"} {
+	for _, path := range []string{"internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", "internal/slices/mutation/domain", "internal/coverage", "internal/coverage/port", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/slices/mutation/adapters/worktrees", "internal/processes", "internal/imports", "internal/slices/mutation/adapters/testtools", "internal/slices/mutation/adapters/testinputs", "internal/slices/mutation/adapters/importgraph", "internal/slices/mutation/adapters/githistory", "internal/slices/mutation/adapters/freshenv", "internal/slices/mutation/adapters/snapshots", "internal/slices/mutation/adapters/exceptions", "internal/slices/mutation/adapters/sources", "internal/slices/mutation/adapters/settings", "internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/slices/version", "internal/slices/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "internal/release/releasetest", "internal/project", "cmd/probe", "internal/covrun", "internal/slices/graph"} {
 		write(path+"/stub.go", "package probe\n\nconst Value = 1\n")
 	}
 	for _, fake := range fakes {
@@ -272,16 +272,16 @@ func TestArchitecture(t *testing.T) {
 		{"internal/workdir", "internal/selection", "workdir", []string{"internal/snapshot/port", "internal/coverage/port", "internal/covrun"}, nil},
 		{"internal/metricsdir", "internal/snapshot", "metricsdir", []string{"internal/selection/port", "internal/lang/port", "internal/coverage/port", "internal/covrun"}, []string{"internal/snapshot"}},
 
-		{"internal/slices/mutation/adapters/testtools", mutation, "testtools", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "graph"}, []string{mutation, "internal/lang", "internal/project", "internal/covrun"}},
-		{"internal/slices/mutation/adapters/testinputs", mutation, "testinputs", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "graph"}, []string{mutation, "internal/lang", "internal/project", "internal/covrun"}},
-		{"internal/slices/mutation/adapters/freshenv", mutation, "freshenv", []string{"internal/snapshot/port", "graph"}, []string{mutation, "internal/coverage", "internal/coverage/port", "internal/selection", "internal/selection/port", "internal/lang", "internal/lang/port", "internal/slices/mutation/adapters/settings", "internal/project", "internal/covrun"}},
-		{"internal/slices/mutation/adapters/githistory", mutation, "githistory", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "internal/covrun", "graph"}, []string{mutation, "internal/project"}},
-		{"internal/slices/mutation/adapters/importgraph", mutation, "importgraph", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "internal/covrun", "internal/project", "graph"}, []string{mutation, "internal/imports"}},
+		{"internal/slices/mutation/adapters/testtools", mutation, "testtools", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "internal/slices/graph"}, []string{mutation, "internal/lang", "internal/project", "internal/covrun"}},
+		{"internal/slices/mutation/adapters/testinputs", mutation, "testinputs", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "internal/slices/graph"}, []string{mutation, "internal/lang", "internal/project", "internal/covrun"}},
+		{"internal/slices/mutation/adapters/freshenv", mutation, "freshenv", []string{"internal/snapshot/port", "internal/slices/graph"}, []string{mutation, "internal/coverage", "internal/coverage/port", "internal/selection", "internal/selection/port", "internal/lang", "internal/lang/port", "internal/slices/mutation/adapters/settings", "internal/project", "internal/covrun"}},
+		{"internal/slices/mutation/adapters/githistory", mutation, "githistory", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "internal/covrun", "internal/slices/graph"}, []string{mutation, "internal/project"}},
+		{"internal/slices/mutation/adapters/importgraph", mutation, "importgraph", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "internal/covrun", "internal/project", "internal/slices/graph"}, []string{mutation, "internal/imports"}},
 		{"internal/slices/mutation/adapters/worktrees", mutation, "worktrees", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "internal/covrun"}, []string{mutation, "internal/processes", "internal/project"}},
-		{"internal/slices/mutation/adapters/snapshots", mutation, "snapshots", []string{"internal/selection/port", "internal/lang/port", "internal/coverage/port", "internal/project", "internal/covrun", "graph"}, []string{mutation, "internal/snapshot/port"}},
-		{"internal/slices/mutation/adapters/exceptions", mutation, "exceptions", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "internal/project", "internal/covrun", "graph"}, []string{mutation, "internal/slices/mutation/adapters/settings"}},
-		{"internal/slices/mutation/adapters/sources", mutation, "sources", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "internal/project", "internal/covrun", "graph"}, []string{mutation}},
-		{"internal/slices/mutation/adapters/settings", mutation, "settings", []string{"internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "internal/covrun", "graph"}, []string{mutation, "internal/selection/port", "internal/project"}},
+		{"internal/slices/mutation/adapters/snapshots", mutation, "snapshots", []string{"internal/selection/port", "internal/lang/port", "internal/coverage/port", "internal/project", "internal/covrun", "internal/slices/graph"}, []string{mutation, "internal/snapshot/port"}},
+		{"internal/slices/mutation/adapters/exceptions", mutation, "exceptions", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "internal/project", "internal/covrun", "internal/slices/graph"}, []string{mutation, "internal/slices/mutation/adapters/settings"}},
+		{"internal/slices/mutation/adapters/sources", mutation, "sources", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "internal/project", "internal/covrun", "internal/slices/graph"}, []string{mutation}},
+		{"internal/slices/mutation/adapters/settings", mutation, "settings", []string{"internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "internal/covrun", "internal/slices/graph"}, []string{mutation, "internal/selection/port", "internal/project"}},
 		{"internal/coveragetools", "internal/coverage", "coveragetools", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/project"},
 			[]string{"internal/coverage", "internal/covrun", "internal/metricsdir"}},
 	} {
@@ -420,7 +420,7 @@ func TestArchitecture(t *testing.T) {
 		if test {
 			kind = "test"
 		}
-		for _, target := range []string{"internal/selection", "internal/selection/port", "internal/lang/port", "internal/snapshot", "internal/snapshot/port", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", mutation, "internal/coverage", "internal/coverage/port", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/processes", "internal/slices/mutation/adapters/worktrees", "internal/slices/mutation/adapters/testtools", "internal/slices/mutation/adapters/testinputs", "internal/slices/mutation/adapters/importgraph", "internal/slices/mutation/adapters/githistory", "internal/slices/mutation/adapters/freshenv", "internal/slices/mutation/adapters/snapshots", "internal/slices/mutation/adapters/exceptions", "internal/slices/mutation/adapters/sources", "internal/slices/mutation/adapters/settings", "internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/slices/version", "internal/slices/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "graph"} {
+		for _, target := range []string{"internal/selection", "internal/selection/port", "internal/lang/port", "internal/snapshot", "internal/snapshot/port", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", mutation, "internal/coverage", "internal/coverage/port", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/processes", "internal/slices/mutation/adapters/worktrees", "internal/slices/mutation/adapters/testtools", "internal/slices/mutation/adapters/testinputs", "internal/slices/mutation/adapters/importgraph", "internal/slices/mutation/adapters/githistory", "internal/slices/mutation/adapters/freshenv", "internal/slices/mutation/adapters/snapshots", "internal/slices/mutation/adapters/exceptions", "internal/slices/mutation/adapters/sources", "internal/slices/mutation/adapters/settings", "internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/slices/version", "internal/slices/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "internal/slices/graph"} {
 			add(strings.ReplaceAll(target, "/", "_")+"_"+kind, "internal/imports", module+"/"+target, "Value", "imports", test)
 		}
 		for _, fake := range fakes {
@@ -441,7 +441,7 @@ func TestArchitecture(t *testing.T) {
 	// coverage runner. Its tests may use lang's fake. Who may
 	// import it is held above: no domain or slice, and of the adapters only
 	// those wrapping it.
-	for _, target := range []string{"internal/selection/port", "internal/snapshot/port", "internal/slices/dry/domain", mutation, "internal/coverage", "internal/coverage/port", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/processes", "internal/imports", "internal/slices/mutation/adapters/worktrees", "internal/slices/mutation/adapters/githistory", "internal/slices/crap", "internal/slices/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "internal/covrun", "graph", "internal/slices/mutation/adapters/settings"} {
+	for _, target := range []string{"internal/selection/port", "internal/snapshot/port", "internal/slices/dry/domain", mutation, "internal/coverage", "internal/coverage/port", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/processes", "internal/imports", "internal/slices/mutation/adapters/worktrees", "internal/slices/mutation/adapters/githistory", "internal/slices/crap", "internal/slices/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "internal/covrun", "internal/slices/graph", "internal/slices/mutation/adapters/settings"} {
 		add(strings.ReplaceAll(target, "/", "_"), "internal/project", module+"/"+target, "Value", "project", false)
 	}
 	for _, fake := range fakes {
@@ -461,7 +461,7 @@ func TestArchitecture(t *testing.T) {
 	// version or graph. Its tests may use the coverage port's fake.
 	// Who may import it is held above: no domain or slice, and of the
 	// adapters only those wrapping it.
-	for _, target := range []string{"internal/selection", "internal/selection/port", "internal/snapshot", "internal/snapshot/port", "internal/slices/crap/domain", mutation, "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/processes", "internal/imports", "internal/slices/mutation/adapters/testtools", "internal/slices/crap", "internal/slices/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "graph", "internal/slices/mutation/adapters/settings"} {
+	for _, target := range []string{"internal/selection", "internal/selection/port", "internal/snapshot", "internal/snapshot/port", "internal/slices/crap/domain", mutation, "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/processes", "internal/imports", "internal/slices/mutation/adapters/testtools", "internal/slices/crap", "internal/slices/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "internal/slices/graph", "internal/slices/mutation/adapters/settings"} {
 		add(strings.ReplaceAll(target, "/", "_"), "internal/covrun", module+"/"+target, "Value", "covrun", false)
 	}
 	for _, fake := range fakes {
@@ -473,15 +473,8 @@ func TestArchitecture(t *testing.T) {
 	add("os_allowed", "internal/covrun", "os", "ReadFile", "", false)
 	add("exec_allowed", "internal/covrun", "os/exec", "Command", "", false)
 	add("coverage_fake_allowed", "internal/covrun", module+"/internal/coverage/port/porttest", "Value", "", true)
-	// graph, the legacy serve consumer outside internal/slices, imports
-	// mutation's domain, its judgment, and its settings adapter, the
-	// project's settings, and no depguard rule holds it; graph resolves its
-	// imports through the import-resolution engine. architecture-check
-	// --outside holds what it and every other package outside
-	// internal/slices import under it, below.
-	add("mutation", "graph", module+"/"+mutation, "Value", "", false)
-	add("settings", "graph", module+"/internal/slices/mutation/adapters/settings", "Value", "", false)
-	add("imports", "graph", module+"/internal/imports", "Value", "", false)
+	// The graph slice's own arrow, which graph_test.go writes (T-208).
+	addGraph(module, mutation, fakes, add, addAny)
 	// The project engine importing a slice is refused by its own rule and
 	// by architecture-check --outside alike, below.
 	add("units", "internal/project", module+"/internal/slices/units", "Value", "project", false)
@@ -490,9 +483,6 @@ func TestArchitecture(t *testing.T) {
 	// every one by.
 	add("mutation_domain", "internal/covrun", module+"/"+mutation, "Value", "", true)
 	add("dry_domain", "features", module+"/internal/slices/dry/domain", "Value", "", false)
-	add("crap_domain", "graph", module+"/internal/slices/crap/domain", "Value", "", false)
-	add("snapshots", "graph", module+"/internal/slices/mutation/adapters/snapshots", "Value", "", false)
-	add("testtools", "graph", module+"/internal/slices/mutation/adapters/testtools", "Value", "", true)
 	// What is outside internal/ and cmd/, which architecture-check
 	// --toplevel refuses or accepts by its rows, below (ADR-0061): depguard
 	// lets every one by.
@@ -761,13 +751,10 @@ func Code(failure sealed.Failure) int {
 	checkSiblings(t, check, dir, compile.Env, module)
 	// Engines stay behind stable APIs the slices import, never the reverse
 	// (ADR-0051, T-167): a package outside internal/slices imports none
-	// under it but cmd, which assembles them, and graph, the legacy
-	// consumer, what its row allows: it and its fixture subpackages, the
-	// mutation domain and its settings adapter from their code and anything
-	// under internal/slices/mutation/ from their tests. depguard holds none
-	// of them, so architecture-check --outside refuses, from code or tests,
-	// naming both packages; the lint above holds that depguard accepts every
-	// fixture.
+	// under it but cmd, which assembles them; graph's row went when it
+	// became a slice (T-208). depguard holds none of them, so
+	// architecture-check --outside refuses, from code or tests, naming both
+	// packages; the lint above holds that depguard accepts every fixture.
 	checkOutside(t, check, dir, compile.Env, module)
 	// Every package but cmd lives under internal/ (ADR-0061): a package
 	// outside internal/ and cmd/ imports none under it, from its code or

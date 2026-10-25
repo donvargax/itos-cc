@@ -8,8 +8,9 @@ import (
 
 // checkSiblings runs architecture-check --siblings over TestArchitecture's
 // fixtures in dir, the temporary module, with env, its environment: a
-// slice's own subpackages, an engine, cmd and graph accepted, a slice
-// importing a sibling's package refused, naming both.
+// slice's own subpackages, an engine and cmd accepted, a slice importing a
+// sibling's package refused, naming both: the graph slice importing the
+// mutation domain among them.
 func checkSiblings(t *testing.T, check, dir string, env []string, module string) {
 	t.Helper()
 	slicePath := func(name string) string { return module + "/internal/slices/" + name }
@@ -18,14 +19,16 @@ func checkSiblings(t *testing.T, check, dir string, env []string, module string)
 		{"./cmd/slices", ""},
 		{"./internal/slices/beta", "alpha"},
 		{"./internal/slices/gamma", "alpha/store"},
-		// Mutation's domain is for its own slice, its porttest, its adapters
-		// and what is outside internal/slices, graph, since every adapter of
-		// it, its settings adapter last (T-197), is under internal/slices now
-		// (T-161); another slice's domain importing it, which depguard lets
-		// by, is refused.
+		// Mutation's domain is for its own slice, its porttest and its
+		// adapters, since every adapter of it, its settings adapter last
+		// (T-197), is under internal/slices now (T-161); another slice's
+		// domain importing it, which depguard lets by, is refused, as the
+		// graph slice importing it is, which its own rule refuses too
+		// (T-208).
 		{"./internal/slices/mutation/own_domain_allowed_code", ""},
 		{"./internal/slices/mutation/domain/porttest/domain_allowed_code", ""},
-		{"./graph/mutation", ""},
+		{"./internal/slices/graph/internal_slices_mutation_domain_code", "mutation/domain"},
+		{"./internal/slices/graph/internal_slices_mutation_domain_test", "mutation/domain"},
 	}
 	for _, domain := range []string{"dry", "scrap", "crap"} {
 		for _, kind := range []string{"code", "test"} {
