@@ -5716,8 +5716,8 @@ items:
   - id: slice-52
     title: itos-cc.yaml refuses a key it does not list, at any depth, with did-you-mean
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [slice-49]
     kind: slice
     why: >
