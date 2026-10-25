@@ -11,6 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
+  - bug-9
   - listed-support-per-test
   - listed-suites
   - features-coverage-gocoverdir-leak
