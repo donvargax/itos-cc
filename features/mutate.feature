@@ -2643,14 +2643,14 @@ Feature: Mutation testing
     # - A file with no list gains the keys it needs at the end of the
     #   mutation mapping, or of the document; nothing before them changes.
     # - --renew (MUT-292) and --prune (slice-21) write the same way.
-    # The fixture's "other" key stands for mutation.tests' join, which would
-    # make the run use listed tests. Both drivers run it, as it needs no real
-    # tool. Before slice-20 the whole document is re-encoded, failing at the
-    # Then.
+    # The fixture's flow list stands for mutation.tests' join, which would
+    # make the run use listed tests; it was an unlisted key, "other", until
+    # slice-52 refused one. Both drivers run it, as it needs no real tool.
+    # Before slice-20 the whole document is re-encoded, failing at the Then.
     @slice-20 @ID-MUT-290
     Scenario: Excepting a survivor changes no byte of itos-cc.yaml outside its new entry
       Given a fresh run recorded the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
-      And itos-cc.yaml is laid out by hand: a "---" line, blank lines between keys, `other: { each: "{id}", sep: "|" }`, a block four spaces deep, a comment two spaces after a value, and an exceptions list at its key's indentation with one entry for another function, whose reason is folded
+      And itos-cc.yaml is laid out by hand: a "---" line, blank lines between keys, `copy: [ "dist/**" ]`, a block four spaces deep, a comment two spaces after a value, and an exceptions list at its key's indentation with one entry for another function, whose reason is folded
       When I run "itos-cc mutation except src/board.ts:7:19 --reason 'the loop only counts up'"
       Then itos-cc.yaml is the text it was, with the new entry's lines after the last entry and no other byte changed
       And the exit code is 0
@@ -3912,7 +3912,7 @@ Feature: Mutation testing
     @slice-20 @ID-MUT-292
     Scenario: Renewing an exception changes only the lines of its entry
       Given a Go project with a reviewed exception for an equivalent mutant in a function
-      And itos-cc.yaml is laid out by hand around that entry: a "---" line, blank lines between keys, `other: { each: "{id}", sep: "|" }`, and a comment two spaces after a value
+      And itos-cc.yaml is laid out by hand around that entry: a "---" line, blank lines between keys, `exclude: [ "**/gen/**" ]`, and a comment two spaces after a value
       And a commit that renames a string literal on another line of that function
       And "itos-cc mutation run" has judged the function again and the mutant still survives
       When I run "itos-cc mutation except --renew --json"

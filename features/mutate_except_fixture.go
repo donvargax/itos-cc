@@ -193,7 +193,7 @@ func (e *exceptionMutation) commented() error {
 	if err := e.review("first"); err != nil {
 		return err
 	}
-	return e.s.m.w.write("itos-cc.yaml", "# a reviewed exception\nother:\n  kept: true\n"+e.s.m.read("itos-cc.yaml"))
+	return e.s.m.w.write("itos-cc.yaml", "# a reviewed exception\nexclude:\n  - \"**/gen/**\"\n"+e.s.m.read("itos-cc.yaml"))
 }
 func (e *exceptionMutation) invalid() error {
 	if err := e.review(e.reason); err != nil {

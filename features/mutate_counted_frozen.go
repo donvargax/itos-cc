@@ -40,7 +40,7 @@ func (q *countedMutation) frozenProject(ctx context.Context) error {
 }
 func (q *countedMutation) dirtyInputs(ctx context.Context) error {
 	w := q.e.m.w
-	for file, text := range map[string]string{"main.go": "package broken\n", "main_test.go": "staged tests cannot compile\n", "itos-cc.yaml": "mutation:\n  test_command: false\n"} {
+	for file, text := range map[string]string{"main.go": "package broken\n", "main_test.go": "staged tests cannot compile\n", "itos-cc.yaml": "mutation:\n  copy: [staged/**]\n"} {
 		if err := w.write(file, text); err != nil {
 			return err
 		}

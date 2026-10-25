@@ -225,7 +225,7 @@ func TestTagsKeysThatAreNotStringsAndASecondDocumentAreRefused(t *testing.T) {
 func TestJSONsYAMLIsRead(t *testing.T) {
 	for _, text := range []string{
 		"exclude: [! a]\n",
-		"exclude: !!seq [!!str a]\nx: {y: !!null null, z: !!bool true, w: !!int 1, v: !!float 1.5}\n",
+		"exclude: !!seq [!!str a]\nmutation: !!map {tests: !!null null, exceptions: [{file: a.go, function: f, hash: h, line_in_function: !!int 1, column: !!int 1, original: '<', replacement: '<=', reason: !!bool true, line_text: !!float 1.5}]}\n",
 		"exclude: !<tag:yaml.org,2002:seq> [a]\n",
 		"--- {exclude: [a]}\n",
 		"exclude: [a]\n\"<<\": {x: 1}\n",

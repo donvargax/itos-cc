@@ -15,11 +15,11 @@ import (
 // change.
 func (e *exceptionMutation) layoutSteps(sc *godog.ScenarioContext) {
 	step := func(text string, fn any) { sc.Step("^"+regexp.QuoteMeta(text)+"$", fn) }
-	step("itos-cc.yaml is laid out by hand: a \"---\" line, blank lines between keys, `other: { each: \"{id}\", sep: \"|\" }`, a block four spaces deep, a comment two spaces after a value, and an exceptions list at its key's indentation with one entry for another function, whose reason is folded", e.layoutNew)
+	step("itos-cc.yaml is laid out by hand: a \"---\" line, blank lines between keys, `copy: [ \"dist/**\" ]`, a block four spaces deep, a comment two spaces after a value, and an exceptions list at its key's indentation with one entry for another function, whose reason is folded", e.layoutNew)
 	step("itos-cc.yaml is the text it was, with the new entry's lines after the last entry and no other byte changed", e.layoutAppended)
 	step(`itos-cc.yaml is laid out by hand, its entry for src/board.ts:7:19 with reason "first" between two entries for other functions, a comment above it`, e.layoutBetween)
 	step(`only the lines of that entry changed in itos-cc.yaml, its reason now "reworded" and the comment above it kept`, e.layoutReplaced)
-	step("itos-cc.yaml is laid out by hand around that entry: a \"---\" line, blank lines between keys, `other: { each: \"{id}\", sep: \"|\" }`, and a comment two spaces after a value", e.layoutRenew)
+	step("itos-cc.yaml is laid out by hand around that entry: a \"---\" line, blank lines between keys, `exclude: [ \"**/gen/**\" ]`, and a comment two spaces after a value", e.layoutRenew)
 	step(`only the lines of the renewed entry changed in itos-cc.yaml`, e.layoutRenewed)
 }
 
@@ -41,8 +41,8 @@ func (e *exceptionMutation) layoutNew() error {
 	if err != nil {
 		return err
 	}
-	text := "---\n# Settings laid out by hand.\n\nexclude:\n    - \"**/gen/**\"\n\nother: { each: \"{id}\", sep: \"|\" }\nlimit: 30  # two spaces before this comment\n\n" +
-		"mutation:\n  exceptions:\n  - file: src/board.ts\n    function: board.Board#k1\n    hash: " + hash + "\n    line_in_function: 1\n    column: 17\n" +
+	text := "---\n# Settings laid out by hand.\n\nexclude:\n    - \"**/gen/**\"\n\n" +
+		"mutation:\n  copy: [ \"dist/**\" ]  # two spaces before this comment\n\n  exceptions:\n  - file: src/board.ts\n    function: board.Board#k1\n    hash: " + hash + "\n    line_in_function: 1\n    column: 17\n" +
 		"    original: '>'\n    replacement: '>='\n    reason: >-\n      a folded\n      reason\n"
 	e.layoutPrefix, e.layoutSuffix = text, ""
 	return e.s.m.w.write("itos-cc.yaml", text)
@@ -100,7 +100,7 @@ func (e *exceptionMutation) layoutBetween() error {
 	if err != nil {
 		return err
 	}
-	e.layoutPrefix = "# Settings laid out by hand.\n\nother: { each: \"{id}\", sep: \"|\" }\n\nmutation:\n    exceptions:\n" +
+	e.layoutPrefix = "# Settings laid out by hand.\n\nexclude: [ \"**/gen/**\" ]\n\nmutation:\n    exceptions:\n" +
 		"      - file: src/board.ts\n        function: board.Board#k1\n        hash: " + k1 + "\n        line_in_function: 1\n        column: 17\n" +
 		"        original: '>'\n        replacement: '>='\n        reason: kept as written   # three spaces\n\n" +
 		"      # The count loop only counts up.\n"
@@ -133,7 +133,7 @@ func (e *exceptionMutation) layoutRenew() error {
 	if !strings.HasPrefix(written, "mutation:\n  exceptions:\n    - file: label.go\n") {
 		return fmt.Errorf("unexpected entries as written:\n%s", written)
 	}
-	text := "---\n# Settings laid out by hand.\n\nother: { each: \"{id}\", sep: \"|\" }\nlimit: 30  # two spaces before this comment\n\n" +
+	text := "---\n# Settings laid out by hand.\n\nexclude: [ \"**/gen/**\" ]  # two spaces before this comment\n\n" +
 		strings.ReplaceAll(written, "\n    - file:", "\n\n    - file:")
 	lines := strings.SplitAfter(text, "\n")
 	start := -1

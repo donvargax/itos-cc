@@ -308,8 +308,8 @@ func (e *exceptionMutation) restKept() error {
 	if err != nil {
 		return err
 	}
-	if !strings.HasPrefix(e.s.m.read("itos-cc.yaml"), "# a reviewed exception\n") || !reflect.DeepEqual(a["other"], map[string]any{"kept": true}) {
-		return fmt.Errorf("comment/other key changed: %v", a)
+	if !strings.HasPrefix(e.s.m.read("itos-cc.yaml"), "# a reviewed exception\n") || !reflect.DeepEqual(a["exclude"], []any{"**/gen/**"}) {
+		return fmt.Errorf("comment/exclude key changed: %v", a)
 	}
 	return nil
 }

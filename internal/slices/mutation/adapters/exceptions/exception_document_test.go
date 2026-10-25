@@ -40,7 +40,7 @@ func TestExceptDocumentAddsEntriesThatParseReads(t *testing.T) {
 func TestExceptDocumentReplacesTheSameSiteAndKeepsTheRest(t *testing.T) {
 	other := entry
 	other.Column = 20
-	text := "# Settings.\nother: [1, 2] # kept\nmutation:\n  # Reviewed.\n  exceptions:\n" +
+	text := "# Settings.\nexclude: [a, b] # kept\nmutation:\n  # Reviewed.\n  exceptions:\n" +
 		"    # The first.\n    - {file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: old}\n" +
 		"    - {file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 20, original: '<', replacement: '!=', reason: the loop only counts up}\n"
 	data, replaced, err := exceptions.ExceptDocument([]byte(text), entry)
@@ -54,7 +54,7 @@ func TestExceptDocumentReplacesTheSameSiteAndKeepsTheRest(t *testing.T) {
 	if !slices.Equal(c.Exceptions, []mutants.Exception{entry, other}) {
 		t.Errorf("exceptions %+v, want the first reworded and the second as it was", c.Exceptions)
 	}
-	for _, kept := range []string{"# Settings.", "# kept", "# Reviewed.", "# The first.", "other:"} {
+	for _, kept := range []string{"# Settings.", "# kept", "# Reviewed.", "# The first.", "exclude:"} {
 		if !strings.Contains(string(data), kept) {
 			t.Errorf("itos-cc.yaml lost %q:\n%s", kept, data)
 		}
@@ -63,7 +63,7 @@ func TestExceptDocumentReplacesTheSameSiteAndKeepsTheRest(t *testing.T) {
 
 func TestRenewDocumentRewritesOnlyItsEntriesAndKeepsTheRest(t *testing.T) {
 	// The first entry predates line_text, and reads with none.
-	text := "# Settings.\nother: [1, 2] # kept\nmutation:\n  exceptions:\n" +
+	text := "# Settings.\nexclude: [a, b] # kept\nmutation:\n  exceptions:\n" +
 		"    # The first.\n    - {file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: old}\n" +
 		"    - {file: src/a.go, function: m/src#g, hash: 0123456789abcdef, line_in_function: 2, column: 20, original: '<', replacement: '!=', reason: kept, line_text: 'if a < b {'}\n"
 	before, err := settings.Parse([]byte(text))
@@ -86,7 +86,7 @@ func TestRenewDocumentRewritesOnlyItsEntriesAndKeepsTheRest(t *testing.T) {
 	if !slices.Equal(after.Exceptions, []mutants.Exception{renewed, before.Exceptions[1]}) {
 		t.Errorf("exceptions %+v, want the first renewed and the second as it was", after.Exceptions)
 	}
-	for _, kept := range []string{"# Settings.", "# kept", "# The first.", "other:"} {
+	for _, kept := range []string{"# Settings.", "# kept", "# The first.", "exclude:"} {
 		if !strings.Contains(string(data), kept) {
 			t.Errorf("itos-cc.yaml lost %q:\n%s", kept, data)
 		}
@@ -183,8 +183,8 @@ func TestExceptDocumentChangesOnlyTheLinesOfItsEntry(t *testing.T) {
 	for _, c := range []struct{ name, text, want string }{
 		{"empty", "", "mutation:\n  exceptions:\n" + block("    ")},
 		{"a comment alone", "# Nothing yet.\n", "# Nothing yet.\nmutation:\n  exceptions:\n" + block("    ")},
-		{"no line break at the end", "x: 1", "x: 1\nmutation:\n  exceptions:\n" + block("    ")},
-		{"a null mutation", "---\nmutation: ~  # none yet\n\nnext: 1\n", "---\nmutation:  # none yet\n  exceptions:\n" + block("    ") + "\nnext: 1\n"},
+		{"no line break at the end", "exclude: []", "exclude: []\nmutation:\n  exceptions:\n" + block("    ")},
+		{"a null mutation", "---\nmutation: ~  # none yet\n\nexclude: []\n", "---\nmutation:  # none yet\n  exceptions:\n" + block("    ") + "\nexclude: []\n"},
 		{"a null list", "mutation:\n    exceptions:\n    tests: {list: l, run: 'r {pattern}', ids_pattern: '{ids}', join: {each: '{id}', sep: ' '}}\n",
 			"mutation:\n    exceptions:\n" + block("      ") + "    tests: {list: l, run: 'r {pattern}', ids_pattern: '{ids}', join: {each: '{id}', sep: ' '}}\n"},
 		{"no list", "mutation:\n  tests: {list: l, run: 'r {pattern}', ids_pattern: '{ids}', join: {each: '{id}',   sep: ' '}}\n\n# the end\n",
@@ -193,9 +193,9 @@ func TestExceptDocumentChangesOnlyTheLinesOfItsEntry(t *testing.T) {
 			"mutation:\n  exceptions:\n  - " + other + "\n" + block("  ") + "\n  # trailing\nexclude:   [a/**]\n"},
 		{"a replaced flow entry", "mutation:\n  exceptions:\n    # first\n    - " + old + "   # its line\n\n    - " + other + "\n",
 			"mutation:\n  exceptions:\n    # first\n" + strings.Replace(block("    "), "src/a.go\n", "src/a.go   # its line\n", 1) + "\n    - " + other + "\n"},
-		{"a flow list", "mutation:\n  exceptions: [" + other + ",\n     ]  # rewritten\n\nnext: 1\n", "mutation:\n  exceptions:\n    - file: src/b.go\n      function: m/src#g\n" +
-			"      hash: 0123456789abcdef\n      line_in_function: 2\n      column: 9\n      original: <\n      replacement: '!='\n      reason: other\n" + block("    ") + "\nnext: 1\n"},
-		{"line breaks of Windows", "a: 1\r\nmutation:\r\n  exceptions:\r\n  - " + other + "\r\n", "a: 1\r\nmutation:\r\n  exceptions:\r\n  - " + other + "\r\n" + strings.ReplaceAll(block("  "), "\n", "\r\n")},
+		{"a flow list", "mutation:\n  exceptions: [" + other + ",\n     ]  # rewritten\n\nexclude: []\n", "mutation:\n  exceptions:\n    - file: src/b.go\n      function: m/src#g\n" +
+			"      hash: 0123456789abcdef\n      line_in_function: 2\n      column: 9\n      original: <\n      replacement: '!='\n      reason: other\n" + block("    ") + "\nexclude: []\n"},
+		{"line breaks of Windows", "exclude: []\r\nmutation:\r\n  exceptions:\r\n  - " + other + "\r\n", "exclude: []\r\nmutation:\r\n  exceptions:\r\n  - " + other + "\r\n" + strings.ReplaceAll(block("  "), "\n", "\r\n")},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			data, _, err := exceptions.ExceptDocument([]byte(c.text), entry)
@@ -238,7 +238,7 @@ func TestExceptDocumentReencodesAFlowMapping(t *testing.T) {
 }
 
 func TestRenewDocumentChangesOnlyTheLinesOfItsEntries(t *testing.T) {
-	text := "---\n# Settings.\n\nother: { each: \"{id}\", sep: \"|\" }\nlimit: 30  # kept\n\nmutation:\n  exceptions:\n" +
+	text := "---\n# Settings.\n\nexclude: [ \"gen/**\" ]  # kept\n\nmutation:\n  tests: {list: l, run: 'r {pattern}', ids_pattern: '{ids}', join: { each: \"{id}\", sep: \"|\" }}\n  exceptions:\n" +
 		"    - {file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: kept}\n\n" +
 		"    - file: src/a.go\n      function: m/src#g\n      hash: 0123456789abcdef\n      line_in_function: 2\n      column: 20\n      original: '<'\n      replacement: '!='\n      reason: >-\n        folded\n        reason\n"
 	before, err := settings.Parse([]byte(text))
@@ -266,8 +266,8 @@ func TestPruneDocumentRemovesOnlyItsEntriesAndTheCommentsAboveThem(t *testing.T)
 	second := "    - file: src/a.go\n      function: m/src#g\n      hash: 0123456789abcdef\n      line_in_function: 2\n      column: 9\n" +
 		"      original: '<'\n      replacement: '!='\n      reason: |\n        second\n        # still its reason\n"
 	third := "    # The third.\n    - {file: src/b.go, function: m/src#h, hash: 0123456789abcdef, line_in_function: 1, column: 3, original: '!', replacement: '', reason: third}\n"
-	head := "---\n# Settings.\n\nother: { each: \"{id}\", sep: \"|\" }\nmutation:\n  exceptions:\n"
-	tail := "\n  # after the list\nnext: 1   # kept\n"
+	head := "---\n# Settings.\n\nmutation:\n  tests: {list: l, run: 'r {pattern}', ids_pattern: '{ids}', join: { each: \"{id}\", sep: \"|\" }}\n  exceptions:\n"
+	tail := "\n  # after the list\nexclude: [ \"gen/**\" ]   # kept\n"
 	text := head + first + "\n" + second + third + tail
 	c, err := settings.Parse([]byte(text))
 	if err != nil {
