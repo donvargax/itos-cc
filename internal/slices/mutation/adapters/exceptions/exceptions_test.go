@@ -95,10 +95,11 @@ func TestExceptionsPreserveCurrentDocumentModeAndInvalidFacts(t *testing.T) {
 	if err := os.WriteFile(path, bad, 0600); err != nil {
 		t.Fatal(err)
 	}
-	_, failure := store.Except(t.Context(), e)
+	// A refused document replaced nothing, whatever its entries.
+	replaced, failure := store.Except(t.Context(), e)
 	var invalid mutants.ExceptionInvalid
-	if !errors.As(failure, &invalid) || !strings.Contains(invalid.Reason, "cannot unmarshal") {
-		t.Fatalf("invalid facts: %v", failure)
+	if replaced || !errors.As(failure, &invalid) || !strings.Contains(invalid.Reason, "cannot unmarshal") {
+		t.Fatalf("invalid facts: replaced %v, %v", replaced, failure)
 	}
 	current, err := os.ReadFile(path)
 	if err != nil {
@@ -158,7 +159,7 @@ func TestExceptStartsOnlyAFileItCreatesWithVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 	var failed mutants.ExceptionFailed
-	if _, failure := unreadable.Except(t.Context(), e); !errors.As(failure, &failed) {
-		t.Errorf("an unreadable itos-cc.yaml: %v, want an ExceptionFailed", failure)
+	if replaced, failure := unreadable.Except(t.Context(), e); replaced || !errors.As(failure, &failed) {
+		t.Errorf("an unreadable itos-cc.yaml: replaced %v, %v; want nothing replaced and an ExceptionFailed", replaced, failure)
 	}
 }
