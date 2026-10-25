@@ -14,7 +14,7 @@ queue:
   - listed-support-per-test
   - listed-suites
   - features-coverage-gocoverdir-leak
-  - itos-cc-yaml-version-key
+  - slice-53
   - slice-50
   - flaky-kills-record
   - sample-repeat
@@ -5710,14 +5710,15 @@ items:
     status: done
     depends_on: [slice-49]
     kind: slice
-  - id: itos-cc-yaml-version-key
+  - id: slice-53
     title: "itos-cc.yaml requires version: 1"
     phase: 1
     owner: null
     status: todo
     depends_on: [slice-52]
-    kind: idea
+    kind: slice
     why: >
+      Was itos-cc-yaml-version-key.
       q-94 item C (the person 2026-10-24): version, a JSON integer, 1; a missing one refused with
       fix "add version: 1 as the first line" (an empty or comment-only file needs none); a newer one
       config.invalid exit 80 with fix to upgrade itos-cc; every key added later bumps the version;
