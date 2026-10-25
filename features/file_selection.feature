@@ -291,8 +291,7 @@ Feature: Choosing which files a command looks at
   # expand without bound (CVE-2019-11253), and mutation except, --renew and
   # --prune spliced nothing into an aliased mutation.exceptions yet said
   # they had written it.
-  # Only these three are refused now: custom tags and a second document stay
-  # as docs/CONFIG.md's table says (the person, 2026-10-24).
+  # slice-49 refuses the rest of rule 1 (below).
   @bug-8 @ID-SEL-24
   Scenario Outline: An anchor, an alias or a merge key in itos-cc.yaml is a config error
     Given itos-cc.yaml holds '<yaml>'
@@ -351,7 +350,7 @@ Feature: Choosing which files a command looks at
   # (itos-cc-yaml-version-key) are the next items. Before this item SEL-26,
   # SEL-27 and SEL-28 fail at the problem step; SEL-29 is a guardrail that
   # passes today.
-  @slice-49 @ID-SEL-26 @wip
+  @slice-49 @ID-SEL-26
   Scenario Outline: A tag or a key that is not a string in itos-cc.yaml is a config error
     Given itos-cc.yaml holds '<yaml>'
     When I run "itos-cc crap --no-coverage"
@@ -364,7 +363,7 @@ Feature: Choosing which files a command looks at
       | {x: !!python/object:os.system echo, exclude: []} | x          |
       | mutation: {[a]: b}                               | mutation   |
 
-  @slice-49 @ID-SEL-27 @wip
+  @slice-49 @ID-SEL-27
   Scenario: A second document in itos-cc.yaml is a config error
     Given itos-cc.yaml holds:
       """
@@ -378,7 +377,7 @@ Feature: Choosing which files a command looks at
     And its fix says "one document"
     And the exit code is 80
 
-  @slice-49 @ID-SEL-28 @wip
+  @slice-49 @ID-SEL-28
   Scenario Outline: A tagged mutation.exceptions is refused by its writers, and nothing writes the file
     Given itos-cc.yaml holds 'mutation: {exceptions: !foo []}'
     When I run "itos-cc <command>"
@@ -391,7 +390,7 @@ Feature: Choosing which files a command looks at
       | mutation except --renew |
       | mutation except --prune |
 
-  @slice-49 @ID-SEL-29 @wip
+  @slice-49 @ID-SEL-29
   Scenario Outline: The non-specific tag, JSON's tags and a leading --- are plain data
     Given itos-cc.yaml holds '<yaml>'
     And the sources src/board.go and src/port/porttest/fake.go

@@ -191,21 +191,58 @@ func TestAnchorsAliasesAndMergeKeysAreRefused(t *testing.T) {
 	}
 }
 
-// What rule 1 refuses besides anchors, aliases and merge keys is still
-// read for now: a custom tag, a second document, and a quoted << that is
-// a plain key; and a file of comments alone is an empty config.
-func TestOtherYAMLIsStillRead(t *testing.T) {
+// A tag written in the file other than ! and JSON's is refused at the key
+// whose value carries it, a key that is not a string at the mapping holding
+// it, and a second document naming the file alone, each before anything
+// else is read, with a fix of its own (docs/CONFIG.md rule 1, slice-49).
+func TestTagsKeysThatAreNotStringsAndASecondDocumentAreRefused(t *testing.T) {
+	for _, c := range []struct{ text, key, found, fix string }{
+		{"exclude: [!foo \"**/porttest/**\"]\n", "exclude[0]", "exclude[0] carries the tag !foo, and itos-cc.yaml takes no tags but ! and JSON's", tagFix},
+		{"{x: !!python/object:os.system echo, exclude: []}\n", "x", "x carries the tag !!python/object:os.system, and itos-cc.yaml takes no tags but ! and JSON's", tagFix},
+		{"mutation: {exceptions: !foo []}\n", "mutation.exceptions", "mutation.exceptions carries the tag !foo", tagFix},
+		{"x: !!timestamp 2026-10-24\n", "x", "x carries the tag !!timestamp", tagFix},
+		{"!foo {exclude: []}\n", "", "the top level carries the tag !foo", tagFix},
+		{"mutation: {[a]: b}\n", "mutation", "mutation holds a key that is not a string, and itos-cc.yaml takes string keys alone", keyFix},
+		{"{a: b}: c\n", "", "the top level holds a key that is not a string", keyFix},
+		{"exclude: [\"**/porttest/**\"]\n---\nexclude: []\n", "", "a second document follows ---, and itos-cc.yaml holds one document alone", documentFix},
+		{"exclude: [!foo a]\n---\nx: [\n", "exclude[0]", "exclude[0] carries the tag !foo", tagFix},
+	} {
+		_, err := Parse([]byte(c.text))
+		var invalid *InvalidError
+		if !errors.As(err, &invalid) {
+			t.Errorf("%q: error %v, want an *InvalidError", c.text, err)
+			continue
+		}
+		if invalid.Key != c.key || !strings.HasPrefix(err.Error(), "itos-cc.yaml: "+c.found) || invalid.Fix != c.fix {
+			t.Errorf("%q: key %q, error %q, fix %q; want %q, %q and %q", c.text, invalid.Key, err, invalid.Fix, c.key, c.found, c.fix)
+		}
+	}
+}
+
+// The non-specific tag, JSON's tags, a leading --- and a plain value YAML
+// resolves as a timestamp are read as plain data; a quoted << is a plain
+// key; and a file of comments alone, or of a lone ---, is an empty config.
+func TestJSONsYAMLIsRead(t *testing.T) {
 	for _, text := range []string{
-		"exclude: [a]\nx: !thing 1\n",
-		"exclude: [a]\n---\nx: 1\n",
+		"exclude: [! a]\n",
+		"exclude: !!seq [!!str a]\nx: {y: !!null null, z: !!bool true, w: !!int 1, v: !!float 1.5}\n",
+		"exclude: !<tag:yaml.org,2002:seq> [a]\n",
+		"--- {exclude: [a]}\n",
 		"exclude: [a]\n\"<<\": {x: 1}\n",
+		"exclude: [a]\n...\n",
 	} {
 		c, err := Parse([]byte(text))
 		if err != nil || !slices.Equal(c.Selection.Exclude, []string{"a"}) {
 			t.Errorf("%q: config %+v, error %v, want exclude [a]", text, c, err)
 		}
 	}
-	if c, err := Parse([]byte("# nothing yet\n")); err != nil || len(c.Selection.Exclude) != 0 || c.Tests != nil {
-		t.Errorf("comments alone: config %+v, error %v, want an empty config", c, err)
+	c, err := Parse([]byte("mutation:\n  exceptions:\n    - {file: a.go, function: f, hash: h, line_in_function: 1, column: 1, original: '<', replacement: '<=', reason: 2026-10-24}\n"))
+	if err != nil || len(c.Exceptions) != 1 || c.Exceptions[0].Reason != "2026-10-24" {
+		t.Errorf("a plain timestamp: config %+v, error %v, want the reason 2026-10-24", c, err)
+	}
+	for _, text := range []string{"", "# nothing yet\n", "---\n"} {
+		if c, err := Parse([]byte(text)); err != nil || len(c.Selection.Exclude) != 0 || c.Tests != nil {
+			t.Errorf("%q: config %+v, error %v, want an empty config", text, c, err)
+		}
 	}
 }

@@ -118,7 +118,13 @@ a backslash is `config.invalid`, exit 80, its `key` naming it
 or a merge key (`&x`, `*x`, `<<`) anywhere in it is `config.invalid`, exit
 80, for every command, its `key` naming the key whose value carries the
 first anchor, or the merge key itself (`mutation.<<`). Write each value in
-place. A release older than this one read them.
+place. So is a tag other than `!` and JSON's (`!!str`, `!!int`, `!!float`,
+`!!bool`, `!!null`, `!!seq`, `!!map`), such as `!foo` or `!!python/object`,
+its `key` naming the key whose value carries it (`exclude[0]`); a list or a
+mapping written as a key, its `key` naming the mapping holding it; and a
+second document after `---`, naming the file alone (a `---` before the
+first document is fine). Remove each such tag and any `---` after the first
+document. Releases older than these read them.
 
 A worker's copy of the project leaves out what git ignores (see Parallel
 workers), so a file a test or a coverage run left in the project never
@@ -1053,8 +1059,9 @@ entry never excuses an uncovered mutant: that needs a test, not a reason, and
 `exception.no-survivor`, its fix naming a test that runs the line, or routing
 the branch through code a test already reaches, such as a helper the tests
 call. An
-`itos-cc.yaml` that cannot be read, one holding an anchor, an alias or a
-merge key, or an entry with no reason, is `config.invalid`, exit 80, and
+`itos-cc.yaml` that cannot be read, one holding an anchor, an alias, a
+merge key, a tag JSON does not have or a second document, or an entry with
+no reason, is `config.invalid`, exit 80, and
 nothing is written.
 
 A change that leaves an excepted mutant the same, such as a rename, a

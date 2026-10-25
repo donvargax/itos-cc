@@ -11,8 +11,10 @@
 package settings
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"slices"
@@ -40,7 +42,8 @@ func Path() string {
 type Config = mutants.Config
 
 // InvalidError is an itos-cc.yaml that cannot be read: not YAML, a key of
-// the wrong type, an anchor, an alias or a merge key, an exclude or
+// the wrong type, an anchor, an alias or a merge key, a tag JSON does not
+// have, a key that is not a string, a second document, an exclude or
 // mutation.copy glob that is no pattern, or an exception that lacks a key. Key is the path from the
 // top of the key at fault, such as exclude[1], where one key is; empty
 // otherwise. Fix is how to mend a refusal that has its own mending; empty
@@ -120,21 +123,26 @@ func Read(root string) ([]byte, error) {
 
 // Parse reads data, the text of an itos-cc.yaml, as a config: no text at
 // all is an empty one, and text that cannot be read as a config is an
-// *InvalidError, as is text holding an anchor, an alias or a merge key
-// (docs/CONFIG.md rule 1), before anything else is read. The text names no
+// *InvalidError, as is text holding what JSON cannot express
+// (docs/CONFIG.md rule 1), before anything else is read: an anchor, an
+// alias or a merge key, a tag written in the file other than ! and JSON's,
+// a key that is not a string, or a second document. The text names no
 // root, so its selection settings have none: the caller that found the
 // file gives it.
 func Parse(data []byte) (*Config, error) {
 	var doc yaml.Node
-	if err := yaml.Unmarshal(data, &doc); err != nil {
-		return nil, invalidYAML(err)
-	}
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
 	c := &Config{}
-	if len(doc.Content) == 0 {
+	if err := decoder.Decode(&doc); errors.Is(err, io.EOF) {
 		return c, nil
+	} else if err != nil {
+		return nil, invalidYAML(err)
 	}
 	if err := spelled(doc.Content[0], ""); err != nil {
 		return nil, err
+	}
+	if err := decoder.Decode(new(yaml.Node)); !errors.Is(err, io.EOF) {
+		return nil, &InvalidError{Reason: "a second document follows ---, and " + File + " holds one document alone", Fix: documentFix}
 	}
 	var r raw
 	if err := doc.Decode(&r); err != nil {
@@ -205,18 +213,39 @@ func invalidYAML(err error) error {
 // merge key.
 const spellingFix = "Write the value in place: give each key its own copy of the value, with no &anchor, *alias or << merge key."
 
-// spelled refuses the first anchor or merge key in n and the nodes below
-// it, in document order, naming the key whose value carries the anchor, or
-// the merge key itself; at is n's key, "" for the top level. An alias
-// always follows its anchor, so a file holding one is refused at its
-// anchor's key, and an alias can expand without bound (CVE-2019-11253).
+// tagFix is how to mend a file holding a tag JSON does not have.
+const tagFix = "Write the value without the tag: " + File + " takes no tag but ! and JSON's own, !!str, !!int, !!float, !!bool, !!null, !!seq and !!map."
+
+// keyFix is how to mend a mapping holding a key that is not a string.
+const keyFix = "Write each key as a string: a list or a mapping is a value, never a key."
+
+// documentFix is how to mend a file holding a second document.
+const documentFix = "Keep one document: remove the --- after the first document and what follows it, moving any key you need into the first."
+
+// jsonTags are the tags a file may write: JSON's types, each building
+// what the value would be read as without it.
+var jsonTags = []string{"!!str", "!!int", "!!float", "!!bool", "!!null", "!!seq", "!!map"}
+
+// spelled refuses the first of what JSON cannot express in n and the nodes
+// below it, in document order: an anchor or a tag other than JSON's,
+// naming the key whose value carries it, a merge key, naming itself, and a
+// key that is not a string, naming the mapping holding it; at is n's key,
+// "" for the top level. An alias always follows its anchor, so a file
+// holding one is refused at its anchor's key, and an alias can expand
+// without bound (CVE-2019-11253); a tag can build an arbitrary object
+// (CVE-2022-1471). Only a tag written in the file counts: the
+// non-specific ! writes none, and a plain 2026-10-24, which YAML resolves
+// as a timestamp, is read as its key's string.
 func spelled(n *yaml.Node, at string) error {
+	what := at
+	if what == "" {
+		what = "the top level"
+	}
 	if n.Anchor != "" {
-		what := at
-		if what == "" {
-			what = "the top level"
-		}
 		return spellingError(at, fmt.Sprintf("%s carries the anchor &%s", what, n.Anchor))
+	}
+	if n.Style&yaml.TaggedStyle != 0 && !slices.Contains(jsonTags, n.Tag) {
+		return &InvalidError{Reason: fmt.Sprintf("%s carries the tag %s, and %s takes no tags but ! and JSON's", what, n.Tag, File), Key: at, Fix: tagFix}
 	}
 	switch n.Kind {
 	case yaml.SequenceNode:
@@ -233,6 +262,9 @@ func spelled(n *yaml.Node, at string) error {
 			}
 			if n.Content[i].Tag == "!!merge" {
 				return spellingError(key, key+" is a merge key")
+			}
+			if n.Content[i].Kind != yaml.ScalarNode {
+				return &InvalidError{Reason: fmt.Sprintf("%s holds a key that is not a string, and %s takes string keys alone", what, File), Key: at, Fix: keyFix}
 			}
 			if err := spelled(n.Content[i], key); err != nil {
 				return err
