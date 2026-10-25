@@ -461,6 +461,10 @@ type world struct {
 	// from the scratch folder, which a sentence names as <dir>; "" for
 	// none.
 	project string
+	// runIn is the folder under the scratch folder a Given has itos-cc run
+	// in, absolute, as a project whose folder the scenario names; "" for
+	// the scratch folder itself.
+	runIn string
 
 	exit           int
 	stdout, stderr string
@@ -708,7 +712,7 @@ func (w *world) setUp(s *godog.Scenario) error {
 	w.problemSubject = nil
 	w.beforeRemove = nil
 	w.last, w.problem, w.without, w.wrote, w.each, w.binary, w.edges, w.signal = nil, nil, nil, "", nil, "", nil, 0
-	w.feature, w.scored, w.noTests, w.with, w.project, w.config = filepath.Base(s.Uri), nil, nil, nil, "", ""
+	w.feature, w.scored, w.noTests, w.with, w.project, w.config, w.runIn = filepath.Base(s.Uri), nil, nil, nil, "", "", ""
 	var err error
 	w.dir, err = w.d.Folder()
 	return err
@@ -747,14 +751,19 @@ func (w *world) withEnv(vars string) []string {
 
 // When steps.
 
-// runWith runs itos-cc in the scratch folder with args, split as a
-// scenario wrote them, and the words a Given added, in the environment env.
+// runWith runs itos-cc in the scratch folder, or the folder under it a
+// Given chose (runIn), with args, split as a scenario wrote them, and the
+// words a Given added, in the environment env.
 func (w *world) runWith(env []string, args string) error {
 	fields, err := commandWords(args)
 	if err != nil {
 		return err
 	}
-	return w.runEnv(w.dir, env, append(fields, w.with...)...)
+	dir := w.dir
+	if w.runIn != "" {
+		dir = w.runIn
+	}
+	return w.runEnv(dir, env, append(fields, w.with...)...)
 }
 
 // commandWords splits a scenario's command line without involving a shell.
