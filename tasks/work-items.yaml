@@ -5937,3 +5937,18 @@ items:
       nothing, so the cause showed only as a unit test comparing command lines. A log line naming
       the reason (go list failed with its stderr, or listed no directory of the sources, naming one
       listed and one wanted) would have shown the physical /private/var paths at once.
+  - id: explicit-env-pwd
+    title: Commands started with an explicit env name itos-cc's PWD, not their own directory
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found while repairing bug-10 (0b7ae287): os/exec sets PWD to Dir only when Env is nil. bug-10
+      made InheritedEnvIn name the directory for the commands slice-59 moved to an explicit env, but
+      commands that already had one before slice-59 (the NoBytecodeEnv test and coverage runs,
+      mutation test runs) still start with itos-cc's PWD. A tool that trusts PWD (go list, go test)
+      then reports physical paths where the working directory is reached through a symlink, as macOS
+      t.TempDir under /var is. No failure seen yet; check whether any such command compares the
+      paths it prints.
