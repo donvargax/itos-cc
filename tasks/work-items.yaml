@@ -19,7 +19,6 @@ queue:
   - T-104
   - T-105
   - T-106
-  - T-107
   - T-112
   - T-113
   - mutation-windows-ownership
@@ -2829,7 +2828,7 @@ items:
     title: Build and refresh architecture through repository and snapshot ports
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: [T-106]
     kind: task
     deferred: >
