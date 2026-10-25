@@ -514,3 +514,47 @@ Feature: Choosing which files a command looks at
     When I run "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason 'x is never 5'"
     Then the exit code is 0
     And itos-cc.yaml's first line is "version: 1"
+
+  # slice-54 (q-98, the person 2026-10-24): slice-52 refuses every key
+  # itos-cc.yaml does not list. A key starting with x- is an extension key,
+  # as Docker Compose and OpenAPI allow: accepted and ignored at any mapping
+  # level (the top level, mutation, an exception entry, mutation.tests), so
+  # other tools and people can keep notes there. Its value may be anything
+  # JSON can express and is still held to slice-49's and bug-8's checks (no
+  # anchor, alias, merge key or tag). A key that only looks like one (X-,
+  # x_) is not one. mutation except, --renew and --prune keep extension keys
+  # byte for byte, as they keep every other byte they do not write.
+  # Additive, so no breaking note; it lands before slice-52 is released, so
+  # no release refuses x- keys. Before this item SEL-38 and SEL-39 fail at
+  # their Then (an unknown key); SEL-40 is a guardrail once slice-52 is in.
+  @slice-54 @ID-SEL-38 @wip
+  Scenario Outline: A key starting with x- is accepted and ignored at any level
+    Given itos-cc.yaml holds '<yaml>'
+    And the sources src/board.go and src/port/porttest/fake.go
+    When I run "itos-cc crap --no-coverage --json"
+    Then src/board.go is scored, and src/port/porttest/fake.go is not
+
+    Examples:
+      | yaml                                                                 |
+      | {x-owner: platform-team, exclude: ["**/porttest/**"]}                |
+      | {exclude: ["**/porttest/**"], mutation: {x-note: {reviewed: true}}}  |
+      | {exclude: ["**/porttest/**"], x-links: [a, b]}                       |
+
+  @slice-54 @ID-SEL-39 @wip
+  Scenario: mutation except --prune keeps an extension key byte for byte
+    Given itos-cc.yaml holds '{x-owner: platform-team, mutation: {exceptions: []}}'
+    When I run "itos-cc mutation except --prune"
+    Then the exit code is 0
+    And itos-cc.yaml is byte for byte as it was
+
+  @slice-54 @ID-SEL-40 @wip
+  Scenario Outline: A key that only looks like an extension is still refused
+    Given itos-cc.yaml holds '<yaml>'
+    When I run "itos-cc crap --no-coverage"
+    Then the problem is "config.invalid", with key "<key>"
+    And the exit code is 80
+
+    Examples:
+      | yaml                      | key     |
+      | {X-owner: platform-team}  | X-owner |
+      | {x_owner: platform-team}  | x_owner |
