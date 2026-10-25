@@ -5837,3 +5837,15 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: flaky-rerun-cancelled
+    title: Leave a rechecked mutant undecided when a stop cancels its re-run
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-57: mutation run records a rechecked mutant's first outcome as soon as it runs; a
+      --fail-fast stop or an interrupt that cancels a re-run then records that first, unconfirmed
+      outcome without the flaky key, so a flaky mutant can pass as a plain kill or survivor until a
+      later run. Leaving it undecided keeps what the snapshot held (preserved).
