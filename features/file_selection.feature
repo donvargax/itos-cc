@@ -450,18 +450,17 @@ Feature: Choosing which files a command looks at
     And the exit code is 80
     And itos-cc.yaml is byte for byte as it was
 
-  # slice-53, itos-cc-yaml-version's third item (q-94, the person
+  # slice-53, itos-cc-yaml-version's third item (q-94 and q-98, the person
   # 2026-10-24; docs/CONFIG.md rules 5 and 6): itos-cc.yaml carries no
-  # version, so an older itos-cc reads a newer file's keys as nothing. Now:
-  # 1. version, a JSON integer, 1. A file without one is config.invalid,
-  #    exit 80, keyed version, its fix to add version: 1 as the first line;
-  #    a file that is missing, empty or holds only comments needs none and
-  #    is an empty config, as before. Today's itos-cc ignores the key, so a
-  #    person adds it before moving their pin.
-  # 2. A version newer than this itos-cc reads is config.invalid, keyed
-  #    version, its message naming both versions and its fix to upgrade
-  #    itos-cc. A value that is not an integer ("1", 1.5) is config.invalid,
-  #    keyed version.
+  # version, so an older itos-cc cannot tell a newer file from a mistyped
+  # one. Now:
+  # 1. version, a JSON integer, 1. A file without one reads as version 1,
+  #    for good (q-98: refusing it would break every project on upgrade for
+  #    no gain), so every file written before this item keeps working.
+  # 2. A version newer than this itos-cc reads is config.invalid, exit 80,
+  #    keyed version, its message naming both versions and its fix to
+  #    upgrade itos-cc. A value that is not an integer ("1", 1.5) or is
+  #    below 1 is config.invalid, keyed version.
   # 3. From this release every key added later bumps the version; a file
   #    of version 1 is read as written for good. itos-cc never rewrites a
   #    file to migrate it.
@@ -469,25 +468,20 @@ Feature: Choosing which files a command looks at
   #    This repository's own itos-cc.yaml gains it.
   # 5. The check runs after slice-49's and bug-8's and before slice-52's
   #    unknown keys, so version is a listed key.
-  # The harness adds version: 1 to every itos-cc.yaml a fixture or a Given
-  # writes that names none, except where the Given says "with no version",
-  # so the scenarios before this item keep their text (a coordinator's call
-  # inside the item). The feat is a BREAKING-CHANGE with an Upgrading footer
-  # (add version: 1 as itos-cc.yaml's first line, before moving the pin), in
-  # a minor release; counted runs read the file HEAD commits, so it must be
-  # committed too. Before this item SEL-33, SEL-35, SEL-36 and SEL-37 fail
-  # at their Then; SEL-34 is a guardrail that passes today.
+  # The feat is additive (no file that worked stops working), so it needs
+  # no breaking note. Before this item SEL-35, SEL-36 and SEL-37 fail at
+  # their Then (version is an unknown key, or not written); SEL-33 and
+  # SEL-34 are guardrails that pass today.
   @slice-53 @ID-SEL-33 @wip
-  Scenario: An itos-cc.yaml with no version is a config error
-    Given itos-cc.yaml holds, with no version, 'exclude: ["**/porttest/**"]'
-    When I run "itos-cc crap --no-coverage"
-    Then the problem is "config.invalid", with key "version"
-    And its fix says "version: 1"
-    And the exit code is 80
+  Scenario: An itos-cc.yaml with no version reads as version 1
+    Given itos-cc.yaml holds 'exclude: ["**/porttest/**"]'
+    And the sources src/board.go and src/port/porttest/fake.go
+    When I run "itos-cc crap --no-coverage --json"
+    Then src/board.go is scored, and src/port/porttest/fake.go is not
 
   @slice-53 @ID-SEL-34 @wip
-  Scenario: An itos-cc.yaml holding only comments needs no version
-    Given itos-cc.yaml holds, with no version, '# nothing set yet'
+  Scenario: An itos-cc.yaml holding only comments is an empty config
+    Given itos-cc.yaml holds '# nothing set yet'
     When I run "itos-cc crap --no-coverage"
     Then the exit code is 0
 
@@ -501,7 +495,7 @@ Feature: Choosing which files a command looks at
     And the exit code is 80
 
   @slice-53 @ID-SEL-36 @wip
-  Scenario Outline: A version that is not an integer is a config error
+  Scenario Outline: A version that is not a positive integer is a config error
     Given itos-cc.yaml holds '<yaml>'
     When I run "itos-cc crap --no-coverage"
     Then the problem is "config.invalid", with key "version"
@@ -511,6 +505,7 @@ Feature: Choosing which files a command looks at
       | yaml                         |
       | {version: "1", exclude: []}  |
       | {version: 1.5, exclude: []}  |
+      | {version: 0, exclude: []}    |
 
   @slice-53 @ID-SEL-37 @wip
   Scenario: mutation except starts an itos-cc.yaml it creates with version: 1
