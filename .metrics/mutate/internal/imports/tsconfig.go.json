@@ -3,13 +3,13 @@
   "file": "internal/imports/tsconfig.go",
   "language": "go",
   "tests": {
-    "graph/graph_test.go": "20eff165a896a65949430b535ee1a899a5552af8b410e18a6bfcb11dcf747e53",
-    "graph/lookup_test.go": "2b22bf106fa9ea83db6546b6f65dc576a9c7e056558cbe2340cf9f6f665b21f3",
-    "graph/mutation_binding_test.go": "2eefa15bd174b584a19777360766b56f40539b147d6f07ac65bc90f8b25e7f32",
-    "graph/mutation_fixtures_test.go": "c45062e4104a2380032d71157a03c22f413267153cfd11ec9f39213b506baeec",
-    "graph/stale_test.go": "0c5c177375d08f50dc03ed558c2001d248746527e77f2ea0cbbaa7e8f54d4ed0",
+    "cmd/itos-cc/graph_stale_test.go": "fbb3f93bb5b7d753815243ccfdd59f6290d1a083c9cdc631fc33856b57040eed",
     "internal/imports/reach_test.go": "e915f9daf8e41dc74e0fa961211646d59ad895a71c03a53dc85260726b6db6a3",
     "internal/imports/tsconfig_test.go": "72f0e589691b2457498bbd2294e19c77eae8fbd015b34f94389c0b69a5372492",
+    "internal/slices/graph/command_test.go": "0cd6773e84e30e4740445ddb8f3bb29a98b99aaa937332a38c6cf78cd86c0e94",
+    "internal/slices/graph/disk_test.go": "ae71ee2020b4eda1b693ca2240d464d02ec3c0cb85b7b323252d4e21f0a8a402",
+    "internal/slices/graph/graph_test.go": "f6b454d09c042e8d4b7d16bff3d0d6f4f50707a1528b9cb08fa59c97cff81412",
+    "internal/slices/graph/mutation_test.go": "ba602411e4b87411880268da5bc551154c9bbd7b05177e5d83a9b47dd4bd13d4",
     "internal/slices/mutation/adapters/importgraph/reach_test.go": "2edc63ea914953e407f1879aeb18c0571cf7a7bf420eefa463b778b35e240a9b"
   },
   "units": [
