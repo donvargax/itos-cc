@@ -5815,13 +5815,9 @@ items:
     title: itos-cc.yaml accepts and ignores keys starting with x-
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      q-98 (the person 2026-10-24): extension keys, as Docker Compose and OpenAPI allow, so other
-      tools or people can keep notes in itos-cc.yaml without itos-cc refusing them; specified in
-      features/file_selection.feature.
   - id: flip-count-reset
     title: The binary driver resets a flipping test's run counts per invocation
     phase: 1
