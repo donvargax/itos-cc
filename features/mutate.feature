@@ -2273,6 +2273,48 @@ Feature: Mutation testing
       And with --json the sampled mutant has "outcomes": ["survived", "killed"]
       And the problem's fix says to make the tests deterministic and names no mutation run
 
+    # slice-57, flaky-kills' second item (q-93, the person 2026-10-24):
+    # slice-50 tells a flaky mutant apart in sample only, which writes
+    # nothing, so mutation run still recorded whichever outcome a flaky
+    # mutant gave last and check trusted it. Now mutation run confirms a
+    # disagreement the way sample does: a survivor it retries that is now
+    # killed, or under --mutate-all a recorded kill that now survives, runs
+    # twice more in the same scope; if a re-run agrees with the recording, the
+    # snapshot records the mutant with "flaky": true and its "outcomes" in run
+    # order, both left out when it is not flaky (additive, like "stale" and
+    # "limit"). A recorded flaky mutant is mutation.flaky in mutation check,
+    # exit 1, with sample's fields and fix; run's summary line counts it
+    # (", 1 flaky") and lists it on a "flaky" line after the survivors, in
+    # slice-51's site shape, and the summary comment lists it beside the
+    # survivors. A flaky mutant is never reused as killed: the next run
+    # judges it again, and once three runs agree it is recorded as their
+    # outcome, without the key. No exception takes one (mutation except
+    # still takes only a survivor). Before this item MUT-345 and MUT-346 fail
+    # at their flaky step and MUT-347 at check's problem step.
+    @slice-57 @ID-MUT-345 @wip
+    Scenario: A retried survivor its tests decide differently each run is recorded flaky
+      Given the snapshot records a mutant of "Board#place" as survived
+      But the tests kill it on one run and miss it on the next, with nothing they hash changed
+      When I run "itos-cc mutation run --json src/board.ts"
+      Then that mutant is recorded with "flaky": true and "outcomes" ["killed", "survived"]
+      And stdout lists it on a "flaky" line, and src/board.ts's summary counts 1 flaky
+      And the exit code is 1
+
+    @slice-57 @ID-MUT-346 @wip
+    Scenario: Under --mutate-all a recorded kill its tests decide differently is recorded flaky
+      Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
+      But the tests miss it on one run and kill it on the next, with nothing they hash changed
+      When I run "itos-cc mutation run --mutate-all --json src/board.ts"
+      Then that mutant is recorded with "flaky": true and "outcomes" ["survived", "killed"]
+
+    @slice-57 @ID-MUT-347 @wip
+    Scenario: mutation check fails on a recorded flaky mutant until a run settles it
+      Given the snapshot records a mutant of "Board#place" as flaky, with outcomes killed and survived
+      When I run "itos-cc mutation check"
+      Then the problem is "mutation.flaky", with recorded "killed" and outcomes "killed", "survived"
+      And the exit code is 1
+      But once the tests kill it on every run, "itos-cc mutation run src/board.ts" records it killed with no "flaky" key, and check exits 0
+
     # A snapshot did not record which tests decided its outcomes, so
     # mutation sample, re-running with the file's own tests unless told
     # otherwise, read a kill only an end-to-end test makes under --all-tests
