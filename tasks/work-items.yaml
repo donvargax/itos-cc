@@ -5852,3 +5852,17 @@ items:
       slice-57: a flaky mutant counts in neither killed nor survived, and mutation run's --json file
       counts it as flaky, but mutation check's functions give no flaky count, so their counts no
       longer add up to the sites recorded; Check.Run has no package-level test to hold the line yet.
+  - id: case-line-reach
+    title: A mutant on a switch case line is judged by its listed tests too
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Go's coverage gives a switch case's expression no block of its own, so LineTests finds no
+      listed test reaching a mutant on a case line and a run, counted or complete, judges it by the
+      package's own tests alone, though a scenario runs that case. slice-58's code proof met it at
+      counted.go's case stage.Name == "listed-baseline": MUT-178 killed the mutant in process, yet
+      the proof never ran it. Taking a case line as reached by the tests that reach its body, or the
+      switch's first block, would let the listed scenarios judge it.
