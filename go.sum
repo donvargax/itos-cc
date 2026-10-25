@@ -16,8 +16,8 @@ github.com/cucumber/messages/go/v34 v34.2.1 h1:qBPEl+HhNJuRX8Kjaw1Pm60KOODZf2/4W
 github.com/cucumber/messages/go/v34 v34.2.1/go.mod h1:LYUPjqlTS1kS0pdkdf6sS5uirnjwiIzEGyXPezXNhL8=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/donvargax/kong v1.16.2-itos.1 h1:5GZmw0y55cIfCawUmParkEAGnVfcPSNf6Rp/OcKcpGk=
-github.com/donvargax/kong v1.16.2-itos.1/go.mod h1:sm+bSCd/FcW5k3gBiHy0kE1PNg79yiwRLbVlwkoMc8I=
+github.com/donvargax/kong v1.16.2-itos.2 h1:oELIlEZ3vNStPEERB3IMBK2zoe+aVQCFaE7IwFcksBg=
+github.com/donvargax/kong v1.16.2-itos.2/go.mod h1:sm+bSCd/FcW5k3gBiHy0kE1PNg79yiwRLbVlwkoMc8I=
 github.com/fatih/color v1.19.0 h1:Zp3PiM21/9Ld6FzSKyL5c/BULoe/ONr9KlbYVOfG8+w=
 github.com/fatih/color v1.19.0/go.mod h1:zNk67I0ZUT1bEGsSGyCZYZNrHuTkJJB+r6Q9VuMi0LE=
 github.com/fwcd/tree-sitter-kotlin v0.0.0-20260801230305-1852ea17b7f6 h1:8g1N0i1aQEVOfV0twXgNG/e7PTOY2HjU+sVW5eDO03k=

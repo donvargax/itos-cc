@@ -247,9 +247,7 @@ func unknownFlag(node *kong.Node, word string) *Problem {
 	}
 	command := commandPath(node)
 	fix := fmt.Sprintf("Run '%s %s --help' for its flags.", programOf(node), command)
-	if guess := Closest("--"+name, names); guess != "" {
-		fix = fmt.Sprintf("Did you mean %s? ", guess) + fix
-	}
+	fix = DidYouMean("--"+name, names, func(flag string) string { return flag }) + fix
 	return NewProblem(CodeUsage, "flags.unknown", fmt.Sprintf("%s takes no flag %s", command, word), fix).With("flag", word)
 }
 
@@ -294,9 +292,9 @@ func UnknownCommand(node *kong.Node, word string) *Problem {
 	if node.Parent != nil {
 		fix = fmt.Sprintf("The subcommands of %s are %s. Run '%s %s --help' for them.", commandPath(node), andList(commandNames(node)), programOf(node), commandPath(node))
 	}
-	if guess := Closest(word, commandNames(node)); guess != "" {
-		fix = fmt.Sprintf("Did you mean '%s'? ", strings.TrimSpace(commandPath(node)+" "+guess)) + fix
-	}
+	fix = DidYouMean(word, commandNames(node), func(command string) string {
+		return "'" + strings.TrimSpace(commandPath(node)+" "+command) + "'"
+	}) + fix
 	return NewProblem(CodeUnknownCommand, "command.unknown", fmt.Sprintf("there is no command %q", full), fix).With("command", full)
 }
 

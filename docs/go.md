@@ -557,7 +557,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   that does I/O: a callback that does I/O takes the context first, as `project.WalkDir`'s
   does. A done context starts no command. It is the only place
   that knows every package. Every command is a node of its one kong model, `commandLine` and
-  the slices' declarations, in their names' order (`byName`), which the guess weighs a tie by;
+  the slices' declarations, in their names' order (`byName`), the order the guess names several in;
   `serve`'s node only names it to the top-level help and the guess. A group is a declaration
   like any other: `mutation`'s `New` makes the group's struct, whose fields are its children, so
   its help, its children's, their top-level rows and the guess for a mistyped child come from
@@ -604,7 +604,7 @@ context-as-argument a context after any other parameter, tests included.
   external tests and porttest import. Mutation's `settings` adapter imports
   `internal/slices/mutation/domain`, whose `Config` it aliases and whose `SettingsReader` its
   `Reader` implements, and `internal/selection/port`, whose `SettingsReader` it implements too,
-  never the reverse.
+  never the reverse, and of the UI's libraries the kong fork alone, for `Suggest` (decision 62).
 - `shared-domains`: the shared domains, `internal/selection`, `internal/lang`,
   `internal/snapshot` and `internal/coverage`, their ports, fakes and tests, import nothing under
   `internal/slices`, so mutation's domain on `domain`'s allow list is open to no shared domain
@@ -745,7 +745,10 @@ context-as-argument a context after any other parameter, tests included.
   `cmd` imports it too. `slices` and `slice-fakes` leave it out.
 - `mocks`: no mocking library anywhere. Fakes live in `porttest`.
 - `rapid`: the property library only in the domains' own tests.
-- `kong`: kong only in `cmd` and `internal/cli`. A slice's struct tags need no import.
+- `kong` and `kong-fork`: kong, and the fork itos-cc builds with, only in `cmd` and
+  `internal/cli`. A slice's struct tags need no import. The one exception is `kong-fork`'s:
+  mutation's `settings` adapter imports the fork for `Suggest` alone, so an unlisted
+  itos-cc.yaml key's "Did you mean" follows the command line's rule (decision 62).
 
 ### Adding a package
 

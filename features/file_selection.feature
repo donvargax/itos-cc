@@ -569,7 +569,7 @@ Feature: Choosing which files a command looks at
   # of a listed one is suggested too. Before this item mut is more than two
   # edits from mutation, so the fix names every top-level key instead,
   # failing at the fix step.
-  @slice-60 @ID-SEL-41 @wip
+  @slice-60 @ID-SEL-41
   Scenario: A key that starts a listed one is suggested
     Given itos-cc.yaml holds '{mut: {}}'
     When I run "itos-cc crap --no-coverage"

@@ -504,14 +504,26 @@ func TestArchitecture(t *testing.T) {
 	for _, domain := range []string{"internal/selection"} {
 		add("rapid_allowed", domain, "pgregory.net/rapid", "Value", "", true)
 	}
-	// kong is the UI's: the entry point and internal/cli, nowhere else.
+	// kong is the UI's: the entry point and internal/cli, nowhere else, but
+	// for mutation's settings adapter, which imports the fork alone, for its
+	// Suggest (decision 62): kong itself is refused there as anywhere else.
 	for i, kong := range kongs {
+		rule, fork := "kong", kong == "github.com/donvargax/kong"
+		if fork {
+			rule = "kong-fork"
+		}
 		for _, test := range []bool{false, true} {
 			for _, layer := range []string{"cmd/probe", "internal/cli"} {
 				add(fmt.Sprintf("kong%d_allowed_%t", i, test), layer, kong, "Value", "", test)
 			}
-			for _, layer := range []string{"internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/slices/version", "internal/slices/mutation", "internal/next", "internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", mutation, "internal/coverage", "internal/coverage/port", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/slices/mutation/adapters/worktrees", "internal/processes", "internal/imports", "internal/slices/mutation/adapters/testtools", "internal/slices/mutation/adapters/testinputs", "internal/slices/mutation/adapters/importgraph", "internal/slices/mutation/adapters/githistory", "internal/slices/mutation/adapters/freshenv", "internal/slices/mutation/adapters/snapshots", "internal/slices/mutation/adapters/exceptions", "internal/slices/mutation/adapters/sources", "internal/slices/mutation/adapters/settings", "internal/project", "internal/covrun", "internal/version", "internal/release"} {
-				add(fmt.Sprintf("kong%d_%t", i, test), layer, kong, "Value", "kong", test)
+			settings := "internal/slices/mutation/adapters/settings"
+			if fork {
+				add(fmt.Sprintf("kong%d_allowed_%t", i, test), settings, kong, "Value", "", test)
+			} else {
+				add(fmt.Sprintf("kong%d_%t", i, test), settings, kong, "Value", rule, test)
+			}
+			for _, layer := range []string{"internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/slices/version", "internal/slices/mutation", "internal/next", "internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", mutation, "internal/coverage", "internal/coverage/port", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/slices/mutation/adapters/worktrees", "internal/processes", "internal/imports", "internal/slices/mutation/adapters/testtools", "internal/slices/mutation/adapters/testinputs", "internal/slices/mutation/adapters/importgraph", "internal/slices/mutation/adapters/githistory", "internal/slices/mutation/adapters/freshenv", "internal/slices/mutation/adapters/snapshots", "internal/slices/mutation/adapters/exceptions", "internal/slices/mutation/adapters/sources", "internal/project", "internal/covrun", "internal/version", "internal/release"} {
+				add(fmt.Sprintf("kong%d_%t", i, test), layer, kong, "Value", rule, test)
 			}
 		}
 	}

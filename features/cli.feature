@@ -62,10 +62,10 @@ Feature: Command line
       And the exit code is 81
 
       Examples:
-        | args        | name   | guess                     |
-        | lint        | lint   | .                         |
-        | crapp       | crapp  | . Did you mean 'crap'?    |
-        | help nosuch | nosuch | .                         |
+        | args        | name   | guess                                           |
+        | lint        | lint   | .                                               |
+        | crapp       | crapp  | . Did you mean one of 'crap', 'graph', 'scrap'? |
+        | help nosuch | nosuch | .                                               |
 
     # slice-60, q-99 (the person 2026-10-25): every "Did you mean" follows
     # kong's rule, which the person finds friendlier: each candidate that
@@ -81,10 +81,10 @@ Feature: Command line
     # one candidate), so CLI-15's mutate still suggests 'mutation'; kong's
     # own closestCandidates stays untouched. Plain output and the fix's
     # wording change for the inputs the rule now matches more of (crapp
-    # names 'crap' and 'scrap' in CLI-04 and CLI-10); the problem's rule and
-    # fields do not, so no breaking note. Before this item "s" names no
-    # command, failing at the stderr step.
-    @slice-60 @ID-CLI-30 @wip
+    # names 'crap', 'graph' and 'scrap' in CLI-04 and CLI-10); the problem's
+    # rule and fields do not, so no breaking note. Before this item "s"
+    # names no command, failing at the stderr step.
+    @slice-60 @ID-CLI-30
     Scenario: A prefix of several commands names them all
       When I run "itos-cc s"
       Then stderr says "itos-cc: there is no command \"s\". Did you mean one of 'scrap', 'serve'? Run 'itos-cc --help' for the commands."
@@ -189,7 +189,7 @@ Feature: Command line
             {
               "command": "crapp",
               "exit": 81,
-              "fix": "Did you mean 'crap'? Run 'itos-cc --help' for the commands.",
+              "fix": "Did you mean one of 'crap', 'graph', 'scrap'? Run 'itos-cc --help' for the commands.",
               "message": "there is no command \"crapp\"",
               "rule": "command.unknown"
             }

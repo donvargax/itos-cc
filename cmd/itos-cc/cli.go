@@ -145,13 +145,9 @@ func parse(cmd *command, args []string) (*invocation, error) {
 		name, value, hasValue := strings.Cut(strings.TrimLeft(a, "-"), "=")
 		f, known := specs[name]
 		if !known || !strings.HasPrefix(a, "--") {
-			p := cli.NewProblem(cli.CodeUsage, "flags.unknown", fmt.Sprintf("%s takes no flag %s", cmd.name, a), "")
-			if guess := cli.Closest("--"+name, flagNames(cmd)); guess != "" {
-				p.Fix = fmt.Sprintf("Did you mean %s? Run 'itos-cc %s --help' for its flags.", guess, cmd.name)
-			} else {
-				p.Fix = fmt.Sprintf("Run 'itos-cc %s --help' for its flags.", cmd.name)
-			}
-			return in, p.With("flag", a)
+			fix := cli.DidYouMean("--"+name, flagNames(cmd), func(flag string) string { return flag }) +
+				fmt.Sprintf("Run 'itos-cc %s --help' for its flags.", cmd.name)
+			return in, cli.NewProblem(cli.CodeUsage, "flags.unknown", fmt.Sprintf("%s takes no flag %s", cmd.name, a), fix).With("flag", a)
 		}
 		if len(in.values[name]) > 0 {
 			return in, cli.NewProblem(cli.CodeUsage, "flags.repeated", fmt.Sprintf("--%s is given more than once", name),

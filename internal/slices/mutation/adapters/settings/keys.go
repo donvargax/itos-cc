@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/donvargax/kong"
 	"go.yaml.in/yaml/v3"
 )
 
@@ -101,47 +102,27 @@ func (s shape) value(name string) (shape, bool) {
 }
 
 // unlistedError is the *InvalidError of key, holding name, which s, the
-// shape of the mapping at at, does not list. Its fix names the listed key
-// within two edits of name, the first of the nearest in s's order, or else
-// every key s lists.
+// shape of the mapping at at, does not list. Its fix names the listed keys
+// the kong fork's Suggest finds for name, by the rule the command line's
+// "Did you mean" follows (decision 62), one or several in s's order, or
+// else every key s lists.
 func unlistedError(at, key, name string, s shape) error {
 	what := at
 	if what == "" {
 		what = "the top level"
 	}
 	names := make([]string, len(s.keys))
-	best, bestDist := "", 3
 	for i, k := range s.keys {
 		names[i] = k.name
-		if d := edits(name, k.name); d < bestDist {
-			best, bestDist = k.name, d
-		}
 	}
-	fix := fmt.Sprintf("Did you mean %s? Rename the key, or remove it.", best)
-	if best == "" {
+	var fix string
+	switch meant := kong.Suggest(name, names); len(meant) {
+	case 0:
 		fix = fmt.Sprintf("Remove the key, or rename it to one %s takes: %s.", what, strings.Join(names, ", "))
+	case 1:
+		fix = fmt.Sprintf("Did you mean %s? Rename the key, or remove it.", meant[0])
+	default:
+		fix = fmt.Sprintf("Did you mean one of %s? Rename the key, or remove it.", strings.Join(meant, ", "))
 	}
 	return &InvalidError{Reason: fmt.Sprintf("%s holds the key %s, which %s does not list", what, name, File), Key: key, Fix: fix}
-}
-
-// edits is the Levenshtein distance between a and b: the fewest letters
-// inserted, deleted or replaced that make one the other.
-func edits(a, b string) int {
-	prev := make([]int, len(b)+1)
-	for j := range prev {
-		prev[j] = j
-	}
-	for i := 1; i <= len(a); i++ {
-		cur := make([]int, len(b)+1)
-		cur[0] = i
-		for j := 1; j <= len(b); j++ {
-			cost := 1
-			if a[i-1] == b[j-1] {
-				cost = 0
-			}
-			cur[j] = min(prev[j]+1, cur[j-1]+1, prev[j-1]+cost)
-		}
-		prev = cur
-	}
-	return prev[len(b)]
 }

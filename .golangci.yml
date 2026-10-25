@@ -33,7 +33,8 @@ linters:
     # only through adapters implementing the ports, an adapter imports
     # nothing of ours but the ports and, as decision 47 amends it, the
     # domain it serves, a slice imports no other slice, the UI
-    # imports nothing of ours (q-54), and kong stays in cmd and internal/cli. Each desc tells the reader of a refusal
+    # imports nothing of ours (q-54), and kong stays in cmd and internal/cli,
+    # but for the settings adapter's use of the fork's Suggest (decision 62). Each desc tells the reader of a refusal
     # what it means and, where a new package caused it, to extend the rules
     # as docs/go.md's Adding a package says rather than loosen them.
     depguard:
@@ -711,9 +712,20 @@ linters:
           deny:
             - pkg: github.com/alecthomas/kong
               desc: "kong stays in the UI, cmd and internal/cli (decision 29): a slice's struct tags need no import of it; never loosen this one"
-            # The fork itos-cc builds with until kong releases its typed parse errors (T-33).
+        # The fork itos-cc builds with until kong releases its typed parse
+        # errors (T-33), held as kong is, but for one exception: mutation's
+        # settings adapter imports it for Suggest alone, so an unlisted
+        # itos-cc.yaml key's "Did you mean" follows the command line's rule
+        # (decision 62, slice-60).
+        kong-fork:
+          files:
+            - $all
+            - "!**/cmd/**"
+            - "!**/internal/cli/**"
+            - "!**/internal/slices/mutation/adapters/settings/**"
+          deny:
             - pkg: github.com/donvargax/kong
-              desc: "kong stays in the UI, cmd and internal/cli (decision 29): a slice's struct tags need no import of it; never loosen this one"
+              desc: "kong stays in the UI, cmd and internal/cli (decision 29), the settings adapter aside, for Suggest alone (decision 62): a slice's struct tags need no import of it; never loosen this one"
     # Only the rules listed run: revive's defaults stay off.
     revive:
       rules:

@@ -101,7 +101,7 @@ func TestDispatch(t *testing.T) {
 		{[]string{"help", "crap"}, 0, "usage: itos-cc crap"},
 		{[]string{"crap", "--help"}, 0, "Exit codes:"},
 		{[]string{"help", "nosuch"}, 81, ""},
-		{[]string{"--json", "crapp"}, 81, `"Did you mean 'crap'?`},
+		{[]string{"--json", "crapp"}, 81, `"Did you mean one of 'crap', 'graph', 'scrap'?`},
 		{[]string{"--json", "version"}, 0, `"version"`},
 		{[]string{"version", "extra"}, 80, ""},
 		{nil, 0, "mutation run "},

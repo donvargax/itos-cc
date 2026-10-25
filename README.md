@@ -130,8 +130,9 @@ document. Releases older than these read them.
 A key `itos-cc.yaml` does not list is `config.invalid` too, at any depth,
 so a misspelt key never passes for an option: its `key` is the path from
 the top (`mutation.exceptions[0].line_txt`), and its fix asks "Did you mean
-`line_text`?" when a listed key at that place is within two edits, or else
-names the keys listed there (`version, exclude, mutation` at the top
+`line_text`?" naming each listed key at that place that starts with it or
+is within two edits of it, as the command line's "Did you mean" does, or
+else names the keys listed there (`version, exclude, mutation` at the top
 level). The keys are `version`, `exclude` and `mutation`, which holds
 `exceptions`, `tests` and `copy`. Remove or rename each key it does not
 list; releases older than this one ignore such a key.

@@ -10,9 +10,9 @@ import (
 
 // A key the format does not list is refused at its path from the top, the
 // first in document order, after rule 1's refusals and before any value is
-// checked; its fix names the listed key at that place within two edits,
-// the first of the nearest in the table's order, or else every key listed
-// there (docs/CONFIG.md rule 2, slice-52). The scenarios hold one row per
+// checked; its fix names the listed keys at that place the kong fork's
+// Suggest finds, in the table's order, or else every key listed there
+// (docs/CONFIG.md rule 2, slice-52, decision 62). The scenarios hold one row per
 // level; these hold the ties, the orders and the places the walk leaves to
 // decoding, which a scenario would only repeat.
 func TestAKeyTheFormatDoesNotListIsRefused(t *testing.T) {
@@ -27,9 +27,11 @@ func TestAKeyTheFormatDoesNotListIsRefused(t *testing.T) {
 		{"mutation:\n  exceptions:\n    - {file: a.go, line_txt: x}\n", "mutation.exceptions[0].line_txt", "mutation.exceptions[0]", "line_txt", "Did you mean line_text? Rename the key, or remove it."},
 		{"mutation: {exceptions: [{}, {colour: x}]}\n", "mutation.exceptions[1].colour", "mutation.exceptions[1]", "colour",
 			"Remove the key, or rename it to one mutation.exceptions[1] takes: file, function, hash, line_in_function, column, original, replacement, reason, line_text."},
-		{"mutation: {tests: {join: {eap: x}}}\n", "mutation.tests.join.eap", "mutation.tests.join", "eap", "Did you mean each? Rename the key, or remove it."},
+		{"mutation: {tests: {join: {eap: x}}}\n", "mutation.tests.join.eap", "mutation.tests.join", "eap", "Did you mean one of each, sep? Rename the key, or remove it."},
 		{"mutation: {tests: {wholly: x}}\n", "mutation.tests.wholly", "mutation.tests", "wholly", "Did you mean whole? Rename the key, or remove it."},
 		{"mutation: {cpy: [a]}\n", "mutation.cpy", "mutation", "cpy", "Did you mean copy? Rename the key, or remove it."},
+		{"{mut: {}}\n", "mut", "the top level", "mut", "Did you mean mutation? Rename the key, or remove it."},
+		{"{mutate: {}}\n", "mutate", "the top level", "mutate", "Did you mean mutation? Rename the key, or remove it."},
 		{"mutation: {copyxyz: [a]}\n", "mutation.copyxyz", "mutation", "copyxyz", "Remove the key, or rename it to one mutation takes: exceptions, tests, copy."},
 	} {
 		_, err := Parse([]byte(c.text))
@@ -69,22 +71,6 @@ func TestAnExtensionKeyIsIgnoredAtAnyLevel(t *testing.T) {
 		var invalid *InvalidError
 		if !errors.As(err, &invalid) || invalid.Key != c.key || !strings.Contains(err.Error(), c.found) {
 			t.Errorf("%q: error %v, want an *InvalidError keyed %q saying %q", c.text, err, c.key, c.found)
-		}
-	}
-}
-
-// edits counts the letters inserted, deleted or replaced, whichever word
-// is the longer.
-func TestEditsIsTheLevenshteinDistance(t *testing.T) {
-	for _, c := range []struct {
-		a, b string
-		want int
-	}{
-		{"", "", 0}, {"", "abc", 3}, {"abc", "", 3}, {"same", "same", 0},
-		{"kitten", "sitting", 3}, {"sitting", "kitten", 3}, {"flaw", "lawn", 2}, {"eap", "sep", 2}, {"ab", "ba", 2},
-	} {
-		if got := edits(c.a, c.b); got != c.want {
-			t.Errorf("edits(%q, %q) = %d, want %d", c.a, c.b, got, c.want)
 		}
 	}
 }

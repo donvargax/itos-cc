@@ -10,7 +10,7 @@ require (
 	github.com/cucumber/gherkin/go/v42 v42.0.1
 	github.com/cucumber/godog v0.16.0
 	github.com/cucumber/messages/go/v34 v34.2.1
-	github.com/donvargax/kong v1.16.2-itos.1
+	github.com/donvargax/kong v1.16.2-itos.2
 	github.com/fwcd/tree-sitter-kotlin v0.0.0-20260801230305-1852ea17b7f6
 	github.com/tree-sitter/go-tree-sitter v0.25.0
 	github.com/tree-sitter/tree-sitter-go v0.25.0

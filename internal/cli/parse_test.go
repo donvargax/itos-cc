@@ -207,10 +207,18 @@ func TestAValueKongsMapperRefusesIsInvalid(t *testing.T) {
 	}
 }
 
-func TestClosestGuessesWhatWasMeant(t *testing.T) {
-	for word, want := range map[string]string{"crapp": "crap", "lint": "", "mutate": "mutation", "dr": "dry", "scrapers": ""} {
-		if got := Closest(word, []string{"crap", "dry", "mutation", "scrap", "serve"}); got != want {
-			t.Errorf("Closest(%q) = %q, want %q", word, got, want)
+func TestDidYouMeanNamesWhatWasMeant(t *testing.T) {
+	quoted := func(c string) string { return "'" + c + "'" }
+	for word, want := range map[string]string{
+		"crapp":    "Did you mean one of 'crap', 'scrap'? ",
+		"s":        "Did you mean one of 'scrap', 'serve'? ",
+		"lint":     "",
+		"mutate":   "Did you mean 'mutation'? ",
+		"dr":       "Did you mean 'dry'? ",
+		"scrapers": "",
+	} {
+		if got := DidYouMean(word, []string{"crap", "dry", "mutation", "scrap", "serve"}, quoted); got != want {
+			t.Errorf("DidYouMean(%q) = %q, want %q", word, got, want)
 		}
 	}
 }
