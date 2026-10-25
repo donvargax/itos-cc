@@ -154,7 +154,8 @@ exclude: ["**/porttest/**"]
 A key starting with `x-` is an extension key, as in Docker Compose and
 OpenAPI: itos-cc accepts and ignores it at any level, so another tool or a
 person can keep notes beside its settings, and `mutation except`, `--renew`
-and `--prune` keep it byte for byte. Its value may be anything JSON can
+and `--prune` keep it byte for byte; an entry they rewrite keeps its own
+`x-` keys after the keys itos-cc writes. Its value may be anything JSON can
 express, with no anchor, alias, merge key or tag; `X-` and `x_` keys are
 not extension keys and are refused.
 
@@ -1042,7 +1043,9 @@ the function's first line, so a move keeps it) and `column`, the `original`,
 the `replacement`, the `reason`, and the site's `line_text`, its line less
 the space around it; excepting a site again replaces it. Only the lines of
 the entry written change, in block style, after the list's last entry or in
-the place of the one it replaces, keeping the comment above it; every other
+the place of the one it replaces, keeping the comment above it and its
+`x-` keys, with their values and the comment lines directly above each,
+after the keys itos-cc writes; every other
 byte of the file, its other entries included, is kept, so the commit shows
 only the exception. A survivor a counted run reports, such as the per-push
 code proof's, is excepted from its identity, with no mutation run and no
@@ -1118,7 +1121,8 @@ and `replacement` on a line whose text, spaces aside, is its `line_text`
 (an entry without one, from before entries had it, matches the site at its
 `line_in_function` and `column`, else the function's only site of that
 change), and that mutant survived. The entry then names the function's
-current hash, name, place and line text, and keeps its reason and comments;
+current hash, name, place and line text, and keeps its reason and comments,
+and its `x-` keys after the keys itos-cc writes, as a replaced entry does;
 `--renew` changes only the lines of the entries it renews. Each renewal is reported with its old and
 new hash and the site, and each entry left stale stays
 `mutation.exception-stale` with why: `killed`, `changed` (its line's text

@@ -3927,7 +3927,7 @@ Feature: Mutation testing
     # keys, with their values and the comments above them, after the keys
     # itos-cc writes. A coordinator's call inside q-98. Before this item the
     # note is gone, failing at the Then.
-    @slice-55 @ID-MUT-344 @wip
+    @slice-55 @ID-MUT-344
     Scenario Outline: A renewed or replaced entry keeps its x- keys
       Given a Go project with a reviewed exception for an equivalent mutant in a function
       And that entry in itos-cc.yaml also holds "x-ticket: QA-12"

@@ -328,3 +328,77 @@ func TestTheWritersKeepExtensionKeys(t *testing.T) {
 		t.Errorf("itos-cc.yaml after --prune\n%s\nwant\n%s", data, head+tail)
 	}
 }
+
+// slice-55: an entry a writer rewrites keeps its x- keys after the codec's,
+// with their values and the comment lines directly above them, and the
+// comment after one goes with it. MUT-344 holds a renewal and a replacing
+// except keeping a key; this holds where each key goes, its comments, and
+// that the comment lines after the entry, kept where they are, are not
+// written into it again.
+func TestARewrittenEntryKeepsItsExtensionKeys(t *testing.T) {
+	text := "mutation:\n  exceptions:\n    # above the entry\n    - x-first: 1  # its own\n      file: src/a.go\n      function: m/src#f\n" +
+		"      hash: 0123456789abcdef\n      line_in_function: 2\n      column: 9\n      # the ticket\n      # for QA\n      x-ticket: QA-12\n" +
+		"      original: '<'\n      replacement: '!='\n      reason: old\n      x-seen:\n        - {a: b}\n        - c\n      # after the entry\nexclude: []\n"
+	data, replaced, err := exceptions.ExceptDocument([]byte(text), entry)
+	if err != nil || !replaced {
+		t.Fatalf("replaced %v, error %v", replaced, err)
+	}
+	want := "mutation:\n  exceptions:\n    # above the entry\n    - file: src/a.go\n      function: m/src#f\n      hash: 0123456789abcdef\n" +
+		"      line_in_function: 2\n      column: 9\n      original: <\n      replacement: '!='\n      reason: the loop only counts up\n" +
+		"      x-first: 1 # its own\n      # the ticket\n      # for QA\n      x-ticket: QA-12\n      x-seen:\n        - {a: b}\n        - c\n" +
+		"      # after the entry\nexclude: []\n"
+	if string(data) != want {
+		t.Errorf("itos-cc.yaml\n%s\nwant\n%s", data, want)
+	}
+}
+
+// A flow list, rewritten whole in block style, keeps the x- keys of every
+// entry, kept or replaced.
+func TestAFlowListRewrittenKeepsItsEntriesExtensionKeys(t *testing.T) {
+	text := "mutation:\n  exceptions: [{file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: old, x-seen: 1},\n" +
+		"    {file: src/b.go, function: m/src#g, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: other, x-kept: [a]}]\n"
+	data, _, err := exceptions.ExceptDocument([]byte(text), entry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "mutation:\n  exceptions:\n    - file: src/a.go\n      function: m/src#f\n      hash: 0123456789abcdef\n      line_in_function: 2\n      column: 9\n" +
+		"      original: <\n      replacement: '!='\n      reason: the loop only counts up\n      x-seen: 1\n" +
+		"    - file: src/b.go\n      function: m/src#g\n      hash: 0123456789abcdef\n      line_in_function: 2\n      column: 9\n" +
+		"      original: <\n      replacement: '!='\n      reason: other\n      x-kept: [a]\n"
+	if string(data) != want {
+		t.Errorf("itos-cc.yaml\n%s\nwant\n%s", data, want)
+	}
+}
+
+// A flow list an entry is pruned from keeps the x- keys of the entries
+// after it.
+func TestAFlowListPrunedKeepsTheRestsExtensionKeys(t *testing.T) {
+	text := "mutation:\n  exceptions: [{file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: old},\n" +
+		"    {file: src/b.go, function: m/src#g, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: other, x-kept: [a]}]\n"
+	c, err := settings.Parse([]byte(text))
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := exceptions.PruneDocument([]byte(text), c.Exceptions[:1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "mutation:\n  exceptions:\n    - file: src/b.go\n      function: m/src#g\n      hash: 0123456789abcdef\n      line_in_function: 2\n      column: 9\n" +
+		"      original: <\n      replacement: '!='\n      reason: other\n      x-kept: [a]\n"
+	if string(data) != want {
+		t.Errorf("itos-cc.yaml\n%s\nwant\n%s", data, want)
+	}
+}
+
+// A document re-encoded whole, its mutation mapping in flow style, keeps
+// the x- keys of the entry it replaces too.
+func TestAReencodedEntryKeepsItsExtensionKeys(t *testing.T) {
+	text := "mutation: {exceptions: [{file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: old, x-seen: 1}]}\n"
+	data, _, err := exceptions.ExceptDocument([]byte(text), entry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), "x-seen: 1") || !strings.Contains(string(data), "reason: the loop only counts up") {
+		t.Errorf("itos-cc.yaml lost the entry's x- key or kept its reason:\n%s", data)
+	}
+}

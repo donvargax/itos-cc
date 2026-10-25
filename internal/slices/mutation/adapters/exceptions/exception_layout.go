@@ -97,7 +97,7 @@ func withoutList(data []byte) (any, error) {
 }
 
 // encodeList writes edit by re-encoding the whole document, each entry it
-// keeps or replaces keeping its comments.
+// keeps or replaces keeping its comments, and each it replaces its x- keys.
 func encodeList(doc *yaml.Node, edit listEdit) ([]byte, error) {
 	if doc.Kind == 0 {
 		doc.Kind = yaml.DocumentNode
@@ -116,6 +116,7 @@ func encodeList(doc *yaml.Node, edit listEdit) ([]byte, error) {
 			if err := entry.Encode(e); err != nil {
 				return nil, err
 			}
+			entry.Content = append(entry.Content, extensions(was.Content)...)
 			entry.HeadComment, entry.LineComment, entry.FootComment = was.HeadComment, was.LineComment, was.FootComment
 			was = &entry
 		}
@@ -272,13 +273,47 @@ func apply(data []byte, edits []change) []byte {
 	return out
 }
 
+// isExtension says whether k is an extension key (settings.Extension).
+func isExtension(k *yaml.Node) bool { return strings.HasPrefix(k.Value, settings.Extension) }
+
+// extensions are the x- keys of the mapping whose content is pairs, each
+// followed by its value, in their order: the keys an entry a writer
+// rewrites keeps after the codec's (slice-55).
+func extensions(pairs []*yaml.Node) []*yaml.Node {
+	var out []*yaml.Node
+	for i := 0; i+1 < len(pairs); i += 2 {
+		if isExtension(pairs[i]) {
+			out = append(out, pairs[i], pairs[i+1])
+		}
+	}
+	return out
+}
+
+// detached is a copy of ns and all they hold without their foot comments,
+// which yaml.v3 gives the comment lines after a node: a splice keeps those
+// lines where they are, past the entry's own, so a copy must not repeat
+// them.
+func detached(ns []*yaml.Node) []*yaml.Node {
+	out := make([]*yaml.Node, len(ns))
+	for i, n := range ns {
+		c := *n
+		c.FootComment, c.Content = "", detached(n.Content)
+		out[i] = &c
+	}
+	return out
+}
+
 // entryText is e as a block entry of a list whose dashes are at column
-// dash, its keys in the codec's order, each line ending with eol.
-func entryText(e mutants.Exception, dash int, eol string) (string, bool) {
+// dash, its keys in the codec's order, then ext, the x- keys of the entry
+// it rewrites and their values (extensions), with the comments yaml.v3
+// gives them, the lines directly above each included; each line ends with
+// eol.
+func entryText(e mutants.Exception, ext []*yaml.Node, dash int, eol string) (string, bool) {
+	var entry yaml.Node
 	var buf bytes.Buffer
 	enc := yaml.NewEncoder(&buf)
 	enc.SetIndent(2)
-	if enc.Encode(e) != nil || enc.Close() != nil {
+	if entry.Encode(e) != nil || enc.Encode(&yaml.Node{Kind: yaml.MappingNode, Content: append(entry.Content, ext...)}) != nil || enc.Close() != nil {
 		return "", false
 	}
 	var b strings.Builder
@@ -294,10 +329,16 @@ func entryText(e mutants.Exception, dash int, eol string) (string, bool) {
 	return b.String(), true
 }
 
-func entriesText(entries []mutants.Exception, dash int, eol string) (string, bool) {
+// entriesText is entries as block entries (entryText), each the first of
+// exts, by index, as its x- keys, none past them.
+func entriesText(entries []mutants.Exception, exts [][]*yaml.Node, dash int, eol string) (string, bool) {
 	var b strings.Builder
-	for _, e := range entries {
-		s, ok := entryText(e, dash, eol)
+	for i, e := range entries {
+		var ext []*yaml.Node
+		if i < len(exts) {
+			ext = exts[i]
+		}
+		s, ok := entryText(e, ext, dash, eol)
 		if !ok {
 			return "", false
 		}
@@ -377,7 +418,7 @@ func (t *text) appendTo(line, indent int, name string, edit listEdit) ([]byte, b
 		pad += "  "
 	}
 	head += pad + "exceptions:" + t.eol
-	entries, ok := entriesText(edit.add, len(pad)+3, t.eol)
+	entries, ok := entriesText(edit.add, nil, len(pad)+3, t.eol)
 	if !ok {
 		return nil, false
 	}
@@ -416,7 +457,7 @@ func (t *text) fillNull(k, v *yaml.Node, child string, edit listEdit) ([]byte, b
 		pad += 2
 		head = strings.Repeat(" ", pad) + child + ":" + t.eol
 	}
-	entries, ok := entriesText(edit.add, pad+3, t.eol)
+	entries, ok := entriesText(edit.add, nil, pad+3, t.eol)
 	if !ok {
 		return nil, false
 	}
@@ -428,7 +469,8 @@ func (t *text) fillNull(k, v *yaml.Node, child string, edit listEdit) ([]byte, b
 }
 
 // rewriteFlow writes the flow list v, the value of k, whole as a block
-// list of the entries edit leaves, two spaces under k.
+// list of the entries edit leaves, two spaces under k, each it keeps or
+// replaces keeping its x- keys.
 func (t *text) rewriteFlow(all []*yaml.Node, k, v *yaml.Node, edit listEdit) ([]byte, bool) {
 	var want any
 	if v.Decode(&want) != nil || len(v.Content) != edit.n {
@@ -443,16 +485,20 @@ func (t *text) rewriteFlow(all []*yaml.Node, k, v *yaml.Node, edit listEdit) ([]
 		return nil, false
 	}
 	var entries []mutants.Exception
-	for _, n := range v.Content {
+	var exts [][]*yaml.Node
+	for i, n := range v.Content {
 		var e mutants.Exception
 		if n.Decode(&e) != nil {
 			return nil, false
 		}
 		entries = append(entries, e)
+		if !edit.remove[i] {
+			exts = append(exts, detached(extensions(n.Content)))
+		}
 	}
 	with := " []" + t.eol
 	if list := edit.result(entries); len(list) > 0 {
-		s, ok := entriesText(list, k.Column+2, t.eol)
+		s, ok := entriesText(list, exts, k.Column+2, t.eol)
 		if !ok {
 			return nil, false
 		}
@@ -470,8 +516,8 @@ func (t *text) rewriteFlow(all []*yaml.Node, k, v *yaml.Node, edit listEdit) ([]
 
 // spliceBlock writes edit into the block list seq entry by entry: a
 // replaced entry's lines become the new entry's, keeping the comment after
-// its first line; a removed entry's lines go, with the comment lines
-// directly above it; and added entries follow the last.
+// its first line and its x- keys; a removed entry's lines go, with the
+// comment lines directly above it; and added entries follow the last.
 func (t *text) spliceBlock(all []*yaml.Node, k, seq *yaml.Node, edit listEdit) ([]byte, bool) {
 	if len(seq.Content) != edit.n {
 		return nil, false
@@ -516,7 +562,7 @@ func (t *text) spliceBlock(all []*yaml.Node, k, seq *yaml.Node, edit listEdit) (
 			}
 			edits = append(edits, change{t.start(start), end, ""})
 		case replaced:
-			with, ok := entryText(e, seq.Column, t.eol)
+			with, ok := entryText(e, detached(extensions(n.Content)), seq.Column, t.eol)
 			if !ok {
 				return nil, false
 			}
@@ -531,7 +577,7 @@ func (t *text) spliceBlock(all []*yaml.Node, k, seq *yaml.Node, edit listEdit) (
 		}
 	}
 	if len(edit.add) > 0 {
-		with, ok := entriesText(edit.add, seq.Column, t.eol)
+		with, ok := entriesText(edit.add, nil, seq.Column, t.eol)
 		if !ok {
 			return nil, false
 		}
@@ -559,9 +605,17 @@ func (t *text) dashLine(seq, n *yaml.Node) (int, bool) {
 }
 
 // firstLineComment is the comment after the first line of entry n, whose
-// dash is on line, with the space before it, or "".
+// dash is on line, with the space before it, or "". The comment of an x-
+// key or its value is not it, as it goes with that key.
 func (t *text) firstLineComment(n *yaml.Node, line int) string {
-	for _, c := range nodes(n) {
+	own := []*yaml.Node{n}
+	for i := 0; i+1 < len(n.Content); i += 2 {
+		if !isExtension(n.Content[i]) {
+			own = append(own, nodes(n.Content[i])...)
+			own = append(own, nodes(n.Content[i+1])...)
+		}
+	}
+	for _, c := range own {
 		if c.Line != line || c.LineComment == "" {
 			continue
 		}
