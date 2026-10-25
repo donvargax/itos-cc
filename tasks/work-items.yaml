@@ -15,7 +15,6 @@ queue:
   - listed-suites
   - features-coverage-gocoverdir-leak
   - slice-51
-  - slice-49
   - itos-cc-yaml-unknown-keys
   - itos-cc-yaml-version-key
   - slice-50
