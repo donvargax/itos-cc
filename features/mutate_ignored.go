@@ -231,6 +231,9 @@ var ignoredFound = map[string]string{
 	"nested/marker.txt is there": `if _, err := os.Stat("nested/marker.txt"); err == nil {
 		t.Fatal("nested/marker.txt is there")
 	}`,
+	"GOCOVERDIR is set": `if dir, ok := os.LookupEnv("GOCOVERDIR"); ok {
+		t.Fatalf("GOCOVERDIR is set: %q", dir)
+	}`,
 }
 
 // ignoredFunctions are the functions of a Given's Go file, each taking one

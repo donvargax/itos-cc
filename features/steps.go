@@ -435,6 +435,9 @@ const (
 type world struct {
 	d   Driver // the world the steps reach
 	dir string // the scratch folder
+	// folders are the folders of their own the scenario's environment
+	// named, removed with the scratch folder.
+	folders []string
 
 	// feature is the name of the scenario's feature file.
 	feature string
@@ -572,7 +575,11 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 		return w.runWith(w.env(), args)
 	})
 	sc.Step(`^itos-cc runs with "([^"]*)" and the environment "([^"]*)"$`, func(args, vars string) error {
-		return w.runWith(w.withEnv(vars), args)
+		env, err := w.withEnv(vars)
+		if err != nil {
+			return err
+		}
+		return w.runWith(env, args)
 	})
 
 	sc.Step(`^it exits with code (\d+)$`, w.exitsWith)
@@ -713,6 +720,7 @@ func (w *world) setUp(s *godog.Scenario) error {
 	w.beforeRemove = nil
 	w.last, w.problem, w.without, w.wrote, w.each, w.binary, w.edges, w.signal = nil, nil, nil, "", nil, "", nil, 0
 	w.feature, w.scored, w.noTests, w.with, w.project, w.config, w.runIn = filepath.Base(s.Uri), nil, nil, nil, "", "", ""
+	w.folders = nil
 	var err error
 	w.dir, err = w.d.Folder()
 	return err
@@ -721,14 +729,17 @@ func (w *world) setUp(s *godog.Scenario) error {
 // A failed join retains the complete fixture for safe recovery; later hooks
 // cannot accidentally make scratch deletion independent of owned cleanup.
 func (w *world) cleanUp(ctx context.Context) error {
-	if w.beforeRemove == nil {
-		_ = w.d.Remove(w.dir)
-		return nil
-	}
 	if w.beforeRemove != nil {
 		if err := w.beforeRemove(ctx); err != nil {
 			return err
 		}
+	}
+	for _, folder := range w.folders {
+		_ = w.d.Remove(folder)
+	}
+	if w.beforeRemove == nil {
+		_ = w.d.Remove(w.dir)
+		return nil
 	}
 	return w.d.Remove(w.dir)
 }
@@ -737,16 +748,31 @@ func (w *world) cleanUp(ctx context.Context) error {
 // The driver gives each run the rest.
 func (w *world) env() []string { return slices.Clone(w.variables) }
 
+// ownFolder is the value an environment variable a scenario sets takes to
+// name a fresh folder of its own, outside the scratch folder.
+const ownFolder = "<a folder of its own>"
+
 // withEnv is the scenarios' environment with each NAME=value of vars, a
-// semicolon-separated list, set as given.
-func (w *world) withEnv(vars string) []string {
+// semicolon-separated list, set as given, a value of ownFolder as a fresh
+// folder the driver makes.
+func (w *world) withEnv(vars string) ([]string, error) {
 	env := w.env()
 	for _, one := range strings.Split(vars, ";") {
-		if name, value, ok := strings.Cut(one, "="); ok {
-			env = setEnv(env, name, value)
+		name, value, ok := strings.Cut(one, "=")
+		if !ok {
+			continue
 		}
+		if value == ownFolder {
+			folder, err := w.d.Folder()
+			if err != nil {
+				return nil, err
+			}
+			w.folders = append(w.folders, folder)
+			value = folder
+		}
+		env = setEnv(env, name, value)
 	}
-	return env
+	return env, nil
 }
 
 // When steps.
