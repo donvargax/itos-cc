@@ -74,10 +74,16 @@ Feature: Command line
     # several as "Did you mean one of X, Y?". The kong fork exports the rule
     # (a new -itos tag) and itos-cc uses it for commands, flags, serve's hand
     # parser and itos-cc.yaml keys (SEL-41), deleting its own two copies; the
-    # architecture rules let the settings adapter import the fork for it.
-    # Plain output and the fix's wording change for the inputs the rule now
-    # matches more of; the problem's rule and fields do not, so no breaking
-    # note. Before this item "s" names no command, failing at the stderr step.
+    # architecture rules let the settings adapter import the fork for it
+    # (decision 62). q-100 (the person 2026-10-25): when kong's rule finds
+    # nothing, the fork's function falls back to today's stem test (all but
+    # the typed word's last letter, four letters at least, begins exactly
+    # one candidate), so CLI-15's mutate still suggests 'mutation'; kong's
+    # own closestCandidates stays untouched. Plain output and the fix's
+    # wording change for the inputs the rule now matches more of (crapp
+    # names 'crap' and 'scrap' in CLI-04 and CLI-10); the problem's rule and
+    # fields do not, so no breaking note. Before this item "s" names no
+    # command, failing at the stderr step.
     @slice-60 @ID-CLI-30 @wip
     Scenario: A prefix of several commands names them all
       When I run "itos-cc s"
