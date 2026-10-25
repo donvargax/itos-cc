@@ -5710,8 +5710,8 @@ items:
   - id: slice-57
     title: mutation run records a flaky mutant, and check fails on it
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
