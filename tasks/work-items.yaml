@@ -20,7 +20,6 @@ queue:
   - T-105
   - T-106
   - T-107
-  - T-108
   - T-112
   - T-113
   - mutation-windows-ownership
@@ -2844,7 +2843,7 @@ items:
     title: Serve architecture through an HTTP adapter over domain services
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: [T-107]
     kind: task
     deferred: >
