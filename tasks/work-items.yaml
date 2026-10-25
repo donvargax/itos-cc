@@ -5741,8 +5741,8 @@ items:
   - id: T-210
     title: The nightly commits .metrics/graph.json beside crap, dry and scrap
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [slice-56]
     kind: task
   - id: changed-lines-coverage
