@@ -14,7 +14,6 @@ queue:
   - listed-support-per-test
   - listed-suites
   - features-coverage-gocoverdir-leak
-  - slice-58
   - T-102
   - T-103
   - T-104
