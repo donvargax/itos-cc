@@ -87,7 +87,7 @@ func (e *exceptionMutation) reviewRenew() error {
 	if e.s.m.w.exit != 1 {
 		return fmt.Errorf("renewal first run exit%d", e.s.m.w.exit)
 	}
-	for _, site := range []string{"label.go:6:7", "other.go:6:7", "other.go:15:7", "size.go:6:7"} {
+	for _, site := range []string{renewSite, "other.go:6:7", "other.go:15:7", "size.go:6:7"} {
 		if err := e.run("mutation except " + site + " --reason 'reviewed: " + site + "'"); err != nil {
 			return err
 		}
