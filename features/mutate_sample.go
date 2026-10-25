@@ -64,7 +64,22 @@ func sampleMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMuta
 		return s.unitOutcomes(s.before, s.clear, "survived")
 	})
 	sc.Step(`^the tests still kill and miss the same mutants$`, p.stillSame)
-	sc.Step("^the snapshot records the mutant `>` → `>=` at src/board\\.ts:5:9 in \"Board#place\" as killed$", func() error { return p.record("") })
+	sc.Step("^the snapshot records the mutant `>` → `>=` at src/board\\.ts:5:9 in \"Board#place\" as killed$", func() error {
+		if err := p.record(""); err != nil {
+			return err
+		}
+		if p.id != "342" {
+			return nil
+		}
+		// MUT-342 samples that mutant alone: the other one, recorded
+		// uncovered, is never drawn.
+		if err := p.setOutcome(s.clear, "<", "uncovered"); err != nil {
+			return err
+		}
+		name := ".metrics/mutate/" + s.file + ".json"
+		s.m.held[name] = s.m.read(name)
+		return nil
+	})
 	sc.Step(`^the tests no longer kill it$`, func() error { return p.setControl("place_weak", true) })
 	sc.Step(`^the snapshot records a mutant of "Board#place" as survived$`, func() error {
 		if err := p.record(""); err != nil {
@@ -73,6 +88,25 @@ func sampleMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMuta
 		return s.unitOutcomes(s.before, s.place, "survived")
 	})
 	sc.Step(`^the tests now kill it$`, func() error { return p.setControl("place_weak", false) })
+	sc.Step(`^the tests miss it on one run and kill it on the next, with nothing they hash changed$`, func() error { return p.flipping("survived", "killed") })
+	sc.Step(`^the tests kill it on one run and miss it on the next, with nothing they hash changed$`, func() error { return p.flipping("killed", "survived") })
+	sc.Step(`^it runs past its timeout on one run and survives the next$`, func() error { return p.flipping("timeout", "survived") })
+	sc.Step(`^the problem is "mutation\.flaky", with file, line, column, function, original, replacement, recorded "([^"]*)" and outcomes "([^"]*)", "([^"]*)"$`, func(recorded, first, second string) error {
+		return p.flaky(recorded, []string{first, second}, true)
+	})
+	sc.Step(`^the problem is "mutation\.flaky", with recorded "([^"]*)" and outcomes "([^"]*)", "([^"]*)"$`, func(recorded, first, second string) error {
+		return p.flaky(recorded, []string{first, second}, false)
+	})
+	sc.Step(`^that mutant ran 3 times$`, p.ranThrice)
+	sc.Step(`^each sampled mutant ran once$`, p.ranOnce)
+	sc.Step(`^stdout says "([^"]*)" and "([^"]*)"$`, func(first, second string) error {
+		if err := p.stdoutSays(first); err != nil {
+			return err
+		}
+		return p.stdoutSays(second)
+	})
+	sc.Step(`^with --json the sampled mutant has "outcomes": \["survived", "killed"\]$`, p.outcomesListed)
+	sc.Step(`^the problem's fix says to make the tests deterministic and names no mutation run$`, p.deterministicFix)
 	sc.Step(`^the snapshot records a mutant of "Board#place" as killed$`, func() error {
 		if err := p.record(""); err != nil {
 			return err

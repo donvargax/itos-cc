@@ -27,15 +27,36 @@ const trace = @TRACE@;
 if(trace) appendFileSync(trace,JSON.stringify({cwd:realpathSync(process.cwd()),original_root:realpathSync(@ROOT@),source_sha256:createHash("sha256").update(readFileSync("src/board.ts")).digest("hex")})+"\n");
 `
 
-const sampleTestTS = sampleTraceWriter + `import {expect,test} from "vitest";
+// sampleTestTS's place test decides the mutant at its boundary, the one
+// place(5) tells from the source, by place_flip when the control file
+// gives it: each run of a mutant takes the next of its outcomes, cycled,
+// "killed" asserting the boundary, "survived" not, "timeout" waiting past
+// any timeout of a run. It counts each mutant's runs, by the SHA-256 of
+// the source, in the control file, outside the project, so nothing the
+// tests hash changes.
+const sampleTestTS = sampleTraceWriter + `import {writeFileSync} from "node:fs";
+import {setTimeout as delay} from "node:timers/promises";
+import {expect,test} from "vitest";
 import {Board} from "./board";
 const control = JSON.parse(readFileSync(@CONTROL@,"utf8"));
 test("place",async()=>{
  if(control.fail) throw new Error("fixture baseline broken");
  const b=new Board();
- if(!control.place_weak) expect(b.place(5)).toBe(false);
+ let strong=!control.place_weak;
+ if(control.place_flip && b.place(5)!==false){
+  const counted=JSON.parse(readFileSync(@CONTROL@,"utf8"));
+  const key=createHash("sha256").update(readFileSync("src/board.ts")).digest("hex");
+  counted.runs=counted.runs||{};
+  const run=counted.runs[key]||0;
+  counted.runs[key]=run+1;
+  writeFileSync(@CONTROL@,JSON.stringify(counted));
+  const outcome=control.place_flip[run%control.place_flip.length];
+  if(outcome==="timeout") await delay(3600000);
+  strong=outcome==="killed";
+ }
+ if(strong) expect(b.place(5)).toBe(false);
  expect(b.place(6)).toBe(true);
-});
+},3600000);
 test("clear",()=>{
  const b=new Board();
  expect(b.clear(2)).toBe(true);
@@ -68,10 +89,13 @@ type sampleMutation struct {
 	id                       string
 	external, control, trace string
 	controls                 map[string]bool
-	files                    []string
-	original                 string
-	observe                  func() ([]string, error)
-	firstTrials              []string
+	// flip is the outcomes the place test gives the mutant at its
+	// boundary in turn, run after run, or nil.
+	flip        []string
+	files       []string
+	original    string
+	observe     func() ([]string, error)
+	firstTrials []string
 }
 
 func (p *sampleMutation) project() error {
@@ -87,7 +111,7 @@ func (p *sampleMutation) project() error {
 	p.control = filepath.Join(p.external, "control.json")
 	p.trace = filepath.Join(p.external, "executions.jsonl")
 	p.controls = map[string]bool{}
-	if slices.Contains([]string{"73", "111"}, p.id) {
+	if slices.Contains([]string{"73", "111", "338", "341"}, p.id) {
 		p.controls["place_weak"] = true
 	}
 	if slices.Contains([]string{"109", "110", "112", "113"}, p.id) {
@@ -186,7 +210,14 @@ func (p *sampleMutation) sampleOptions() {
 }
 
 func (p *sampleMutation) writeControl() error {
-	b, err := json.Marshal(p.controls)
+	control := map[string]any{}
+	for name, value := range p.controls {
+		control[name] = value
+	}
+	if p.flip != nil {
+		control["place_flip"] = p.flip
+	}
+	b, err := json.Marshal(control)
 	if err != nil {
 		return err
 	}
@@ -211,6 +242,13 @@ func (p *sampleMutation) declare() error {
 		}
 		if p.id == "75" && site.line == 5 {
 			own.Surviving = append(own.Surviving, mu)
+		}
+		if p.flip != nil && sinceFunction(site, s.place) {
+			if own.Flipping == nil {
+				own.Flipping = map[Site][]string{}
+			}
+			own.Flipping[mu] = slices.Clone(p.flip)
+			continue
 		}
 		if sinceFunction(site, s.place) && p.controls["place_weak"] || sinceFunction(site, s.clear) && !p.controls["clear_strong"] {
 			own.Surviving = append(own.Surviving, mu)

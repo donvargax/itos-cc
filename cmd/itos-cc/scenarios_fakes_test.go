@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"io"
@@ -260,6 +261,10 @@ func (m *memory) workers(runs ...features.Run) *mutantstest.Workers {
 						Outcome: outcome.outcome, Output: t.Writing[site]})
 				}
 			}
+			for _, site := range slices.SortedFunc(maps.Keys(t.Flipping), compareSites) {
+				d.Verdicts = append(d.Verdicts, mutantstest.Verdict{Path: site.File, Site: mutation.Site{Line: site.Line, Original: site.Original, Replacement: site.Replacement},
+					Outcomes: slices.Clone(t.Flipping[site])})
+			}
 			if t.Trace != nil {
 				d.Trace = &mutantstest.Trace{File: t.Trace.File, Source: t.Trace.Source, Tests: maps.Clone(t.Trace.Tests), Coverage: t.Trace.Coverage, CoverDir: t.Trace.CoverDir}
 			}
@@ -272,6 +277,11 @@ func (m *memory) workers(runs ...features.Run) *mutantstest.Workers {
 	}
 	env := runVariables(run.Env)
 	return &mutantstest.Workers{Files: m.files, Tests: declarations, Write: m.Write, Env: env, Without: slices.Clone(run.Without), Platform: m.Platform()}
+}
+
+// compareSites orders sites by file, line, original and replacement.
+func compareSites(a, b features.Site) int {
+	return cmp.Or(cmp.Compare(a.File, b.File), cmp.Compare(a.Line, b.Line), cmp.Compare(a.Original, b.Original), cmp.Compare(a.Replacement, b.Replacement))
 }
 
 // capsWriting are the sites of writing, whose mutants make the tests

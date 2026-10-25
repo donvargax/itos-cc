@@ -285,7 +285,7 @@ var testTools = map[string][]string{
 // (quickRunsOn). The tests themselves then decide every outcome.
 func (binary) Tests(_ string, t Tests) error {
 	if t.Command == "" && t.Imports != nil {
-		if t.Baseline != "" || len(t.Surviving) > 0 || len(t.TimingOut) > 0 || t.Elapsed != 0 || t.Trace != nil || t.Listed != nil {
+		if t.Baseline != "" || len(t.Surviving) > 0 || len(t.TimingOut) > 0 || len(t.Flipping) > 0 || t.Elapsed != 0 || t.Trace != nil || t.Listed != nil {
 			return fmt.Errorf("imports-only setup cannot declare execution outcomes")
 		}
 		return nil

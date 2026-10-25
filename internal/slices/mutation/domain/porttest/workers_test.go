@@ -197,3 +197,37 @@ func TestBoundUnittestFailFastRequestsSelectActualInventory(t *testing.T) {
 		t.Fatal("unsupported -k changed trace or was accepted")
 	}
 }
+
+func TestAVerdictsOutcomesCycleThroughItsRuns(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "a.py")
+	c := mutants.Command{Root: root, Dir: root, Args: []string{"python3", "-m", "pytest"}}
+	src := []byte("return x > 0\n")
+	site := mutants.Site{Start: 9, End: 10, Line: 1, Original: ">", Replacement: ">="}
+	other := mutants.Site{Start: 9, End: 10, Line: 1, Original: ">", Replacement: "<"}
+	declaration := Tests{Verdicts: []Verdict{{Path: "a.py", Site: site, Outcomes: []string{mutants.Survived, mutants.Timeout, mutants.Killed}}}}
+	f := &Workers{Files: map[string]string{source: string(src)}, Tests: map[string]map[string]Tests{root: {c.String(): declaration}}}
+	p, err := f.Open(t.Context(), mutants.MutationRun, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closePool(t.Context(), t, p)
+	w := p.Worker(0)
+	var got []string
+	for range 4 {
+		r, err := w.Run(t.Context(), c, &mutants.Mutation{Path: source, Source: src, Site: site}, mutants.Limits{Timeout: time.Second})
+		if err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, mutants.Judged(r))
+		if r, err := w.Run(t.Context(), c, &mutants.Mutation{Path: source, Source: src, Site: other}, mutants.Limits{}); err != nil || mutants.Judged(r) != mutants.Killed {
+			t.Fatalf("another site of the file: %+v %v", r, err)
+		}
+		if r, err := w.Run(t.Context(), c, nil, mutants.Limits{}); err != nil || !r.Passed {
+			t.Fatalf("baseline: %+v %v", r, err)
+		}
+	}
+	if want := []string{mutants.Survived, mutants.Timeout, mutants.Killed, mutants.Survived}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("runs gave %v, want %v", got, want)
+	}
+}

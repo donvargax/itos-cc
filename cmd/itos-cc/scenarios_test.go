@@ -312,7 +312,7 @@ func (m *memory) Tests(dir string, t features.Tests) error {
 	if err := m.admitCoverageTrace(dir, t); err != nil {
 		return err
 	}
-	if t.Command == "" && t.Imports != nil && (t.Baseline != "" || len(t.Surviving) > 0 || len(t.TimingOut) > 0 || t.Elapsed != 0 || t.Trace != nil || t.Listed != nil) {
+	if t.Command == "" && t.Imports != nil && (t.Baseline != "" || len(t.Surviving) > 0 || len(t.TimingOut) > 0 || len(t.Flipping) > 0 || t.Elapsed != 0 || t.Trace != nil || t.Listed != nil) {
 		return fmt.Errorf("imports-only setup cannot declare execution outcomes")
 	}
 
@@ -353,7 +353,7 @@ func (m *memory) Tests(dir string, t features.Tests) error {
 	}
 	dir = filepath.Clean(dir)
 	if t.Command == "" && t.Imports != nil {
-		if t.Baseline != "" || len(t.Surviving) > 0 || len(t.TimingOut) > 0 || t.Elapsed != 0 || t.Trace != nil || t.Listed != nil {
+		if t.Baseline != "" || len(t.Surviving) > 0 || len(t.TimingOut) > 0 || len(t.Flipping) > 0 || t.Elapsed != 0 || t.Trace != nil || t.Listed != nil {
 			return fmt.Errorf("imports-only setup cannot declare execution outcomes")
 		}
 		return nil

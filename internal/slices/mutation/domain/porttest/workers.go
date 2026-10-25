@@ -49,6 +49,11 @@ type Verdict struct {
 	Path    string
 	Site    mutants.Site
 	Outcome string
+	// Outcomes, when set, are the outcomes of the mutant's runs in turn,
+	// Killed, Survived or Timeout, cycled per site across the runs one
+	// Workers makes, in place of Outcome: tests deciding it differently
+	// each run with nothing changed.
+	Outcomes []string
 	// Output is how many bytes the tests write under a Writing mutant.
 	Output int64
 }
@@ -110,6 +115,9 @@ type Workers struct {
 
 	mu   sync.Mutex
 	next int
+	// trials counts the runs of each mutant a Verdict's Outcomes cycle
+	// through, by its file and site.
+	trials map[string]int
 }
 
 var _ mutants.Workers = (*Workers)(nil)
@@ -336,7 +344,7 @@ func (w *worker) Run(ctx context.Context, c mutants.Command, change *mutants.Mut
 			return mutants.CommandResult{Cancelled: true, ExitCode: -1}, nil
 		}
 	}
-	return declaredResult(c, tests, change, limits, f.Platform)
+	return declaredResult(c, f.trial(c, tests, change), change, limits, f.Platform)
 }
 
 // declaredResult is the declared result of c's run, of change under
@@ -365,8 +373,9 @@ func declaredResult(c mutants.Command, tests Tests, change *mutants.Mutation, li
 		return r, nil
 	}
 	for _, v := range tests.Verdicts {
-		if filepath.ToSlash(rel) == filepath.ToSlash(v.Path) && v.Site.Line == change.Site.Line && v.Site.Original == change.Site.Original && v.Site.Replacement == change.Site.Replacement {
+		if v.decides(c, change) {
 			switch v.Outcome {
+			case mutants.Killed:
 			case mutants.Survived:
 				r.Passed = true
 				r.ExitCode = 0

@@ -139,6 +139,11 @@ type Tests struct {
 	// whose mutants make them run past the timeout; every other mutant
 	// they run fails them, killed.
 	Surviving, TimingOut []Site
+	// Flipping are the sites whose mutants they decide differently from
+	// run to run with nothing they hash changed: each run of a site's
+	// mutant takes its next outcome, "killed", "survived" or "timeout",
+	// cycled, counted from the first run of the invocation of itos-cc.
+	Flipping map[Site][]string
 	// Elapsed is how long one run of them takes: the baseline's, and each
 	// trial's but a timing-out one's.
 	Elapsed time.Duration
