@@ -5912,3 +5912,18 @@ items:
       07, 08, 13-15, 22, 24-31, 34-40, per the graph-snapshot draft); the parser-level ones (09-12,
       17-21) need small fixtures; GRAPH-06 and 16 (several repositories) and 23, 32, 33 (live
       rebuild) stay @wip with serve. Drop the feature-level @wip and tag what stays.
+  - id: listed-coverage-wrapper-counters
+    title: A -cover itos-cc's own -exec wrapper writes its counters into a listed test's GOCOVERDIR
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      After slice-59, ID-MUT-178 passes under the binary driver's coverage build but ID-MUT-123
+      still fails: a listed test's per-test GOCOVERDIR (eachTestEnv) reaches the itos-cc
+      __exec-with-gocoverdir wrapper go test runs, and a wrapper built with -cover writes
+      atomic-mode metadata there, so go tool covdata refuses the folder (counter mode clash). Only a
+      measured itos-cc meets it, but it costs the nightly's integration coverage of listed-test
+      scenarios; decide whether the harness, the wrapper or the conversion keeps itos-cc's own
+      counters out.
