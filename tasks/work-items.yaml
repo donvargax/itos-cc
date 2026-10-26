@@ -5904,17 +5904,9 @@ items:
     title: Say why a Go plan falls back to the whole module
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was go-scope-fallback-silent.
-      GoScope returns nothing, and goPlan measures the whole module with -coverpkg=./... ./..., both
-      when go list fails, its error dropped, and when it lists none of the chosen sources
-      directories. bug-10 hid behind the second on macOS: the run measured the whole module and said
-      nothing, so the cause showed only as a unit test comparing command lines. A log line naming
-      the reason (go list failed with its stderr, or listed no directory of the sources, naming one
-      listed and one wanted) would have shown the physical /private/var paths at once.
   - id: explicit-env-pwd
     title: Commands started with an explicit env name itos-cc's PWD, not their own directory
     phase: 1
