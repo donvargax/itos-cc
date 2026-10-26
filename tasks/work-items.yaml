@@ -6000,3 +6000,20 @@ items:
     status: doing
     depends_on: []
     kind: task
+  - id: mutation-trials-own-tmpdir
+    title: Give each mutation trial, and the worktrees tests, a temporary directory of their own
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-217 found the nightly recording a kill that only a race made: the worktrees package tests
+      build Workers, whose newWorkerScratch sweeps the system temporary directory, and the nightly
+      runs trials of that package side by side, so one trial meets the worker directories another is
+      making or removing. The unchangedFor mutant at line 160 died there by a nil-pointer panic on a
+      directory removed between listing and check (nightly 40299431695), then survived the CD sample
+      alone (cd.yml 40412787808). A test whose outcome depends on other processes in /tmp can record
+      any mutant of removeAbandonedWorkers or abandoned killed or survived by chance. Setting
+      TMPDIR, TMP and TEMP to a t.TempDir in the tests that build Workers, or giving every trial its
+      own TMPDIR in mutation run, would make those outcomes deterministic; decide which, or both.
