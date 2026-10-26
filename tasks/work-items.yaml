@@ -5996,7 +5996,7 @@ items:
   - id: T-217
     title: Kill the unchangedFor mutant the CD sample found surviving
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
