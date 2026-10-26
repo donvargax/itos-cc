@@ -5962,3 +5962,18 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: scenario-report-earlier-runs
+    title: A failing step's report shows every itos-cc run the scenario made, not only the last
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      A step that runs itos-cc again (ID-MUT-300's lowerFactor, the rerun with --output-factor 1)
+      replaces w.stdout and w.stderr, and world.report() prints only those, so a failure there hides
+      the When's own run: in T-215 the Windows logs of runs 40169478722 and 40207453484 showed the
+      rerun's trials and timeout but not the When run's baseline, timeout or time to the 36 MiB cap,
+      which would have measured the fixture's pace on Windows directly. Passing scenarios print no
+      timings at all. The report could list each run's command, exit, elapsed and stderr (outcomes()
+      already keeps the runs the When made).
