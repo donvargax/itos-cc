@@ -5908,14 +5908,15 @@ items:
     status: done
     depends_on: []
     kind: bug
-  - id: go-scope-fallback-silent
+  - id: slice-61
     title: Say why a Go plan falls back to the whole module
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was go-scope-fallback-silent.
       GoScope returns nothing, and goPlan measures the whole module with -coverpkg=./... ./..., both
       when go list fails, its error dropped, and when it lists none of the chosen sources
       directories. bug-10 hid behind the second on macOS: the run measured the whole module and said
