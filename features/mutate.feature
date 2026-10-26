@@ -780,9 +780,12 @@ Feature: Mutation testing
   # and the fake measures memory where the real supervisor does.
   Rule: A mutant's output and memory are capped, sized from its baseline
 
-    # The flooding fixture writes in 64 KiB pieces with a millisecond's
-    # pause, about 64 MB a second, so today's product, which buffers it
-    # all until the timeout, stays under half a gigabyte on CI.
+    # The flooding fixture writes in 64 KiB pieces, one a millisecond by
+    # the clock, about 64 MB a second, catching up at once after a sleep
+    # that lasts longer than asked, as on Windows, so on every system the
+    # caps are reached seconds before the timeout, and today's product,
+    # which buffers it all until the timeout, stays under half a gigabyte
+    # on CI.
     # --timeout-factor 1 keeps that red run short; every judged mutant's
     # tests end in under a second. The fixture sets GOFLAGS=-v: without
     # -v, go test holds a package's test output until its test ends, so

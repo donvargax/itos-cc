@@ -90,10 +90,13 @@ const (
 	few     = 32
 )
 `
-	// capsFloodingTest prints the pieces with a millisecond's pause, about
-	// 64 MB a second, and stops where its output is closed or at 1 GiB,
-	// so a run with no cap ends it at its timeout, and an output it lost
-	// ends it on every system.
+	// capsFloodingTest prints the pieces at one a millisecond by the
+	// clock, about 64 MB a second, and stops where its output is closed or
+	// at 1 GiB, so a run with no cap ends it at its timeout, and an output
+	// it lost ends it on every system. It sleeps only while it is ahead of
+	// that pace, so a sleep that lasts longer than asked, as on Windows, is
+	// caught up at once: a millisecond's pause after each piece made 18 MiB
+	// take as long as the timeout there (T-215).
 	capsFloodingTest = `package board
 
 import (
@@ -110,14 +113,17 @@ func TestPrint(t *testing.T) {
 	}
 	piece := bytes.Repeat([]byte(strings.Repeat("x", 1023)+"\n"), 64)
 	n := Pieces()
+	start := time.Now()
 	for i := 0; n < 0 || i < n; i++ {
 		if i == 16*1024 {
 			t.Fatal("printed 1 GiB")
 		}
+		if ahead := time.Duration(i)*time.Millisecond - time.Since(start); ahead > 0 {
+			time.Sleep(ahead)
+		}
 		if _, err := os.Stdout.Write(piece); err != nil {
 			os.Exit(2)
 		}
-		time.Sleep(time.Millisecond)
 	}
 }
 `
