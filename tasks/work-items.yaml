@@ -5972,3 +5972,10 @@ items:
       past the 18 MiB cap, while the other printer reached the cap in 4.8 s. Make the scenario
       deterministic (a timeout far above the time to the cap, or a printer that reaches it sooner),
       never by retrying. Each red CD holds a release.
+  - id: T-213
+    title: MUT-265's workers step holds however the workers share the mutants
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

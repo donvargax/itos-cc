@@ -7021,3 +7021,20 @@
   why: >
     Between agents, the coordinator moves the pin from 8.17.0 to the newest 8.19 so the next agents
     read its guides and hooks, as T-211 did; the person approved it 2026-10-25.
+- id: T-213
+  type: test
+  title: MUT-265's workers step holds however the workers share the mutants
+  why: >
+    CD 40270075550 (1d07d550, a Renovate setup-node bump that touches no Dart) failed in its dart
+    job: ID-MUT-265's member-of-a-pub-workspace example (features/mutate.feature, slice-35) reported
+    "the tests ran in 1 workers' copies, not 2" (features/mutate_dart.go mutateDartCopies): worker
+    w0 ran all four mutants while w1 had none. It is the first dart failure in thirty CD runs, so
+    the step races the scheduler: a worker that takes longer over its offline pub get can find the
+    queue empty. Decided by the coordinator (2026-10-26): find where the race is and make the
+    scenario deterministic without weakening it; the step still proves the mutants ran in at least
+    two workers' own copies, each without android or ios and with lib/user.g.dart (and the workspace
+    for a member). If the product gives a worker no mutant when it should, fix the product. If the
+    scenario promises something the product does not (that every worker gets a mutant), stop and
+    report it: that is the person's call. Neither example of MUT-265 may depend on timing.
+  done_when:
+    - run: go vet ./features
