@@ -69,7 +69,7 @@ jobs:
       # step of the plan (itos.yaml's proof.code, T-187): a viewer site it
       # draws runs its Vitest tests, and without node_modules every
       # viewer/src file reports a failing baseline.
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: npm
@@ -280,7 +280,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: npm
@@ -437,7 +437,7 @@ jobs:
           cache-dependency-path: go.sum
       - name: Build itos-cc
         run: go build -o "$RUNNER_TEMP/itos-cc" ./cmd/itos-cc
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: npm
