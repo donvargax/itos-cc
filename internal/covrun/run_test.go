@@ -280,11 +280,14 @@ func TestGoScopeListsAModuleReachedThroughASymlinkByItsSources(t *testing.T) {
 	}
 }
 
-// Why GoScope measures nothing, in the cases coverage.feature's ID-COV-48
-// and ID-COV-49 leave out: a module go list lists no package of, and a go
-// list that fails writing nothing, or a line ending in \r\n, to stderr.
-// Neither failure is one a real go makes on demand, so a go of the test's
-// own stands first on the PATH.
+// Why GoScope measures nothing, and the Notice goPlan gives it. ID-COV-48
+// holds the plan of a file in no listed package's folder, but only the
+// binary driver runs it, and the code proof measures the in-process tests
+// alone, so it is held here too. The other cases no scenario reaches: a
+// module go list lists no package of, and a go list that fails writing
+// nothing, or a line ending in \r\n, to stderr. Neither failure is one a
+// real go makes on demand, so a go of the test's own stands first on the
+// PATH.
 func TestGoScopeSaysWhyItMeasuresNothing(t *testing.T) {
 	dir := t.TempDir()
 	writeFiles(t, dir, map[string]string{
@@ -294,6 +297,25 @@ func TestGoScopeSaysWhyItMeasuresNothing(t *testing.T) {
 	sources := []string{filepath.Join(dir, "tools", "gen.go")}
 	if pkgs, tests, why := GoScope(dir, sources); pkgs != nil || tests != nil || why != "go list lists no package in "+filepath.Join(dir, "tools") {
 		t.Errorf("with no package listed: %q tested by %q, why %q", pkgs, tests, why)
+	}
+
+	// a/a.go has a test, as GoScope drops a package of no dependencies
+	// that go list prints last (goScopeSupervised says why).
+	writeFiles(t, dir, map[string]string{
+		"a/a.go":      "package a\n\nfunc A() int { return 1 }\n",
+		"a/a_test.go": "package a\n\nimport \"testing\"\n\nfunc TestA(t *testing.T) { A() }\n",
+	})
+	want := "measuring the whole module, as go list lists no package in " + filepath.Join(dir, "tools") +
+		"; the first it lists is in " + filepath.Join(dir, "a")
+	plan := goPlan(dir, "/out", sources, false)
+	if words := plan.Commands[0]; plan.Notice != want || !slices.Equal(words[len(words)-2:], []string{"-coverpkg=./...", "./..."}) {
+		t.Errorf("goPlan: %q, notice %q\nwant the whole module and %q", words, plan.Notice, want)
+	}
+	if plan := goPlan(dir, "/out", []string{filepath.Join(dir, "a", "a.go")}, false); plan.Notice != "" {
+		t.Errorf("goPlan of a listed file: notice %q, want none", plan.Notice)
+	}
+	if err := os.RemoveAll(filepath.Join(dir, "a")); err != nil {
+		t.Fatal(err)
 	}
 
 	for _, c := range []struct{ name, sh, bat, why string }{
