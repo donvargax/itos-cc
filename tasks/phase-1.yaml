@@ -7065,7 +7065,7 @@
   done_when:
     - run: go vet ./features
 - id: T-216
-  type: fix
+  type: test
   title: A -cover itos-cc drops its own coverage data from a listed test's folder before converting it
   why: >
     Under the nightly's coverage build, ID-MUT-123 measures nothing (docs/binary-only-reach.md): a
