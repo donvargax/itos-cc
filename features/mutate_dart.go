@@ -90,10 +90,15 @@ func (l *languageMutation) dartSteps(sc *godog.ScenarioContext) {
 // the package's real folder root, whether the platform folders and
 // lib/user.g.dart are beside it, and whether a pub workspace's root
 // pubspec.yaml and pubspec.lock and its sibling member core are above it.
+// Workers' tests record at once, and Dart's FileMode.append seeks to the
+// file's end when it opens it rather than opening it O_APPEND, so two
+// records written together could land at the same offset, one overwriting
+// the other (T-213): record holds an exclusive lock on the trace while it
+// finds the end and writes there.
 func mutateDartRecorder(trace, root string) string {
 	q := func(s string) string { b, _ := json.Marshal(s); return string(b) }
 	return "import 'dart:convert';\nimport 'dart:io';\n\nvoid record(String name) {\n" +
-		"  File(" + q(trace) + ").writeAsStringSync(jsonEncode({\n" +
+		"  final line = jsonEncode({\n" +
 		"    'test': name,\n" +
 		"    'cwd': Directory.current.resolveSymbolicLinksSync(),\n" +
 		"    'original_root': Directory(" + q(root) + ").resolveSymbolicLinksSync(),\n" +
@@ -101,7 +106,16 @@ func mutateDartRecorder(trace, root string) string {
 		"    'ios': Directory('ios').existsSync(),\n" +
 		"    'generated': File('lib/user.g.dart').existsSync(),\n" +
 		"    'workspace': File('../pubspec.yaml').existsSync() && File('../pubspec.lock').existsSync() && File('../core/pubspec.yaml').existsSync(),\n" +
-		"  }) + '\\n', mode: FileMode.append, flush: true);\n}\n"
+		"  }) + '\\n';\n" +
+		"  final trace = File(" + q(trace) + ").openSync(mode: FileMode.append);\n" +
+		"  try {\n" +
+		"    trace.lockSync(FileLock.blockingExclusive);\n" +
+		"    trace.setPositionSync(trace.lengthSync());\n" +
+		"    trace.writeStringSync(line);\n" +
+		"    trace.flushSync();\n" +
+		"  } finally {\n" +
+		"    trace.closeSync();\n" +
+		"  }\n}\n"
 }
 
 // mutateDartTest is a flutter_test test file named name that records its
