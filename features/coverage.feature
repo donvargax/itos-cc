@@ -555,3 +555,47 @@ Feature: Coverage
       Then stderr has a line beginning "itos-cc: coverage: go: " that gives the command's exit status
       # go test passes on the failing binary's own "coverage: N% of
       # statements" line, so this one does not ask that no line begins so
+
+  # slice-61 (go-scope-fallback-silent): a Go run measures chosen files with the tests
+  # of the packages that link them, from go list -test ./... (ID-COV-01).
+  # When go list fails, or lists no package in the folder of any chosen
+  # file, the run falls back to the whole module, -coverpkg=./... ./...,
+  # and said nothing: bug-10 hid behind the second on macOS, where go list
+  # named the physical /private/var folders. Decided by the coordinator on
+  # 2026-10-26:
+  # - The fallback stays; one line says why, with the coverage-prefix's
+  #   "itos-cc: coverage: <dir>: " and the words "measuring the whole
+  #   module, as":
+  #   - "go list failed: " and the first line go list wrote to stderr, or
+  #     its exit status when it wrote none;
+  #   - "go list lists no package in <folder>", the first chosen file's
+  #     folder as an absolute path, then "; the first it lists is in
+  #     <folder>", the absolute folder of the first package go list lists,
+  #     so a path told two ways shows at once. When it lists none, the line
+  #     ends after the chosen folder.
+  # - A run with no file chosen, which means the whole module, says
+  #   nothing new, nor does a run whose files go list finds.
+  # - Only goPlan (internal/covrun/run.go), the plan internal/coveragetools'
+  #   measurer runs, falls back silently; goScopeSupervised, which
+  #   mutation's fresh environment (freshenv) runs, already fails with its
+  #   reason and is unchanged.
+  # Before the slice, no such line is written: ID-COV-48 and ID-COV-49 fail
+  # at their last Then. ID-COV-50 holds already and guards the quiet runs.
+    @slice-61 @ID-COV-48 @binary-only @wip
+    Scenario: A Go file in no package go list lists says why the whole module measures it
+      Given a/a.go, tested by its own package, and tools/gen.go, which builds only under the ignore constraint
+      When I run "itos-cc crap tools/gen.go"
+      Then coverage runs "go test ... -coverpkg=./... ... ./..."
+      And stderr has a line "itos-cc: coverage: <dir>: measuring the whole module, as go list lists no package in <dir>/tools; the first it lists is in <dir>/a"
+
+    @slice-61 @ID-COV-49 @binary-only @wip
+    Scenario: A Go module go list cannot list says why the whole module measures a file
+      Given a/a.go, tested by its own package, and b/b.go, which imports example.com/m/nope, a package of no module
+      When I run "itos-cc crap a/a.go"
+      Then coverage runs "go test ... -coverpkg=./... ... ./..."
+      And stderr has a line beginning "itos-cc: coverage: <dir>: measuring the whole module, as go list failed: " that names "no required module provides package example.com/m/nope"
+
+    @slice-61 @ID-COV-50 @binary-only @wip
+    Scenario: A Go file go list finds, and a run of the whole suite, say nothing of the whole module
+      When I run "itos-cc crap a/a.go", and then "itos-cc crap --all-tests a/a.go"
+      Then no line of stderr says "measuring the whole module"
