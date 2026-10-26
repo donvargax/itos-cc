@@ -5983,6 +5983,6 @@ items:
     title: Upgrade the repository pin to itos 8.23
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
