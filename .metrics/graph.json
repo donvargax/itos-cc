@@ -6,20 +6,20 @@
       "kind": "repo",
       "label": "itos-cc",
       "metrics": {
-        "functions": 4000,
-        "mutated": 1619,
+        "functions": 3999,
+        "mutated": 1876,
         "crap_bands": {
           "low": 1222,
-          "medium": 564,
+          "medium": 563,
           "high": 49,
           "unknown": 2165
         },
         "max_crap": 2756,
-        "killed": 6003,
-        "survived": 1600,
-        "uncovered": 930,
-        "stale": 1449,
-        "duplicates": 158,
+        "killed": 6944,
+        "survived": 1820,
+        "uncovered": 1034,
+        "stale": 1630,
+        "duplicates": 156,
         "crap_grade": 7.9,
         "mutation_grade": 8.1,
         "grade": 8
@@ -32,7 +32,7 @@
       "label": "cmd",
       "metrics": {
         "functions": 90,
-        "mutated": 75,
+        "mutated": 88,
         "crap_bands": {
           "low": 77,
           "medium": 11,
@@ -40,10 +40,10 @@
           "unknown": 1
         },
         "max_crap": 68,
-        "killed": 109,
-        "survived": 17,
-        "uncovered": 21,
-        "stale": 75,
+        "killed": 128,
+        "survived": 20,
+        "uncovered": 13,
+        "stale": 88,
         "duplicates": 3,
         "crap_grade": 9.1,
         "mutation_grade": 8.8,
@@ -594,7 +594,7 @@
           "complexity": 6,
           "coverage": 72.7,
           "crap": 6.7,
-          "killed": 3,
+          "killed": 4,
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
@@ -702,10 +702,10 @@
           "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
           "file": "cmd/itos-cc/cli.go",
           "line": 116,
-          "end_line": 186,
-          "complexity": 25,
+          "end_line": 182,
+          "complexity": 24,
           "coverage": 100,
-          "crap": 25,
+          "crap": 24,
           "killed": 40,
           "survived": 0,
           "uncovered": 0,
@@ -717,8 +717,8 @@
           "name": "checkValue",
           "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
           "file": "cmd/itos-cc/cli.go",
-          "line": 188,
-          "end_line": 204,
+          "line": 184,
+          "end_line": 200,
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
@@ -733,8 +733,8 @@
           "name": "flagNames",
           "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
           "file": "cmd/itos-cc/cli.go",
-          "line": 206,
-          "end_line": 212,
+          "line": 202,
+          "end_line": 208,
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
@@ -749,8 +749,8 @@
           "name": "execute",
           "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
           "file": "cmd/itos-cc/cli.go",
-          "line": 217,
-          "end_line": 233,
+          "line": 213,
+          "end_line": 229,
           "complexity": 4,
           "coverage": 83.3,
           "crap": 4.1,
@@ -765,8 +765,8 @@
           "name": "runSafely",
           "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
           "file": "cmd/itos-cc/cli.go",
-          "line": 237,
-          "end_line": 244,
+          "line": 233,
+          "end_line": 240,
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
@@ -781,8 +781,8 @@
           "name": "help",
           "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc.command",
           "file": "cmd/itos-cc/cli.go",
-          "line": 249,
-          "end_line": 256,
+          "line": 245,
+          "end_line": 252,
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
@@ -797,8 +797,8 @@
           "name": "helpFlags",
           "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
           "file": "cmd/itos-cc/cli.go",
-          "line": 259,
-          "end_line": 269,
+          "line": 255,
+          "end_line": 265,
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
@@ -1074,11 +1074,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -1093,8 +1093,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -1106,11 +1106,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -1125,8 +1125,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -1141,8 +1141,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -1157,8 +1157,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -1170,11 +1170,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -1186,11 +1186,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -1202,11 +1202,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -1221,8 +1221,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -1234,9 +1234,9 @@
           "complexity": 3,
           "coverage": 0,
           "crap": 12,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 4,
+          "killed": 3,
+          "survived": 1,
+          "uncovered": 0,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -1410,9 +1410,9 @@
           "complexity": 7,
           "coverage": 28.6,
           "crap": 24.8,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 9,
+          "killed": 3,
+          "survived": 1,
+          "uncovered": 5,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -1426,11 +1426,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -1445,8 +1445,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -1458,11 +1458,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
-          "survived": 0,
+          "killed": 1,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -1536,7 +1536,7 @@
       ],
       "metrics": {
         "functions": 90,
-        "mutated": 75,
+        "mutated": 88,
         "crap_bands": {
           "low": 77,
           "medium": 11,
@@ -1544,10 +1544,10 @@
           "unknown": 1
         },
         "max_crap": 68,
-        "killed": 109,
-        "survived": 17,
-        "uncovered": 21,
-        "stale": 75,
+        "killed": 128,
+        "survived": 20,
+        "uncovered": 13,
+        "stale": 88,
         "duplicates": 3,
         "crap_grade": 1,
         "mutation_grade": 8.8,
@@ -31098,20 +31098,20 @@
       "kind": "dir",
       "label": "internal",
       "metrics": {
-        "functions": 1920,
-        "mutated": 1388,
+        "functions": 1919,
+        "mutated": 1632,
         "crap_bands": {
           "low": 1064,
-          "medium": 493,
+          "medium": 492,
           "high": 30,
           "unknown": 333
         },
         "max_crap": 164.6,
-        "killed": 5358,
-        "survived": 1435,
-        "uncovered": 512,
-        "stale": 1354,
-        "duplicates": 150,
+        "killed": 6280,
+        "survived": 1652,
+        "uncovered": 639,
+        "stale": 1522,
+        "duplicates": 148,
         "crap_grade": 8,
         "mutation_grade": 8.1,
         "grade": 8.1
@@ -31847,36 +31847,20 @@
           "duplicates": 0
         },
         {
-          "name": "Closest",
+          "name": "DidYouMean",
           "namespace": "github.com/donvargax/itos-cc/internal/cli",
           "file": "internal/cli/guess.go",
-          "line": 11,
-          "end_line": 31,
-          "complexity": 8,
+          "line": 17,
+          "end_line": 29,
+          "complexity": 4,
           "coverage": 100,
-          "crap": 8,
-          "killed": 6,
-          "survived": 1,
-          "uncovered": 0,
-          "mutated": true,
-          "stale": true,
-          "duplicates": 0
-        },
-        {
-          "name": "distance",
-          "namespace": "github.com/donvargax/itos-cc/internal/cli",
-          "file": "internal/cli/guess.go",
-          "line": 34,
-          "end_line": 52,
-          "complexity": 5,
-          "coverage": 100,
-          "crap": 5,
-          "killed": 25,
+          "crap": 4,
+          "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": true,
-          "stale": true,
-          "duplicates": 1
+          "mutated": false,
+          "stale": false,
+          "duplicates": 0
         },
         {
           "name": "String",
@@ -32299,10 +32283,10 @@
           "namespace": "github.com/donvargax/itos-cc/internal/cli",
           "file": "internal/cli/parse.go",
           "line": 242,
-          "end_line": 254,
-          "complexity": 3,
+          "end_line": 252,
+          "complexity": 2,
           "coverage": 100,
-          "crap": 3,
+          "crap": 2,
           "killed": 4,
           "survived": 0,
           "uncovered": 0,
@@ -32314,8 +32298,8 @@
           "name": "written",
           "namespace": "github.com/donvargax/itos-cc/internal/cli",
           "file": "internal/cli/parse.go",
-          "line": 259,
-          "end_line": 270,
+          "line": 257,
+          "end_line": 268,
           "complexity": 5,
           "coverage": 85.7,
           "crap": 5.1,
@@ -32330,8 +32314,8 @@
           "name": "needsAValue",
           "namespace": "github.com/donvargax/itos-cc/internal/cli",
           "file": "internal/cli/parse.go",
-          "line": 273,
-          "end_line": 276,
+          "line": 271,
+          "end_line": 274,
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
@@ -32346,8 +32330,8 @@
           "name": "valueInvalid",
           "namespace": "github.com/donvargax/itos-cc/internal/cli",
           "file": "internal/cli/parse.go",
-          "line": 280,
-          "end_line": 287,
+          "line": 278,
+          "end_line": 285,
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
@@ -32362,11 +32346,11 @@
           "name": "UnknownCommand",
           "namespace": "github.com/donvargax/itos-cc/internal/cli",
           "file": "internal/cli/parse.go",
-          "line": 291,
-          "end_line": 301,
-          "complexity": 3,
+          "line": 289,
+          "end_line": 299,
+          "complexity": 2,
           "coverage": 100,
-          "crap": 3,
+          "crap": 2,
           "killed": 9,
           "survived": 0,
           "uncovered": 0,
@@ -32378,8 +32362,8 @@
           "name": "commandNames",
           "namespace": "github.com/donvargax/itos-cc/internal/cli",
           "file": "internal/cli/parse.go",
-          "line": 304,
-          "end_line": 312,
+          "line": 302,
+          "end_line": 310,
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
@@ -32394,8 +32378,8 @@
           "name": "andList",
           "namespace": "github.com/donvargax/itos-cc/internal/cli",
           "file": "internal/cli/parse.go",
-          "line": 315,
-          "end_line": 325,
+          "line": 313,
+          "end_line": 323,
           "complexity": 4,
           "coverage": 60,
           "crap": 5,
@@ -32536,20 +32520,20 @@
         "sync"
       ],
       "metrics": {
-        "functions": 86,
-        "mutated": 86,
+        "functions": 85,
+        "mutated": 84,
         "crap_bands": {
           "low": 65,
-          "medium": 20,
+          "medium": 19,
           "high": 1,
           "unknown": 0
         },
         "max_crap": 32,
-        "killed": 385,
-        "survived": 31,
+        "killed": 354,
+        "survived": 30,
         "uncovered": 5,
-        "stale": 86,
-        "duplicates": 5,
+        "stale": 84,
+        "duplicates": 4,
         "crap_grade": 1,
         "mutation_grade": 9.3,
         "grade": 5.2
@@ -32805,8 +32789,8 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
-          "survived": 1,
+          "killed": 1,
+          "survived": 0,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -33304,8 +33288,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -33317,11 +33301,11 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
-          "survived": 0,
+          "killed": 5,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -33336,8 +33320,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -33352,8 +33336,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -33365,11 +33349,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -33468,7 +33452,7 @@
       ],
       "metrics": {
         "functions": 126,
-        "mutated": 76,
+        "mutated": 81,
         "crap_bands": {
           "low": 58,
           "medium": 14,
@@ -33476,14 +33460,14 @@
           "unknown": 54
         },
         "max_crap": 14,
-        "killed": 202,
+        "killed": 210,
         "survived": 50,
         "uncovered": 12,
-        "stale": 76,
+        "stale": 81,
         "duplicates": 6,
         "crap_grade": 9,
-        "mutation_grade": 8.2,
-        "grade": 8.6
+        "mutation_grade": 8.3,
+        "grade": 8.7
       }
     },
     {
@@ -34921,11 +34905,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -34940,8 +34924,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -34953,11 +34937,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -34972,8 +34956,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -34985,11 +34969,11 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
-          "survived": 0,
+          "killed": 3,
+          "survived": 2,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35001,11 +34985,11 @@
           "complexity": 3,
           "coverage": 75,
           "crap": 3.1,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 4,
+          "survived": 1,
+          "uncovered": 1,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35017,11 +35001,11 @@
           "complexity": 7,
           "coverage": 77.8,
           "crap": 7.5,
-          "killed": 0,
-          "survived": 0,
+          "killed": 8,
+          "survived": 3,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35033,11 +35017,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35049,11 +35033,11 @@
           "complexity": 2,
           "coverage": 66.7,
           "crap": 2.1,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35068,8 +35052,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35081,11 +35065,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
-          "survived": 0,
+          "killed": 6,
+          "survived": 4,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35097,11 +35081,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35113,11 +35097,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35129,11 +35113,11 @@
           "complexity": 8,
           "coverage": 76.9,
           "crap": 8.8,
-          "killed": 0,
+          "killed": 7,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35145,11 +35129,11 @@
           "complexity": 6,
           "coverage": 84.6,
           "crap": 6.1,
-          "killed": 0,
+          "killed": 4,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 2,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35162,10 +35146,10 @@
           "coverage": 0,
           "crap": 20,
           "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "survived": 3,
+          "uncovered": 3,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35179,9 +35163,9 @@
           "crap": 6,
           "killed": 0,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 5,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35195,9 +35179,9 @@
           "crap": 4.1,
           "killed": 0,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 2,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35211,9 +35195,9 @@
           "crap": 20,
           "killed": 0,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 6,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35227,9 +35211,9 @@
           "crap": 42,
           "killed": 0,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 8,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35244,8 +35228,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35259,9 +35243,9 @@
           "crap": 20,
           "killed": 0,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 7,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35274,10 +35258,10 @@
           "coverage": 33.3,
           "crap": 5.7,
           "killed": 0,
-          "survived": 0,
+          "survived": 2,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35289,11 +35273,11 @@
           "complexity": 6,
           "coverage": 100,
           "crap": 6,
-          "killed": 0,
+          "killed": 8,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35305,11 +35289,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35321,11 +35305,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
+          "killed": 9,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35337,11 +35321,11 @@
           "complexity": 5,
           "coverage": 64.3,
           "crap": 6.1,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 7,
+          "survived": 1,
+          "uncovered": 4,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35353,11 +35337,11 @@
           "complexity": 7,
           "coverage": 42.9,
           "crap": 16.1,
-          "killed": 0,
+          "killed": 4,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 3,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35371,9 +35355,9 @@
           "crap": 6,
           "killed": 0,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 1,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35388,8 +35372,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35403,9 +35387,9 @@
           "crap": 42,
           "killed": 0,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 8,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35417,11 +35401,11 @@
           "complexity": 15,
           "coverage": 72.5,
           "crap": 19.7,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 8,
+          "survived": 8,
+          "uncovered": 1,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35433,11 +35417,11 @@
           "complexity": 6,
           "coverage": 100,
           "crap": 6,
-          "killed": 0,
+          "killed": 6,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35449,11 +35433,11 @@
           "complexity": 12,
           "coverage": 100,
           "crap": 12,
-          "killed": 0,
-          "survived": 0,
+          "killed": 9,
+          "survived": 2,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35465,11 +35449,11 @@
           "complexity": 3,
           "coverage": 75,
           "crap": 3.1,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35481,11 +35465,11 @@
           "complexity": 7,
           "coverage": 100,
           "crap": 7,
-          "killed": 0,
-          "survived": 0,
+          "killed": 2,
+          "survived": 6,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35497,11 +35481,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35513,11 +35497,11 @@
           "complexity": 6,
           "coverage": 80,
           "crap": 6.3,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 1,
+          "survived": 8,
+          "uncovered": 2,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35530,10 +35514,10 @@
           "coverage": 40,
           "crap": 7.5,
           "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "survived": 1,
+          "uncovered": 2,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35548,8 +35532,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35564,8 +35548,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35580,8 +35564,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35596,8 +35580,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35612,8 +35596,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35625,11 +35609,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 6,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35643,9 +35627,9 @@
           "crap": 12,
           "killed": 0,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 10,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35657,11 +35641,11 @@
           "complexity": 8,
           "coverage": 84.6,
           "crap": 8.2,
-          "killed": 0,
-          "survived": 0,
+          "killed": 4,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35673,11 +35657,11 @@
           "complexity": 6,
           "coverage": 88.2,
           "crap": 6.1,
-          "killed": 0,
-          "survived": 0,
+          "killed": 2,
+          "survived": 3,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35692,8 +35676,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35707,9 +35691,9 @@
           "crap": 1,
           "killed": 0,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 1,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35724,8 +35708,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35737,11 +35721,11 @@
           "complexity": 32,
           "coverage": 88.2,
           "crap": 33.7,
-          "killed": 0,
-          "survived": 0,
+          "killed": 36,
+          "survived": 4,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35756,8 +35740,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35772,8 +35756,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35788,8 +35772,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35804,8 +35788,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35817,11 +35801,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
-          "survived": 0,
+          "killed": 1,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35835,9 +35819,9 @@
           "crap": 2,
           "killed": 0,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 1,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35849,11 +35833,11 @@
           "complexity": 8,
           "coverage": 80,
           "crap": 8.5,
-          "killed": 0,
-          "survived": 0,
+          "killed": 1,
+          "survived": 4,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35868,8 +35852,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35881,11 +35865,11 @@
           "complexity": 5,
           "coverage": 94.4,
           "crap": 5,
-          "killed": 0,
-          "survived": 0,
+          "killed": 2,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35897,11 +35881,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35913,11 +35897,11 @@
           "complexity": 5,
           "coverage": 92.3,
           "crap": 5,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 18,
+          "survived": 3,
+          "uncovered": 3,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35929,11 +35913,11 @@
           "complexity": 6,
           "coverage": 90.9,
           "crap": 6,
-          "killed": 0,
-          "survived": 0,
+          "killed": 4,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35945,11 +35929,11 @@
           "complexity": 8,
           "coverage": 81,
           "crap": 8.4,
-          "killed": 0,
-          "survived": 0,
+          "killed": 6,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35961,11 +35945,11 @@
           "complexity": 2,
           "coverage": 66.7,
           "crap": 2.1,
-          "killed": 0,
-          "survived": 0,
+          "killed": 1,
+          "survived": 3,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35977,11 +35961,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -35996,8 +35980,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36009,11 +35993,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 1,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36025,11 +36009,11 @@
           "complexity": 19,
           "coverage": 85.5,
           "crap": 20.1,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 10,
+          "survived": 5,
+          "uncovered": 3,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36043,9 +36027,9 @@
           "crap": 4.2,
           "killed": 0,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 3,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36057,11 +36041,11 @@
           "complexity": 3,
           "coverage": 60,
           "crap": 3.6,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 3,
+          "survived": 3,
+          "uncovered": 7,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36073,11 +36057,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36089,11 +36073,11 @@
           "complexity": 3,
           "coverage": 92.3,
           "crap": 3,
-          "killed": 0,
-          "survived": 0,
+          "killed": 1,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36108,8 +36092,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36122,10 +36106,10 @@
           "coverage": 100,
           "crap": 1,
           "killed": 0,
-          "survived": 0,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36137,11 +36121,11 @@
           "complexity": 2,
           "coverage": 75,
           "crap": 2.1,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36154,10 +36138,10 @@
           "coverage": 100,
           "crap": 3,
           "killed": 0,
-          "survived": 0,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36169,11 +36153,11 @@
           "complexity": 8,
           "coverage": 100,
           "crap": 8,
-          "killed": 0,
-          "survived": 0,
+          "killed": 7,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36185,11 +36169,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36201,11 +36185,11 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36217,11 +36201,11 @@
           "complexity": 6,
           "coverage": 100,
           "crap": 6,
-          "killed": 0,
-          "survived": 0,
+          "killed": 8,
+          "survived": 2,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36233,11 +36217,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36249,11 +36233,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36265,11 +36249,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36281,11 +36265,11 @@
           "complexity": 5,
           "coverage": 78.3,
           "crap": 5.3,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 2,
+          "survived": 4,
+          "uncovered": 1,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36300,8 +36284,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36316,8 +36300,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36332,8 +36316,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36345,11 +36329,11 @@
           "complexity": 2,
           "coverage": 66.7,
           "crap": 2.1,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36361,11 +36345,11 @@
           "complexity": 26,
           "coverage": 85.2,
           "crap": 28.2,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 25,
+          "survived": 8,
+          "uncovered": 6,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36377,11 +36361,11 @@
           "complexity": 7,
           "coverage": 87.5,
           "crap": 7.1,
-          "killed": 0,
-          "survived": 0,
+          "killed": 2,
+          "survived": 3,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36393,11 +36377,11 @@
           "complexity": 3,
           "coverage": 71.4,
           "crap": 3.2,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 1,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36412,8 +36396,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36425,11 +36409,11 @@
           "complexity": 6,
           "coverage": 73.3,
           "crap": 6.7,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 5,
+          "survived": 4,
+          "uncovered": 4,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36441,11 +36425,11 @@
           "complexity": 15,
           "coverage": 94.4,
           "crap": 15,
-          "killed": 0,
-          "survived": 0,
+          "killed": 9,
+          "survived": 3,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36455,13 +36439,13 @@
           "line": 419,
           "end_line": 498,
           "complexity": 23,
-          "coverage": 88.9,
-          "crap": 23.7,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "coverage": 98.1,
+          "crap": 23,
+          "killed": 2,
+          "survived": 5,
+          "uncovered": 18,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36473,11 +36457,11 @@
           "complexity": 11,
           "coverage": 67.7,
           "crap": 15.1,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 6,
+          "survived": 2,
+          "uncovered": 5,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36489,11 +36473,11 @@
           "complexity": 9,
           "coverage": 96.9,
           "crap": 9,
-          "killed": 0,
-          "survived": 0,
+          "killed": 6,
+          "survived": 3,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36508,8 +36492,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 1
         },
         {
@@ -36521,11 +36505,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 1
         },
         {
@@ -36537,11 +36521,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36553,11 +36537,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36569,11 +36553,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36585,11 +36569,11 @@
           "complexity": 9,
           "coverage": 81.8,
           "crap": 9.5,
-          "killed": 0,
-          "survived": 0,
+          "killed": 7,
+          "survived": 3,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36601,11 +36585,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36617,11 +36601,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
+          "killed": 4,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36634,10 +36618,10 @@
           "coverage": 85.7,
           "crap": 3,
           "killed": 0,
-          "survived": 0,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36649,11 +36633,11 @@
           "complexity": 5,
           "coverage": 87.5,
           "crap": 5,
-          "killed": 0,
+          "killed": 4,
           "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "uncovered": 1,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36665,11 +36649,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 2
         },
         {
@@ -36684,8 +36668,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 2
         },
         {
@@ -36697,11 +36681,11 @@
           "complexity": 37,
           "coverage": 55,
           "crap": 161.8,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 9,
+          "survived": 26,
+          "uncovered": 13,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36713,11 +36697,11 @@
           "complexity": 28,
           "coverage": 69.6,
           "crap": 50,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 17,
+          "survived": 9,
+          "uncovered": 3,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36730,10 +36714,10 @@
           "coverage": 8.3,
           "crap": 87.1,
           "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "survived": 1,
+          "uncovered": 9,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36745,11 +36729,11 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
-          "survived": 0,
+          "killed": 5,
+          "survived": 2,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -36761,11 +36745,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         }
       ],
@@ -36795,7 +36779,7 @@
       ],
       "metrics": {
         "functions": 116,
-        "mutated": 0,
+        "mutated": 116,
         "crap_bands": {
           "low": 73,
           "medium": 37,
@@ -36803,13 +36787,14 @@
           "unknown": 0
         },
         "max_crap": 161.8,
-        "killed": 0,
-        "survived": 0,
-        "uncovered": 0,
-        "stale": 0,
+        "killed": 346,
+        "survived": 151,
+        "uncovered": 145,
+        "stale": 116,
         "duplicates": 6,
         "crap_grade": 1,
-        "grade": 1
+        "mutation_grade": 7.3,
+        "grade": 4.2
       }
     },
     {
@@ -36843,7 +36828,7 @@
           "survived": 0,
           "uncovered": 11,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -36859,7 +36844,7 @@
           "survived": 0,
           "uncovered": 5,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -36875,7 +36860,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -36891,7 +36876,7 @@
           "survived": 0,
           "uncovered": 12,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -36907,7 +36892,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -36923,7 +36908,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 1
         },
         {
@@ -36939,7 +36924,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -36955,7 +36940,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -36971,7 +36956,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -36987,7 +36972,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37003,7 +36988,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37019,7 +37004,7 @@
           "survived": 0,
           "uncovered": 1,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37035,7 +37020,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37051,7 +37036,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37067,7 +37052,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37083,7 +37068,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37099,7 +37084,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37115,7 +37100,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37131,7 +37116,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37147,7 +37132,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37163,7 +37148,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37179,7 +37164,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37195,7 +37180,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37211,7 +37196,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37227,7 +37212,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 1
         },
         {
@@ -37243,7 +37228,7 @@
           "survived": 1,
           "uncovered": 9,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37259,7 +37244,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37275,7 +37260,7 @@
           "survived": 2,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37291,7 +37276,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37307,7 +37292,7 @@
           "survived": 5,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37323,7 +37308,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37335,11 +37320,11 @@
           "complexity": 21,
           "coverage": 96.7,
           "crap": 21,
-          "killed": 17,
-          "survived": 4,
+          "killed": 18,
+          "survived": 3,
           "uncovered": 2,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37355,7 +37340,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37371,7 +37356,7 @@
           "survived": 1,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 2
         },
         {
@@ -37387,7 +37372,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37403,7 +37388,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37419,7 +37404,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37435,7 +37420,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37451,7 +37436,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37467,7 +37452,7 @@
           "survived": 1,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37483,7 +37468,7 @@
           "survived": 1,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37499,7 +37484,7 @@
           "survived": 2,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37515,7 +37500,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 1
         },
         {
@@ -37531,7 +37516,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37547,7 +37532,7 @@
           "survived": 4,
           "uncovered": 6,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37563,7 +37548,7 @@
           "survived": 3,
           "uncovered": 1,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37579,7 +37564,7 @@
           "survived": 3,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37595,7 +37580,7 @@
           "survived": 0,
           "uncovered": 1,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37611,7 +37596,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37627,7 +37612,7 @@
           "survived": 1,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37643,7 +37628,7 @@
           "survived": 17,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37659,7 +37644,7 @@
           "survived": 2,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37675,7 +37660,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37691,7 +37676,7 @@
           "survived": 0,
           "uncovered": 8,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37707,7 +37692,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37723,7 +37708,7 @@
           "survived": 0,
           "uncovered": 1,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -37739,7 +37724,7 @@
           "survived": 0,
           "uncovered": 2,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         }
       ],
@@ -37763,14 +37748,14 @@
           "unknown": 1
         },
         "max_crap": 156,
-        "killed": 117,
-        "survived": 47,
+        "killed": 118,
+        "survived": 46,
         "uncovered": 59,
-        "stale": 57,
+        "stale": 0,
         "duplicates": 5,
         "crap_grade": 1,
-        "mutation_grade": 7.4,
-        "grade": 4.2
+        "mutation_grade": 7.5,
+        "grade": 4.3
       }
     },
     {
@@ -40726,8 +40711,8 @@
           "line": 34,
           "end_line": 67,
           "complexity": 13,
-          "coverage": 78.3,
-          "crap": 14.7,
+          "coverage": 73.9,
+          "crap": 16,
           "killed": 9,
           "survived": 9,
           "uncovered": 6,
@@ -40950,8 +40935,8 @@
           "line": 310,
           "end_line": 324,
           "complexity": 5,
-          "coverage": 77.8,
-          "crap": 5.3,
+          "coverage": 55.6,
+          "crap": 7.2,
           "killed": 1,
           "survived": 0,
           "uncovered": 2,
@@ -41196,8 +41181,24 @@
           "name": "InheritedEnv",
           "namespace": "github.com/donvargax/itos-cc/internal/project",
           "file": "internal/project/env.go",
-          "line": 22,
-          "end_line": 31,
+          "line": 23,
+          "end_line": 32,
+          "complexity": 3,
+          "coverage": 100,
+          "crap": 3,
+          "killed": 1,
+          "survived": 1,
+          "uncovered": 0,
+          "mutated": true,
+          "stale": true,
+          "duplicates": 0
+        },
+        {
+          "name": "InheritedEnvIn",
+          "namespace": "github.com/donvargax/itos-cc/internal/project",
+          "file": "internal/project/env.go",
+          "line": 43,
+          "end_line": 49,
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
@@ -41212,32 +41213,32 @@
           "name": "NoBytecodeEnv",
           "namespace": "github.com/donvargax/itos-cc/internal/project",
           "file": "internal/project/env.go",
-          "line": 42,
-          "end_line": 47,
+          "line": 60,
+          "end_line": 65,
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
           "name": "gitCommand",
           "namespace": "github.com/donvargax/itos-cc/internal/project",
           "file": "internal/project/env.go",
-          "line": 50,
-          "end_line": 54,
+          "line": 69,
+          "end_line": 73,
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -41521,11 +41522,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -41725,10 +41726,10 @@
           "namespace": "github.com/donvargax/itos-cc/internal/project",
           "file": "internal/project/project.go",
           "line": 48,
-          "end_line": 55,
+          "end_line": 53,
           "complexity": 2,
-          "coverage": 80,
-          "crap": 2,
+          "coverage": 66.7,
+          "crap": 2.1,
           "killed": 2,
           "survived": 0,
           "uncovered": 1,
@@ -41740,8 +41741,8 @@
           "name": "IsBuildOutputWithIgnore",
           "namespace": "github.com/donvargax/itos-cc/internal/project",
           "file": "internal/project/project.go",
-          "line": 61,
-          "end_line": 71,
+          "line": 59,
+          "end_line": 69,
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
@@ -41756,8 +41757,8 @@
           "name": "Discover",
           "namespace": "github.com/donvargax/itos-cc/internal/project",
           "file": "internal/project/project.go",
-          "line": 83,
-          "end_line": 85,
+          "line": 81,
+          "end_line": 83,
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
@@ -41772,8 +41773,8 @@
           "name": "DiscoverWithBuildOutput",
           "namespace": "github.com/donvargax/itos-cc/internal/project",
           "file": "internal/project/project.go",
-          "line": 90,
-          "end_line": 144,
+          "line": 88,
+          "end_line": 142,
           "complexity": 18,
           "coverage": 89.5,
           "crap": 18.4,
@@ -41788,8 +41789,8 @@
           "name": "Changed",
           "namespace": "github.com/donvargax/itos-cc/internal/project",
           "file": "internal/project/project.go",
-          "line": 150,
-          "end_line": 175,
+          "line": 148,
+          "end_line": 173,
           "complexity": 9,
           "coverage": 100,
           "crap": 9,
@@ -41804,8 +41805,8 @@
           "name": "Rel",
           "namespace": "github.com/donvargax/itos-cc/internal/project",
           "file": "internal/project/project.go",
-          "line": 180,
-          "end_line": 190,
+          "line": 178,
+          "end_line": 188,
           "complexity": 4,
           "coverage": 0,
           "crap": 20,
@@ -41949,9 +41950,9 @@
           "namespace": "github.com/donvargax/itos-cc/internal/project",
           "file": "internal/project/root.go",
           "line": 30,
-          "end_line": 46,
+          "end_line": 44,
           "complexity": 4,
-          "coverage": 91.7,
+          "coverage": 90,
           "crap": 4,
           "killed": 0,
           "survived": 2,
@@ -41964,8 +41965,8 @@
           "name": "FromRoot",
           "namespace": "github.com/donvargax/itos-cc/internal/project",
           "file": "internal/project/root.go",
-          "line": 51,
-          "end_line": 53,
+          "line": 49,
+          "end_line": 51,
           "complexity": 1,
           "coverage": 0,
           "crap": 2,
@@ -41980,8 +41981,8 @@
           "name": "FromRootOf",
           "namespace": "github.com/donvargax/itos-cc/internal/project",
           "file": "internal/project/root.go",
-          "line": 58,
-          "end_line": 64,
+          "line": 56,
+          "end_line": 62,
           "complexity": 2,
           "coverage": 0,
           "crap": 6,
@@ -41996,8 +41997,8 @@
           "name": "AtRoot",
           "namespace": "github.com/donvargax/itos-cc/internal/project",
           "file": "internal/project/root.go",
-          "line": 67,
-          "end_line": 72,
+          "line": 65,
+          "end_line": 70,
           "complexity": 2,
           "coverage": 0,
           "crap": 6,
@@ -42362,19 +42363,19 @@
         "sync"
       ],
       "metrics": {
-        "functions": 72,
-        "mutated": 68,
+        "functions": 73,
+        "mutated": 72,
         "crap_bands": {
-          "low": 53,
+          "low": 54,
           "medium": 18,
           "high": 1,
           "unknown": 0
         },
         "max_crap": 43.8,
-        "killed": 140,
-        "survived": 40,
+        "killed": 143,
+        "survived": 41,
         "uncovered": 68,
-        "stale": 68,
+        "stale": 72,
         "duplicates": 4,
         "crap_grade": 1,
         "mutation_grade": 8,
@@ -43833,23 +43834,23 @@
       "kind": "dir",
       "label": "slices",
       "metrics": {
-        "functions": 1133,
-        "mutated": 840,
+        "functions": 1132,
+        "mutated": 961,
         "crap_bands": {
-          "low": 598,
+          "low": 597,
           "medium": 319,
           "high": 18,
           "unknown": 198
         },
         "max_crap": 164.6,
-        "killed": 3557,
-        "survived": 1058,
-        "uncovered": 302,
-        "stale": 824,
-        "duplicates": 109,
+        "killed": 4152,
+        "survived": 1125,
+        "uncovered": 284,
+        "stale": 926,
+        "duplicates": 108,
         "crap_grade": 7.8,
-        "mutation_grade": 7.9,
-        "grade": 7.9
+        "mutation_grade": 8.1,
+        "grade": 8
       }
     },
     {
@@ -43935,7 +43936,7 @@
           "complexity": 21,
           "coverage": 95.6,
           "crap": 21,
-          "killed": 23,
+          "killed": 24,
           "survived": 1,
           "uncovered": 0,
           "mutated": true,
@@ -43991,10 +43992,10 @@
           "unknown": 0
         },
         "max_crap": 21,
-        "killed": 61,
+        "killed": 62,
         "survived": 11,
         "uncovered": 0,
-        "stale": 14,
+        "stale": 10,
         "duplicates": 5,
         "crap_grade": 9.2,
         "mutation_grade": 8.6,
@@ -44024,7 +44025,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 1
         },
         {
@@ -44040,7 +44041,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -44088,7 +44089,7 @@
           "survived": 2,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -44120,7 +44121,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         }
       ],
@@ -44141,7 +44142,7 @@
         "killed": 29,
         "survived": 5,
         "uncovered": 0,
-        "stale": 7,
+        "stale": 3,
         "duplicates": 1,
         "crap_grade": 10,
         "mutation_grade": 8.7,
@@ -44272,7 +44273,7 @@
         "killed": 51,
         "survived": 16,
         "uncovered": 0,
-        "stale": 11,
+        "stale": 6,
         "duplicates": 7,
         "crap_grade": 7.8,
         "mutation_grade": 7.9,
@@ -44302,7 +44303,7 @@
           "survived": 5,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -44318,7 +44319,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -44334,7 +44335,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -44350,7 +44351,7 @@
           "survived": 6,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -44366,7 +44367,7 @@
           "survived": 1,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -44404,7 +44405,7 @@
         "killed": 27,
         "survived": 12,
         "uncovered": 0,
-        "stale": 5,
+        "stale": 0,
         "duplicates": 0,
         "crap_grade": 7.5,
         "mutation_grade": 7.2,
@@ -44435,11 +44436,11 @@
           "complexity": 10,
           "coverage": 89.5,
           "crap": 10.1,
-          "killed": 0,
+          "killed": 12,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44451,11 +44452,11 @@
           "complexity": 20,
           "coverage": 90.5,
           "crap": 20.3,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 12,
+          "survived": 8,
+          "uncovered": 5,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44467,11 +44468,11 @@
           "complexity": 2,
           "coverage": 66.7,
           "crap": 2.1,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 2
         },
         {
@@ -44486,8 +44487,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44499,11 +44500,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44515,11 +44516,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44531,11 +44532,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
-          "survived": 0,
+          "killed": 6,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44547,11 +44548,11 @@
           "complexity": 5,
           "coverage": 92.3,
           "crap": 5,
-          "killed": 0,
-          "survived": 0,
+          "killed": 2,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44563,11 +44564,11 @@
           "complexity": 4,
           "coverage": 80,
           "crap": 4.1,
-          "killed": 0,
-          "survived": 0,
+          "killed": 2,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44579,11 +44580,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
-          "survived": 0,
+          "killed": 2,
+          "survived": 2,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44598,8 +44599,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44614,8 +44615,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44627,11 +44628,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
-          "survived": 0,
+          "killed": 4,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44643,11 +44644,11 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
+          "killed": 4,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44659,11 +44660,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 7,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 1
         },
         {
@@ -44675,11 +44676,11 @@
           "complexity": 6,
           "coverage": 100,
           "crap": 6,
-          "killed": 0,
-          "survived": 0,
+          "killed": 1,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44691,11 +44692,11 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
-          "survived": 0,
+          "killed": 5,
+          "survived": 5,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44707,11 +44708,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
-          "survived": 0,
+          "killed": 1,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44724,10 +44725,10 @@
           "coverage": 100,
           "crap": 1,
           "killed": 0,
-          "survived": 0,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 2
         },
         {
@@ -44739,11 +44740,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 1
         },
         {
@@ -44755,11 +44756,11 @@
           "complexity": 8,
           "coverage": 100,
           "crap": 8,
-          "killed": 0,
+          "killed": 4,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44771,11 +44772,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
-          "survived": 0,
+          "killed": 3,
+          "survived": 2,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44787,11 +44788,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44806,8 +44807,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44819,11 +44820,11 @@
           "complexity": 7,
           "coverage": 100,
           "crap": 7,
-          "killed": 0,
+          "killed": 8,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44835,11 +44836,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44851,11 +44852,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44867,11 +44868,11 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44883,11 +44884,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
-          "survived": 0,
+          "killed": 2,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44899,11 +44900,11 @@
           "complexity": 3,
           "coverage": 75,
           "crap": 3.1,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 1
         },
         {
@@ -44915,11 +44916,11 @@
           "complexity": 6,
           "coverage": 100,
           "crap": 6,
-          "killed": 0,
-          "survived": 0,
+          "killed": 3,
+          "survived": 5,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44931,11 +44932,11 @@
           "complexity": 12,
           "coverage": 86.7,
           "crap": 12.3,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "killed": 3,
+          "survived": 1,
+          "uncovered": 3,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44947,11 +44948,11 @@
           "complexity": 4,
           "coverage": 80,
           "crap": 4.1,
-          "killed": 0,
-          "survived": 0,
+          "killed": 1,
+          "survived": 2,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44966,8 +44967,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 1
         },
         {
@@ -44979,11 +44980,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
-          "survived": 0,
+          "killed": 12,
+          "survived": 2,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -44995,11 +44996,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
-          "survived": 0,
+          "killed": 5,
+          "survived": 2,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -45011,11 +45012,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 5,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -45027,11 +45028,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -45046,8 +45047,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -45059,11 +45060,11 @@
           "complexity": 15,
           "coverage": 97.6,
           "crap": 15,
-          "killed": 0,
-          "survived": 0,
+          "killed": 5,
+          "survived": 12,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -45075,11 +45076,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
-          "survived": 0,
+          "killed": 2,
+          "survived": 3,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         }
       ],
@@ -45097,7 +45098,7 @@
       ],
       "metrics": {
         "functions": 41,
-        "mutated": 0,
+        "mutated": 41,
         "crap_bands": {
           "low": 32,
           "medium": 9,
@@ -45105,13 +45106,14 @@
           "unknown": 0
         },
         "max_crap": 20.3,
-        "killed": 0,
-        "survived": 0,
-        "uncovered": 0,
-        "stale": 0,
+        "killed": 126,
+        "survived": 52,
+        "uncovered": 8,
+        "stale": 41,
         "duplicates": 8,
         "crap_grade": 4.5,
-        "grade": 4.5
+        "mutation_grade": 7.4,
+        "grade": 6
       }
     },
     {
@@ -45176,7 +45178,7 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 8,
+          "killed": 10,
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
@@ -45192,7 +45194,7 @@
           "complexity": 20,
           "coverage": 97.8,
           "crap": 20,
-          "killed": 20,
+          "killed": 19,
           "survived": 3,
           "uncovered": 0,
           "mutated": true,
@@ -45208,11 +45210,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -45324,7 +45326,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -45336,8 +45338,8 @@
           "complexity": 37,
           "coverage": 84.6,
           "crap": 42,
-          "killed": 15,
-          "survived": 30,
+          "killed": 26,
+          "survived": 20,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -45384,9 +45386,9 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 6,
-          "survived": 0,
-          "uncovered": 2,
+          "killed": 7,
+          "survived": 1,
+          "uncovered": 0,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -45432,7 +45434,7 @@
           "complexity": 13,
           "coverage": 94.1,
           "crap": 13,
-          "killed": 13,
+          "killed": 14,
           "survived": 1,
           "uncovered": 0,
           "mutated": true,
@@ -45452,7 +45454,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -45464,8 +45466,8 @@
           "complexity": 3,
           "coverage": 75,
           "crap": 3.1,
-          "killed": 0,
-          "survived": 1,
+          "killed": 1,
+          "survived": 0,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -45512,8 +45514,8 @@
           "complexity": 11,
           "coverage": 85.7,
           "crap": 11.4,
-          "killed": 1,
-          "survived": 5,
+          "killed": 6,
+          "survived": 1,
           "uncovered": 4,
           "mutated": true,
           "stale": true,
@@ -45529,7 +45531,7 @@
           "coverage": 91.7,
           "crap": 18.2,
           "killed": 3,
-          "survived": 13,
+          "survived": 15,
           "uncovered": 6,
           "mutated": true,
           "stale": true,
@@ -45608,8 +45610,8 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 1,
-          "survived": 1,
+          "killed": 3,
+          "survived": 0,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -45720,7 +45722,7 @@
           "complexity": 10,
           "coverage": 66.7,
           "crap": 13.7,
-          "killed": 1,
+          "killed": 5,
           "survived": 0,
           "uncovered": 1,
           "mutated": true,
@@ -45928,9 +45930,9 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
-          "uncovered": 1,
+          "uncovered": 0,
           "mutated": true,
           "stale": true,
           "duplicates": 1
@@ -46872,11 +46874,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 4,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -46936,11 +46938,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
-          "survived": 0,
+          "killed": 1,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -46952,8 +46954,8 @@
           "complexity": 6,
           "coverage": 100,
           "crap": 6,
-          "killed": 12,
-          "survived": 0,
+          "killed": 22,
+          "survived": 1,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -46968,8 +46970,8 @@
           "complexity": 10,
           "coverage": 100,
           "crap": 10,
-          "killed": 0,
-          "survived": 7,
+          "killed": 4,
+          "survived": 3,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -46984,11 +46986,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
-          "survived": 0,
+          "killed": 1,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -47000,8 +47002,8 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 1,
-          "survived": 1,
+          "killed": 2,
+          "survived": 0,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -47032,8 +47034,8 @@
           "complexity": 15,
           "coverage": 94.6,
           "crap": 15,
-          "killed": 9,
-          "survived": 8,
+          "killed": 13,
+          "survived": 4,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -47052,7 +47054,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -47128,7 +47130,7 @@
           "complexity": 24,
           "coverage": 94.6,
           "crap": 24.1,
-          "killed": 3,
+          "killed": 4,
           "survived": 3,
           "uncovered": 1,
           "mutated": true,
@@ -47240,7 +47242,7 @@
           "complexity": 8,
           "coverage": 100,
           "crap": 8,
-          "killed": 5,
+          "killed": 6,
           "survived": 1,
           "uncovered": 0,
           "mutated": true,
@@ -47273,7 +47275,7 @@
           "coverage": 66.7,
           "crap": 2.1,
           "killed": 0,
-          "survived": 0,
+          "survived": 2,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -47288,8 +47290,8 @@
           "complexity": 8,
           "coverage": 100,
           "crap": 8,
-          "killed": 0,
-          "survived": 0,
+          "killed": 4,
+          "survived": 7,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -47480,7 +47482,7 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
@@ -47496,8 +47498,8 @@
           "complexity": 23,
           "coverage": 84.6,
           "crap": 24.9,
-          "killed": 0,
-          "survived": 0,
+          "killed": 18,
+          "survived": 4,
           "uncovered": 2,
           "mutated": true,
           "stale": true,
@@ -47512,11 +47514,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -47528,7 +47530,7 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
@@ -47544,7 +47546,7 @@
           "complexity": 3,
           "coverage": 83.3,
           "crap": 3,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
@@ -47560,11 +47562,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -47576,7 +47578,7 @@
           "complexity": 31,
           "coverage": 100,
           "crap": 31,
-          "killed": 0,
+          "killed": 20,
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
@@ -47675,8 +47677,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -47771,8 +47773,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -48027,8 +48029,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -48043,8 +48045,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -48123,8 +48125,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 1
         },
         {
@@ -48222,23 +48224,23 @@
         "strings"
       ],
       "metrics": {
-        "functions": 1000,
-        "mutated": 748,
+        "functions": 999,
+        "mutated": 828,
         "crap_bands": {
-          "low": 515,
+          "low": 514,
           "medium": 269,
           "high": 18,
           "unknown": 198
         },
         "max_crap": 164.6,
-        "killed": 3093,
-        "survived": 942,
-        "uncovered": 295,
-        "stale": 748,
-        "duplicates": 75,
+        "killed": 3561,
+        "survived": 957,
+        "uncovered": 269,
+        "stale": 818,
+        "duplicates": 74,
         "crap_grade": 7.8,
-        "mutation_grade": 7.9,
-        "grade": 7.9
+        "mutation_grade": 8.1,
+        "grade": 8
       }
     },
     {
@@ -48247,23 +48249,23 @@
       "kind": "dir",
       "label": "adapters",
       "metrics": {
-        "functions": 296,
-        "mutated": 248,
+        "functions": 295,
+        "mutated": 294,
         "crap_bands": {
-          "low": 179,
+          "low": 178,
           "medium": 109,
           "high": 8,
           "unknown": 0
         },
         "max_crap": 164.6,
-        "killed": 1096,
-        "survived": 365,
-        "uncovered": 164,
-        "stale": 248,
-        "duplicates": 32,
+        "killed": 1360,
+        "survived": 396,
+        "uncovered": 142,
+        "stale": 294,
+        "duplicates": 31,
         "crap_grade": 7.5,
-        "mutation_grade": 7.8,
-        "grade": 7.7
+        "mutation_grade": 8,
+        "grade": 7.8
       }
     },
     {
@@ -48306,8 +48308,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -48319,8 +48321,8 @@
           "complexity": 6,
           "coverage": 92.3,
           "crap": 6,
-          "killed": 7,
-          "survived": 1,
+          "killed": 8,
+          "survived": 0,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -48367,8 +48369,8 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 13,
-          "survived": 4,
+          "killed": 2,
+          "survived": 0,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -48495,9 +48497,9 @@
           "complexity": 11,
           "coverage": 83.3,
           "crap": 11.6,
-          "killed": 3,
-          "survived": 9,
-          "uncovered": 1,
+          "killed": 10,
+          "survived": 3,
+          "uncovered": 0,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -48690,8 +48692,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -48703,11 +48705,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
-          "survived": 0,
+          "killed": 4,
+          "survived": 2,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -48722,8 +48724,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -48735,7 +48737,7 @@
           "complexity": 7,
           "coverage": 92.3,
           "crap": 7,
-          "killed": 13,
+          "killed": 15,
           "survived": 1,
           "uncovered": 1,
           "mutated": true,
@@ -48751,7 +48753,7 @@
           "complexity": 4,
           "coverage": 90,
           "crap": 4,
-          "killed": 2,
+          "killed": 3,
           "survived": 0,
           "uncovered": 1,
           "mutated": true,
@@ -48816,8 +48818,8 @@
           "coverage": 88.5,
           "crap": 15.3,
           "killed": 18,
-          "survived": 8,
-          "uncovered": 4,
+          "survived": 9,
+          "uncovered": 3,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -48863,8 +48865,8 @@
           "complexity": 15,
           "coverage": 80,
           "crap": 16.8,
-          "killed": 16,
-          "survived": 10,
+          "killed": 20,
+          "survived": 7,
           "uncovered": 5,
           "mutated": true,
           "stale": true,
@@ -48911,8 +48913,8 @@
           "complexity": 10,
           "coverage": 93.8,
           "crap": 10,
-          "killed": 8,
-          "survived": 7,
+          "killed": 12,
+          "survived": 10,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -48928,8 +48930,8 @@
           "coverage": 92.9,
           "crap": 6,
           "killed": 6,
-          "survived": 2,
-          "uncovered": 2,
+          "survived": 1,
+          "uncovered": 1,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -49031,7 +49033,7 @@
       ],
       "metrics": {
         "functions": 46,
-        "mutated": 42,
+        "mutated": 46,
         "crap_bands": {
           "low": 29,
           "medium": 17,
@@ -49039,14 +49041,14 @@
           "unknown": 0
         },
         "max_crap": 24,
-        "killed": 275,
-        "survived": 110,
-        "uncovered": 38,
-        "stale": 42,
+        "killed": 287,
+        "survived": 101,
+        "uncovered": 35,
+        "stale": 46,
         "duplicates": 0,
         "crap_grade": 3.2,
-        "mutation_grade": 7.4,
-        "grade": 5.3
+        "mutation_grade": 7.7,
+        "grade": 5.5
       }
     },
     {
@@ -49073,9 +49075,9 @@
           "complexity": 12,
           "coverage": 79.4,
           "crap": 13.3,
-          "killed": 9,
+          "killed": 10,
           "survived": 1,
-          "uncovered": 1,
+          "uncovered": 0,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -49089,9 +49091,9 @@
           "complexity": 5,
           "coverage": 93.3,
           "crap": 5,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 7,
+          "killed": 6,
+          "survived": 1,
+          "uncovered": 0,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -49153,9 +49155,9 @@
           "complexity": 2,
           "coverage": 75,
           "crap": 2.1,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
-          "uncovered": 1,
+          "uncovered": 0,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -49201,9 +49203,9 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
-          "uncovered": 1,
+          "uncovered": 0,
           "mutated": true,
           "stale": true,
           "duplicates": 2
@@ -49796,9 +49798,9 @@
           "unknown": 0
         },
         "max_crap": 164.6,
-        "killed": 243,
-        "survived": 99,
-        "uncovered": 50,
+        "killed": 252,
+        "survived": 100,
+        "uncovered": 40,
         "stale": 44,
         "duplicates": 7,
         "crap_grade": 1,
@@ -50059,8 +50061,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50072,11 +50074,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50091,8 +50093,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50104,11 +50106,11 @@
           "complexity": 3,
           "coverage": 87.5,
           "crap": 3,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50123,8 +50125,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50136,11 +50138,11 @@
           "complexity": 23,
           "coverage": 100,
           "crap": 23,
-          "killed": 0,
-          "survived": 0,
+          "killed": 32,
+          "survived": 4,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50152,11 +50154,11 @@
           "complexity": 9,
           "coverage": 100,
           "crap": 9,
-          "killed": 0,
+          "killed": 14,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50168,11 +50170,11 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
+          "killed": 5,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50187,8 +50189,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50200,11 +50202,11 @@
           "complexity": 15,
           "coverage": 100,
           "crap": 15,
-          "killed": 0,
+          "killed": 19,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50216,11 +50218,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50232,11 +50234,11 @@
           "complexity": 8,
           "coverage": 100,
           "crap": 8,
-          "killed": 0,
+          "killed": 5,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50248,11 +50250,11 @@
           "complexity": 6,
           "coverage": 100,
           "crap": 6,
-          "killed": 0,
-          "survived": 0,
+          "killed": 8,
+          "survived": 9,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50264,92 +50266,76 @@
           "complexity": 13,
           "coverage": 100,
           "crap": 13,
-          "killed": 0,
+          "killed": 16,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
           "name": "plain",
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings",
           "file": "internal/slices/mutation/adapters/settings/keys.go",
-          "line": 26,
-          "end_line": 32,
+          "line": 27,
+          "end_line": 33,
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
           "name": "unlisted",
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings",
           "file": "internal/slices/mutation/adapters/settings/keys.go",
-          "line": 63,
-          "end_line": 91,
+          "line": 64,
+          "end_line": 92,
           "complexity": 12,
           "coverage": 100,
           "crap": 12,
-          "killed": 0,
+          "killed": 16,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
           "name": "value",
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings.shape",
           "file": "internal/slices/mutation/adapters/settings/keys.go",
-          "line": 94,
-          "end_line": 101,
+          "line": 95,
+          "end_line": 102,
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
           "name": "unlistedError",
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings",
           "file": "internal/slices/mutation/adapters/settings/keys.go",
-          "line": 107,
-          "end_line": 125,
+          "line": 109,
+          "end_line": 128,
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
-        },
-        {
-          "name": "edits",
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings",
-          "file": "internal/slices/mutation/adapters/settings/keys.go",
-          "line": 129,
-          "end_line": 147,
-          "complexity": 5,
-          "coverage": 100,
-          "crap": 5,
-          "killed": 0,
-          "survived": 0,
-          "uncovered": 0,
-          "mutated": false,
-          "stale": false,
-          "duplicates": 1
         },
         {
           "name": "Read",
@@ -50360,11 +50346,11 @@
           "complexity": 7,
           "coverage": 93.3,
           "crap": 7,
-          "killed": 0,
-          "survived": 0,
+          "killed": 4,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50379,8 +50365,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -50392,11 +50378,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         }
       ],
@@ -50406,6 +50392,7 @@
         "errors",
         "fmt",
         "github.com/bmatcuk/doublestar/v4",
+        "github.com/donvargax/kong",
         "go.yaml.in/yaml/v3",
         "io",
         "io/fs",
@@ -50417,22 +50404,23 @@
         "strings"
       ],
       "metrics": {
-        "functions": 22,
-        "mutated": 0,
+        "functions": 21,
+        "mutated": 21,
         "crap_bands": {
-          "low": 13,
+          "low": 12,
           "medium": 9,
           "high": 0,
           "unknown": 0
         },
         "max_crap": 23,
-        "killed": 0,
-        "survived": 0,
+        "killed": 133,
+        "survived": 14,
         "uncovered": 0,
-        "stale": 0,
-        "duplicates": 1,
+        "stale": 21,
+        "duplicates": 0,
         "crap_grade": 3.5,
-        "grade": 3.5
+        "mutation_grade": 9.1,
+        "grade": 6.3
       }
     },
     {
@@ -52107,7 +52095,7 @@
           "complexity": 26,
           "coverage": 90.7,
           "crap": 26.5,
-          "killed": 18,
+          "killed": 17,
           "survived": 2,
           "uncovered": 0,
           "mutated": true,
@@ -52187,9 +52175,9 @@
           "complexity": 6,
           "coverage": 80,
           "crap": 6.3,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
-          "uncovered": 3,
+          "uncovered": 0,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -52198,30 +52186,30 @@
           "name": "env",
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools.Toolchain",
           "file": "internal/slices/mutation/adapters/testtools/toolchain.go",
-          "line": 174,
-          "end_line": 179,
+          "line": 175,
+          "end_line": 180,
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
           "name": "GoPlatform",
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools.Toolchain",
           "file": "internal/slices/mutation/adapters/testtools/toolchain.go",
-          "line": 186,
-          "end_line": 210,
+          "line": 187,
+          "end_line": 211,
           "complexity": 10,
           "coverage": 81.3,
           "crap": 10.7,
-          "killed": 5,
-          "survived": 9,
-          "uncovered": 1,
+          "killed": 8,
+          "survived": 5,
+          "uncovered": 0,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -52241,7 +52229,7 @@
       ],
       "metrics": {
         "functions": 9,
-        "mutated": 8,
+        "mutated": 9,
         "crap_bands": {
           "low": 5,
           "medium": 4,
@@ -52249,14 +52237,14 @@
           "unknown": 0
         },
         "max_crap": 26.5,
-        "killed": 29,
-        "survived": 14,
-        "uncovered": 5,
-        "stale": 8,
+        "killed": 35,
+        "survived": 10,
+        "uncovered": 1,
+        "stale": 9,
         "duplicates": 1,
         "crap_grade": 2.3,
-        "mutation_grade": 7.1,
-        "grade": 4.7
+        "mutation_grade": 8,
+        "grade": 5.2
       }
     },
     {
@@ -52368,11 +52356,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52384,11 +52372,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52400,11 +52388,11 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
-          "survived": 0,
+          "killed": 4,
+          "survived": 2,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52416,11 +52404,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 5,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52432,11 +52420,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52448,11 +52436,11 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
+          "killed": 6,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52464,11 +52452,11 @@
           "complexity": 7,
           "coverage": 100,
           "crap": 7,
-          "killed": 0,
+          "killed": 11,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52480,11 +52468,11 @@
           "complexity": 6,
           "coverage": 100,
           "crap": 6,
-          "killed": 0,
-          "survived": 0,
+          "killed": 9,
+          "survived": 3,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52499,8 +52487,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52512,11 +52500,11 @@
           "complexity": 12,
           "coverage": 100,
           "crap": 12,
-          "killed": 0,
-          "survived": 0,
+          "killed": 10,
+          "survived": 5,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52528,11 +52516,11 @@
           "complexity": 7,
           "coverage": 100,
           "crap": 7,
-          "killed": 0,
-          "survived": 0,
+          "killed": 6,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52544,11 +52532,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52720,11 +52708,11 @@
           "complexity": 9,
           "coverage": 100,
           "crap": 9,
-          "killed": 0,
-          "survived": 0,
+          "killed": 7,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52736,11 +52724,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 4,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52752,9 +52740,9 @@
           "complexity": 26,
           "coverage": 97,
           "crap": 26,
-          "killed": 11,
-          "survived": 0,
-          "uncovered": 1,
+          "killed": 17,
+          "survived": 7,
+          "uncovered": 0,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -52768,11 +52756,11 @@
           "complexity": 12,
           "coverage": 100,
           "crap": 12,
-          "killed": 0,
-          "survived": 0,
+          "killed": 9,
+          "survived": 3,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52787,8 +52775,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52800,11 +52788,11 @@
           "complexity": 7,
           "coverage": 100,
           "crap": 7,
-          "killed": 0,
+          "killed": 4,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52944,11 +52932,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
-          "survived": 0,
+          "killed": 2,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52960,11 +52948,11 @@
           "complexity": 8,
           "coverage": 94.1,
           "crap": 8,
-          "killed": 0,
-          "survived": 0,
+          "killed": 5,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -52992,9 +52980,9 @@
           "complexity": 7,
           "coverage": 83.3,
           "crap": 7.2,
-          "killed": 2,
-          "survived": 5,
-          "uncovered": 5,
+          "killed": 4,
+          "survived": 7,
+          "uncovered": 1,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -53024,8 +53012,8 @@
           "complexity": 19,
           "coverage": 85.2,
           "crap": 20.2,
-          "killed": 8,
-          "survived": 4,
+          "killed": 14,
+          "survived": 6,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -53104,8 +53092,8 @@
           "complexity": 6,
           "coverage": 70,
           "crap": 7,
-          "killed": 4,
-          "survived": 3,
+          "killed": 3,
+          "survived": 4,
           "uncovered": 1,
           "mutated": true,
           "stale": true,
@@ -53264,7 +53252,7 @@
           "complexity": 8,
           "coverage": 90,
           "crap": 8.1,
-          "killed": 5,
+          "killed": 6,
           "survived": 2,
           "uncovered": 0,
           "mutated": true,
@@ -53280,11 +53268,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -53441,7 +53429,7 @@
       ],
       "metrics": {
         "functions": 71,
-        "mutated": 50,
+        "mutated": 70,
         "crap_bands": {
           "low": 44,
           "medium": 27,
@@ -53449,10 +53437,10 @@
           "unknown": 0
         },
         "max_crap": 26,
-        "killed": 177,
-        "survived": 48,
-        "uncovered": 19,
-        "stale": 50,
+        "killed": 281,
+        "survived": 77,
+        "uncovered": 14,
+        "stale": 70,
         "duplicates": 3,
         "crap_grade": 2.4,
         "mutation_grade": 8.1,
@@ -53537,7 +53525,7 @@
           "complexity": 9,
           "coverage": 100,
           "crap": 9,
-          "killed": 9,
+          "killed": 12,
           "survived": 1,
           "uncovered": 0,
           "mutated": true,
@@ -53553,11 +53541,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -53777,7 +53765,7 @@
           "complexity": 11,
           "coverage": 100,
           "crap": 11,
-          "killed": 6,
+          "killed": 8,
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
@@ -53809,7 +53797,7 @@
           "complexity": 9,
           "coverage": 100,
           "crap": 9,
-          "killed": 8,
+          "killed": 9,
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
@@ -53921,7 +53909,7 @@
           "complexity": 29,
           "coverage": 96.3,
           "crap": 29,
-          "killed": 24,
+          "killed": 25,
           "survived": 1,
           "uncovered": 0,
           "mutated": true,
@@ -54197,7 +54185,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 2
         },
         {
@@ -54213,7 +54201,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 2
         },
         {
@@ -54545,7 +54533,7 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 1,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
@@ -54869,7 +54857,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -55329,11 +55317,11 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
+          "killed": 6,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -55345,11 +55333,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -55441,11 +55429,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
+          "killed": 5,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -55460,8 +55448,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -55473,11 +55461,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -55489,11 +55477,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -55505,11 +55493,11 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
+          "killed": 5,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -55541,7 +55529,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -55733,7 +55721,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -56673,8 +56661,8 @@
           "complexity": 57,
           "coverage": 93.8,
           "crap": 57.8,
-          "killed": 49,
-          "survived": 5,
+          "killed": 53,
+          "survived": 4,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -57105,11 +57093,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -57124,8 +57112,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -57140,8 +57128,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -57153,11 +57141,11 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
+          "killed": 7,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -57169,11 +57157,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -57185,11 +57173,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 4,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -57217,8 +57205,8 @@
           "complexity": 55,
           "coverage": 96.9,
           "crap": 55.1,
-          "killed": 39,
-          "survived": 10,
+          "killed": 45,
+          "survived": 9,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -57233,11 +57221,11 @@
           "complexity": 6,
           "coverage": 100,
           "crap": 6,
-          "killed": 0,
+          "killed": 8,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -57250,8 +57238,8 @@
           "coverage": 77.8,
           "crap": 21.5,
           "killed": 17,
-          "survived": 7,
-          "uncovered": 3,
+          "survived": 8,
+          "uncovered": 2,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -57393,8 +57381,8 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 1,
-          "survived": 5,
+          "killed": 3,
+          "survived": 3,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -57505,7 +57493,7 @@
           "complexity": 6,
           "coverage": 90.9,
           "crap": 6,
-          "killed": 1,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
@@ -57521,8 +57509,8 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
-          "survived": 4,
+          "killed": 3,
+          "survived": 1,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -57569,8 +57557,8 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
-          "survived": 3,
+          "killed": 2,
+          "survived": 1,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -57745,8 +57733,8 @@
           "complexity": 29,
           "coverage": 92.1,
           "crap": 29.4,
-          "killed": 29,
-          "survived": 5,
+          "killed": 34,
+          "survived": 2,
           "uncovered": 0,
           "mutated": true,
           "stale": true,
@@ -57761,11 +57749,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -57793,7 +57781,7 @@
           "complexity": 12,
           "coverage": 100,
           "crap": 12,
-          "killed": 10,
+          "killed": 11,
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
@@ -58017,7 +58005,7 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 3,
+          "killed": 0,
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
@@ -58036,8 +58024,8 @@
           "killed": 0,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -58049,11 +58037,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -58065,11 +58053,11 @@
           "complexity": 5,
           "coverage": 100,
           "crap": 5,
-          "killed": 0,
-          "survived": 0,
+          "killed": 4,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -58081,11 +58069,11 @@
           "complexity": 3,
           "coverage": 100,
           "crap": 3,
-          "killed": 0,
+          "killed": 2,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -58097,11 +58085,11 @@
           "complexity": 1,
           "coverage": 100,
           "crap": 1,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -58113,11 +58101,11 @@
           "complexity": 4,
           "coverage": 100,
           "crap": 4,
-          "killed": 0,
-          "survived": 0,
+          "killed": 3,
+          "survived": 1,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -58145,7 +58133,7 @@
           "complexity": 37,
           "coverage": 95.1,
           "crap": 37.2,
-          "killed": 28,
+          "killed": 29,
           "survived": 6,
           "uncovered": 1,
           "mutated": true,
@@ -58165,7 +58153,7 @@
           "survived": 0,
           "uncovered": 0,
           "mutated": true,
-          "stale": true,
+          "stale": false,
           "duplicates": 0
         },
         {
@@ -58529,11 +58517,11 @@
           "complexity": 2,
           "coverage": 100,
           "crap": 2,
-          "killed": 0,
+          "killed": 1,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -58545,11 +58533,11 @@
           "complexity": 6,
           "coverage": 100,
           "crap": 6,
-          "killed": 0,
+          "killed": 3,
           "survived": 0,
           "uncovered": 0,
-          "mutated": false,
-          "stale": false,
+          "mutated": true,
+          "stale": true,
           "duplicates": 0
         },
         {
@@ -58817,8 +58805,8 @@
           "complexity": 14,
           "coverage": 96.3,
           "crap": 14,
-          "killed": 7,
-          "survived": 3,
+          "killed": 8,
+          "survived": 2,
           "uncovered": 1,
           "mutated": true,
           "stale": true,
@@ -59089,7 +59077,7 @@
       ],
       "metrics": {
         "functions": 513,
-        "mutated": 322,
+        "mutated": 346,
         "crap_bands": {
           "low": 218,
           "medium": 104,
@@ -59097,13 +59085,13 @@
           "unknown": 186
         },
         "max_crap": 61,
-        "killed": 1490,
-        "survived": 351,
-        "uncovered": 64,
-        "stale": 322,
+        "killed": 1587,
+        "survived": 341,
+        "uncovered": 63,
+        "stale": 340,
         "duplicates": 18,
         "crap_grade": 8,
-        "mutation_grade": 8.3,
+        "mutation_grade": 8.4,
         "grade": 8.2
       }
     },
@@ -64023,7 +64011,7 @@
           "crap": 2,
           "killed": 0,
           "survived": 0,
-          "uncovered": 2,
+          "uncovered": 0,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -64039,7 +64027,7 @@
           "crap": 8.1,
           "killed": 0,
           "survived": 0,
-          "uncovered": 7,
+          "uncovered": 0,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -64119,7 +64107,7 @@
           "crap": 4,
           "killed": 0,
           "survived": 0,
-          "uncovered": 6,
+          "uncovered": 0,
           "mutated": true,
           "stale": true,
           "duplicates": 0
@@ -64190,7 +64178,7 @@
         "max_crap": 42,
         "killed": 0,
         "survived": 0,
-        "uncovered": 22,
+        "uncovered": 7,
         "stale": 8,
         "duplicates": 0,
         "crap_grade": 1,

@@ -436,18 +436,18 @@
       "language": "go",
       "file": "cmd/itos-cc/cli.go",
       "start_line": 116,
-      "end_line": 186,
-      "complexity": 25,
+      "end_line": 182,
+      "complexity": 24,
       "coverage": 100,
-      "crap": 25
+      "crap": 24
     },
     {
       "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
       "name": "checkValue",
       "language": "go",
       "file": "cmd/itos-cc/cli.go",
-      "start_line": 188,
-      "end_line": 204,
+      "start_line": 184,
+      "end_line": 200,
       "complexity": 4,
       "coverage": 100,
       "crap": 4
@@ -457,8 +457,8 @@
       "name": "flagNames",
       "language": "go",
       "file": "cmd/itos-cc/cli.go",
-      "start_line": 206,
-      "end_line": 212,
+      "start_line": 202,
+      "end_line": 208,
       "complexity": 2,
       "coverage": 100,
       "crap": 2
@@ -468,8 +468,8 @@
       "name": "execute",
       "language": "go",
       "file": "cmd/itos-cc/cli.go",
-      "start_line": 217,
-      "end_line": 233,
+      "start_line": 213,
+      "end_line": 229,
       "complexity": 4,
       "coverage": 83.3,
       "crap": 4.1
@@ -479,8 +479,8 @@
       "name": "runSafely",
       "language": "go",
       "file": "cmd/itos-cc/cli.go",
-      "start_line": 237,
-      "end_line": 244,
+      "start_line": 233,
+      "end_line": 240,
       "complexity": 2,
       "coverage": 100,
       "crap": 2
@@ -490,8 +490,8 @@
       "name": "help",
       "language": "go",
       "file": "cmd/itos-cc/cli.go",
-      "start_line": 249,
-      "end_line": 256,
+      "start_line": 245,
+      "end_line": 252,
       "complexity": 2,
       "coverage": 100,
       "crap": 2
@@ -501,8 +501,8 @@
       "name": "helpFlags",
       "language": "go",
       "file": "cmd/itos-cc/cli.go",
-      "start_line": 259,
-      "end_line": 269,
+      "start_line": 255,
+      "end_line": 265,
       "complexity": 3,
       "coverage": 100,
       "crap": 3
@@ -1466,25 +1466,14 @@
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/cli",
-      "name": "Closest",
+      "name": "DidYouMean",
       "language": "go",
       "file": "internal/cli/guess.go",
-      "start_line": 11,
-      "end_line": 31,
-      "complexity": 8,
+      "start_line": 17,
+      "end_line": 29,
+      "complexity": 4,
       "coverage": 100,
-      "crap": 8
-    },
-    {
-      "namespace": "github.com/donvargax/itos-cc/internal/cli",
-      "name": "distance",
-      "language": "go",
-      "file": "internal/cli/guess.go",
-      "start_line": 34,
-      "end_line": 52,
-      "complexity": 5,
-      "coverage": 100,
-      "crap": 5
+      "crap": 4
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/cli.Page",
@@ -1778,18 +1767,18 @@
       "language": "go",
       "file": "internal/cli/parse.go",
       "start_line": 242,
-      "end_line": 254,
-      "complexity": 3,
+      "end_line": 252,
+      "complexity": 2,
       "coverage": 100,
-      "crap": 3
+      "crap": 2
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/cli",
       "name": "written",
       "language": "go",
       "file": "internal/cli/parse.go",
-      "start_line": 259,
-      "end_line": 270,
+      "start_line": 257,
+      "end_line": 268,
       "complexity": 5,
       "coverage": 85.7,
       "crap": 5.1
@@ -1799,8 +1788,8 @@
       "name": "needsAValue",
       "language": "go",
       "file": "internal/cli/parse.go",
-      "start_line": 273,
-      "end_line": 276,
+      "start_line": 271,
+      "end_line": 274,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -1810,8 +1799,8 @@
       "name": "valueInvalid",
       "language": "go",
       "file": "internal/cli/parse.go",
-      "start_line": 280,
-      "end_line": 287,
+      "start_line": 278,
+      "end_line": 285,
       "complexity": 2,
       "coverage": 100,
       "crap": 2
@@ -1821,19 +1810,19 @@
       "name": "UnknownCommand",
       "language": "go",
       "file": "internal/cli/parse.go",
-      "start_line": 291,
-      "end_line": 301,
-      "complexity": 3,
+      "start_line": 289,
+      "end_line": 299,
+      "complexity": 2,
       "coverage": 100,
-      "crap": 3
+      "crap": 2
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/cli",
       "name": "commandNames",
       "language": "go",
       "file": "internal/cli/parse.go",
-      "start_line": 304,
-      "end_line": 312,
+      "start_line": 302,
+      "end_line": 310,
       "complexity": 4,
       "coverage": 100,
       "crap": 4
@@ -1843,8 +1832,8 @@
       "name": "andList",
       "language": "go",
       "file": "internal/cli/parse.go",
-      "start_line": 315,
-      "end_line": 325,
+      "start_line": 313,
+      "end_line": 323,
       "complexity": 4,
       "coverage": 60,
       "crap": 5
@@ -3958,8 +3947,8 @@
       "start_line": 419,
       "end_line": 498,
       "complexity": 23,
-      "coverage": 88.9,
-      "crap": 23.7
+      "coverage": 98.1,
+      "crap": 23
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/covrun",
@@ -6587,8 +6576,8 @@
       "start_line": 34,
       "end_line": 67,
       "complexity": 13,
-      "coverage": 78.3,
-      "crap": 14.7
+      "coverage": 73.9,
+      "crap": 16
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/processes",
@@ -6741,8 +6730,8 @@
       "start_line": 310,
       "end_line": 324,
       "complexity": 5,
-      "coverage": 77.8,
-      "crap": 5.3
+      "coverage": 55.6,
+      "crap": 7.2
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/processes.cleanupSignal",
@@ -6870,8 +6859,19 @@
       "name": "InheritedEnv",
       "language": "go",
       "file": "internal/project/env.go",
-      "start_line": 22,
-      "end_line": 31,
+      "start_line": 23,
+      "end_line": 32,
+      "complexity": 3,
+      "coverage": 100,
+      "crap": 3
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/project",
+      "name": "InheritedEnvIn",
+      "language": "go",
+      "file": "internal/project/env.go",
+      "start_line": 43,
+      "end_line": 49,
       "complexity": 3,
       "coverage": 100,
       "crap": 3
@@ -6881,8 +6881,8 @@
       "name": "NoBytecodeEnv",
       "language": "go",
       "file": "internal/project/env.go",
-      "start_line": 42,
-      "end_line": 47,
+      "start_line": 60,
+      "end_line": 65,
       "complexity": 2,
       "coverage": 100,
       "crap": 2
@@ -6892,8 +6892,8 @@
       "name": "gitCommand",
       "language": "go",
       "file": "internal/project/env.go",
-      "start_line": 50,
-      "end_line": 54,
+      "start_line": 69,
+      "end_line": 73,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -7234,18 +7234,18 @@
       "language": "go",
       "file": "internal/project/project.go",
       "start_line": 48,
-      "end_line": 55,
+      "end_line": 53,
       "complexity": 2,
-      "coverage": 80,
-      "crap": 2
+      "coverage": 66.7,
+      "crap": 2.1
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/project",
       "name": "IsBuildOutputWithIgnore",
       "language": "go",
       "file": "internal/project/project.go",
-      "start_line": 61,
-      "end_line": 71,
+      "start_line": 59,
+      "end_line": 69,
       "complexity": 5,
       "coverage": 100,
       "crap": 5
@@ -7255,8 +7255,8 @@
       "name": "Discover",
       "language": "go",
       "file": "internal/project/project.go",
-      "start_line": 83,
-      "end_line": 85,
+      "start_line": 81,
+      "end_line": 83,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -7266,8 +7266,8 @@
       "name": "DiscoverWithBuildOutput",
       "language": "go",
       "file": "internal/project/project.go",
-      "start_line": 90,
-      "end_line": 144,
+      "start_line": 88,
+      "end_line": 142,
       "complexity": 18,
       "coverage": 89.5,
       "crap": 18.4
@@ -7277,8 +7277,8 @@
       "name": "Changed",
       "language": "go",
       "file": "internal/project/project.go",
-      "start_line": 150,
-      "end_line": 175,
+      "start_line": 148,
+      "end_line": 173,
       "complexity": 9,
       "coverage": 100,
       "crap": 9
@@ -7288,8 +7288,8 @@
       "name": "Rel",
       "language": "go",
       "file": "internal/project/project.go",
-      "start_line": 180,
-      "end_line": 190,
+      "start_line": 178,
+      "end_line": 188,
       "complexity": 4,
       "coverage": 0,
       "crap": 20
@@ -7388,9 +7388,9 @@
       "language": "go",
       "file": "internal/project/root.go",
       "start_line": 30,
-      "end_line": 46,
+      "end_line": 44,
       "complexity": 4,
-      "coverage": 91.7,
+      "coverage": 90,
       "crap": 4
     },
     {
@@ -7398,8 +7398,8 @@
       "name": "FromRoot",
       "language": "go",
       "file": "internal/project/root.go",
-      "start_line": 51,
-      "end_line": 53,
+      "start_line": 49,
+      "end_line": 51,
       "complexity": 1,
       "coverage": 0,
       "crap": 2
@@ -7409,8 +7409,8 @@
       "name": "FromRootOf",
       "language": "go",
       "file": "internal/project/root.go",
-      "start_line": 58,
-      "end_line": 64,
+      "start_line": 56,
+      "end_line": 62,
       "complexity": 2,
       "coverage": 0,
       "crap": 6
@@ -7420,8 +7420,8 @@
       "name": "AtRoot",
       "language": "go",
       "file": "internal/project/root.go",
-      "start_line": 67,
-      "end_line": 72,
+      "start_line": 65,
+      "end_line": 70,
       "complexity": 2,
       "coverage": 0,
       "crap": 6
@@ -10115,8 +10115,8 @@
       "name": "plain",
       "language": "go",
       "file": "internal/slices/mutation/adapters/settings/keys.go",
-      "start_line": 26,
-      "end_line": 32,
+      "start_line": 27,
+      "end_line": 33,
       "complexity": 2,
       "coverage": 100,
       "crap": 2
@@ -10126,8 +10126,8 @@
       "name": "unlisted",
       "language": "go",
       "file": "internal/slices/mutation/adapters/settings/keys.go",
-      "start_line": 63,
-      "end_line": 91,
+      "start_line": 64,
+      "end_line": 92,
       "complexity": 12,
       "coverage": 100,
       "crap": 12
@@ -10137,8 +10137,8 @@
       "name": "value",
       "language": "go",
       "file": "internal/slices/mutation/adapters/settings/keys.go",
-      "start_line": 94,
-      "end_line": 101,
+      "start_line": 95,
+      "end_line": 102,
       "complexity": 3,
       "coverage": 100,
       "crap": 3
@@ -10148,19 +10148,8 @@
       "name": "unlistedError",
       "language": "go",
       "file": "internal/slices/mutation/adapters/settings/keys.go",
-      "start_line": 107,
-      "end_line": 125,
-      "complexity": 5,
-      "coverage": 100,
-      "crap": 5
-    },
-    {
-      "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings",
-      "name": "edits",
-      "language": "go",
-      "file": "internal/slices/mutation/adapters/settings/keys.go",
-      "start_line": 129,
-      "end_line": 147,
+      "start_line": 109,
+      "end_line": 128,
       "complexity": 5,
       "coverage": 100,
       "crap": 5
@@ -11314,8 +11303,8 @@
       "name": "env",
       "language": "go",
       "file": "internal/slices/mutation/adapters/testtools/toolchain.go",
-      "start_line": 174,
-      "end_line": 179,
+      "start_line": 175,
+      "end_line": 180,
       "complexity": 2,
       "coverage": 100,
       "crap": 2
@@ -11325,8 +11314,8 @@
       "name": "GoPlatform",
       "language": "go",
       "file": "internal/slices/mutation/adapters/testtools/toolchain.go",
-      "start_line": 186,
-      "end_line": 210,
+      "start_line": 187,
+      "end_line": 211,
       "complexity": 10,
       "coverage": 81.3,
       "crap": 10.7

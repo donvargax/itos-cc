@@ -46,26 +46,6 @@
       "score": 1,
       "language": "go",
       "left": {
-        "file": "internal/cli/guess.go",
-        "start_line": 34,
-        "end_line": 52,
-        "namespace": "github.com/donvargax/itos-cc/internal/cli",
-        "name": "distance",
-        "nodes": 192
-      },
-      "right": {
-        "file": "internal/slices/mutation/adapters/settings/keys.go",
-        "start_line": 129,
-        "end_line": 147,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings",
-        "name": "edits",
-        "nodes": 192
-      }
-    },
-    {
-      "score": 1,
-      "language": "go",
-      "left": {
         "file": "internal/cli/interrupt.go",
         "start_line": 53,
         "end_line": 57,
@@ -1993,29 +1973,6 @@
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "CleanupProblem",
           "nodes": 60
-        }
-      ]
-    },
-    {
-      "language": "go",
-      "min_score": 1,
-      "max_score": 1,
-      "members": [
-        {
-          "file": "internal/cli/guess.go",
-          "start_line": 34,
-          "end_line": 52,
-          "namespace": "github.com/donvargax/itos-cc/internal/cli",
-          "name": "distance",
-          "nodes": 192
-        },
-        {
-          "file": "internal/slices/mutation/adapters/settings/keys.go",
-          "start_line": 129,
-          "end_line": 147,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings",
-          "name": "edits",
-          "nodes": 192
         }
       ]
     },

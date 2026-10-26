@@ -7724,21 +7724,21 @@
           "mocks": 0
         },
         {
-          "name": "TestClosestGuessesWhatWasMeant",
+          "name": "TestDidYouMeanNamesWhatWasMeant",
           "start_line": 210,
-          "end_line": 216,
+          "end_line": 224,
           "table": true,
           "score": 1,
-          "lines": 7,
-          "raw_lines": 7,
+          "lines": 8,
+          "raw_lines": 15,
           "decisions": 0,
           "assertions": 1,
           "mocks": 0
         },
         {
           "name": "TestRelNamesAPathFromTheWorkingDirectory",
-          "start_line": 218,
-          "end_line": 233,
+          "start_line": 226,
+          "end_line": 241,
           "table": true,
           "score": 1.2,
           "lines": 16,
@@ -9360,51 +9360,51 @@
       "file": "internal/covrun/run_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 61.4,
-      "examples": 20,
+      "pressure": 65.5,
+      "examples": 21,
       "setup_lines": 0,
       "average_score": 4.1,
       "max_score": 13.8,
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestAGoPackageThatTimedOutIsNamedInItsGap\" (lines 341-376) is 36 lines: split it into examples that each check one behavior"
+          "text": "\"TestAGoPackageThatTimedOutIsNamedInItsGap\" (lines 371-406) is 36 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestPythonOwnCoverageIsPlannedPerSetOfReachingTests\" (lines 419-455) is 37 lines: split it into examples that each check one behavior"
+          "text": "\"TestPythonOwnCoverageIsPlannedPerSetOfReachingTests\" (lines 449-485) is 37 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses\" (lines 480-542) is 54 lines: split it into examples that each check one behavior"
+          "text": "\"TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses\" (lines 510-572) is 54 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestAVitestComingThroughAnotherPackageIsVersionedByItsBin\" (lines 114-141) takes 1 branch or loop: a test should not need logic; split the cases"
+          "text": "\"TestAVitestComingThroughAnotherPackageIsVersionedByItsBin\" (lines 115-142) takes 1 branch or loop: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestHelperCoverageCommand\" (lines 288-303) takes 3 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestGoScopeListsAModuleReachedThroughASymlinkByItsSources\" (lines 259-281) takes 1 branch or loop: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage\" (lines 305-336) takes 2 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestHelperCoverageCommand\" (lines 318-333) takes 3 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestPythonOwnCoverageIsPlannedPerSetOfReachingTests\" (lines 419-455) takes 1 branch or loop: a test should not need logic; split the cases"
+          "text": "\"TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage\" (lines 335-366) takes 2 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses\" (lines 480-542) takes 2 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestPythonOwnCoverageIsPlannedPerSetOfReachingTests\" (lines 449-485) takes 1 branch or loop: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestARunThatFailsAfterWritingItsReportIsFailed\" (lines 574-601) takes 1 branch or loop: a test should not need logic; split the cases"
+          "text": "\"TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses\" (lines 510-572) takes 2 branches or loops: a test should not need logic; split the cases"
         },
         {
-          "confidence": "LOW",
-          "text": "2 examples share most of their structure (70% alike); a shared helper may read better: \"TestMavenRunsTheJaCoCoTheProjectDeclares\" (189-208), \"TestPythonWithoutCoveragePyIsNotRun\" (210-221)"
+          "confidence": "MEDIUM",
+          "text": "\"TestARunThatFailsAfterWritingItsReportIsFailed\" (lines 604-631) takes 1 branch or loop: a test should not need logic; split the cases"
         }
       ],
       "clusters": [
@@ -9414,13 +9414,13 @@
           "examples": [
             {
               "name": "TestMavenRunsTheJaCoCoTheProjectDeclares",
-              "start_line": 189,
-              "end_line": 208
+              "start_line": 190,
+              "end_line": 209
             },
             {
               "name": "TestPythonWithoutCoveragePyIsNotRun",
-              "start_line": 210,
-              "end_line": 221
+              "start_line": 211,
+              "end_line": 222
             }
           ]
         }
@@ -9428,8 +9428,8 @@
       "details": [
         {
           "name": "TestJVMTestFiltersMatchMutations",
-          "start_line": 22,
-          "end_line": 40,
+          "start_line": 23,
+          "end_line": 41,
           "table": true,
           "score": 1,
           "lines": 10,
@@ -9440,8 +9440,8 @@
         },
         {
           "name": "TestVitestBeforeTheCurrentMajorIsNotRun",
-          "start_line": 88,
-          "end_line": 99,
+          "start_line": 89,
+          "end_line": 100,
           "score": 1,
           "lines": 12,
           "raw_lines": 12,
@@ -9451,8 +9451,8 @@
         },
         {
           "name": "TestCurrentVitestRunsFromNodeModules",
-          "start_line": 101,
-          "end_line": 108,
+          "start_line": 102,
+          "end_line": 109,
           "score": 1,
           "lines": 8,
           "raw_lines": 8,
@@ -9462,8 +9462,8 @@
         },
         {
           "name": "TestAVitestComingThroughAnotherPackageIsVersionedByItsBin",
-          "start_line": 114,
-          "end_line": 141,
+          "start_line": 115,
+          "end_line": 142,
           "score": 6.1,
           "smells": [
             "logic"
@@ -9476,8 +9476,8 @@
         },
         {
           "name": "TestMissingNodeToolsAreNeverFetched",
-          "start_line": 143,
-          "end_line": 167,
+          "start_line": 144,
+          "end_line": 168,
           "table": true,
           "score": 2.4,
           "lines": 22,
@@ -9488,8 +9488,8 @@
         },
         {
           "name": "TestAWorkspaceMemberUsesItsRootsPackageManagerAndTools",
-          "start_line": 169,
-          "end_line": 187,
+          "start_line": 170,
+          "end_line": 188,
           "score": 1.8,
           "lines": 19,
           "raw_lines": 19,
@@ -9499,8 +9499,8 @@
         },
         {
           "name": "TestMavenRunsTheJaCoCoTheProjectDeclares",
-          "start_line": 189,
-          "end_line": 208,
+          "start_line": 190,
+          "end_line": 209,
           "score": 2,
           "lines": 20,
           "raw_lines": 20,
@@ -9510,8 +9510,8 @@
         },
         {
           "name": "TestPythonWithoutCoveragePyIsNotRun",
-          "start_line": 210,
-          "end_line": 221,
+          "start_line": 211,
+          "end_line": 222,
           "score": 1,
           "lines": 12,
           "raw_lines": 12,
@@ -9521,8 +9521,8 @@
         },
         {
           "name": "TestGoMeasuresWithTheTestsThatLoadTheChosenPackagesOrTheirOwn",
-          "start_line": 223,
-          "end_line": 251,
+          "start_line": 224,
+          "end_line": 252,
           "score": 3.8,
           "lines": 29,
           "raw_lines": 29,
@@ -9531,9 +9531,23 @@
           "mocks": 0
         },
         {
+          "name": "TestGoScopeListsAModuleReachedThroughASymlinkByItsSources",
+          "start_line": 259,
+          "end_line": 281,
+          "score": 5.1,
+          "smells": [
+            "logic"
+          ],
+          "lines": 23,
+          "raw_lines": 23,
+          "decisions": 1,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
           "name": "TestCoverageThatCouldNotBeMeasuredIsMissing",
-          "start_line": 253,
-          "end_line": 280,
+          "start_line": 283,
+          "end_line": 310,
           "score": 3.6,
           "lines": 28,
           "raw_lines": 28,
@@ -9543,8 +9557,8 @@
         },
         {
           "name": "TestHelperCoverageCommand",
-          "start_line": 288,
-          "end_line": 303,
+          "start_line": 318,
+          "end_line": 333,
           "score": 8.7,
           "smells": [
             "logic"
@@ -9557,8 +9571,8 @@
         },
         {
           "name": "TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage",
-          "start_line": 305,
-          "end_line": 336,
+          "start_line": 335,
+          "end_line": 366,
           "table": true,
           "score": 8,
           "smells": [
@@ -9572,8 +9586,8 @@
         },
         {
           "name": "TestAGoPackageThatTimedOutIsNamedInItsGap",
-          "start_line": 341,
-          "end_line": 376,
+          "start_line": 371,
+          "end_line": 406,
           "score": 5.2,
           "smells": [
             "large"
@@ -9586,8 +9600,8 @@
         },
         {
           "name": "TestTheTimeoutWatchReadsWholeLines",
-          "start_line": 380,
-          "end_line": 402,
+          "start_line": 410,
+          "end_line": 432,
           "table": true,
           "score": 2.6,
           "lines": 23,
@@ -9598,8 +9612,8 @@
         },
         {
           "name": "TestPythonOwnTestsAreTheTestFilesThatReachASource",
-          "start_line": 404,
-          "end_line": 417,
+          "start_line": 434,
+          "end_line": 447,
           "score": 1,
           "lines": 14,
           "raw_lines": 14,
@@ -9609,8 +9623,8 @@
         },
         {
           "name": "TestPythonOwnCoverageIsPlannedPerSetOfReachingTests",
-          "start_line": 419,
-          "end_line": 455,
+          "start_line": 449,
+          "end_line": 485,
           "score": 7.9,
           "smells": [
             "large",
@@ -9624,8 +9638,8 @@
         },
         {
           "name": "TestAPlanOfItsOwnSourcesLendsNoCoverageToOthers",
-          "start_line": 457,
-          "end_line": 478,
+          "start_line": 487,
+          "end_line": 508,
           "score": 2.4,
           "lines": 22,
           "raw_lines": 22,
@@ -9635,8 +9649,8 @@
         },
         {
           "name": "TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses",
-          "start_line": 480,
-          "end_line": 542,
+          "start_line": 510,
+          "end_line": 572,
           "table": true,
           "score": 13.8,
           "smells": [
@@ -9651,8 +9665,8 @@
         },
         {
           "name": "TestACommandWhoseCleanupFailedLeavesItsGap",
-          "start_line": 548,
-          "end_line": 567,
+          "start_line": 578,
+          "end_line": 597,
           "score": 2,
           "lines": 20,
           "raw_lines": 20,
@@ -9662,8 +9676,8 @@
         },
         {
           "name": "TestARunThatFailsAfterWritingItsReportIsFailed",
-          "start_line": 574,
-          "end_line": 601,
+          "start_line": 604,
+          "end_line": 631,
           "table": true,
           "score": 6.1,
           "smells": [
@@ -11666,10 +11680,10 @@
       "file": "internal/project/env_test.go",
       "language": "go",
       "action": "LEAVE_ALONE",
-      "pressure": 1.8,
-      "examples": 1,
+      "pressure": 3.2,
+      "examples": 2,
       "setup_lines": 0,
-      "average_score": 2.8,
+      "average_score": 2.6,
       "max_score": 2.8,
       "recommendations": [],
       "clusters": null,
@@ -11682,6 +11696,17 @@
           "score": 2.8,
           "lines": 24,
           "raw_lines": 27,
+          "decisions": 0,
+          "assertions": 5,
+          "mocks": 0
+        },
+        {
+          "name": "TestInheritedEnvInNamesTheDirectoryACommandStartsIn",
+          "start_line": 46,
+          "end_line": 67,
+          "score": 2.4,
+          "lines": 22,
+          "raw_lines": 22,
           "decisions": 0,
           "assertions": 5,
           "mocks": 0
@@ -14507,26 +14532,26 @@
       "language": "go",
       "action": "AUTO_REFACTOR",
       "pressure": 24,
-      "examples": 5,
+      "examples": 4,
       "setup_lines": 0,
-      "average_score": 5.8,
+      "average_score": 7,
       "max_score": 22.5,
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestFormatListsTheKeysTheDecoderReads\" (lines 116-150) is 35 lines: split it into examples that each check one behavior"
+          "text": "\"TestFormatListsTheKeysTheDecoderReads\" (lines 102-136) is 35 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestAKeyTheFormatDoesNotListIsRefused\" (lines 18-46) takes 1 branch or loop: a test should not need logic; split the cases"
+          "text": "\"TestAKeyTheFormatDoesNotListIsRefused\" (lines 18-48) takes 1 branch or loop: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestFormatListsTheKeysTheDecoderReads\" (lines 116-150) takes 7 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestFormatListsTheKeysTheDecoderReads\" (lines 102-136) takes 7 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "LOW",
-          "text": "2 examples share most of their structure (80% alike); a shared helper may read better: \"TestAnExtensionKeyIsIgnoredAtAnyLevel\" (52-74), \"TestUnlistedKeysComeAfterRuleOneAndBeforeDecoding\" (95-110)"
+          "text": "2 examples share most of their structure (80% alike); a shared helper may read better: \"TestAnExtensionKeyIsIgnoredAtAnyLevel\" (54-76), \"TestUnlistedKeysComeAfterRuleOneAndBeforeDecoding\" (81-96)"
         }
       ],
       "clusters": [
@@ -14536,13 +14561,13 @@
           "examples": [
             {
               "name": "TestAnExtensionKeyIsIgnoredAtAnyLevel",
-              "start_line": 52,
-              "end_line": 74
+              "start_line": 54,
+              "end_line": 76
             },
             {
               "name": "TestUnlistedKeysComeAfterRuleOneAndBeforeDecoding",
-              "start_line": 95,
-              "end_line": 110
+              "start_line": 81,
+              "end_line": 96
             }
           ]
         }
@@ -14551,22 +14576,22 @@
         {
           "name": "TestAKeyTheFormatDoesNotListIsRefused",
           "start_line": 18,
-          "end_line": 46,
+          "end_line": 48,
           "table": true,
           "score": 3.5,
           "smells": [
             "logic"
           ],
           "lines": 15,
-          "raw_lines": 29,
+          "raw_lines": 31,
           "decisions": 1,
           "assertions": 2,
           "mocks": 0
         },
         {
           "name": "TestAnExtensionKeyIsIgnoredAtAnyLevel",
-          "start_line": 52,
-          "end_line": 74,
+          "start_line": 54,
+          "end_line": 76,
           "table": true,
           "score": 1,
           "lines": 14,
@@ -14576,21 +14601,9 @@
           "mocks": 0
         },
         {
-          "name": "TestEditsIsTheLevenshteinDistance",
-          "start_line": 78,
-          "end_line": 90,
-          "table": true,
-          "score": 1,
-          "lines": 7,
-          "raw_lines": 13,
-          "decisions": 0,
-          "assertions": 1,
-          "mocks": 0
-        },
-        {
           "name": "TestUnlistedKeysComeAfterRuleOneAndBeforeDecoding",
-          "start_line": 95,
-          "end_line": 110,
+          "start_line": 81,
+          "end_line": 96,
           "table": true,
           "score": 1,
           "lines": 9,
@@ -14601,8 +14614,8 @@
         },
         {
           "name": "TestFormatListsTheKeysTheDecoderReads",
-          "start_line": 116,
-          "end_line": 150,
+          "start_line": 102,
+          "end_line": 136,
           "table": true,
           "score": 22.5,
           "smells": [
