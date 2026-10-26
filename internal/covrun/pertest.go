@@ -79,7 +79,7 @@ func testCollectors(ctx context.Context, root, dir string, sources []string) []t
 		language: "go",
 		dir:      root,
 		each:     eachTestEnv,
-		written:  hasCoverData,
+		written:  func(d string) bool { return hasCoverData(d, "") },
 		convert: func(d, out string) ([]string, string) {
 			return []string{"go", "tool", "covdata", "textfmt", "-i=" + d, "-o=" + out + ".out"}, out + ".out"
 		},
@@ -339,7 +339,7 @@ func eachTestEnv(dir string) []string {
 	return env
 }
 
-func hasCoverData(dir string) bool {
+func hasCoverData(dir, own string) bool {
 	written, _ := filepath.Glob(filepath.Join(dir, "covmeta.*"))
 	return len(written) > 0
 }
