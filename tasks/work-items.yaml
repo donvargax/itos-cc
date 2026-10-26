@@ -5979,3 +5979,10 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: T-214
+    title: Upgrade the repository pin to itos 8.22
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
