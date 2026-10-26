@@ -5945,7 +5945,7 @@ items:
     title: The output-cap scenario on Windows is killed by its timeout before its output cap
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-213

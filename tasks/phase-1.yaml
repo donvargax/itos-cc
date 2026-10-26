@@ -7062,8 +7062,6 @@
     before choosing (the jobs' outcomes and elapsed times); if the cause is not the fixture's pace,
     say so and fix what it is. The comment above the Rule keeps describing the fixture truthfully.
     Scenario text changes only if a step's words no longer match, and then only its words.
-  done_when:
-    - run: go vet ./features
 - id: T-216
   type: test
   title: A -cover itos-cc drops its own coverage data from a listed test's folder before converting it
