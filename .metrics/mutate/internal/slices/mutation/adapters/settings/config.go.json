@@ -4,7 +4,7 @@
   "language": "go",
   "tests": {
     "cmd/itos-cc/adapters_test.go": "323f6e6241b03e4826bc6d38fcfb0e8abfa170380149ab41b9699a3b2709a00a",
-    "cmd/itos-cc/cli_test.go": "88a7942036fa2fcd8a18ded3b972e068b94329273e340974609c8379a7bc9fcc",
+    "cmd/itos-cc/cli_test.go": "7ff0837ac4bb2207b69a06be4e1f3771d5c9eff57df08434f7419c48f08e8e48",
     "cmd/itos-cc/coverage_test.go": "832d9e7290e4308e493b8f624ca98a7c10cb4eb3cc6306350b2a1c04956edbd7",
     "cmd/itos-cc/crap_unloaded_test.go": "a845f25efab51b46bafe064c8f1470c3b4158fbb9bf5324e3ae4dcc2510e217d",
     "cmd/itos-cc/except_renew_test.go": "4e4d9ca80a25a7b435d3de62b62854975420e09cb7d3d128d1634d79d231099e",
@@ -117,7 +117,7 @@
     "internal/slices/mutation/adapters/freshenv/preparation_test.go": "9af0d532518c66e1baa366f70ce991090fdbddc337fafc284abd7b5be747f924",
     "internal/slices/mutation/adapters/freshenv/trial_unreached_test.go": "738f7cf675f0d52467f5b8652276b3650963eb8ed1ad14bc2972c865fbb02d43",
     "internal/slices/mutation/adapters/settings/config_test.go": "969fff0189ac0cbb7bd5e9dbd1ec3bb939c7f93e8970868be50d14623a318b60",
-    "internal/slices/mutation/adapters/settings/keys_test.go": "923eedb8f11683ee6900d9685bec6a9f25a0b7b48c88d668046c1ce3c1c6ce98",
+    "internal/slices/mutation/adapters/settings/keys_test.go": "13ff48cccc46291840e9607e95b403b711a58c610d3ea0c4ec870e114a4bd429",
     "internal/slices/mutation/adapters/settings/reader_test.go": "2118aaa616c51169fddb8a6dbfc556c3194465e0ebb1fdf1ff412f88e5cdc6bf"
   },
   "units": [
@@ -1694,7 +1694,7 @@
   },
   "listed_files": {
     "features/dry.feature": "53526e6a8cb5d4bba85be7f031af88caa1ddac2e4006cc69c747787f510c2ab2",
-    "features/file_selection.feature": "d8d5c0d39621eeed33dd443ce1aa5010fe726cbb72d179c7b822d75fe3773a74",
+    "features/file_selection.feature": "f254be4180c818179e955f86223b77404b0dae3ef9b70fcacaf8b36d9cdbb51f",
     "features/graph_command.feature": "689075d30e5f2845dbba67cb6a324557d683ac4a89d6adfb10101fd554b759f4",
     "features/mutate.feature": "eab1b5c707b9f7c59ab6dda68e97048bb98b5961dedc7aa37993c10d8390084f",
     "features/units.feature": "7281bdd16d1085fa607f647649d56b5583ac16c712997f241c717b276e3a1c04"

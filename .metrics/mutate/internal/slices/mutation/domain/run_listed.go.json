@@ -4,7 +4,7 @@
   "language": "go",
   "tests": {
     "cmd/itos-cc/adapters_test.go": "323f6e6241b03e4826bc6d38fcfb0e8abfa170380149ab41b9699a3b2709a00a",
-    "cmd/itos-cc/cli_test.go": "88a7942036fa2fcd8a18ded3b972e068b94329273e340974609c8379a7bc9fcc",
+    "cmd/itos-cc/cli_test.go": "7ff0837ac4bb2207b69a06be4e1f3771d5c9eff57df08434f7419c48f08e8e48",
     "cmd/itos-cc/coverage_test.go": "832d9e7290e4308e493b8f624ca98a7c10cb4eb3cc6306350b2a1c04956edbd7",
     "cmd/itos-cc/crap_unloaded_test.go": "a845f25efab51b46bafe064c8f1470c3b4158fbb9bf5324e3ae4dcc2510e217d",
     "cmd/itos-cc/except_renew_test.go": "4e4d9ca80a25a7b435d3de62b62854975420e09cb7d3d128d1634d79d231099e",
@@ -119,7 +119,7 @@
     "internal/slices/mutation/adapters/githistory/history_test.go": "3ca9cbf66cf974d6152bf6fab00d1f11787fa0f807a2d1cc23dcb6b508f31ecf",
     "internal/slices/mutation/adapters/importgraph/reach_test.go": "2edc63ea914953e407f1879aeb18c0571cf7a7bf420eefa463b778b35e240a9b",
     "internal/slices/mutation/adapters/settings/config_test.go": "969fff0189ac0cbb7bd5e9dbd1ec3bb939c7f93e8970868be50d14623a318b60",
-    "internal/slices/mutation/adapters/settings/keys_test.go": "923eedb8f11683ee6900d9685bec6a9f25a0b7b48c88d668046c1ce3c1c6ce98",
+    "internal/slices/mutation/adapters/settings/keys_test.go": "13ff48cccc46291840e9607e95b403b711a58c610d3ea0c4ec870e114a4bd429",
     "internal/slices/mutation/adapters/settings/reader_test.go": "2118aaa616c51169fddb8a6dbfc556c3194465e0ebb1fdf1ff412f88e5cdc6bf",
     "internal/slices/mutation/adapters/snapshots/mutation_catalog_test.go": "b984fc8bf80630223b4bbb5bd7159cdd4d9a2401cc6bd78c9c61a2bdd80c2a46",
     "internal/slices/mutation/adapters/snapshots/mutation_codec_bytes_test.go": "6d2cd6b8ca448a3ad18f8b0a4f50947eeaa4fc971521462c229b742d43762ff0",
@@ -1586,7 +1586,7 @@
     "ID-SNAP-11": "features/metrics_snapshots.feature"
   },
   "listed_files": {
-    "features/cli.feature": "b3f2f71e4029fe653680826c3e760d38f824830464e321ec5ff6481ae29f1a2d",
+    "features/cli.feature": "108b3a37496a395970c7cbce49a948954e838a23cfa49fa9a9bb78347733b658",
     "features/graph_command.feature": "689075d30e5f2845dbba67cb6a324557d683ac4a89d6adfb10101fd554b759f4",
     "features/metrics_snapshots.feature": "dc436817eb86c3be4243d0c47291c2d284084924b84a2981489cc6c418e5ea53",
     "features/mutate.feature": "eab1b5c707b9f7c59ab6dda68e97048bb98b5961dedc7aa37993c10d8390084f"

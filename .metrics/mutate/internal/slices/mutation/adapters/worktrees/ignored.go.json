@@ -4,7 +4,7 @@
   "language": "go",
   "tests": {
     "cmd/itos-cc/adapters_test.go": "323f6e6241b03e4826bc6d38fcfb0e8abfa170380149ab41b9699a3b2709a00a",
-    "cmd/itos-cc/cli_test.go": "88a7942036fa2fcd8a18ded3b972e068b94329273e340974609c8379a7bc9fcc",
+    "cmd/itos-cc/cli_test.go": "7ff0837ac4bb2207b69a06be4e1f3771d5c9eff57df08434f7419c48f08e8e48",
     "cmd/itos-cc/coverage_test.go": "832d9e7290e4308e493b8f624ca98a7c10cb4eb3cc6306350b2a1c04956edbd7",
     "cmd/itos-cc/crap_unloaded_test.go": "a845f25efab51b46bafe064c8f1470c3b4158fbb9bf5324e3ae4dcc2510e217d",
     "cmd/itos-cc/except_renew_test.go": "4e4d9ca80a25a7b435d3de62b62854975420e09cb7d3d128d1634d79d231099e",
@@ -171,7 +171,7 @@
     {
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/worktrees",
       "name": "gitListed",
-      "hash": "afde28fd96ae4a78",
+      "hash": "e4d38147e8da04d1",
       "start_line": 90,
       "end_line": 108,
       "killed": 4,
@@ -182,7 +182,7 @@
         {
           "line": 94,
           "column": 9,
-          "offset": 309,
+          "offset": 315,
           "original": "!=",
           "replacement": "==",
           "outcome": "killed"
@@ -190,7 +190,7 @@
         {
           "line": 95,
           "column": 15,
-          "offset": 332,
+          "offset": 338,
           "original": "false",
           "replacement": "true",
           "outcome": "survived"
@@ -198,7 +198,7 @@
         {
           "line": 98,
           "column": 47,
-          "offset": 412,
+          "offset": 418,
           "original": "0",
           "replacement": "1",
           "outcome": "killed"
@@ -206,7 +206,7 @@
         {
           "line": 102,
           "column": 16,
-          "offset": 489,
+          "offset": 495,
           "original": "false",
           "replacement": "true",
           "outcome": "survived"
@@ -214,7 +214,7 @@
         {
           "line": 104,
           "column": 15,
-          "offset": 520,
+          "offset": 526,
           "original": "true",
           "replacement": "false",
           "outcome": "killed"
@@ -222,7 +222,7 @@
         {
           "line": 107,
           "column": 16,
-          "offset": 547,
+          "offset": 553,
           "original": "true",
           "replacement": "false",
           "outcome": "killed"

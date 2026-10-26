@@ -4,7 +4,7 @@
   "language": "go",
   "tests": {
     "cmd/itos-cc/adapters_test.go": "323f6e6241b03e4826bc6d38fcfb0e8abfa170380149ab41b9699a3b2709a00a",
-    "cmd/itos-cc/cli_test.go": "88a7942036fa2fcd8a18ded3b972e068b94329273e340974609c8379a7bc9fcc",
+    "cmd/itos-cc/cli_test.go": "7ff0837ac4bb2207b69a06be4e1f3771d5c9eff57df08434f7419c48f08e8e48",
     "cmd/itos-cc/coverage_test.go": "832d9e7290e4308e493b8f624ca98a7c10cb4eb3cc6306350b2a1c04956edbd7",
     "cmd/itos-cc/crap_unloaded_test.go": "a845f25efab51b46bafe064c8f1470c3b4158fbb9bf5324e3ae4dcc2510e217d",
     "cmd/itos-cc/except_renew_test.go": "4e4d9ca80a25a7b435d3de62b62854975420e09cb7d3d128d1634d79d231099e",
@@ -223,9 +223,9 @@
     {
       "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
       "name": "parse",
-      "hash": "12c9252d8a546662",
+      "hash": "b6ddb85aecbfc0ce",
       "start_line": 116,
-      "end_line": 186,
+      "end_line": 182,
       "killed": 40,
       "survived": 0,
       "uncovered": 0,
@@ -368,185 +368,185 @@
           "outcome": "killed"
         },
         {
-          "line": 149,
-          "column": 32,
-          "offset": 873,
+          "line": 148,
+          "column": 30,
+          "offset": 763,
           "original": "+",
           "replacement": "-",
           "outcome": "killed"
         },
         {
-          "line": 149,
-          "column": 62,
-          "offset": 903,
-          "original": "!=",
-          "replacement": "==",
+          "line": 148,
+          "column": 95,
+          "offset": 828,
+          "original": "+",
+          "replacement": "-",
           "outcome": "killed"
         },
         {
-          "line": 156,
+          "line": 152,
           "column": 27,
-          "offset": 1166,
+          "offset": 1059,
           "original": ">",
           "replacement": ">=",
           "outcome": "killed"
         },
         {
-          "line": 156,
+          "line": 152,
           "column": 29,
-          "offset": 1168,
+          "offset": 1061,
           "original": "0",
           "replacement": "1",
           "outcome": "killed"
         },
         {
-          "line": 158,
+          "line": 154,
           "column": 39,
-          "offset": 1323,
+          "offset": 1216,
           "original": "+",
           "replacement": "-",
           "outcome": "killed"
         },
         {
-          "line": 161,
+          "line": 157,
           "column": 25,
-          "offset": 1358,
+          "offset": 1251,
           "original": "+",
           "replacement": "-",
           "outcome": "killed"
         },
         {
-          "line": 161,
+          "line": 157,
           "column": 26,
-          "offset": 1359,
+          "offset": 1252,
           "original": "1",
           "replacement": "0",
           "outcome": "killed"
         },
         {
-          "line": 161,
+          "line": 157,
           "column": 28,
-          "offset": 1361,
+          "offset": 1254,
           "original": "<",
           "replacement": "<=",
           "outcome": "killed"
         },
         {
-          "line": 163,
+          "line": 159,
           "column": 17,
-          "offset": 1404,
+          "offset": 1297,
           "original": "+",
           "replacement": "-",
           "outcome": "killed"
         },
         {
-          "line": 163,
+          "line": 159,
           "column": 18,
-          "offset": 1405,
+          "offset": 1298,
           "original": "1",
           "replacement": "0",
           "outcome": "killed"
         },
         {
-          "line": 166,
+          "line": 162,
           "column": 14,
-          "offset": 1436,
+          "offset": 1329,
           "original": "==",
           "replacement": "!=",
           "outcome": "killed"
         },
         {
-          "line": 166,
+          "line": 162,
           "column": 28,
-          "offset": 1450,
+          "offset": 1343,
           "original": "&&",
           "replacement": "||",
           "outcome": "killed"
         },
         {
-          "line": 168,
+          "line": 164,
           "column": 62,
-          "offset": 1657,
+          "offset": 1550,
           "original": "+",
           "replacement": "-",
           "outcome": "killed"
         },
         {
-          "line": 169,
+          "line": 165,
           "column": 14,
-          "offset": 1677,
+          "offset": 1570,
           "original": "==",
           "replacement": "!=",
           "outcome": "killed"
         },
         {
-          "line": 171,
+          "line": 167,
           "column": 8,
-          "offset": 1717,
+          "offset": 1610,
           "original": "!",
           "replacement": "",
           "outcome": "killed"
         },
         {
-          "line": 171,
+          "line": 167,
           "column": 18,
-          "offset": 1727,
+          "offset": 1620,
           "original": "&&",
           "replacement": "||",
           "outcome": "killed"
         },
         {
-          "line": 171,
+          "line": 167,
           "column": 22,
-          "offset": 1731,
+          "offset": 1624,
           "original": "!",
           "replacement": "",
           "outcome": "killed"
         },
         {
-          "line": 171,
+          "line": 167,
           "column": 31,
-          "offset": 1740,
+          "offset": 1633,
           "original": "||",
           "replacement": "&&",
           "outcome": "killed"
         },
         {
-          "line": 171,
+          "line": 167,
           "column": 64,
-          "offset": 1773,
+          "offset": 1666,
           "original": "&&",
           "replacement": "||",
           "outcome": "killed"
         },
         {
-          "line": 171,
+          "line": 167,
           "column": 72,
-          "offset": 1781,
+          "offset": 1674,
           "original": "!=",
           "replacement": "==",
           "outcome": "killed"
         },
         {
-          "line": 175,
+          "line": 171,
           "column": 81,
-          "offset": 1979,
+          "offset": 1872,
           "original": "+",
           "replacement": "-",
           "outcome": "killed"
         },
         {
-          "line": 176,
+          "line": 172,
           "column": 8,
-          "offset": 1993,
+          "offset": 1886,
           "original": "!",
           "replacement": "",
           "outcome": "killed"
         },
         {
-          "line": 180,
+          "line": 176,
           "column": 39,
-          "offset": 2069,
+          "offset": 1962,
           "original": "!=",
           "replacement": "==",
           "outcome": "killed"
@@ -557,15 +557,15 @@
       "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
       "name": "checkValue",
       "hash": "45d3c7ae2405300a",
-      "start_line": 188,
-      "end_line": 204,
+      "start_line": 184,
+      "end_line": 200,
       "killed": 2,
       "survived": 0,
       "uncovered": 0,
       "sites": 2,
       "mutants": [
         {
-          "line": 199,
+          "line": 195,
           "column": 9,
           "offset": 275,
           "original": "!=",
@@ -573,7 +573,7 @@
           "outcome": "killed"
         },
         {
-          "line": 201,
+          "line": 197,
           "column": 55,
           "offset": 469,
           "original": "+",
@@ -586,15 +586,15 @@
       "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
       "name": "flagNames",
       "hash": "76eb2ddf55bf3151",
-      "start_line": 206,
-      "end_line": 212,
+      "start_line": 202,
+      "end_line": 208,
       "killed": 1,
       "survived": 0,
       "uncovered": 0,
       "sites": 1,
       "mutants": [
         {
-          "line": 209,
+          "line": 205,
           "column": 29,
           "offset": 124,
           "original": "+",
@@ -607,15 +607,15 @@
       "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
       "name": "execute",
       "hash": "d1326ec7541199ac",
-      "start_line": 217,
-      "end_line": 233,
+      "start_line": 213,
+      "end_line": 229,
       "killed": 3,
       "survived": 0,
       "uncovered": 1,
       "sites": 4,
       "mutants": [
         {
-          "line": 220,
+          "line": 216,
           "column": 9,
           "offset": 135,
           "original": "==",
@@ -623,7 +623,7 @@
           "outcome": "killed"
         },
         {
-          "line": 222,
+          "line": 218,
           "column": 10,
           "offset": 181,
           "original": "0",
@@ -631,7 +631,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 225,
+          "line": 221,
           "column": 9,
           "offset": 208,
           "original": "==",
@@ -639,7 +639,7 @@
           "outcome": "killed"
         },
         {
-          "line": 229,
+          "line": 225,
           "column": 9,
           "offset": 281,
           "original": "!=",
@@ -652,15 +652,15 @@
       "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
       "name": "runSafely",
       "hash": "ab9127e0622d147e",
-      "start_line": 237,
-      "end_line": 244,
+      "start_line": 233,
+      "end_line": 240,
       "killed": 1,
       "survived": 0,
       "uncovered": 0,
       "sites": 1,
       "mutants": [
         {
-          "line": 239,
+          "line": 235,
           "column": 24,
           "offset": 129,
           "original": "!=",
@@ -673,8 +673,8 @@
       "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc.command",
       "name": "help",
       "hash": "256a96a0c65b0f66",
-      "start_line": 249,
-      "end_line": 256,
+      "start_line": 245,
+      "end_line": 252,
       "killed": 0,
       "survived": 0,
       "uncovered": 0,
@@ -685,15 +685,15 @@
       "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
       "name": "helpFlags",
       "hash": "81f15a438f3cc9e5",
-      "start_line": 259,
-      "end_line": 269,
+      "start_line": 255,
+      "end_line": 265,
       "killed": 0,
       "survived": 1,
       "uncovered": 0,
       "sites": 1,
       "mutants": [
         {
-          "line": 263,
+          "line": 259,
           "column": 13,
           "offset": 191,
           "original": "==",
@@ -711,7 +711,7 @@
     "ID-CLI-19": "features/cli.feature"
   },
   "listed_files": {
-    "features/cli.feature": "b3f2f71e4029fe653680826c3e760d38f824830464e321ec5ff6481ae29f1a2d"
+    "features/cli.feature": "108b3a37496a395970c7cbce49a948954e838a23cfa49fa9a9bb78347733b658"
   },
   "support": {
     "cmd/itos-cc/run_fakes_test.go": "cc976a7c661481fc7f7e90438f5adcc1b2db89487ed30158230db5ffcabd7c07",
