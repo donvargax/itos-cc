@@ -318,9 +318,11 @@ func TestGoScopeSaysWhyItMeasuresNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// cmd reads a redirection only after a space or at a line's start, so
+	// go.bat's blank line is "1>&2 echo.": "echo.1>&2" would echo "1".
 	for _, c := range []struct{ name, sh, bat, why string }{
 		{"silent", "exit 3\n", "@exit /b 3\r\n", "go list failed: exit status 3"},
-		{"crlf", "printf '\\n go: broken\\r\\nnext\\n' >&2\nexit 1\n", "@echo.1>&2\r\n@1>&2 echo  go: broken\r\n@1>&2 echo next\r\n@exit /b 1\r\n", "go list failed: go: broken"},
+		{"crlf", "printf '\\n go: broken\\r\\nnext\\n' >&2\nexit 1\n", "@1>&2 echo.\r\n@1>&2 echo  go: broken\r\n@1>&2 echo next\r\n@exit /b 1\r\n", "go list failed: go: broken"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			fake := t.TempDir()
