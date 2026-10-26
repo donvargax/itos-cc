@@ -7064,3 +7064,33 @@
     Scenario text changes only if a step's words no longer match, and then only its words.
   done_when:
     - run: go vet ./features
+- id: T-216
+  type: fix
+  title: A -cover itos-cc drops its own coverage data from a listed test's folder before converting it
+  why: >
+    Under the nightly's coverage build, ID-MUT-123 measures nothing (docs/binary-only-reach.md): a
+    listed test's per-test folder (eachTestEnv, internal/covrun/pertest.go) is GOCOVERDIR for the
+    listed command, go test without -cover hands that environment unchanged to its -exec program,
+    itos-cc's own __exec-with-gocoverdir wrapper (ExecTest), and that wrapper, being the measuring
+    -cover itos-cc built in atomic mode, writes its covmeta and covcounters there beside the
+    project's set-mode data; go tool covdata textfmt then refuses the folder with a counter mode
+    clash, and -pkg does not help. A research agent reproduced it (go1.27.3, scratch lcwc-repro) and
+    read the runtime: a -cover binary writes its meta-data during init and its counters at exit, to
+    the GOCOVERDIR it read at init, so nothing ExecTest does can keep them out, and the non-listed
+    Go plan is safe because go test -cover hands the wrapper its own folder. Decided by the
+    coordinator (2026-10-26): fix it in the conversion, as Plan.dropRunnerData
+    (internal/covrun/collector.go) already drops a test runner's own Node data. After each listed
+    run and before deciding whether anything was written (hasCoverData), remove the covmeta.<own>
+    and covcounters.<own>.* files from the folder, <own> being the measuring binary's own meta-data
+    hash, learned once per process through runtime/coverage.WriteMetaDir into a scratch folder and
+    empty in a normal build (WriteMetaDir fails and writes nothing there), so nothing changes for
+    users. Give the hash as a value, so the unit tests use a fake: a folder holding covmeta.H,
+    covcounters.H.<pid>.<time> and another binary's files keeps only the other's; with an empty hash
+    nothing is removed; a folder holding only H's files counts as not written. Not the harness
+    (building itos-cc in set mode would leave its blocks in the project's profile and the folder
+    looking written), not the wrapper (the runtime decides at init). No new scenario: users never
+    meet a -cover itos-cc; the unit tests gate each push and the nightly's ID-MUT-123 under
+    GOCOVERDIR proves the whole, and docs/binary-only-reach.md's ID-MUT-123 paragraph then says it
+    is fixed. No OS branch, no build tag.
+  done_when:
+    - run: go test ./internal/covrun/...
