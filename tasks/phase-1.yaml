@@ -7090,3 +7090,22 @@
     meet a -cover itos-cc; the unit tests gate each push and the nightly's ID-MUT-123 under
     GOCOVERDIR proves the whole, and docs/binary-only-reach.md's ID-MUT-123 paragraph then says it
     is fixed. No OS branch, no build tag.
+- id: T-217
+  type: test
+  title: Kill the unchangedFor mutant the CD sample found surviving
+  why: >
+    cd.yml 40412787808 (head 79e9452c), job sample (121887594504): the recorded mutant `!=` to `==`
+    at internal/slices/mutation/adapters/worktrees/worker_scratch.go:160 column 9, in unchangedFor
+    (the os.Stat error check), was recorded killed and survived three trials, so the run failed on
+    the mismatch. The function has not changed since bug-10 (0b7ae287), and it is the only sample
+    failure in the last 25 CD runs: the test that killed it then does not kill it on CI now, which
+    is a gap, not a flake to retry. Decided by the coordinator (2026-10-26): find which test was
+    meant to kill it and why it no longer does (a timing or modification-time assumption that holds
+    on a developer machine and not on a runner, a change elsewhere), and add or fix a test that
+    kills it deterministically on every system, through the package's existing fakes or real
+    temporary folders; no product change unless the product is wrong (then stop and report), no
+    exception for an equivalent mutant without the coordinator's approval (AGENTS.md). Run the
+    mutant locally against the package's tests only, as the sample does, to see it survive before
+    and die after; never a mutation run over the repository.
+  done_when:
+    - run: go test ./internal/slices/mutation/adapters/worktrees/...

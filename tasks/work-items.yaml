@@ -5993,3 +5993,10 @@ items:
       goScopeSupervised splits without trimming the whole listing and is unaffected. slice-61's
       fixture gave a/ a test to dodge it. Trim each line's carriage return instead, with a unit test
       listing such a package last.
+  - id: T-217
+    title: Kill the unchangedFor mutant the CD sample found surviving
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
