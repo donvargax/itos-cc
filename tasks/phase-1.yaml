@@ -7042,3 +7042,25 @@
   why: >
     Between agents, the coordinator moves the pin from 8.19.1 to the newest 8.23 so the next agents
     read its guides and hooks, as T-212 did; the person approved it 2026-10-26.
+- id: T-215
+  type: test
+  title: The output-cap scenario on Windows is killed by its timeout before its output cap
+  why: >
+    cd.yml test (windows-latest, features), ID-MUT-300 (features/mutate.feature:793, 'A mutant whose
+    tests write output without end is killed over its output cap'): its last step, the rerun with
+    --output-factor 1, judged the 30 MiB printer timeout instead of over-limit in runs 40169478722
+    (dce26a97) and 40207453484 (213901b1); it passed in the other runs before and since. With
+    --output-factor 1 the cap is 2 MiB times 1 plus 16 MiB, 18 MiB, about 288 of the fixture's 64
+    KiB pieces, and the run's --timeout-factor 1 gives about 7.2 s. The fixture (capsFloodingTest in
+    features/mutate_limits.go) sleeps a millisecond after each piece; on Windows a sleep can last
+    much longer than asked, so the printer's time to the cap lands close to the timeout and a loaded
+    runner crosses it. Decided by the coordinator (2026-10-26): make the scenario deterministic on
+    every system by giving the printers' time to the cap a wide margin under the timeout, in the
+    fixture or the step, never by retrying, never by changing the product, and never by loosening
+    what a step checks (the endless printer still over-limit before its timeout, the 30 MiB printer
+    survived at the default factor and over-limit at factor 1). Find the cause in the Windows logs
+    before choosing (the jobs' outcomes and elapsed times); if the cause is not the fixture's pace,
+    say so and fix what it is. The comment above the Rule keeps describing the fixture truthfully.
+    Scenario text changes only if a step's words no longer match, and then only its words.
+  done_when:
+    - run: go vet ./features
