@@ -5911,8 +5911,8 @@ items:
   - id: slice-61
     title: Say why a Go plan falls back to the whole module
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
