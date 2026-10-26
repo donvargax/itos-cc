@@ -121,6 +121,41 @@ func (c *coverageState) e2eModule() error {
 	return c.declare(".", Coverage{Language: "go"})
 }
 
+// ownModule writes the module example.com/m whose a/a.go its own test
+// covers, beside the files besides, by slash-separated path.
+func (c *coverageState) ownModule(besides map[string]string) error {
+	files := map[string]string{
+		"go.mod":      "module example.com/m\n\ngo 1.22\n",
+		"a/a.go":      sampleA,
+		"a/a_test.go": sampleTest(1),
+	}
+	for name, text := range besides {
+		files[name] = text
+	}
+	if err := c.writeIn(".", files); err != nil {
+		return err
+	}
+	return c.declare(".", Coverage{Language: "go"})
+}
+
+// ignoredGenerator writes the module of ownModule with tools/gen.go, a
+// program built only under the ignore constraint, as go generate's
+// generators are, so go list ./... lists no package in tools/.
+func (c *coverageState) ignoredGenerator() error {
+	return c.ownModule(map[string]string{
+		"tools/gen.go": "//go:build ignore\n\npackage main\n\nfunc main() {\n\tprintln(\"gen\")\n}\n",
+	})
+}
+
+// unresolvableImport writes the module of ownModule with b/b.go, which
+// imports example.com/m/nope, a package no folder of the module holds and
+// no module provides, so go list ./... fails.
+func (c *coverageState) unresolvableImport() error {
+	return c.ownModule(map[string]string{
+		"b/b.go": "package b\n\nimport \"example.com/m/nope\"\n\nfunc B() int {\n\treturn nope.N\n}\n",
+	})
+}
+
 // slowTest writes slow/slow_test.go, a test importing nothing of the
 // module.
 func (c *coverageState) slowTest() error {

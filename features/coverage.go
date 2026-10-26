@@ -258,10 +258,10 @@ func coverageSteps(sc *godog.ScenarioContext, w *world) {
 		}
 		// no tests are run (steps.go) looks for their marks.
 		w.noTests = c.noTestsRun
-		// The scenarios that only say When I run, or that coverage is run,
-		// run in the sample.
+		// The scenarios that only say When I run, once or once and then
+		// again, or that coverage is run, run in the sample.
 		first := s.Steps[0].Text
-		if m := regexp.MustCompile(`^I run "itos-cc ?([^"]*)"$`).FindStringSubmatch(first); m != nil {
+		if m := regexp.MustCompile(`^I run "itos-cc ?([^"]*)"(?:, and then "itos-cc [^"]*")?$`).FindStringSubmatch(first); m != nil {
 			return ctx, c.sample(m[1])
 		}
 		if first == "coverage is run" {
@@ -415,4 +415,10 @@ func coverageSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^no line of stderr begins "([^"]*)"$`, c.noLineBegins)
 	sc.Step(`^a test of a/a\.go fails$`, c.failingSampleTest)
 	sc.Step(`^stderr has a line beginning "([^"]*)" that gives the command's exit status$`, c.exitStatusLine)
+	sc.Step(`^a/a\.go, tested by its own package, and tools/gen\.go, which builds only under the ignore constraint$`, c.ignoredGenerator)
+	sc.Step(`^a/a\.go, tested by its own package, and b/b\.go, which imports example\.com/m/nope, a package of no module$`, c.unresolvableImport)
+	sc.Step(`^stderr has a line "([^"]*)"$`, func(text string) error { return c.saysLine(text, "", false) })
+	sc.Step(`^stderr has a line beginning "([^"]*)" that names "([^"]*)"$`, func(text, names string) error { return c.saysLine(text, names, true) })
+	sc.Step(`^I run "itos-cc ([^"]*)", and then "itos-cc ([^"]*)"$`, func(first, then string) error { return w.runEach(first, then) })
+	sc.Step(`^no line of stderr says "([^"]*)"$`, c.saysNowhere)
 }

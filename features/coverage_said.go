@@ -219,6 +219,59 @@ func (c *coverageState) noLineBegins(text string) error {
 	return nil
 }
 
+// saysLine is whether a line of stderr is text, or begins with it when
+// beginning, and holds names; each <dir> in text stands for the build root
+// of the sources the run named, as itos-cc names it, and a path is read
+// slash-separated, as a scenario writes it.
+func (c *coverageState) saysLine(text, names string, beginning bool) error {
+	var b strings.Builder
+	b.WriteString("^")
+	for i, piece := range strings.Split(text, "<dir>") {
+		if i > 0 {
+			b.WriteString("(.+?)")
+		}
+		b.WriteString(regexp.QuoteMeta(piece))
+	}
+	if !beginning {
+		b.WriteString("$")
+	}
+	re := regexp.MustCompile(b.String())
+	roots, err := c.selectedRoots()
+	if err != nil {
+		return err
+	}
+	for _, line := range strings.Split(strings.ReplaceAll(c.w.stderr, "\r\n", "\n"), "\n") {
+		line = filepath.ToSlash(line)
+		m := re.FindStringSubmatch(line)
+		if m == nil || !strings.Contains(line, names) {
+			continue
+		}
+		for _, dir := range m[1:] {
+			if rel, in := c.rel(dir); !in || !slices.Contains(roots, rel) {
+				return fmt.Errorf("%q names %s, not the build root of the run's sources, %v\n%s", line, dir, roots, c.w.report())
+			}
+		}
+		return nil
+	}
+	if names != "" {
+		return fmt.Errorf("no line of stderr begins %q and names %q\n%s", text, names, c.w.report())
+	}
+	return fmt.Errorf("stderr has no line %q\n%s", text, c.w.report())
+}
+
+// saysNowhere is whether no line of the stderr of any run the When made
+// holds text.
+func (c *coverageState) saysNowhere(text string) error {
+	for _, o := range c.w.outcomes() {
+		for _, line := range strings.Split(o.stderr, "\n") {
+			if strings.Contains(line, text) {
+				return fmt.Errorf("the run of itos-cc %s says %q\n--- stderr\n%s", strings.Join(o.run.args, " "), line, o.stderr)
+			}
+		}
+	}
+	return nil
+}
+
 // exitStatusLine is whether a line of stderr begins with text and gives the
 // exit status the failing command exited with.
 func (c *coverageState) exitStatusLine(text string) error {
