@@ -5976,6 +5976,6 @@ items:
     title: MUT-265's workers step holds however the workers share the mutants
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task

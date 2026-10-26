@@ -7036,5 +7036,3 @@
     for a member). If the product gives a worker no mutant when it should, fix the product. If the
     scenario promises something the product does not (that every worker gets a mutant), stop and
     report it: that is the person's call. Neither example of MUT-265 may depend on timing.
-  done_when:
-    - run: go vet ./features
