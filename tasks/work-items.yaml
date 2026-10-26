@@ -5980,7 +5980,7 @@ items:
     depends_on: []
     kind: task
   - id: T-214
-    title: Upgrade the repository pin to itos 8.22
+    title: Upgrade the repository pin to itos 8.23
     phase: 1
     owner: donvargax
     status: doing

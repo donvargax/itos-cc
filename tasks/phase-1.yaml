@@ -7038,9 +7038,9 @@
     report it: that is the person's call. Neither example of MUT-265 may depend on timing.
 - id: T-214
   type: chore
-  title: Upgrade the repository pin to itos 8.22
+  title: Upgrade the repository pin to itos 8.23
   why: >
-    Between agents, the coordinator moves the pin from 8.19.1 to the newest 8.22 so the next agents
+    Between agents, the coordinator moves the pin from 8.19.1 to the newest 8.23 so the next agents
     read its guides and hooks, as T-212 did; the person approved it 2026-10-26.
   done_when:
     - run: itos version
