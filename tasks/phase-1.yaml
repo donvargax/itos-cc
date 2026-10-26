@@ -7092,5 +7092,3 @@
     meet a -cover itos-cc; the unit tests gate each push and the nightly's ID-MUT-123 under
     GOCOVERDIR proves the whole, and docs/binary-only-reach.md's ID-MUT-123 paragraph then says it
     is fixed. No OS branch, no build tag.
-  done_when:
-    - run: go test ./internal/covrun/...

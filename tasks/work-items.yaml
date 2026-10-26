@@ -5878,7 +5878,7 @@ items:
     title: A -cover itos-cc drops its own coverage data from a listed test's folder before converting it
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: command-env-guard
