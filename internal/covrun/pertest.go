@@ -79,7 +79,7 @@ func testCollectors(ctx context.Context, root, dir string, sources []string) []t
 		language: "go",
 		dir:      root,
 		each:     eachTestEnv,
-		written:  func(d string) bool { return hasCoverData(d, "") },
+		written:  func(d string) bool { return hasCoverData(d, ownCoverHash()) },
 		convert: func(d, out string) ([]string, string) {
 			return []string{"go", "tool", "covdata", "textfmt", "-i=" + d, "-o=" + out + ".out"}, out + ".out"
 		},
@@ -339,7 +339,12 @@ func eachTestEnv(dir string) []string {
 	return env
 }
 
+// hasCoverData says whether a Go binary other than the one whose
+// meta-data hash is own wrote coverage data to dir, first removing own's
+// (dropCoverData): the measuring itos-cc's, which reaches a listed test's
+// folder as go test's -exec program.
 func hasCoverData(dir, own string) bool {
+	dropCoverData(dir, own)
 	written, _ := filepath.Glob(filepath.Join(dir, "covmeta.*"))
 	return len(written) > 0
 }
