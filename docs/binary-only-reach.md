@@ -91,7 +91,9 @@ coverage build's `GOCOVERDIR` reaching the commands itos-cc runs for the project
 
 - ID-MUT-123: a `-cover` itos-cc wrote atomic-mode counters into the per-test folder itos-cc gave
   a listed test's `GOCOVERDIR`, and `go tool covdata textfmt` refused that folder ("counter mode
-  clash"), so the listed tests measured nothing.
+  clash"), so the listed tests measured nothing. T-216 fixed it: before converting a listed
+  test's folder, itos-cc removes the data of its own binary, found by its meta-data hash, as it
+  already drops a Node test runner's own data.
 - The other six: their fixtures' tests record whether `GOCOVERDIR` was set, which is how they
   report a coverage run, and the harness's inherited `GOCOVERDIR` made trials itos-cc runs
   without coverage read as coverage runs.
