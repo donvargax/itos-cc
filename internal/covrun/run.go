@@ -300,10 +300,15 @@ func UsesVitest(dir string) bool {
 
 // goPlan measures sources with the tests of every package whose test binary
 // links one of theirs, or the whole module when sources is empty or go list
-// cannot say. With own, each package is measured by its own tests alone.
+// cannot say, its Notice then saying why. With own, each package is
+// measured by its own tests alone.
 func goPlan(dir, out string, sources []string, own bool) Plan {
-	pkgs, testing := GoScope(dir, sources)
-	return goPlanWithScope(dir, out, sources, own, pkgs, testing)
+	pkgs, testing, why := GoScope(dir, sources)
+	plan := goPlanWithScope(dir, out, sources, own, pkgs, testing)
+	if why != "" {
+		plan.Notice = "measuring the whole module, as " + why
+	}
+	return plan
 }
 
 func goPlanWithScope(dir, out string, sources []string, own bool, pkgs, testing []string) Plan {
@@ -347,16 +352,20 @@ func goPlanWithScope(dir, out string, sources []string, own bool, pkgs, testing 
 // whose test binaries link any of them, their own included: integration
 // tests in another package that import the code count, and packages that
 // never load it are not run. Packages without tests are listed too, so they
-// measure as 0%. Both are empty when go list fails.
-func GoScope(dir string, sources []string) (pkgs, testing []string) {
+// measure as 0%. Both are empty when go list fails, or lists no package in
+// the folder of any source, and why then says which: go list failed, with
+// the first line it wrote to stderr, or its exit status when it wrote none;
+// or it lists no package in the first source's folder, and the first it
+// lists is in another, so a folder named two ways shows at once (bug-10).
+func GoScope(dir string, sources []string) (pkgs, testing []string, why string) {
 	if len(sources) == 0 {
-		return nil, nil
+		return nil, nil, ""
 	}
 	cmd := exec.Command("go", "list", "-test", "-f", "{{.ImportPath}}\t{{.Dir}}\t{{join .Deps \" \"}}", "./...")
 	cmd.Dir, cmd.Env = dir, project.InheritedEnvIn(dir)
 	listing, err := cmd.Output()
 	if err != nil {
-		return nil, nil
+		return nil, nil, "go list failed: " + firstStderrLine(err)
 	}
 	dirs := map[string]bool{}
 	for _, s := range sources {
@@ -368,6 +377,7 @@ func GoScope(dir string, sources []string) (pkgs, testing []string) {
 	}
 	var binaries []entry
 	selected := map[string]bool{}
+	first := "" // the folder of the first package listed
 	for _, line := range strings.Split(strings.TrimSpace(string(listing)), "\n") {
 		fields := strings.SplitN(line, "\t", 3)
 		if len(fields) < 3 {
@@ -377,9 +387,21 @@ func GoScope(dir string, sources []string) (pkgs, testing []string) {
 		switch {
 		case strings.HasSuffix(path, ".test"):
 			binaries = append(binaries, entry{strings.TrimSuffix(path, ".test"), strings.Fields(fields[2])})
-		case !strings.Contains(path, " ") && dirs[filepath.Clean(fields[1])]:
-			selected[path] = true
+		case !strings.Contains(path, " "):
+			if first == "" {
+				first = fields[1]
+			}
+			if dirs[filepath.Clean(fields[1])] {
+				selected[path] = true
+			}
 		}
+	}
+	if len(selected) == 0 {
+		why = "go list lists no package in " + filepath.Dir(filepath.Clean(sources[0]))
+		if first != "" {
+			why += "; the first it lists is in " + first
+		}
+		return nil, nil, why
 	}
 	tested := map[string]bool{}
 	for p := range selected {
@@ -402,7 +424,21 @@ func GoScope(dir string, sources []string) (pkgs, testing []string) {
 	}
 	sort.Strings(pkgs)
 	sort.Strings(testing)
-	return pkgs, testing
+	return pkgs, testing, ""
+}
+
+// firstStderrLine is the first line a failed command wrote to stderr, or
+// the error itself, such as its exit status, when it wrote none.
+func firstStderrLine(err error) string {
+	var exit *exec.ExitError
+	if errors.As(err, &exit) {
+		for _, line := range strings.Split(string(exit.Stderr), "\n") {
+			if line = strings.TrimSpace(line); line != "" {
+				return line
+			}
+		}
+	}
+	return err.Error()
 }
 
 // goScopeSupervised is the fail-closed scope probe of opt-in preparation. It

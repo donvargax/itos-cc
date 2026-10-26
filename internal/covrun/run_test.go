@@ -270,13 +270,44 @@ func TestGoScopeListsAModuleReachedThroughASymlinkByItsSources(t *testing.T) {
 	sources := []string{filepath.Join(dir, "a", "a.go")}
 	want := []string{"example.com/m/a"}
 
-	if pkgs, tests := GoScope(dir, sources); !slices.Equal(pkgs, want) || !slices.Equal(tests, want) {
-		t.Errorf("GoScope: %q tested by %q, want %q by %q", pkgs, tests, want, want)
+	if pkgs, tests, why := GoScope(dir, sources); !slices.Equal(pkgs, want) || !slices.Equal(tests, want) || why != "" {
+		t.Errorf("GoScope: %q tested by %q (%q), want %q by %q", pkgs, tests, why, want, want)
 	}
 	execute := func(_ context.Context, cmd *exec.Cmd) error { return cmd.Run() }
 	pkgs, tests, _, err := goScopeSupervised(t.Context(), dir, sources, execute)
 	if err != nil || !slices.Equal(pkgs, want) || !slices.Equal(tests, want) {
 		t.Errorf("goScopeSupervised: %q tested by %q (%v), want %q by %q", pkgs, tests, err, want, want)
+	}
+}
+
+// Why GoScope measures nothing, in the cases coverage.feature's ID-COV-48
+// and ID-COV-49 leave out: a module go list lists no package of, and a go
+// list that fails writing nothing, or a line ending in \r\n, to stderr.
+// Neither failure is one a real go makes on demand, so a go of the test's
+// own stands first on the PATH.
+func TestGoScopeSaysWhyItMeasuresNothing(t *testing.T) {
+	dir := t.TempDir()
+	writeFiles(t, dir, map[string]string{
+		"go.mod":       "module example.com/m\n\ngo 1.22\n",
+		"tools/gen.go": "//go:build ignore\n\npackage main\n\nfunc main() {}\n",
+	})
+	sources := []string{filepath.Join(dir, "tools", "gen.go")}
+	if pkgs, tests, why := GoScope(dir, sources); pkgs != nil || tests != nil || why != "go list lists no package in "+filepath.Join(dir, "tools") {
+		t.Errorf("with no package listed: %q tested by %q, why %q", pkgs, tests, why)
+	}
+
+	for _, c := range []struct{ name, sh, bat, why string }{
+		{"silent", "exit 3\n", "@exit /b 3\r\n", "go list failed: exit status 3"},
+		{"crlf", "printf '\\n go: broken\\r\\nnext\\n' >&2\nexit 1\n", "@echo.1>&2\r\n@1>&2 echo  go: broken\r\n@1>&2 echo next\r\n@exit /b 1\r\n", "go list failed: go: broken"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			fake := t.TempDir()
+			writeFiles(t, fake, map[string]string{"go": "#!/bin/sh\n" + c.sh, "go.bat": c.bat})
+			t.Setenv("PATH", fake)
+			if pkgs, tests, why := GoScope(dir, sources); pkgs != nil || tests != nil || why != c.why {
+				t.Errorf("%q tested by %q, why %q, want %q", pkgs, tests, why, c.why)
+			}
+		})
 	}
 }
 

@@ -610,6 +610,9 @@ itos-cc finds and cannot run.
 | `two reports given with --coverage-report, …` / `each covers a line of a file the other does not` / `a line or block is covered when any report covered it` / `a decision counts the branches of the report that took the most` | F has the union of the lines, more than either; G the branches of the report that took most, fewer than both. |
 | `its coverage starts at line <n>, not at its first line <n>`                          | The function `the <language> function:` wrote starts on that line; a report running that line alone of all of its lines gives it one line's share of those from there. |
 | `stderr has a line "…" naming the command coverage runs` / `no line of stderr begins "…"` / `stderr has a line beginning "…" that gives the command's exit status` | The line, `<dir>` the build root of the sources named, its command's output after it; none so; one so ending in `exit status N`. |
+| `a/a.go, tested by its own package, and tools/gen.go, …` / `… and b/b.go, which imports example.com/m/nope, …` | example.com/m with a/a.go and its test, and tools/gen.go under `//go:build ignore`, or b/b.go importing a package no module provides. |
+| `stderr has a line "…"` / `stderr has a line beginning "…" that names "…"` | The line, or one beginning so and holding the name, read slash-separated, each `<dir>` the build root of the sources named. |
+| `I run "itos-cc …", and then "itos-cc …"` / `no line of stderr says "…"` | Both runs in the sample, each held to the Thens; no line of either run's stderr holds the text. |
 
 `file_selection.feature`'s steps, in `selection.go`. What a command selects is what units lists,
 its production code and with `--tests` its test code, for a command run with no paths or with

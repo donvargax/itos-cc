@@ -581,21 +581,21 @@ Feature: Coverage
   #   reason and is unchanged.
   # Before the slice, no such line is written: ID-COV-48 and ID-COV-49 fail
   # at their last Then. ID-COV-50 holds already and guards the quiet runs.
-    @slice-61 @ID-COV-48 @binary-only @wip
+    @slice-61 @ID-COV-48 @binary-only
     Scenario: A Go file in no package go list lists says why the whole module measures it
       Given a/a.go, tested by its own package, and tools/gen.go, which builds only under the ignore constraint
       When I run "itos-cc crap tools/gen.go"
       Then coverage runs "go test ... -coverpkg=./... ... ./..."
       And stderr has a line "itos-cc: coverage: <dir>: measuring the whole module, as go list lists no package in <dir>/tools; the first it lists is in <dir>/a"
 
-    @slice-61 @ID-COV-49 @binary-only @wip
+    @slice-61 @ID-COV-49 @binary-only
     Scenario: A Go module go list cannot list says why the whole module measures a file
       Given a/a.go, tested by its own package, and b/b.go, which imports example.com/m/nope, a package of no module
       When I run "itos-cc crap a/a.go"
       Then coverage runs "go test ... -coverpkg=./... ... ./..."
       And stderr has a line beginning "itos-cc: coverage: <dir>: measuring the whole module, as go list failed: " that names "no required module provides package example.com/m/nope"
 
-    @slice-61 @ID-COV-50 @binary-only @wip
+    @slice-61 @ID-COV-50 @binary-only
     Scenario: A Go file go list finds, and a run of the whole suite, say nothing of the whole module
       When I run "itos-cc crap a/a.go", and then "itos-cc crap --all-tests a/a.go"
       Then no line of stderr says "measuring the whole module"
