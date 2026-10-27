@@ -6108,3 +6108,18 @@ items:
       coverage conversions, own-tests baseline, each mutant's stages and outcome); --json's stdout
       unchanged. Measures #73's split.
     refs: ["#74"]
+  - id: coverage-reuse
+    title: mutation run reuses coverage across runs of an unchanged tree
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      #67: a one-file run in a project whose mutation tests include an end-to-end suite spends ~5
+      minutes on coverage before any mutant, and pays it again on a second run over the same
+      unchanged tree. Asked: a coverage map reused while what its tests read is unchanged (keyed as
+      mutation.tests' support globs fingerprint them), or --coverage-from <report> accepted by
+      strict mode when its fingerprint matches. Bigger than listed-coverage-scoped-conversion;
+      judge-named-site makes it hurt less.
+    refs: ["#67"]
