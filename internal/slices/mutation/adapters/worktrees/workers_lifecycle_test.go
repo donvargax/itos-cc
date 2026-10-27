@@ -258,3 +258,25 @@ func joinedBeforeRelease(joined bool) error {
 	}
 	return nil
 }
+
+// A pool holds as many workers as it was opened for, each its own
+// directory, and one when opened for none.
+func TestAPoolHoldsTheWorkersItWasOpenedFor(t *testing.T) {
+	for count, want := range map[int]int{0: 1, 1: 1, 3: 3} {
+		opened, failure := (Workers{Platform: runtime.GOOS, TempDir: t.TempDir()}).Open(t.Context(), mutants.MutationRun, count)
+		if failure != nil {
+			t.Fatal(failure)
+		}
+		p := opened.(*pool)
+		dirs := map[string]bool{}
+		for _, w := range p.workers {
+			dirs[w.worker.dir] = true
+		}
+		if len(p.workers) != want || len(dirs) != want {
+			t.Errorf("a pool opened for %d holds %d workers in %d directories, not %d", count, len(p.workers), len(dirs), want)
+		}
+		if f := p.Close(t.Context()); f != nil {
+			t.Fatal(f)
+		}
+	}
+}
