@@ -7,7 +7,7 @@
 # usage: tools/bin/scenario-digits [-a <digits>] <report.json>...
 #   e.g. gh run download <run> -n features-a-windows-latest -D a
 #        gh run download <run> -n features-b-windows-latest -D b
-#        tools/bin/scenario-digits -a 02369 a/features-a.json b/features-b.json
+#        tools/bin/scenario-digits -a 024578 a/features-a.json b/features-b.json
 #
 # Prints, for each digit, its scenarios and their seconds (every step's
 # duration summed), then the total. With -a, the seconds of the part whose
