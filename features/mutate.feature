@@ -4321,6 +4321,214 @@ Feature: Mutation testing
       Then its standard error names the survivor `<` → `<=` at board/board.go:5:11 with its identity "board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><="
       And with --json, the "mutation.survived" problem's fix names "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason"
 
+  # slice-63 (judge-named-site, issue #68): confirming that a test kills a survivor a
+  # report named (file, line, column, operator, or a counted run's
+  # identity) took a run over its whole file, minutes, judging and
+  # reporting sites nobody asked about; this repository's repairs applied
+  # mutants by hand instead (T-217, T-219). mutation run --site judges the
+  # named mutants alone, freshly, with the tests the nightly would pick.
+  # Decisions:
+  # - --site SITE, repeatable, takes a site, <file>:<line>:<column>, the
+  #   file from the working directory as a path and mutation except's site
+  #   are, naming every mutant at that position; or a counted run's
+  #   identity, <file>:<namespace#name>@<start>:<end>:<hash>:<offset>:
+  #   <original>><replacement>, told apart as mutation except tells it
+  #   (its @<start>:<end>:<hash>:<offset>: part), its file from the
+  #   project root, naming one mutant: its function by name, and namespace
+  #   where it is the unit's own, whose hash is the identity's, its lines
+  #   choosing among several, so a function that only moved is still
+  #   found; its site by its whole key, never split at >. No third form
+  #   with an operator: the identity is the exact one, and a position's
+  #   mutants are each named in the output; were complete runs' survivors to
+  #   be named exactly, the fix is an identity on their mutation.survived,
+  #   today only --count's.
+  # - A --site run is a counted run whose selection is named, not drawn:
+  #   it judges the HEAD commit's files, frozen, warns of uncommitted
+  #   inputs as slice-26 does, measures coverage and listed reach of the
+  #   named sites' functions only, runs each named mutant's own tests, the
+  #   whole suite with --all-tests, then, if it survives them, the listed
+  #   tests that reach its line after their selection's clean baseline,
+  #   as a complete run and the nightly do. --repeat N runs each trial N
+  #   times, as with --count. Exceptions of the named functions apply as
+  #   in a counted run. Linux and macOS, as --count (count.platform, 82).
+  # - Arguments naming the same mutant judge it once. Every argument is
+  #   resolved before any command runs; one that names no mutant is
+  #   site.unmatched, exit 80, each such argument a problem of its own,
+  #   with its argument and why: no-site (no mutation site at that
+  #   position, a test file's included), gone (the identity's file,
+  #   function or site is gone, or the file is not in the commit),
+  #   changed (a function of its name with another hash, hash the hash
+  #   now), excluded (itos-cc.yaml excludes its source), not-built (a Go
+  #   file only another system builds, platform, exit 82). Nothing runs.
+  #   A malformed value is flags.value-invalid, exit 80.
+  # - It refuses what --count refuses, and --count, --seed and --since
+  #   (flags.conflict, exit 80): the sites are the selection. Paths with it
+  #   are args.unexpected, exit 80: a site names its file.
+  #   --fail-uncovered keeps its meaning for the named functions; =lines
+  #   needs --since and so is flags.conflict as today.
+  # - Exit 0 when every named mutant is killed, timed out, over a cap or
+  #   excepted by a valid exception. A survivor is mutation.survived, its
+  #   message naming its identity and its fix the except command
+  #   (ID-MUT-324's), exit 1. An uncovered named mutant is mutation.uncovered,
+  #   exit 1, with or without --fail-uncovered: it was named to be killed,
+  #   and no test reaching it cannot be a kill. Flaky, blocked, failed and
+  #   stale-exception outcomes are as in a counted run, exit 1.
+  # - It writes nothing: no snapshot, summary comment, coverage cache or
+  #   orphan removal, as a counted run (MUT-185). Its --json is a counted
+  #   run's object; "sampling" counts the named mutants as budget, eligible
+  #   and selected, omitted 0, "algorithm" "named", no "seed"; and a key is
+  #   added, "named": [{"argument", "identities": [...]}], each argument in
+  #   the order given with the identities it named.
+  # - No --until or range (issue #63): the pinned check #63 wants is
+  #   --site with the identity the CI log prints, which fixes the mutant
+  #   and not just the draw; the code proof must judge its whole range, so
+  #   a bound would not steady its draw, and mapping an older commit's
+  #   hunks onto HEAD's functions is new, fragile machinery. #63 closes
+  #   when this slice lands. The machinery's problems stay count.*
+  #   (count.platform, count.no-git, ...), their messages naming --site.
+  # Decided by the coordinator on 2026-10-26 from the drafter's
+  # recommendations (scratch spec-draft-site-range.md, Q1-Q10).
+  # Before slice-63, --site is flags.unknown, exit 80 ("Did you
+  # mean --since?"), so each scenario fails at its first Then that reads
+  # the selected sites, the outcome line or the problem's rule; refusal
+  # rows, exit 80 already, fail at the rule. "No test or coverage command
+  # ran" and ".metrics/mutate was not written" already pass: guardrails.
+  Rule: A site a report names is judged alone, freshly, with the tests the nightly picks
+
+    @slice-63 @ID-MUT-355 @wip
+    Scenario Outline: A named survivor that a committed test now kills passes, judged alone (<form>)
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And board/board.go also holds Over, whose `>` → `>=` at board/board.go:10:11 its test survives too
+      And a later commit's test also checks Count(5)
+      When I run "itos-cc mutation run --site '<site>' --json"
+      Then "selected" lists one site, "board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=", its state "judged" and its outcome "killed"
+      And exactly one mutation trial ran, and none of Over's
+      And the exit code is 0
+      And neither .metrics/mutate nor board/board.go was written
+      Examples:
+        | form     | site                                                                    |
+        | identity | board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=  |
+        | position | board/board.go:5:11                                                     |
+
+    @slice-63 @ID-MUT-356 @wip
+    Scenario: A named site's plain report says what was judged and what it proves
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And a later commit's test also checks Count(5)
+      When I run "itos-cc mutation run --site board/board.go:5:11"
+      Then stdout says "killed `<` → `<=` in example.com/fx/board#Count, board/board.go line 5 column 11"
+      And stdout says that only the judgments above are proven and nothing was written
+      And no stdout line starts with a path or holds "board/board.go:5:11"
+
+    @slice-63 @ID-MUT-357 @wip
+    Scenario Outline: A named site that still survives fails, unless a valid exception takes it
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And <exception>
+      When I run "itos-cc mutation run --site board/board.go:5:11 --json"
+      Then <verdict>
+      And the exit code is <exit>
+      Examples:
+        | exception                                                    | verdict                                                                                                                                                  | exit |
+        | itos-cc.yaml excepts nothing                                 | the problem is "mutation.survived", its message naming the identity, its fix "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason" | 1    |
+        | itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5" | the selected site is "survived", "excepted" "x is never 5", and there is no problem                                                                 | 0    |
+
+    @slice-63 @ID-MUT-358 @wip
+    Scenario: A named site no test executes fails, with no trial, even without --fail-uncovered
+      Given a committed Go module whose "example.com/fx/board#Count" no test calls
+      When I run "itos-cc mutation run --site board/board.go:5:11 --json"
+      Then the problem is "mutation.uncovered", with file "board/board.go", line 5 and column 11
+      And no mutation trial ran
+      And the exit code is 1
+
+    @slice-63 @ID-MUT-359 @wip
+    Scenario: Several sites are named, and one mutant named twice is judged once
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And board/board.go also holds Over, whose `>` → `>=` at board/board.go:10:11 its test survives too
+      And a later commit's test also checks Count(5)
+      When I run "itos-cc mutation run --site board/board.go:5:11 --site board/board.go:10:11 --site 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --json"
+      Then "selected" lists two sites: Count's "killed" and Over's "survived"
+      And exactly two mutation trials ran
+      And "named" lists the three arguments in order, the first and the third with Count's identity
+      And the only problem is "mutation.survived", at board/board.go line 10 column 11
+      And the exit code is 1
+
+    @slice-63 @ID-MUT-360 @wip
+    Scenario: An identity whose function only moved is judged where it is now
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And a later commit added a blank line above Count's comment, and its test also checks Count(5)
+      When I run "itos-cc mutation run --site 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><='"
+      Then stdout says "killed `<` → `<=` in example.com/fx/board#Count, board/board.go line 6 column 11"
+      And the exit code is 0
+
+    @slice-63 @ID-MUT-361 @wip
+    Scenario Outline: A site that names no mutant is refused before any command runs, naming why
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And <change>, committed
+      When I run "itos-cc mutation run --site '<site>' --json"
+      Then the problem is "site.unmatched", with argument "<site>" and why "<why>"
+      And the exit code is <exit>
+      And no test or coverage command ran, and .metrics/mutate was not written
+      Examples:
+        | change                                   | site                                                                    | why       | exit |
+        | nothing changed                          | board/board.go:5:12                                                     | no-site   | 80   |
+        | nothing changed                          | board/board_test.go:6:9                                                 | no-site   | 80   |
+        | nothing changed                          | board/gone.go:5:11                                                      | gone      | 80   |
+        | Count's "x < 5" became "x < 6"           | board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=  | changed   | 80   |
+        | Count was renamed Below                  | board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=  | gone      | 80   |
+        | itos-cc.yaml excludes "board/**"         | board/board.go:5:11                                                     | excluded  | 80   |
+        | board/board.go became board/board_plan9.go | board/board_plan9.go:5:11                                             | not-built | 82   |
+
+    @slice-63 @ID-MUT-362 @wip
+    Scenario: Every unmatched site is named at once, and nothing is judged
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      When I run "itos-cc mutation run --site board/board.go:5:11 --site board/board.go:5:12 --site board/gone.go:1:1 --json"
+      Then the problems are two "site.unmatched", with arguments "board/board.go:5:12" and "board/gone.go:1:1"
+      And no test or coverage command ran
+      And the exit code is 80
+
+    @slice-63 @ID-MUT-363 @wip
+    Scenario Outline: --site refuses what would make it something else
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      When I run "itos-cc mutation run <args> --json"
+      Then the problem is "<rule>", with <subject>
+      And the exit code is 80
+      And no test or coverage command ran
+      Examples:
+        | args                                                   | rule                | subject                          |
+        | --site board/board.go:5:11 --count 1                   | flags.conflict      | flag "--count"                   |
+        | --site board/board.go:5:11 --seed x                    | flags.conflict      | flag "--seed"                    |
+        | --site board/board.go:5:11 --since HEAD                | flags.conflict      | flag "--since"                   |
+        | --site board/board.go:5:11 --changed                   | flags.conflict      | flag "--changed"                 |
+        | --site board/board.go:5:11 --fail-fast                 | flags.conflict      | flag "--fail-fast"               |
+        | --site board/board.go:5:11 --test-command 'go test'    | flags.conflict      | flag "--test-command"            |
+        | --site board/board.go:5:11 board                       | args.unexpected     | argument "board"                 |
+        | --site board/board.go                                  | flags.value-invalid | flag "--site" and value "board/board.go" |
+        | --site ''                                              | flags.value-invalid | flag "--site" and value ""       |
+
+    @slice-63 @ID-MUT-364 @wip
+    Scenario: --repeat confirms a named kill is no flake
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      But its test kills that mutant on one run and misses it on the next, with nothing it hashes changed
+      When I run "itos-cc mutation run --site board/board.go:5:11 --repeat 2 --json"
+      Then the problem is "mutation.flaky", with outcomes "killed", "survived"
+      And the exit code is 1
+
+    @slice-63 @ID-MUT-365 @wip
+    Scenario: A named site is judged at HEAD, and an uncommitted test is named as unjudged
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And board/board_test.go now also checks Count(5), not committed
+      When I run "itos-cc mutation run --site board/board.go:5:11"
+      Then stderr warns that the run judged HEAD's commit and that board/board_test.go goes unjudged
+      And the problem is "mutation.survived", at board/board.go line 5 column 11
+      And the exit code is 1
+
+    @slice-63 @ID-MUT-366 @wip
+    Scenario: Listed tests that reach a named site judge it after its own tests, as the nightly's do
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And mutation.tests lists a test that reaches board/board.go line 5 and kills the mutant
+      When I run "itos-cc mutation run --site board/board.go:5:11 --json"
+      Then the selected site's stages are "own" survived, "listed-baseline" complete and "listed" killed, its scope "listed" with that test
+      And the exit code is 0
+
   # integration-coverage-python, integration-coverage-typescript and
   # integration-coverage-kotlin, q-41 (answered 2026-10-10): issue #14's
   # two parts, integration coverage (ID-MUT-117 to 120) and per-test
@@ -5401,6 +5609,11 @@ Feature: Mutation testing
         | mode        | rule               |
         | --count 1   | count.platform     |
         | --fail-fast | fail-fast.platform |
+
+      @slice-63 @wip
+      Examples:
+        | mode            | rule           |
+        | --site a.go:3:9 | count.platform |
 
   # fail-fast-counts: a fail-fast file's "ran" and "reused" count this run's
   # trials and reuses of that file in every state, blocked included, and
