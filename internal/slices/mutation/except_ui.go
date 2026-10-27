@@ -3,7 +3,6 @@ package mutation
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -136,7 +135,7 @@ func (c Except) excepted(p *Presentation, found ExceptFound) exceptResult {
 		if found.Replaced {
 			what = "excepted again"
 		}
-		_, _ = fmt.Fprintf(p.UI.Stdout, "%s %s:%d:%d %s → %s in %s in %s\n", what, named(found.File, found.Path, p.UI.Rel), found.Line, found.Column,
+		_, _ = fmt.Fprintf(p.UI.Stdout, "%s %s:%d:%d %s → %s in %s in %s\n", what, p.plain(named(found.File, found.Path, p.UI.Rel)), found.Line, found.Column,
 			Quote(e.Original), Quote(e.Replacement), e.Function, "itos-cc.yaml")
 	}
 	return exceptResult{Exception: &e, Replaced: found.Replaced}
@@ -196,7 +195,7 @@ func (c Except) renewed(p *Presentation, found RenewFound) (renewResult, []*cli.
 			NewHash: r.New.Hash, OldHash: r.Old.Hash, OldFile: r.Old.File, OldFunction: r.Old.Function,
 			OldLineInFunction: r.Old.LineInFunction, OldColumn: r.Old.Column, Match: r.Match})
 		if !c.JSON {
-			_, _ = fmt.Fprintf(ui.Stdout, "renewed %s:%d:%d %s → %s in %s (hash %s → %s) in %s\n", rel, r.Line, r.New.Column,
+			_, _ = fmt.Fprintf(ui.Stdout, "renewed %s:%d:%d %s → %s in %s (hash %s → %s) in %s\n", p.plain(rel), r.Line, r.New.Column,
 				Quote(r.New.Original), Quote(r.New.Replacement), r.New.Function, r.Old.Hash, r.New.Hash, "itos-cc.yaml")
 		}
 	}
@@ -210,7 +209,7 @@ func (c Except) renewed(p *Presentation, found RenewFound) (renewResult, []*cli.
 		}
 		change := fmt.Sprintf("%s → %s in %s", Quote(u.Original), Quote(u.Replacement), u.Function)
 		if !c.JSON {
-			_, _ = fmt.Fprintf(ui.Stdout, "  not renewed %s %s (%s)\n", at, change, u.Why)
+			_, _ = fmt.Fprintf(ui.Stdout, "  not renewed %s %s (%s)\n", p.plain(at), change, u.Why)
 		}
 		because, fix := notRenewedBecause(u.Why), notRenewedFix(u.Why)
 		if u.Rehashable {
@@ -263,7 +262,7 @@ func (c Except) pruned(p *Presentation, found PruneFound) pruneResult {
 			if s.Line != 0 {
 				at = fmt.Sprintf("%s:%d:%d", at, s.Line, s.Column)
 			}
-			_, _ = fmt.Fprintf(p.UI.Stdout, "pruned %s %s → %s in %s (%s) from %s\n", at, Quote(s.Original), Quote(s.Replacement), s.Function, s.Why, "itos-cc.yaml")
+			_, _ = fmt.Fprintf(p.UI.Stdout, "pruned %s %s → %s in %s (%s) from %s\n", p.plain(at), Quote(s.Original), Quote(s.Replacement), s.Function, s.Why, "itos-cc.yaml")
 		}
 	}
 	return result
@@ -313,7 +312,7 @@ func (c Except) rehashed(p *Presentation, found RehashFound) (rehashResult, []*c
 			LineInFunction: r.Old.LineInFunction, Original: r.Old.Original, Replacement: r.Old.Replacement, Reason: r.Old.Reason,
 			OldHash: r.Old.Hash, NewHash: r.New.Hash})
 		if !c.JSON {
-			_, _ = fmt.Fprintf(ui.Stdout, "rehashed %s:%d:%d %s → %s in %s (hash %s → %s) in %s\n", Slashed(rel, filepath.Separator), r.Line, r.Old.Column,
+			_, _ = fmt.Fprintf(ui.Stdout, "rehashed %s:%d:%d %s → %s in %s (hash %s → %s) in %s\n", p.plain(rel), r.Line, r.Old.Column,
 				Quote(r.Old.Original), Quote(r.Old.Replacement), r.Old.Function, r.Old.Hash, r.New.Hash, "itos-cc.yaml")
 		}
 	}
@@ -327,7 +326,7 @@ func (c Except) rehashed(p *Presentation, found RehashFound) (rehashResult, []*c
 		}
 		change := fmt.Sprintf("%s → %s in %s", Quote(s.Original), Quote(s.Replacement), s.Function)
 		if !c.JSON {
-			_, _ = fmt.Fprintf(ui.Stdout, "  not rehashed %s %s (%s)\n", Slashed(at, filepath.Separator), change, s.Why)
+			_, _ = fmt.Fprintf(ui.Stdout, "  not rehashed %s %s (%s)\n", p.plain(at), change, s.Why)
 		}
 		because, fix := "its function changed in more than what the hash now leaves out", notRehashedChangedFix
 		if s.Why == mutants.ExceptionGone {

@@ -4399,7 +4399,7 @@ Feature: Mutation testing
     # fail before the fix on any system. On Linux and macOS the scenario
     # holds already, a guardrail; on Windows (cd.yml) it fails before the
     # fix at its Then.
-    @bug-12 @ID-MUT-391 @wip
+    @bug-12 @ID-MUT-391
     Scenario Outline: mutation except's plain lines name their file slash-separated
       Given <given>
       When I run "<command>"
