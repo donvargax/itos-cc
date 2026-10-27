@@ -103,6 +103,7 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 					}
 				} else {
 					limits[key] = factors.LimitsOf(r.Usage())
+					report(opt.Progress, RunEvent{Kind: BaselinePassed, Command: s.command, Elapsed: r.Elapsed, Timeout: limits[key].Timeout})
 					if !r.MemoryMeasured && !unmeasured {
 						// No memory cap holds on this system: said once.
 						unmeasured = true

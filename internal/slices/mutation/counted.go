@@ -162,6 +162,7 @@ func (h Handler) Counted(ctx context.Context, q CountedQuery) error {
 		q.present(ctx, CountedFound{Report: result, PreparationStage: failed, PreparationFailure: prepFailure})
 		return nil
 	}
+	mutants.ReportFreshBaselines(q.Progress, prep.Baselines, mutants.Factors{Timeout: q.TimeoutFactor, Output: q.OutputFactor, Memory: q.MemoryFactor})
 
 	if strict {
 		// A collector that could not measure the processes the tests

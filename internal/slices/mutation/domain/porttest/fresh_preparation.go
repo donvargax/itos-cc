@@ -266,6 +266,9 @@ func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport
 				return stop("baseline", cause)
 			}
 			c := b.Command
+			if f.Log != nil {
+				_, _ = fmt.Fprintf(f.Log, "itos-cc: baseline %s$ %s\n", c.Dir, c)
+			}
 			f.bindBaseline(p, c)
 			facts, known := f.Commands.Tests[filepath.Clean(c.Dir)][c.String()]
 			if !known {

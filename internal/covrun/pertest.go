@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage/port"
@@ -243,6 +244,7 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 	for _, t := range p.Tests {
 		ids = append(ids, t.ID)
 	}
+	started := time.Now()
 	if err := runShell(ctx, p.All, p.Root, wholeEnv(collectors, dir), log, execute); err != nil {
 		logf(log, "itos-cc: coverage: the listed tests fail without any mutant, so no mutant is judged: %v\n", err)
 		return nil, testsFailed(ctx, p.All, err)
@@ -253,7 +255,8 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 			written[id] = d
 		}
 	}
-	if len(written) == 0 {
+	alone := len(written) == 0 && len(ids) > 0
+	if alone {
 		// The harness did not split the run: each test alone, every
 		// process it starts writing to a directory of its own.
 		for i, id := range ids {
@@ -271,6 +274,8 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 			}
 		}
 	}
+	listedRan(log, alone, time.Since(started), len(written))
+	started = time.Now()
 	for i, id := range ids {
 		d, ok := written[id]
 		if !ok {
@@ -306,6 +311,7 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 		}
 		tc.Add(id, coverage.Merge(reports...))
 	}
+	listedConverted(log, len(written), time.Since(started))
 	return tc, nil
 }
 

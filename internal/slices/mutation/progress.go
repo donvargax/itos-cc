@@ -42,7 +42,11 @@ func (p Progress) Report(e mutants.RunEvent) {
 		case r.Scope == mutants.ScopeListed:
 			said = fmt.Sprintf("%s, then %s with %s", own, overLimit(r.Outcome, r.Limit, r.Limits), strings.Join(r.Tests, " "))
 		}
-		_, _ = fmt.Fprintf(log, "itos-cc: [%d/%d] %s:%d %s → %s %s (%.1fs)\n", e.Done, e.Total, e.File, e.Site.Line, mutants.Show(e.Site.Original), mutants.Show(e.Site.Replacement), said, r.Elapsed.Seconds())
+		took := fmt.Sprintf("%.1fs", r.Elapsed.Seconds())
+		if r.Scope == mutants.ScopeListed {
+			took += fmt.Sprintf(", the listed tests %.1fs", r.Listed.Seconds())
+		}
+		_, _ = fmt.Fprintf(log, "itos-cc: [%d/%d] %s:%d %s → %s %s (%s)\n", e.Done, e.Total, e.File, e.Site.Line, mutants.Show(e.Site.Original), mutants.Show(e.Site.Replacement), said, took)
 	case "nothing":
 		_, _ = fmt.Fprintln(log, "itos-cc: no mutations to test")
 	case "reused":
@@ -53,6 +57,12 @@ func (p Progress) Report(e mutants.RunEvent) {
 		_, _ = fmt.Fprintf(log, "itos-cc: no coverage for %s; running every mutant\n", e.File)
 	case "baseline":
 		_, _ = fmt.Fprintf(log, "itos-cc: baseline %s$ %s\n", p.rel(e.Command.Dir), e.Command)
+	case mutants.BaselinePassed, mutants.FreshBaselinePassed:
+		dir := e.Command.Dir
+		if e.Kind == mutants.BaselinePassed {
+			dir = p.rel(dir)
+		}
+		_, _ = fmt.Fprintf(log, "itos-cc: baseline %s passed in %.1fs: a mutant running it times out after %.1fs\n", dir, e.Elapsed.Seconds(), e.Timeout.Seconds())
 	case "baseline-project":
 		_, _ = fmt.Fprintf(log, "itos-cc: its baseline failed in the worker's copy; again in the project %s$ %s\n", p.rel(e.Command.Dir), e.Command)
 	case "listing":

@@ -42,7 +42,7 @@ func (m *memory) counted(dir string, tree *selporttest.Tree, inputs *mutantstest
 			History:  mutantstest.History{Root: root, Dir: dir, Repository: repository, Working: m.files},
 			Coverage: measurer, Commands: workers, Lister: lister, Tools: m.preparationTools(inputs),
 			DecodeConfig: decodeFreshSettings, Inputs: inputs, Tree: tree,
-			Measured: m.freshMeasured,
+			Measured: m.freshMeasured, Log: measurer.Log,
 		},
 		FreshWorkers: workers,
 		Repository: func(ctx context.Context) (string, error) {

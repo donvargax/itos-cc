@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"time"
 
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage/port"
@@ -233,6 +234,7 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 		return nil, executions, err
 	}
 	written := map[string]string{}
+	started := time.Now()
 	if err := run(ctx, "all", p.All, wholeEnv(collectors, dir)); err != nil {
 		return nil, executions, err
 	}
@@ -242,7 +244,8 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 			written[id] = candidate
 		}
 	}
-	if len(written) == 0 && len(ids) > 0 {
+	alone := len(written) == 0 && len(ids) > 0
+	if alone {
 		for i, id := range ids {
 			if p.Select == nil {
 				return nil, executions, fmt.Errorf("listed test %s has no selector", id)
@@ -259,11 +262,15 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 			}
 		}
 	}
-	for i, id := range ids {
-		d, ok := written[id]
-		if !ok {
+	for _, id := range ids {
+		if _, ok := written[id]; !ok {
 			return nil, executions, fmt.Errorf("listed test %s produced no per-ID coverage data", id)
 		}
+	}
+	listedRan(log, alone, time.Since(started), len(written))
+	started = time.Now()
+	for i, id := range ids {
+		d := written[id]
 		var reports []*coverage.Report
 		for _, c := range collectors {
 			if !c.written(d) {
@@ -289,6 +296,7 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 		}
 		tc.Add(id, coverage.Merge(reports...))
 	}
+	listedConverted(log, len(written), time.Since(started))
 	return tc, executions, nil
 }
 

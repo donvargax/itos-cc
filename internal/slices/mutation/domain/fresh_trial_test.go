@@ -77,6 +77,37 @@ func TestFreshTrialsShareListedBaselineAndPreserveStageScope(t *testing.T) {
 	}
 }
 
+// A trial the listed tests judge says what their runs took, apart from the
+// trial's time in all, which holds it, as a complete run's line says it:
+// each run's, summed over a repeated trial's runs.
+func TestAFreshTrialKeepsItsListedTestsTime(t *testing.T) {
+	for _, repeat := range []int{1, 2} {
+		f, p, trial, opt := preparedFreshTrial(t)
+		trial.Reach = []string{"A"}
+		command := trial.Baseline.Command
+		facts := f.Commands.Tests[command.Dir][command.String()]
+		relative, err := filepath.Rel(command.Root, filepath.Join(p.FrozenRoot, filepath.FromSlash(trial.Candidate.Path)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		facts.Elapsed = time.Millisecond
+		facts.Verdicts = []porttest.Verdict{{Path: filepath.ToSlash(relative), Site: trial.Candidate.Site, Outcome: mutants.Survived}}
+		f.Commands.Tests[command.Dir][command.String()] = facts
+		opt.Listed = &mutants.Listed{Root: p.FrozenRoot, Select: func([]string) string { return "select A" }}
+		opt.Repeat = repeat
+		f.Commands.Tests[p.FrozenRoot] = map[string]porttest.Tests{"select A": {Elapsed: 3 * time.Millisecond}}
+		results, err := mutants.RunFreshTrials(t.Context(), p, []mutants.FreshTrial{trial}, opt)
+		if err != nil || len(results) != 1 {
+			t.Fatalf("trials: %+v %v", results, err)
+		}
+		r := results[0]
+		want := time.Duration(repeat) * 3 * time.Millisecond
+		if r.Scope != mutants.ScopeListed || r.Listed != want || r.Elapsed != want+time.Duration(repeat)*time.Millisecond {
+			t.Errorf("repeat %d: scope %q, listed %s, in all %s; want listed, %s, and %s", repeat, r.Scope, r.Listed, r.Elapsed, want, want+time.Duration(repeat)*time.Millisecond)
+		}
+	}
+}
+
 func TestARepeatedFreshTrialListsEveryRunsOutcome(t *testing.T) {
 	for _, c := range []struct {
 		name     string

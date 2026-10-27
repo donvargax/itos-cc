@@ -3,6 +3,7 @@ package porttest
 import (
 	"context"
 	"fmt"
+	"io"
 	"maps"
 	"path/filepath"
 	"slices"
@@ -33,6 +34,10 @@ type Fresh struct {
 	// in a plan's frozen inputs: its own tests', or the listed tests' when
 	// listed is not nil, as their harness observes the runs it makes.
 	Measured func(ctx context.Context, p *mutants.FreshPlan, listed *coverage.PerTest) error
+	// Log, when set, is where preparation says what it runs, as the real
+	// preparation says it on itos-cc's stderr: each own-tests baseline's
+	// command, before it runs.
+	Log      io.Writer
 	sequence uint64
 	plans    map[*mutants.FreshPlan]bool
 }

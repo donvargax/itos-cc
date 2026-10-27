@@ -31,6 +31,16 @@ type RunEvent struct {
 	Stop                     *Stop
 }
 
+// BaselinePassed is the event of an own-tests baseline that passed: its
+// Command, how long it took, Elapsed, and how long a mutant running it may
+// take before it times out, Timeout. FreshBaselinePassed is the same of a
+// counted run's, which preparation ran, naming its folder as preparation's
+// line does.
+const (
+	BaselinePassed      = "baseline-passed"
+	FreshBaselinePassed = "fresh-baseline-passed"
+)
+
 func report(progress Progress, event RunEvent) {
 	if progress != nil {
 		progress.Report(event)

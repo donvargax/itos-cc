@@ -44,7 +44,9 @@ type FreshTrialResult struct {
 	Tests           []string
 	Stages          []FreshStage
 	FailedSelection *FailedSelection
-	Elapsed         time.Duration
+	// Elapsed is the trial's time in all, and Listed the time of its run
+	// of the listed tests, a part of it.
+	Elapsed, Listed time.Duration
 	Err             error
 	// Outcomes is, for a trial run more than once (Repeat), every outcome
 	// its runs gave, in run order, Outcome their first; nil otherwise.
@@ -178,12 +180,12 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 func repeatedTrial(ctx context.Context, w Worker, plan *FreshPlan, trial FreshTrial, opt FreshTrialOptions, sels *SelectionBaselines) FreshTrialResult {
 	var first FreshTrialResult
 	var outcomes []string
-	var elapsed time.Duration
+	var elapsed, listed time.Duration
 	for n := range max(1, opt.Repeat) {
 		r := runFreshTrial(ctx, w, plan, trial, opt, sels)
-		elapsed += r.Elapsed
+		elapsed, listed = elapsed+r.Elapsed, listed+r.Listed
 		if r.Outcome == "" {
-			r.Elapsed = elapsed
+			r.Elapsed, r.Listed = elapsed, listed
 			return r
 		}
 		if n == 0 {
@@ -191,7 +193,7 @@ func repeatedTrial(ctx context.Context, w Worker, plan *FreshPlan, trial FreshTr
 		}
 		outcomes = append(outcomes, r.Outcome)
 	}
-	first.Elapsed = elapsed
+	first.Elapsed, first.Listed = elapsed, listed
 	if len(outcomes) > 1 {
 		first.Outcomes = outcomes
 	}
@@ -281,7 +283,7 @@ func runFreshTrial(ctx context.Context, w Worker, plan *FreshPlan, trial FreshTr
 	}
 	out.Stages = append(out.Stages, FreshStage{Name: "listed-baseline", State: "complete", Tests: ids})
 	listed, err := w.Run(ctx, opt.Listed.Command(ids), &Mutation{Path: path, Source: src, Site: site}, limits)
-	out.Elapsed += listed.Elapsed
+	out.Elapsed, out.Listed = out.Elapsed+listed.Elapsed, listed.Elapsed
 	if out.Err = stageError(ctx, listed, err); out.Err != nil {
 		out.Stages = append(out.Stages, FreshStage{Name: "listed", State: failedState(ctx), Tests: ids, Error: out.Err.Error()})
 		return out
@@ -289,6 +291,15 @@ func runFreshTrial(ctx context.Context, w Worker, plan *FreshPlan, trial FreshTr
 	out.Outcome, out.Limit, out.Limits, out.Scope, out.Tests = Judged(listed), listed.OverLimit, limits, ScopeListed, ids
 	out.Stages = append(out.Stages, FreshStage{Name: "listed", State: "complete", Outcome: out.Outcome, Tests: ids})
 	return out
+}
+
+// ReportFreshBaselines says, on progress, that each own-tests baseline of
+// a counted run's preparation passed, in how long, and how long a mutant
+// running it may take, sized by factors as its trials are.
+func ReportFreshBaselines(progress Progress, baselines []FreshBaseline, factors Factors) {
+	for _, b := range baselines {
+		report(progress, RunEvent{Kind: FreshBaselinePassed, Command: b.Command, Elapsed: b.Elapsed, Timeout: factors.LimitsOf(b.Usage()).Timeout})
+	}
 }
 
 // factors size the trials' limits from their baselines'.

@@ -986,7 +986,7 @@ Feature: Mutation testing
   Rule: A mutation run says on stderr when each long phase ends, and how long it took
 
     # Before: neither line exists; it fails at the first Then.
-    @slice-64 @ID-MUT-367 @wip
+    @slice-64 @ID-MUT-367
     Scenario Outline: The listed tests' coverage says when its run and its conversions end
       Given the module of <module>
       When I run "itos-cc mutation run"
@@ -1001,7 +1001,7 @@ Feature: Mutation testing
 
     # Before: the baseline's command line is the last line about it; it
     # fails at the Then.
-    @slice-64 @ID-MUT-368 @wip
+    @slice-64 @ID-MUT-368
     Scenario: A file's own-tests baseline says when it passed
       Given a Go file whose tests pass, with a mutant they kill
       When I run "itos-cc mutation run a/a.go"
@@ -1013,7 +1013,7 @@ Feature: Mutation testing
     # before; it is reported apart. Both listed tests reach the fixture's
     # line, so its mutant runs the selection of both, ID-A-01 the one that
     # kills it, and its line names both.
-    @slice-64 @ID-MUT-369 @wip
+    @slice-64 @ID-MUT-369
     Scenario Outline: A counted run accounts for its time between coverage and the result
       Given the counted listed fixture, whose selected mutant survives its own tests and is killed by ID-A-01
       When I run "itos-cc mutation run --count 1 <json>"

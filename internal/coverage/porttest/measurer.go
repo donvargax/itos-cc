@@ -444,11 +444,27 @@ func (m *Measurer) listed(ctx context.Context, groups map[coverage.Unloaded][]st
 				missing = append(missing, test.ID)
 			}
 		}
+		m.ended(split, len(tests.Tests)-len(missing), len(listedErrors) == 0)
 	}
 	if ctx.Err() != nil {
 		return nil, nil, context.Cause(ctx)
 	}
 	return tc, missing, errors.Join(listedErrors...)
+}
+
+// ended says on Log, as the real measurer does, that the listed tests'
+// coverage run ended, the coverage of n of them, those with data,
+// converted next, and, when converted, that the conversions ended. Their
+// durations are zero: the memory takes no time.
+func (m *Measurer) ended(split bool, n int, converted bool) {
+	ran := "ran"
+	if !split {
+		ran = "ran one at a time"
+	}
+	m.log("coverage: the listed tests %s in 0.0s; converting the coverage of %d of them\n", ran, n)
+	if converted {
+		m.log("coverage: converted the coverage of %d listed tests in 0.0s\n", n)
+	}
 }
 
 // CollectFresh reads the same tool formats/build populations as ordinary
