@@ -7211,5 +7211,3 @@
     other PID or marker file the package's fixtures write and a test polls for. Show the race before
     the fix by delaying between the redirect and the echo (a temporary sleep, never committed) and
     the test failing, and after it passing with the same delay.
-  done_when:
-    - run: go test ./internal/slices/mutation/adapters/freshenv/ -run TestFreshPreparationOwnsCommandsAndPreservesListedReach -count=3
