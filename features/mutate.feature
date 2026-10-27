@@ -6376,11 +6376,15 @@ Feature: Mutation testing
   # "itos-cc: coverage <dir>: reused from .metrics/coverage/cache, its
   # inputs unchanged". Everything slice-69's comment settles holds here:
   # who writes and reads, strict admission, the folder, the miss lines,
-  # --no-coverage-cache. Decided by the coordinator on 2026-10-27, within
-  # q-102 (a). Python, Kotlin and Dart rows join ID-MUT-389 from the strict
-  # line-coverage parity rule's fixtures when their steps allow; this slice
-  # needs Go and TypeScript. Before the slice the plan's coverage command
-  # runs again, failing at the first Then.
+  # --no-coverage-cache. An entry measured of more files than the run's
+  # says so on its miss line: "it also measured <file>[, …]". Decided by
+  # the coordinator on 2026-10-27, within q-102 (a). Python, Kotlin and
+  # Dart rows join ID-MUT-389 from the strict line-coverage parity rule's
+  # fixtures when their steps allow; this slice needs Go and TypeScript.
+  # ID-MUT-390 runs with --all-tests, as ID-MUT-117 to 120 do: without it
+  # the e2e test, of another package, never measures main.go. Before the
+  # slice the plan's coverage command runs again, failing at the first
+  # Then.
   Rule: A file's own tests' coverage is reused while nothing it was measured from changed
 
     @slice-70 @ID-MUT-389 @wip
@@ -6403,7 +6407,7 @@ Feature: Mutation testing
     @slice-70 @ID-MUT-390 @binary-only @wip
     Scenario: A reused measurement keeps the coverage of the processes the tests started
       Given the module of ID-MUT-117, whose test runs the built binary
-      And "itos-cc mutation run" has run
-      When I run "itos-cc mutation run --mutate-all --json"
+      And "itos-cc mutation run --all-tests" has run
+      When I run "itos-cc mutation run --all-tests --mutate-all --json"
       Then no coverage command ran
       And each covered mutant's "coverage" is as the first run's, "integration" included

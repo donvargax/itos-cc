@@ -21,7 +21,9 @@ func (w *world) report() string {
 
 // stderrSays is whether stderr holds text, \" in it a quote, in each run
 // the When made. In a text naming <dir>, that stands for the folder of the
-// project the Given made, as itos-cc names it from the scratch folder, and
+// project the Given made, as itos-cc names it from the scratch folder, or
+// the scratch folder itself, by its whole path, where the Given made the
+// project there, and
 // "..." or "…" for the rest of what it says there. A text that goes on
 // past its said part with `" and names <a>, <b> and <c>` is a line that
 // begins with the said part and names each, quoted or not (saysNaming).
@@ -95,8 +97,12 @@ func (w *world) saysIn(stderr, text string) error {
 		}
 		return nil
 	}
-	if strings.Contains(text, "<dir>") && w.project == "" {
-		return fmt.Errorf("%q names <dir>, and no Given made a project's folder", text)
+	// A project the Given made in the scratch folder itself is that
+	// folder, which itos-cc names by its whole path: any path ending in
+	// its name, as the system may name it through another path.
+	dir := regexp.QuoteMeta(w.project)
+	if w.project == "" {
+		dir = `\S*/` + regexp.QuoteMeta(filepath.Base(w.dir))
 	}
 	var pattern strings.Builder
 	for i, part := range strings.Split(text, "...") {
@@ -106,13 +112,13 @@ func (w *world) saysIn(stderr, text string) error {
 		pieces := strings.Split(part, "<dir>")
 		for j, piece := range pieces {
 			if j > 0 {
-				pattern.WriteString(regexp.QuoteMeta(w.project))
+				pattern.WriteString(dir)
 			}
 			pattern.WriteString(regexp.QuoteMeta(piece))
 		}
 	}
 	if !regexp.MustCompile(pattern.String()).MatchString(filepath.ToSlash(stderr)) {
-		return fmt.Errorf("stderr does not say %q, <dir> being %s", text, w.project)
+		return fmt.Errorf("stderr does not say %q, <dir> being %s", text, dir)
 	}
 	return nil
 }

@@ -105,6 +105,7 @@ func listedMutationSteps(sc *godog.ScenarioContext, m *mutateState) {
 	slice39FingerprintSteps(sc, l)
 	listedImporterSteps(sc, l)
 	coverageReuseSteps(sc, l)
+	ownCoverageReuseSteps(sc, l.m)
 }
 
 func (l *listedMutation) project() error {
