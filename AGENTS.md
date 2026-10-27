@@ -51,20 +51,26 @@ Stage only your own files, by explicit path: untracked files you did not make ar
 
 - Do not run mutation testing on this repository's own code on your machine:
   no `itos-cc mutation run` or `mutation sample` over its sources while you
-  work. A push's CI runs the code proof's one fresh site (`itos.yaml`'s
-  `proof.code`) and `cd.yml`'s sample of ten recorded results; the nightly
-  judges the rest, committing `.metrics/mutate/` back. The Go tests of the
-  mutation packages are fine: they mutate fixtures, not this code.
+  work, but for one run: `mutation run --site` on the one survivor you are
+  killing (below). A push's CI runs the code proof's one fresh site
+  (`itos.yaml`'s `proof.code`) and `cd.yml`'s sample of ten recorded
+  results; the nightly judges the rest, committing `.metrics/mutate/` back.
+  The Go tests of the mutation packages are fine: they mutate fixtures, not
+  this code.
 - A survivor the code proof finds in a function your push changed, even one
-  older than the push, is yours: kill it with a test in that push. A repair
-  push usually re-judges the same site, as `--seed {base}` seeds the draw by
-  the range's start, but a site another push adds can outrank it and be
-  drawn instead (2026-10-26, bug-11 and T-219), so a green repair run is not
-  proof the first site died: show the kill by applying the mutant by hand
-  and running its package's tests. When you judge the mutant truly equivalent, stop and
-  report it with your reasoning: the coordinator approves it, or sends it
-  back for a test, before its exception lands in `itos-cc.yaml` with its
-  reason; the person reviews the exceptions weekly.
+  older than the push, is yours: kill it with a test in that push. Commit
+  the test, then prove the kill with `go run ./cmd/itos-cc mutation run
+  --site '<identity>'`, the identity the proof's log names: it judges that
+  mutant alone, freshly, at HEAD, and exits 0 once it is killed. Name that
+  survivor alone, never another site, a path or `--count`. A repair push
+  usually re-judges the same site, as `--seed {base}` seeds the draw by the
+  range's start, but a site another push adds can outrank it and be drawn
+  instead (2026-10-26, bug-11 and T-219), so a green repair run is not
+  proof the first site died: the `--site` run is. When you judge the
+  mutant truly equivalent, stop and report it with your reasoning: the
+  coordinator approves it, or sends it back for a test, before its
+  exception lands in `itos-cc.yaml` with its reason; the person reviews the
+  exceptions weekly.
   About 22% of the mutants a test reaches survive (nightly 39930716718: 1871
   of 8317), so about one Go push in five may meet one.
 
