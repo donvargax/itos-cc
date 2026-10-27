@@ -6072,14 +6072,15 @@ items:
     depends_on: []
     kind: slice
     refs: ["#74"]
-  - id: coverage-reuse
-    title: mutation run reuses coverage across runs of an unchanged tree
+  - id: slice-69
+    title: The listed tests' coverage is reused while nothing it was measured from changed
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was coverage-reuse.
       #67: a one-file run in a project whose mutation tests include an end-to-end suite spends ~5
       minutes on coverage before any mutant, and pays it again on a second run over the same
       unchanged tree. Asked: a coverage map reused while what its tests read is unchanged (keyed as
