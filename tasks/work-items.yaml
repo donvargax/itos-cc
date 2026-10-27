@@ -6201,9 +6201,6 @@ items:
     title: mutation except's plain lines name their file in the system's form on Windows
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: bug
-    why: >
-      Promoted from the idea except-plain-slashed (2026-10-27); its spec is ID-MUT-391 in
-      features/mutate.feature.
