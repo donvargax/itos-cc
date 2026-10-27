@@ -6015,3 +6015,18 @@ items:
     why: >
       Promoted from the idea go-scope-last-package-dropped (2026-10-26), its spec ID-COV-51 in
       features/coverage.feature.
+  - id: mutation-trial-tmpdir
+    title: mutation run gives every trial a temporary folder of its own
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Split from mutation-trials-own-tmpdir (T-219, 2026-10-26): workers run a project's trials side
+      by side in their own copies, but every trial shares the system temporary folder, so a project
+      whose tests make, sweep or name things there can see its outcomes change with what a sibling
+      trial does, as itos-cc's own worktrees tests did (T-217). Setting TMPDIR, TMP and TEMP to a
+      folder per worker or per trial, removed after, would make those outcomes independent. It
+      changes what the user's tests see (a tool that caches under TMPDIR loses its cache, a path a
+      test prints differs), so it is the person's call, with a scenario.
