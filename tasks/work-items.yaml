@@ -6204,7 +6204,7 @@ items:
   - id: T-223
     title: cd.yml splits the features part in two, as cmd-a and cmd-b split cmd/itos-cc
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
