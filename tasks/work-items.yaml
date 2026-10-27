@@ -6170,21 +6170,9 @@ items:
     title: mutation run --site --own-tests judges named mutants by their own tests alone
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was site-own-tests-only.
-      slice-63's mutation run --site is a counted run: before judging the named mutant it measures
-      every listed scenario's reach (itos-cc.yaml's mutation.tests: about 470 scenarios here, ~55 s
-      on CI, some starting Kotlin, Python or Dart tools), so a repair agent's local check of one
-      kill runs the whole scenario suite, which the person keeps off this machine (2026-10-27:
-      AGENTS.md went back to proving kills by hand). A flag such as --own-tests (judge the named
-      mutants by their own tests only, measuring no listed reach, saying in the report that listed
-      tests were not run) would make the local check seconds long; a survivor its own tests miss
-      would then be reported as such, not as a survivor of the whole suite. Question for the person:
-      build it, and if so whether AGENTS.md then allows --site --own-tests locally. itos.yaml's
-      proof comment names --site as the repair's proof and changes with that decision.
     refs: ["#68"]
   - id: pid-file-read-race
     title: Wait for the descendant PID file to hold a line before reading it in freshenv test
