@@ -4239,6 +4239,47 @@ Feature: Mutation testing
         | a commit that renames a string literal on another line of that function, and the mutant still survives      | itos-cc mutation except --renew --json           |
         | the mutant still survives at the same site                                                                  | itos-cc mutation except that site --reason 'still equivalent' |
 
+    # slice-66 (except-renew-quoting, issue #64): mutation except, --renew
+    # and an entry replaced wrote a string that needs quotes (a reason
+    # holding ": ", a line_text holding "#") in single quotes, though the
+    # file around it, and the formatters projects run on it (dprint's
+    # preferDouble), quote with double quotes, so every write was followed
+    # by a formatter's churn and the entry read unlike its neighbours.
+    # Decided by the coordinator on 2026-10-27, a call inside the issue:
+    # - A string itos-cc writes into itos-cc.yaml that needs quotes takes
+    #   the quote the file already uses: double quotes when the file holds
+    #   more double-quoted scalars than single-quoted ones, single quotes
+    #   otherwise, as today. A string that needs no quotes stays plain, as
+    #   today: formatters leave plain scalars alone. Numbers stay numbers.
+    # - The count is of the document as read, before the write, every
+    #   scalar of it, exclude's and x- keys' included.
+    # - Nothing else of an entry's layout changes (slice-20, slice-55).
+    # Before the slice the reason is single-quoted, failing at the Then;
+    # the plain and single rows hold already and are guardrails.
+    @slice-66 @ID-MUT-372 @wip
+    Scenario Outline: A string mutation except must quote takes the quote the file uses
+      Given a Go project whose "example.com/fx/board#Count" survives its test, and a counted run that named its identity
+      And itos-cc.yaml quotes its strings <style>
+      When I run "itos-cc mutation except" with that identity and --reason 'x is never 5: the caller checks'
+      Then the new entry's reason is written <reason>
+      And its line_text is written plain, as "return x < 5"
+
+      Examples:
+        | style                                          | reason                                    |
+        | with double quotes, as `exclude: ["**/gen/**"]` | "x is never 5: the caller checks"         |
+        | with single quotes, as `exclude: ['**/gen/**']` | 'x is never 5: the caller checks'         |
+        | nowhere, as `exclude: [gen/**]`                 | 'x is never 5: the caller checks'         |
+
+    @slice-66 @ID-MUT-373 @wip
+    Scenario: A renewed entry's quoted reason keeps the file's double quotes
+      Given a Go project with a reviewed exception for an equivalent mutant in a function, its reason "x is never 5: the caller checks"
+      And itos-cc.yaml quotes its strings with double quotes, as `exclude: ["**/gen/**"]`
+      And a commit that renames a string literal on another line of that function
+      And "itos-cc mutation run" has judged the function again and the mutant still survives
+      When I run "itos-cc mutation except --renew --json"
+      Then the renewed entry's reason is written "x is never 5: the caller checks"
+      And only the lines of the renewed entry changed in itos-cc.yaml
+
     # slice-22, issue #50: an exception whose own line changed is never
     # renewed, by design (MUT-227), and the only way on was to except the
     # mutant at its new site, typing the reason again, which added a second
