@@ -162,6 +162,52 @@ func TagFilter(selection, dir string, files []string, skip string) (Selection, e
 	return sel, nil
 }
 
+// Skip is sel, a selection of the feature files in dir, without every
+// scenario that carries a tag skipping matches, its own, its feature's or
+// its Examples block's, as go test's -skip leaves out what -run would
+// select: what TagFilter selects by an expression, Skip by the same one
+// leaves out, and it keeps every other scenario, so the two run each live
+// scenario once between them. An expression that matches no tag of a
+// converted file is an error, as it is for TagFilter, so a mistyped one
+// never leaves out nothing silently; "" leaves sel as it is.
+func Skip(sel Selection, skipping, dir string) (Selection, error) {
+	if skipping == "" {
+		return sel, nil
+	}
+	pattern, err := regexp.Compile(skipping)
+	if err != nil {
+		return Selection{}, err
+	}
+	var converted []string
+	for _, name := range Converted {
+		converted = append(converted, filepath.Join(dir, name))
+	}
+	tags, err := featureTags(converted)
+	if err != nil {
+		return Selection{}, err
+	}
+	own, err := featureTags(sel.Paths)
+	if err != nil {
+		return Selection{}, err
+	}
+	matched := false
+	var terms strings.Builder
+	for _, tag := range tags {
+		if !pattern.MatchString(tag) {
+			continue
+		}
+		matched = true
+		if slices.Contains(own, tag) {
+			terms.WriteString("&&~" + tag)
+		}
+	}
+	if !matched {
+		return Selection{}, &noMatch{selection: skipping}
+	}
+	sel.Filter = without(sel.Filter, terms.String())
+	return sel, nil
+}
+
 // noMatch is a selection matching no tag of a converted file, with the
 // tags it matches in files with no steps yet.
 type noMatch struct {

@@ -87,15 +87,22 @@ func Defer(sel Selection, selection, dir string, deferred map[string]string) (Se
 			left = append(left, tag)
 		}
 	}
-	if sel.Filter == "" || terms.Len() == 0 {
-		return sel, left, nil
-	}
-	each := strings.Split(sel.Filter, ",")
-	for i := range each {
-		each[i] += terms.String()
-	}
-	sel.Filter = strings.Join(each, ",")
+	sel.Filter = without(sel.Filter, terms.String())
 	return sel, left, nil
+}
+
+// without is godog's tag filter with terms, each "&&~" and a tag, added to
+// every one of its alternatives, so it leaves out every scenario carrying
+// one of those tags; "" stays "", selecting nothing.
+func without(filter, terms string) string {
+	if filter == "" || terms == "" {
+		return filter
+	}
+	each := strings.Split(filter, ",")
+	for i := range each {
+		each[i] += terms
+	}
+	return strings.Join(each, ",")
 }
 
 // examplesTags are the tags the Examples blocks of files carry, each with

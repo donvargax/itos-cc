@@ -1,10 +1,13 @@
 package features
 
 import (
+	"errors"
 	"flag"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -33,15 +36,54 @@ func TestSkipScenariosRunsWhatScenariosLeaves(t *testing.T) {
 			selected := ranByParts(t, dir, pattern, "")
 			left := ranByParts(t, dir, "", pattern)
 			for _, name := range every {
-				in := slices.Contains(selected, name)
-				if in == slices.Contains(left, name) {
-					t.Errorf("%s: run by -scenarios %v, by -skip-scenarios %v; want exactly one", name, in, !in)
+				byRun, bySkip := slices.Contains(selected, name), slices.Contains(left, name)
+				if byRun == bySkip {
+					t.Errorf("%s: run by -scenarios %v, by -skip-scenarios %v; want exactly one", name, byRun, bySkip)
 				}
 			}
 			if both := append(slices.Clone(selected), left...); len(both) != len(every) {
 				t.Errorf("-scenarios ran %v and -skip-scenarios %v; want each of %v once", selected, left, every)
 			}
 		})
+	}
+}
+
+// An expression -skip-scenarios is given that matches no tag fails the
+// run, as one -scenarios is given does, so a mistyped one never leaves the
+// part it splits off running everything a second time; one that is no
+// regular expression fails too.
+func TestSkipScenariosRefusesAnExpressionMatchingNoTag(t *testing.T) {
+	t.Setenv("ITOS_CC_SKIP_FEATURES", "")
+	dir := partsFixture(t)
+	setFlag(t, "scenarios", "")
+	for skip, want := range map[string]string{
+		"^@ID-UNIT-99$": "no scenario has a tag that ^@ID-UNIT-99$ matches",
+		"^@ID-UNIT-(":   "missing closing )",
+	} {
+		setFlag(t, "skip-scenarios", skip)
+		if _, err := binarySelection(dir); err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("-skip-scenarios=%s: %v; want a failure saying %q", skip, err, want)
+		}
+	}
+	missing := filepath.Join(dir, "gone.feature")
+	if _, err := Skip(Selection{Paths: []string{missing}}, "^@ID-UNIT-90$", dir); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("a selection's feature file gone: %v; want its read failing", err)
+	}
+	if err := os.Remove(filepath.Join(dir, "units.feature")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Skip(Selection{}, "^@ID-UNIT-90$", dir); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("a converted feature file gone: %v; want its read failing", err)
+	}
+}
+
+// A tag only a feature file ITOS_CC_SKIP_FEATURES leaves out carries is a
+// valid expression, as it is for -scenarios, and leaves out nothing more.
+func TestSkipScenariosAcceptsATagOfALeftOutFile(t *testing.T) {
+	t.Setenv("ITOS_CC_SKIP_FEATURES", "dry.feature")
+	ran := ranByParts(t, partsFixture(t), "", "^@ID-DRY-90$")
+	if want := []string{"zero", "one", "five", "fifteen"}; !slices.Equal(ran, want) {
+		t.Fatalf("scenarios ran: %v; want %v", ran, want)
 	}
 }
 

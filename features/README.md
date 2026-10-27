@@ -246,6 +246,7 @@ Before hook keyed on the scenario's file.
 export ITOS_CC_FEATURES_BINARY_DRIVER=1             # opt into the binary driver (decision 52)
 go test ./features -count=1                          # every live scenario, through the binary
 go test ./features -count=1 -scenarios='^@ID-CLI-'   # the live scenarios with a matching tag
+go test ./features -count=1 -skip-scenarios='^@ID-CLI-'   # the live scenarios with no matching tag
 GOCOVERDIR=$d go test ./features -count=1            # built with -cover, its coverage in $d
 ITOS_CC_FEATURES_BINARY=$bin go test ./features -count=1   # against the binary at $bin, opted in
 ITOS_CC_FEATURES_CONCURRENCY=1 go test ./features -count=1  # one scenario at a time
@@ -283,6 +284,16 @@ expression joined by `|`. One that matches no tag fails the run, so a selection 
 running nothing, but for `TestFeatures` without the opt-in, which reads no selection and passes,
 so locally only the in-process run judges one. Each scenario is a subtest of `TestFeatures`, named
 after the scenario.
+
+`-skip-scenarios`, the binary driver's alone, takes the same kind of expression and leaves out
+every live scenario with a tag it matches, its own, its feature's or its Examples block's, as go
+test's `-skip` leaves out what `-run` would select (T-223). Given one expression,
+`-skip-scenarios` runs exactly the live scenarios `-scenarios` does not, so two runs, one by each
+flag, run every live scenario once between them, the selection complementary by construction,
+never two lists kept by hand: `cd.yml` splits its features part in two so.
+Both at once run what `-scenarios` selects less what `-skip-scenarios` leaves out. One that
+matches no tag of a converted file fails the run, as for `-scenarios`, so a mistyped one never
+leaves out nothing; a tag only a file `ITOS_CC_SKIP_FEATURES` leaves out carries is valid.
 
 The binary driver runs scenarios at once (T-128): as many as the CPUs Go runs on,
 `runtime.GOMAXPROCS(0)`, which follows a container's CPU limit, so four on `ubuntu-latest` and

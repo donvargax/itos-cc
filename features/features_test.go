@@ -20,6 +20,9 @@
 //	go test ./features -count=1                        every live scenario
 //	go test ./features -count=1 -scenarios=<regexp>    the live scenarios with a
 //	                                                   tag the expression matches
+//	go test ./features -count=1 -skip-scenarios=<regexp>
+//	                                                   the live scenarios with
+//	                                                   no tag it matches
 //	GOCOVERDIR=<dir> go test ./features -count=1       either, itos-cc
 //	                                                   built with -cover, what
 //	                                                   the scenarios ran in <dir>
@@ -94,6 +97,7 @@ import (
 )
 
 var scenarios = flag.String("scenarios", "", "run only the live scenarios with a tag this regular expression matches")
+var skipScenarios = flag.String("skip-scenarios", "", "run only the live scenarios with no tag this regular expression matches")
 var scenarioReport = flag.String("scenario-report", "", "also write Godog cucumber JSON to this file (test harness only)")
 
 func TestFeatures(t *testing.T) {
@@ -156,9 +160,15 @@ func TestFeatures(t *testing.T) {
 }
 
 // binarySelection is what the binary driver runs of the feature files in
-// dir: the live scenarios -scenarios selects.
+// dir: the live scenarios -scenarios selects, without those -skip-scenarios
+// names, so two runs given one expression, each by one flag, run each
+// scenario once between them (cd.yml's features parts, T-223).
 func binarySelection(dir string) (Selection, error) {
-	return TagFilter(*scenarios, dir, Converted, InProcessOnly)
+	sel, err := TagFilter(*scenarios, dir, Converted, InProcessOnly)
+	if err != nil {
+		return Selection{}, err
+	}
+	return Skip(sel, *skipScenarios, dir)
 }
 
 // driverEnv opts into the binary driver when it is 1 (decision 52).
