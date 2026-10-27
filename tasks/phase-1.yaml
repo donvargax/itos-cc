@@ -7211,3 +7211,20 @@
     other PID or marker file the package's fixtures write and a test polls for. Show the race before
     the fix by delaying between the redirect and the echo (a temporary sleep, never committed) and
     the test failing, and after it passing with the same delay.
+- id: T-225
+  type: ci
+  title: Rebalance cd.yml's features parts from their measured reports
+  why: >
+    T-223 split the features part in two by the last digit of each scenario's ID number
+    ('^@ID-[A-Z]+-[0-9]*[024789]$' for features-a), balanced to 17.1 and 17.8 minutes on Windows;
+    slices 69 and 70 then added scenarios mostly to features-b, and cd.yml 40489537344 took 12.5 and
+    19.7 minutes. Both parts now upload their -scenario-report JSON, which carries each scenario's
+    duration. Decided by the coordinator (2026-10-27): choose the digit set again from the latest
+    green run's Windows reports so neither part exceeds about 16 minutes, keeping the complement by
+    construction (-scenarios and -skip-scenarios on one pattern); update the workflow's comment with
+    the run and the measured split. Leave a script in tools/bin, or a features test helper, that
+    prints each digit class's total from downloaded reports, so the next rebalance is one command;
+    if two parts cannot both stay under about 16 minutes, say so in the report instead of adding a
+    third (macOS already runs five jobs at once, GitHub's limit).
+  done_when:
+    - run: go tool actionlint .github/workflows/cd.yml

@@ -6225,3 +6225,10 @@ items:
       scenario. Decide whether stdoutSays keeps the normalisation (for paths the product prints in
       the system's form on purpose, such as --json-adjacent messages) or compares plain lines
       strictly, and which scenarios then change.
+  - id: T-225
+    title: Rebalance cd.yml's features parts from their measured reports
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
