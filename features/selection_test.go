@@ -174,7 +174,7 @@ func runSelection(t *testing.T, filter string, paths []string) []string {
 	suite := godog.TestSuite{
 		Name: "selection",
 		ScenarioInitializer: func(sc *godog.ScenarioContext) {
-			sc.Step(`^the (skipped|active) fixture runs$`, func(name string) error {
+			sc.Step(`^the (\w+) fixture runs$`, func(name string) error {
 				ran = append(ran, name)
 				return nil
 			})

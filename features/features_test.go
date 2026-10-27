@@ -101,7 +101,7 @@ func TestFeatures(t *testing.T) {
 		t.Log(notOptedIn)
 		return
 	}
-	sel, err := TagFilter(*scenarios, ".", Converted, InProcessOnly)
+	sel, err := binarySelection(".")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,6 +153,12 @@ func TestFeatures(t *testing.T) {
 	if suite.Run() != 0 {
 		t.Fatal("a scenario failed")
 	}
+}
+
+// binarySelection is what the binary driver runs of the feature files in
+// dir: the live scenarios -scenarios selects.
+func binarySelection(dir string) (Selection, error) {
+	return TagFilter(*scenarios, dir, Converted, InProcessOnly)
 }
 
 // driverEnv opts into the binary driver when it is 1 (decision 52).
