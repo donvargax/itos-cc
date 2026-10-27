@@ -6204,3 +6204,17 @@ items:
     status: done
     depends_on: []
     kind: bug
+  - id: covdata-comma-path
+    title: Go coverage conversions break on a project path holding a comma
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      covdata textfmt reads -i as a comma-separated list, and covrun passes it the run's folders as
+      they are (run.go's integration Convert, pertest.go's listed conversions): a project, or a run
+      folder, under a path with a comma converts nothing, the listed tests' coverage and integration
+      data silently lost. Seen in slice-70 when a Go test named with a comma gave its TempDir one
+      and the listed contract read no per-ID coverage. Refuse such a path with a clear problem, or
+      convert from a comma-free folder of the run's own.
