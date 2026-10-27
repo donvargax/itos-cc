@@ -4717,6 +4717,61 @@ Feature: Mutation testing
       Then the selected site's stages are "own" survived, "listed-baseline" complete and "listed" killed, its scope "listed" with that test
       And the exit code is 0
 
+    # slice-67 (site-own-tests-only, q-103 answered by the person on
+    # 2026-10-27): a --site run measures every listed test's reach before it
+    # judges (about 470 scenarios in itos-cc's own repository, ~55 s on CI,
+    # some starting real language tools), so a repair's local check of one
+    # kill ran the whole suite. --own-tests, with --site only, judges the
+    # named mutants by their own tests alone. Decided by the coordinator
+    # inside q-103:
+    # - With --own-tests no listed test runs and no listed reach is
+    #   measured; the named mutants' own coverage is measured as before.
+    # - A mutant its own tests kill is killed, exit 0. One that survives
+    #   them is mutation.survived, exit 1, as without the flag, and the
+    #   report says the listed tests did not run, so a mutant they would
+    #   kill can show here as survived: plain output's assurance line gains
+    #   "own tests only: the tests mutation.tests lists did not run", and
+    #   --json gains "own_tests": true.
+    # - --own-tests without --site, or with --all-tests, is flags.conflict,
+    #   exit 80: it narrows a named judgment, nothing else.
+    # Before the slice --own-tests is flags.unknown, each scenario failing
+    # at its first Then.
+    @slice-67 @ID-MUT-374 @wip
+    Scenario: --own-tests judges a named site by its own tests alone, and says the listed tests did not run
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And mutation.tests lists a test that reaches board/board.go line 5 and kills the mutant
+      When I run "itos-cc mutation run --site board/board.go:5:11 --own-tests --json"
+      Then the selected site's stages are "own" alone, survived
+      And no listed test or listed coverage command ran
+      And the problem is "mutation.survived", at board/board.go line 5 column 11
+      And "own_tests" is true
+      And the exit code is 1
+
+    @slice-67 @ID-MUT-375 @wip
+    Scenario: A named mutant its own tests kill passes with --own-tests, running no listed test
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And mutation.tests lists a test that reaches board/board.go line 5 and kills the mutant
+      And a later commit's test also checks Count(5)
+      When I run "itos-cc mutation run --site board/board.go:5:11 --own-tests"
+      Then stdout says "killed `<` → `<=` in example.com/fx/board#Count, board/board.go line 5 column 11"
+      And stdout says "own tests only: the tests mutation.tests lists did not run"
+      And no listed test or listed coverage command ran
+      And the exit code is 0
+
+    @slice-67 @ID-MUT-376 @wip
+    Scenario Outline: --own-tests narrows a named judgment and nothing else
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      When I run "itos-cc mutation run <args> --json"
+      Then the problem is "flags.conflict", with flag "--own-tests"
+      And the exit code is 80
+      And no test or coverage command ran
+
+      Examples:
+        | args                                                  |
+        | --own-tests                                           |
+        | --count 1 --own-tests                                 |
+        | --site board/board.go:5:11 --own-tests --all-tests    |
+
   # integration-coverage-python, integration-coverage-typescript and
   # integration-coverage-kotlin, q-41 (answered 2026-10-10): issue #14's
   # two parts, integration coverage (ID-MUT-117 to 120) and per-test
