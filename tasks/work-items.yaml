@@ -6076,17 +6076,9 @@ items:
     title: The listed tests' coverage is reused while nothing it was measured from changed
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [slice-67]
     kind: slice
-    why: >
-      Was coverage-reuse.
-      #67: a one-file run in a project whose mutation tests include an end-to-end suite spends ~5
-      minutes on coverage before any mutant, and pays it again on a second run over the same
-      unchanged tree. Asked: a coverage map reused while what its tests read is unchanged (keyed as
-      mutation.tests' support globs fingerprint them), or --coverage-from <report> accepted by
-      strict mode when its fingerprint matches. Bigger than listed-coverage-scoped-conversion;
-      judge-named-site makes it hurt less.
     refs: ["#67"]
   - id: slice-66
     title: mutation except --renew keeps the quoting the file already uses
