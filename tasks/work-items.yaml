@@ -6044,18 +6044,9 @@ items:
     title: mutation run --site judges the named sites alone
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was judge-named-site.
-      #68: confirming that a test kills a survivor a report named (file:line:column and operator)
-      takes a run over the whole file, minutes, judging and reporting sites nobody asked about; seen
-      again confirming exceptions, a run killed past 10 minutes. Asked: a selection by site (e.g.
-      --site file:line:col, repeatable, optionally the operator or the JSON's survivor id) judged
-      freshly with the tests the nightly would pick, exit 0 when each is killed, unknown or moved
-      sites named. This repository's own repairs met it: T-217 and T-219's agents applied mutants by
-      hand.
     refs: ["#68"]
   - id: since-upper-bound
     title: mutation run --since takes an upper bound, so a fixed seed keeps its draw
