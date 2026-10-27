@@ -24,8 +24,9 @@ type RunMeasurement struct {
 	Measurer coverage.MutationMeasurer
 	Request  covport.Request
 	Lister   TestLister
-	// Reuse, when set, serves the listed tests' coverage from the cache,
-	// and keeps what the run measures of them there (MeasureReusing).
+	// Reuse, when set, serves the listed tests' coverage and each plan's
+	// own from the cache, and keeps what the run measures of them there
+	// (MeasureReusing).
 	Reuse *ListedReuse
 }
 
@@ -218,7 +219,8 @@ func (opt Options) Measure(ctx context.Context, sources []string, strict bool) (
 	}
 	req := m.Request
 	req.Sources = sources
-	value, failure := MeasureReusing(ctx, m.Measurer, req, perTest, m.Reuse, key)
+	plans := m.Reuse.KeyPlans(ctx, m.Measurer, req, opt.Toolchain, opt.Fingerprints, opt.Root, opt.Support)
+	value, failure := MeasureReusing(ctx, m.Measurer, req, perTest, m.Reuse, key, plans)
 	if failure != nil {
 		if ctx.Err() != nil {
 			return nil, context.Cause(ctx)

@@ -24,9 +24,9 @@
 // import-resolution engine; freshenv, the counted Fresh; snapshots, the one
 // snapshot codec, MutationSnapshots, MutationSnapshotReader and
 // MutationCatalog over the snapshot port's Store, and the CoverageCache of
-// the listed tests' coverage beside them; exceptions, the Exceptions
-// writer over config's reading codec; and sources, SourceEdits,
-// SourcePresence and SourceStatus over the disk.
+// the listed tests' and each plan's own coverage beside them; exceptions,
+// the Exceptions writer over config's reading codec; and sources,
+// SourceEdits, SourcePresence and SourceStatus over the disk.
 //
 // Check, CheckCoverage, List and Orphans own read-only orchestration through
 // MutationSnapshotReader, MutationCatalog and SourcePresence. Catalog metadata

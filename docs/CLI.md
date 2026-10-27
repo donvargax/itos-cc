@@ -748,6 +748,13 @@ and <n> more`, `it measured no <file>` or `it cannot be read`). stdout and
 `--no-coverage-cache` measures as before, reading and writing no entry;
 given with `--no-coverage`, `--use-existing-coverage`, `--coverage-command`
 or `--coverage-report`, which use no cache, it is `flags.conflict`, exit 80.
+Each coverage plan's own tests' coverage is kept there too, one entry a
+plan under `.metrics/coverage/cache/own`, and reused while its build root's
+inputs and the files it measured are the same (slice-70): stderr says
+`itos-cc: coverage <dir>: reused from .metrics/coverage/cache, its inputs
+unchanged` in place of the plan's command, or `itos-cc: coverage <dir>: its
+cached coverage does not serve this run:` and why, as above, or `it also
+measured <file>` of an entry of more files than the run's.
 
 `mutation run --fail-fast` stops a complete run at the first actionable final
 judgment it observes, and reports it under the rule and exit code a run

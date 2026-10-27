@@ -701,6 +701,14 @@ writes it, and deleting the folder is always safe. Since `itos-cc.yaml` is
 hashed whole, `mutation except` makes the entry miss; check a new exception
 with `mutation check`, which runs nothing.
 
+Each file's own tests' coverage is kept there the same way, one entry for
+each coverage plan: a language's build root and, for a Python, Kotlin or
+Dart file, the tests that reach it. A later run whose plan measures the
+same files with the same build root's inputs reuses it in place of the
+plan's coverage command, each line's `in-process` and `integration`
+sources kept. This matters most where a build root's tests are slow to
+run for coverage, as Python's, Kotlin's and Dart's are.
+
 `--since <ref>` judges only the functions the commits since `<ref>`
 changed, `git diff <ref>...HEAD`: a branch's own commits, never uncommitted
 work, so a gate judges a task by what it committed. A deleted line counts as

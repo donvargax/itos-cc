@@ -482,7 +482,18 @@ refuses is neither kept nor reused. --count and --site write nothing
 there, and --fail-uncovered reuses the entry as independent evidence of
 the inputs it records. Deleting the folder is always safe; a CI may
 restore it between jobs of one commit. --no-coverage-cache measures as
-before, reading and writing no entry.`,
+before, reading and writing no entry.
+
+Each coverage plan's own tests' coverage, a language's build root measured
+by its own tests (a Python, Kotlin or Dart file's: the tests that reach
+it), is kept there too, one entry a plan, written and read as the listed
+tests' is, and reused while its build root's inputs, as strict coverage
+evidence records them, and the files it measured are the same; stderr
+then says "itos-cc: coverage <dir>: reused from .metrics/coverage/cache,
+its inputs unchanged" in place of the plan's command, or why the entry
+does not serve the run: up to three changed inputs, the files it did not
+measure, those it measured besides the run's, or that it cannot be read.
+Each line keeps its coverage's sources, "in-process" and "integration".`,
 		JSON: `"files": [{"file", "killed", "survived", "excepted", "uncovered", "ran",
    "reused", "baseline": "passed"|"failed"|"not-run", whether this run
    ran the file's own tests without any mutant: "passed" only when they

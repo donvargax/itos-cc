@@ -112,7 +112,7 @@ func (m *memoryCoverage) announce(ctx context.Context, req port.Request) {
 	sources := map[group][]string{}
 	for _, source := range req.Sources {
 		spec := lang.Detect(source)
-		if spec == nil || covrun.Markers(spec.Name) == nil {
+		if spec == nil || covrun.Markers(spec.Name) == nil || slices.Contains(req.Served, source) {
 			continue
 		}
 		g := group{spec.Name, m.memory.buildRoot(source, covrun.Markers(spec.Name))}
@@ -155,6 +155,10 @@ func relTo(dir, path string) string {
 		return filepath.ToSlash(rel)
 	}
 	return path
+}
+
+func (m *memoryCoverage) Plans(ctx context.Context, req port.Request) []coverage.Plan {
+	return m.base.Plans(ctx, req)
 }
 
 func (m *memoryCoverage) Inventory(ctx context.Context, r *coverage.Report, language string) port.Failure {

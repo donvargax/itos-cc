@@ -77,6 +77,10 @@ func (p Progress) Report(e mutants.RunEvent) {
 		_, _ = fmt.Fprintln(log, "itos-cc: coverage: the listed tests' coverage reused from .metrics/coverage/cache, its inputs unchanged")
 	case mutants.ListedCoverageUnserved:
 		_, _ = fmt.Fprintln(log, "itos-cc: coverage: the cached listed tests' coverage does not serve this run:", e.Failure)
+	case mutants.OwnCoverageReused:
+		_, _ = fmt.Fprintf(log, "itos-cc: coverage %s: reused from .metrics/coverage/cache, its inputs unchanged\n", e.File)
+	case mutants.OwnCoverageUnserved:
+		_, _ = fmt.Fprintf(log, "itos-cc: coverage %s: its cached coverage does not serve this run: %v\n", e.File, e.Failure)
 	case "selection-failed":
 		_, _ = fmt.Fprintf(log, "itos-cc: baseline of %s failed: no mutant runs it\n", strings.Join(e.IDs, " "))
 	case "selection-passed":

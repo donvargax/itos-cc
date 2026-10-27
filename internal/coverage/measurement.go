@@ -48,8 +48,23 @@ type MutationMeasurer interface {
 	// MeasureListed measures req, attaching the listed tests only when fresh
 	// built-in collectors run. Named/existing reports retain aggregate behavior.
 	MeasureListed(ctx context.Context, req port.Request, tests *PerTest) (*Report, port.Failure)
+	// Plans are the plans the built-in measurement of req measures its
+	// Sources by, whatever req.Served says, sorted by language, then build
+	// root, then first source; none for a request of reports.
+	Plans(ctx context.Context, req port.Request) []Plan
 	// Inventory lists executable lines of measured but unloaded sources without
 	// running tests. Collector failures are logged and leave those files unproven;
 	// cancellation returns Cancelled. The supplied Report retains good evidence.
 	Inventory(ctx context.Context, report *Report, language string) port.Failure
+}
+
+// Plan is one of a measurement's plans, as a cache keeps its coverage: the
+// language, its build root, Dir, the sources it measures and, for a
+// Python, Kotlin or Dart source measured by the tests that reach it, those
+// tests, its own. An Unreached plan's sources no test reaches, so it runs
+// nothing.
+type Plan struct {
+	Language, Dir  string
+	Sources, Tests []string
+	Unreached      bool
 }

@@ -82,3 +82,30 @@ func TestTestsGiveEachListedTestsCoverage(t *testing.T) {
 		t.Error("Of gives each test's own coverage, and none of a test not measured")
 	}
 }
+
+// A plan's report made of what a store kept of it measures its language,
+// lists the files it proved and leaves those no test loaded unloaded, by
+// its build root (slice-70's cache).
+func TestFromPlanKeepsWhatAPlanProved(t *testing.T) {
+	files := map[string][]coverage.Piece{"/w/a.py": {{Start: 1, End: 1, Total: 1, Covered: 1, InProcess: true}}}
+	r := coverage.FromPlan("python", "/w", files, []string{"/w/a.py"}, []string{"/w/b.py"})
+	if !r.Measures("python") || r.Measures("go") {
+		t.Error("the plan's language is measured, and no other")
+	}
+	if !r.Proves("/w/a.py") || r.Proves("/w/b.py") {
+		t.Error("a.py is proved, b.py is not")
+	}
+	if got := r.Unloaded("python"); !slices.Equal(got, []string{"/w/b.py"}) {
+		t.Errorf("unloaded %v, want b.py", got)
+	}
+	if got := r.UnloadedByDir("python"); !slices.Equal(got["/w"], []string{"/w/b.py"}) {
+		t.Errorf("unloaded by build root %v, want b.py under /w", got)
+	}
+	if lines, proved := r.Lines("/w/a.py"); !proved || len(lines) != 1 || !lines[0].Covered {
+		t.Errorf("a.py's lines %v proved %v, want its one covered line", lines, proved)
+	}
+	var none *coverage.Report
+	if none.Proves("/w/a.py") {
+		t.Error("a nil report proves nothing")
+	}
+}

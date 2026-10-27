@@ -6387,7 +6387,7 @@ Feature: Mutation testing
   # Then.
   Rule: A file's own tests' coverage is reused while nothing it was measured from changed
 
-    @slice-70 @ID-MUT-389 @wip
+    @slice-70 @ID-MUT-389
     Scenario Outline: A second run over an unchanged <language> file reuses its own coverage
       Given <fixture>
       And "itos-cc mutation run <file>" has run
@@ -6404,7 +6404,7 @@ Feature: Mutation testing
 
     # Binary-only for good: integration data is the real binary's, as
     # ID-MUT-117 to 120's.
-    @slice-70 @ID-MUT-390 @binary-only @wip
+    @slice-70 @ID-MUT-390 @binary-only
     Scenario: A reused measurement keeps the coverage of the processes the tests started
       Given the module of ID-MUT-117, whose test runs the built binary
       And "itos-cc mutation run --all-tests" has run

@@ -53,7 +53,7 @@ func (h Handler) strictCoverage(ctx context.Context, q RunQuery, s strictCoverag
 		scope = covport.AllTests
 	}
 	producer := mutants.CoverageProducer("go", q.AllTests)
-	report, err := h.loadCoverage(ctx, q, sources, scope, perTest, s.reach, s.reuse, key)
+	report, err := h.loadCoverage(ctx, q, s, sources, scope, perTest, key)
 	if err != nil {
 		return nil, "", nil, err
 	}
@@ -77,27 +77,30 @@ func (h Handler) strictCoverage(ctx context.Context, q RunQuery, s strictCoverag
 
 // loadCoverage produces coverage for sources under ctx, or nil with
 // --no-coverage, through the mutation coverage binding. scope is the tests
-// that run without --all-tests. With perTest, when the coverage commands
-// run, it also measures each listed test's coverage, in the run's own
-// folder, or serves it from the cache when reuse serves key
-// (mutants.MeasureReusing). The binding owns progress and test output.
-// reach, in OwnTests, is the test files that reach each source, which
-// measure Python's and Kotlin's; nil measures them by the whole suite. A
+// that run without --all-tests. Each plan's own coverage is served from the
+// cache when s's reuse serves it, its inputs keyed at s's root. With
+// perTest, when the coverage commands run, it also measures each listed
+// test's coverage, in the run's own folder, or serves it from the cache
+// when the reuse serves key (mutants.MeasureReusing). The binding owns
+// progress and test output. s's reach, in OwnTests, is the test files that
+// reach each source, which measure Python's and Kotlin's; nil measures
+// them by the whole suite. A
 // stopped run is reported as ctx's cause, as mutation reports a stop, and
 // listed tests whose coverage run failed as tests.coverage-failed
 // (RunError). Its one caller, strict coverage, has refused every raw
 // coverage flag before it (StrictCoverageFlag), --coverage-command among
 // them.
-func (h Handler) loadCoverage(ctx context.Context, q RunQuery, sources []string, scope covport.Scope, perTest *coverage.PerTest, reach covport.Reach, reuse *mutants.ListedReuse, key *mutants.ListedKey) (*coverage.Report, error) {
+func (h Handler) loadCoverage(ctx context.Context, q RunQuery, s strictCoverage, sources []string, scope covport.Scope, perTest *coverage.PerTest, key *mutants.ListedKey) (*coverage.Report, error) {
 	if q.NoCoverage {
 		return nil, nil
 	}
 	req := covport.Request{Sources: sources, Reports: reports(q.CoverageReports), Command: given(q.CoverageCommand), Existing: q.UseExistingCoverage,
-		AllTests: q.AllTests, Scope: scope, Reach: reach}
+		AllTests: q.AllTests, Scope: scope, Reach: s.reach}
 	if h.Coverage == nil {
 		return nil, fmt.Errorf("mutation coverage capability is not bound")
 	}
-	report, failure := mutants.MeasureReusing(ctx, h.Coverage, req, perTest, reuse, key)
+	plans := s.reuse.KeyPlans(ctx, h.Coverage, req, h.Toolchain, h.Fingerprints, s.root, s.support)
+	report, failure := mutants.MeasureReusing(ctx, h.Coverage, req, perTest, s.reuse, key, plans)
 	if failure != nil {
 		if ctx.Err() != nil {
 			return nil, context.Cause(ctx)

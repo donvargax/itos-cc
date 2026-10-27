@@ -97,3 +97,27 @@ func (tc *TestCoverage) Of(id string) *Report {
 	}
 	return tc.reports[id]
 }
+
+// Proves is whether r lists file's executable lines completely, at its
+// format's line precision (Lines).
+func (r *Report) Proves(file string) bool {
+	return r != nil && r.proven[file]
+}
+
+// FromPlan makes the report of a plan of language in its build root dir
+// whose commands all succeeded and wrote their reports, as a store kept
+// it: the pieces of each file it names (FromPieces), its language
+// measured, each of proven listed completely (Lines), and each of
+// unloaded loaded by no test (Unloaded).
+func FromPlan(language, dir string, files map[string][]Piece, proven, unloaded []string) *Report {
+	r := FromPieces(files)
+	r.MarkMeasured(language)
+	r.proven, r.unloaded = map[string]bool{}, map[string]Unloaded{}
+	for _, file := range proven {
+		r.proven[file] = true
+	}
+	for _, file := range unloaded {
+		r.unloaded[file] = Unloaded{Language: language, Dir: dir}
+	}
+	return r
+}

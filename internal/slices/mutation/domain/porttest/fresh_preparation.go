@@ -195,9 +195,26 @@ func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport
 		}
 	}
 	req := covport.Request{Sources: sources, Scope: scope, AllTests: scope == covport.AllTests, Reach: func(path string) []string { return reach[path] }}
+	var served []*coverage.Report
+	if p.ListedReuse != nil {
+		// The plans a complete run of the same inputs kept run nothing:
+		// the frozen tree's inputs, before any coverage command runs.
+		var patterns []string
+		if tests != nil {
+			patterns = tests.Support
+		}
+		if support, failed := inputs.Support(ctx, p.FrozenRoot, patterns); failed == nil {
+			var servedSources []string
+			served, servedSources, _ = p.ListedReuse.ServePlans(ctx, p.ListedReuse.KeyPlans(ctx, f.Coverage, req, &inputs, &inputs, p.FrozenRoot, support))
+			req.Served = servedSources
+		}
+	}
 	// The parser reads actual independently declared tool-format artifacts. A
 	// failed command can retain those bytes but cannot erase the stage failure.
 	report, err := f.Coverage.CollectFresh(ctx, req)
+	if len(served) > 0 {
+		report = coverage.Merge(append(served, report)...)
+	}
 	prep.Report = report
 	if err != nil {
 		return stop("coverage", err)

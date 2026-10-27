@@ -140,7 +140,7 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 	for _, flag := range []string{"no-coverage", "use-existing-coverage", "coverage-command", "coverage-report"} {
 		if written.given("no-coverage-cache") && written.given(flag) {
 			return ui.Emit(c.JSON, nil, []*cli.Problem{flagConflict("--no-coverage-cache",
-				"--no-coverage-cache bypasses the cache of the listed tests' coverage the built-in commands measure, and --"+flag+" uses no cache")})
+				"--no-coverage-cache bypasses the cache of the coverage the built-in commands measure, and --"+flag+" uses no cache")})
 		}
 	}
 	if written.given("count") || written.given("seed") || written.given("repeat") || written.given("site") {

@@ -14,11 +14,34 @@ import (
 )
 
 // listedCache is a stub of the cache: the entry it holds, or the failure
-// reading it gives, and each entry saved.
+// reading it gives, and each entry saved; and each plan's own entry, or
+// the failure reading one gives, and each name an own entry was saved by.
 type listedCache struct {
-	entry   *mutants.ListedCoverage
-	failure snapport.Failure
-	saved   []mutants.ListedCoverage
+	entry      *mutants.ListedCoverage
+	failure    snapport.Failure
+	saved      []mutants.ListedCoverage
+	own        map[string]mutants.OwnCoverage
+	ownFailure snapport.Failure
+	ownSaved   []string
+}
+
+func (c *listedCache) Own(_ context.Context, name string) (*mutants.OwnCoverage, snapport.Failure) {
+	if c.ownFailure != nil {
+		return nil, c.ownFailure
+	}
+	if entry, ok := c.own[name]; ok {
+		return &entry, nil
+	}
+	return nil, nil
+}
+
+func (c *listedCache) SaveOwn(_ context.Context, name string, entry mutants.OwnCoverage) snapport.Failure {
+	if c.own == nil {
+		c.own = map[string]mutants.OwnCoverage{}
+	}
+	c.own[name] = entry
+	c.ownSaved = append(c.ownSaved, name)
+	return nil
 }
 
 func (c *listedCache) Listed(context.Context) (*mutants.ListedCoverage, snapport.Failure) {

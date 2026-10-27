@@ -19,8 +19,26 @@ import (
 )
 
 // listedCache is a stub of the cache of the live project: the entry it
-// holds.
-type listedCache struct{ entry *mutants.ListedCoverage }
+// holds, and each plan's own.
+type listedCache struct {
+	entry *mutants.ListedCoverage
+	own   map[string]mutants.OwnCoverage
+}
+
+func (c *listedCache) Own(_ context.Context, name string) (*mutants.OwnCoverage, snapport.Failure) {
+	if entry, ok := c.own[name]; ok {
+		return &entry, nil
+	}
+	return nil, nil
+}
+
+func (c *listedCache) SaveOwn(_ context.Context, name string, entry mutants.OwnCoverage) snapport.Failure {
+	if c.own == nil {
+		c.own = map[string]mutants.OwnCoverage{}
+	}
+	c.own[name] = entry
+	return nil
+}
 
 func (c *listedCache) Listed(context.Context) (*mutants.ListedCoverage, snapport.Failure) {
 	return c.entry, nil
@@ -177,3 +195,61 @@ func (c stoppingCache) Listed(context.Context) (*mutants.ListedCoverage, snappor
 }
 
 func (stoppingCache) SaveListed(context.Context, mutants.ListedCoverage) snapport.Failure { return nil }
+
+func (stoppingCache) Own(context.Context, string) (*mutants.OwnCoverage, snapport.Failure) {
+	return nil, nil
+}
+
+func (stoppingCache) SaveOwn(context.Context, string, mutants.OwnCoverage) snapport.Failure {
+	return nil
+}
+
+// A preparation whose plan reads the cache runs a coverage plan's own tests
+// while the cache holds nothing of its frozen inputs, and takes its
+// coverage from the cache, running no coverage command, once it does
+// (slice-70): what a complete run of the same commit keeps.
+func TestFreshPreparationServesTheOwnCoverageTheCacheHolds(t *testing.T) {
+	repo := freshPreparationFixture(t)
+	plan, err := PlanFresh(t.Context(), repo, nil, "", 1, "own-reuse-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupFreshPlan(t, plan)
+	cache := &listedCache{}
+	said := &events{}
+	plan.ListedReuse = &mutants.ListedReuse{Cache: cache, Progress: said}
+	prepare := func() (*FreshPreparation, []string) {
+		t.Helper()
+		var calls []string
+		prep, err := prepareFreshContext(t.Context(), plan, freshPreparationOptions{Scope: covrun.OwnTests, Executor: freshPreparationExecutor(t, &calls, nil), Log: coverageLog(t)})
+		if err != nil {
+			t.Fatalf("prepare: %v; stages=%+v calls=%v", err, prep.Stages, calls)
+		}
+		return prep, calls
+	}
+	ranOwn := func(calls []string) bool {
+		return slices.ContainsFunc(calls, func(call string) bool { return strings.Contains(call, "-coverprofile=") })
+	}
+	measured, calls := prepare()
+	if !ranOwn(calls) || len(cache.own) != 0 || slices.Contains(said.kinds, mutants.OwnCoverageReused) {
+		t.Fatalf("an empty cache: own ran %v, kept %+v, said %v", ranOwn(calls), cache.own, said.kinds)
+	}
+	e := fixtureEnvironment(repo)
+	var keys []*mutants.PlanKey
+	for _, id := range covrun.Identities(t.Context(), mutants.FreshMeasurementSources(plan), covrun.OwnTests, nil) {
+		keys = append(keys, mutants.KeyPlan(t.Context(), e.Toolchain, e.Fingerprints, plan.FrozenRoot, id, false, map[string]string{}))
+	}
+	(&mutants.ListedReuse{Cache: cache, Write: true}).KeepPlans(t.Context(), keys, measured.Report)
+	if len(cache.own) != 1 {
+		t.Fatalf("the measured preparation's own coverage was kept as %+v", cache.own)
+	}
+	said.kinds = nil
+	served, calls := prepare()
+	if ranOwn(calls) || !slices.Contains(said.kinds, mutants.OwnCoverageReused) {
+		t.Fatalf("a matching cache: own ran %v (%v), said %v", ranOwn(calls), calls, said.kinds)
+	}
+	main := filepath.Join(plan.FrozenRoot, "main.go")
+	if !served.Report.Measures("go") || !slices.Equal(served.Report.GoBlocks(main), measured.Report.GoBlocks(main)) {
+		t.Fatalf("served own coverage %+v, want %+v", served.Report.GoBlocks(main), measured.Report.GoBlocks(main))
+	}
+}

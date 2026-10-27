@@ -104,7 +104,10 @@ func (m Measurer) fresh(ctx context.Context, req port.Request, out string, scope
 		return nil, port.Unwritable{Reason: err.Error()}
 	}
 	defer func() { _ = os.RemoveAll(run) }()
-	report := covrun.Run(ctx, covrun.Plans(ctx, req.Sources, run, scope, req.Reach), req.Sources, m.Log, m.Execute)
+	// The sources the caller serves itself no plan measures; the listed
+	// tests' coverage measures every one.
+	own := slices.DeleteFunc(slices.Clone(req.Sources), func(s string) bool { return slices.Contains(req.Served, s) })
+	report := covrun.Run(ctx, covrun.Plans(ctx, own, run, scope, req.Reach), own, m.Log, m.Execute)
 	var testsFailed port.Failure
 	if perTest != nil {
 		var tests *coverage.TestCoverage
@@ -129,6 +132,20 @@ func (m Measurer) fresh(ctx context.Context, req port.Request, out string, scope
 	}
 	keepLatest(run, out)
 	return report, nil
+}
+
+// Plans are the plans the built-in measurement of req measures its sources
+// by, as the runner groups them (covrun.Identities); none for a request of
+// reports.
+func (m Measurer) Plans(ctx context.Context, req port.Request) []coverage.Plan {
+	if len(req.Reports) > 0 || req.Existing {
+		return nil
+	}
+	scope := req.Scope
+	if req.AllTests {
+		scope = port.AllTests
+	}
+	return covrun.Identities(ctx, req.Sources, scope, req.Reach)
 }
 
 // removeAbandoned deletes run folders a killed run left behind: any a day

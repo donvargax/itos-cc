@@ -16,10 +16,11 @@ import (
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
 
-// CoverageCache keeps, between runs, the listed tests' coverage a complete
-// run measured (slice-69, issue #67): .metrics/coverage/cache, one entry
-// for the project, which a run reuses while nothing it was measured from
-// changed. Deleting it is always safe.
+// CoverageCache keeps, between runs, the coverage a complete run measured
+// (issue #67): .metrics/coverage/cache, one entry of the listed tests'
+// coverage for the project (slice-69) and one of its own tests' coverage
+// for each coverage plan (slice-70), which a run reuses while nothing it
+// was measured from changed. Deleting it is always safe.
 type CoverageCache interface {
 	// Listed is the entry kept, nil when there is none. One that cannot be
 	// read, or was written by a newer itos-cc, is Unreadable.
@@ -27,6 +28,12 @@ type CoverageCache interface {
 	// SaveListed keeps entry, whole, in place of the one kept, so a run
 	// reading it at the same time never reads half of one.
 	SaveListed(ctx context.Context, entry ListedCoverage) snapport.Failure
+	// Own is the entry kept of the plan named name (PlanKey), as Listed
+	// gives the listed tests'.
+	Own(ctx context.Context, name string) (*OwnCoverage, snapport.Failure)
+	// SaveOwn keeps entry as the plan named name's, as SaveListed keeps
+	// the listed tests'.
+	SaveOwn(ctx context.Context, name string, entry OwnCoverage) snapport.Failure
 }
 
 // CachedPiece is a piece of a listed test's coverage of a file, as the
@@ -67,9 +74,10 @@ type CachedTest struct {
 	Files map[string][]CachedPiece
 }
 
-// ListedReuse is a run's use of the cached listed tests' coverage: the
-// cache, whether the run keeps what it measures (a complete run's built-in
-// measurement), and where it says what it did.
+// ListedReuse is a run's use of the coverage cache, the listed tests'
+// coverage and each plan's own: the cache, whether the run keeps what it
+// measures (a complete run's built-in measurement), and where it says what
+// it did.
 type ListedReuse struct {
 	Cache    CoverageCache
 	Write    bool
@@ -94,12 +102,13 @@ const (
 	ListedCoverageUnserved = "listed-coverage-unserved"
 )
 
-// ListedUnserved is why the cached listed tests' coverage does not serve a
-// run: the inputs that changed, by their names, the files it measured none
-// of, or that it cannot be read.
+// ListedUnserved is why a cached coverage, the listed tests' or a plan's
+// own, does not serve a run: the inputs that changed, by their names, the
+// files it measured none of, the files it measured besides the run's, a
+// plan's alone, or that it cannot be read.
 type ListedUnserved struct {
-	Changed, Unmeasured []string
-	Unreadable          bool
+	Changed, Unmeasured, Also []string
+	Unreadable                bool
 }
 
 func (u ListedUnserved) Error() string {
@@ -112,8 +121,10 @@ func (u ListedUnserved) Error() string {
 			named = append(named, name+" changed")
 		}
 		return firstThree(named)
+	case len(u.Unmeasured) > 0:
+		return "it measured no " + firstThree(u.Unmeasured)
 	}
-	return "it measured no " + firstThree(u.Unmeasured)
+	return "it also measured " + firstThree(u.Also)
 }
 
 // firstThree is up to three of names, by commas, then how many more.
@@ -255,10 +266,16 @@ func (u *ListedReuse) Keep(ctx context.Context, key *ListedKey, report *coverage
 
 // path is file, a path the cache keeps, at the key's root.
 func (k *ListedKey) path(file string) string {
+	return atRoot(k.root, file)
+}
+
+// atRoot is file, a path the cache keeps, slash-separated from root unless
+// it is absolute, as the system names it.
+func atRoot(root, file string) string {
 	if path := filepath.FromSlash(file); filepath.IsAbs(path) {
 		return path
 	}
-	return filepath.Join(k.root, filepath.FromSlash(file))
+	return filepath.Join(root, filepath.FromSlash(file))
 }
 
 // changed is the name of each input of k that kept does not have as k has
@@ -301,23 +318,36 @@ func differing(a, b map[string]string) []string {
 	return out
 }
 
-// MeasureReusing is m's measurement of req, the listed tests' coverage
-// beside it (perTest) served from the cache when reuse serves key, and
-// kept there when reuse writes and the measurement succeeded.
-func MeasureReusing(ctx context.Context, m coverage.MutationMeasurer, req covport.Request, perTest *coverage.PerTest, reuse *ListedReuse, key *ListedKey) (*coverage.Report, covport.Failure) {
-	if perTest == nil {
-		return m.MeasureListed(ctx, req, nil)
-	}
-	if tc := reuse.Serve(ctx, key); tc != nil {
-		report, failure := m.MeasureListed(ctx, req, nil)
-		if failure == nil {
-			report.SetTests(tc)
+// MeasureReusing is m's measurement of req, each plan of plans served from
+// the cache when reuse serves it, and the listed tests' coverage beside it
+// (perTest) when reuse serves key; m measures only the rest, and nothing
+// when nothing is left. What it measured is kept there when reuse writes
+// and the measurement succeeded.
+func MeasureReusing(ctx context.Context, m coverage.MutationMeasurer, req covport.Request, perTest *coverage.PerTest, reuse *ListedReuse, key *ListedKey, plans []*PlanKey) (*coverage.Report, covport.Failure) {
+	served, sources, measured := reuse.ServePlans(ctx, plans)
+	req.Served = append(req.Served, sources...)
+	var tc *coverage.TestCoverage
+	if perTest != nil {
+		if tc = reuse.Serve(ctx, key); tc != nil {
+			perTest = nil
 		}
-		return report, failure
 	}
-	report, failure := m.MeasureListed(ctx, req, perTest)
-	if failure == nil {
+	report := coverage.Merge()
+	if perTest != nil || slices.ContainsFunc(req.Sources, func(s string) bool { return !slices.Contains(req.Served, s) }) {
+		var failure covport.Failure
+		if report, failure = m.MeasureListed(ctx, req, perTest); failure != nil {
+			return nil, failure
+		}
+	}
+	if len(served) > 0 {
+		report = coverage.Merge(append(served, report)...)
+	}
+	if tc != nil {
+		report.SetTests(tc)
+	}
+	if perTest != nil {
 		reuse.Keep(ctx, key, report)
 	}
-	return report, failure
+	reuse.KeepPlans(ctx, measured, report)
+	return report, nil
 }

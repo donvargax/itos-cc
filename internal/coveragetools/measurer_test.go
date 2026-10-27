@@ -157,3 +157,19 @@ func TestRealStaticInventoryContract(t *testing.T) {
 		return Measurer{Log: io.Discard}, dir
 	})
 }
+
+// The plans a request is measured by are the runner's: a Python source's
+// own of the tests that reach it, and its build root's whole suite's with
+// --all-tests, which names no tests of its own.
+func TestPlansAreTheRunnersGroups(t *testing.T) {
+	dir := workspace(t, map[string]string{"pyproject.toml": "[project]\nname='p'\n", "a.py": "a = 1\n", "test_a.py": ""})
+	req := port.Request{Sources: []string{filepath.Join(dir, "a.py")}, Scope: port.OwnTests,
+		Reach: func(string) []string { return []string{filepath.Join(dir, "test_a.py")} }}
+	if plans := (Measurer{}).Plans(t.Context(), req); len(plans) != 1 || len(plans[0].Tests) != 1 {
+		t.Errorf("own plans %+v, want a.py's of test_a.py", plans)
+	}
+	req.AllTests = true
+	if plans := (Measurer{}).Plans(t.Context(), req); len(plans) != 1 || plans[0].Tests != nil {
+		t.Errorf("--all-tests plans %+v, want the build root's whole suite", plans)
+	}
+}

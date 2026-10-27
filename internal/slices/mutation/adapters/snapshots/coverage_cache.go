@@ -13,8 +13,13 @@ import (
 // --use-existing-coverage reads.
 const ListedCoverageName = "coverage/cache/listed.json"
 
-// listedCoverageVersion is the version of the entry this itos-cc writes;
-// one of a newer version cannot be read.
+// ownCoverageFolder is where the cached own tests' coverage of each
+// coverage plan is, from .metrics: one entry a plan, by its name.
+const ownCoverageFolder = "coverage/cache/own"
+
+// listedCoverageVersion is the version of the entries this itos-cc
+// writes, the listed tests' and each plan's own; one of a newer version
+// cannot be read.
 const listedCoverageVersion = 1
 
 // CoverageCache is the domain's CoverageCache over the snapshot Store,
@@ -77,18 +82,37 @@ func (c CoverageCache) Listed(ctx context.Context) (*mutants.ListedCoverage, sna
 		entry.Listed = append(entry.Listed, mutants.CachedListing{ID: l.ID, File: l.File, Fingerprint: l.Fingerprint})
 	}
 	for _, t := range wire.Tests {
-		test := mutants.CachedTest{ID: t.ID, Files: map[string][]mutants.CachedPiece{}}
-		for file, pieces := range t.Files {
-			out := []mutants.CachedPiece{}
-			for _, p := range pieces {
-				out = append(out, mutants.CachedPiece{Start: p.Start, End: p.End, Total: p.Total, Covered: p.Covered, Key: p.Key, Ran: p.Ran,
-					Branch: p.Branch, InProcess: p.InProcess, Integration: p.Integration})
-			}
-			test.Files[file] = out
-		}
-		entry.Tests = append(entry.Tests, test)
+		entry.Tests = append(entry.Tests, mutants.CachedTest{ID: t.ID, Files: fromWire(t.Files)})
 	}
 	return entry, nil
+}
+
+// fromWire is each file's pieces as the domain holds them.
+func fromWire(files map[string][]pieceWire) map[string][]mutants.CachedPiece {
+	out := map[string][]mutants.CachedPiece{}
+	for file, pieces := range files {
+		kept := []mutants.CachedPiece{}
+		for _, p := range pieces {
+			kept = append(kept, mutants.CachedPiece{Start: p.Start, End: p.End, Total: p.Total, Covered: p.Covered, Key: p.Key, Ran: p.Ran,
+				Branch: p.Branch, InProcess: p.InProcess, Integration: p.Integration})
+		}
+		out[file] = kept
+	}
+	return out
+}
+
+// toWire is each file's pieces as they are stored.
+func toWire(files map[string][]mutants.CachedPiece) map[string][]pieceWire {
+	out := map[string][]pieceWire{}
+	for file, pieces := range files {
+		stored := []pieceWire{}
+		for _, p := range pieces {
+			stored = append(stored, pieceWire{Start: p.Start, End: p.End, Total: p.Total, Covered: p.Covered, Key: p.Key, Ran: p.Ran,
+				Branch: p.Branch, InProcess: p.InProcess, Integration: p.Integration})
+		}
+		out[file] = stored
+	}
+	return out
 }
 
 // SaveListed writes entry whole, in place of the one there.
@@ -99,16 +123,47 @@ func (c CoverageCache) SaveListed(ctx context.Context, entry mutants.ListedCover
 		wire.Listed = append(wire.Listed, listedWire{ID: l.ID, File: l.File, Fingerprint: l.Fingerprint})
 	}
 	for _, t := range entry.Tests {
-		test := listedCoverageTest{ID: t.ID, Files: map[string][]pieceWire{}}
-		for file, pieces := range t.Files {
-			out := []pieceWire{}
-			for _, p := range pieces {
-				out = append(out, pieceWire{Start: p.Start, End: p.End, Total: p.Total, Covered: p.Covered, Key: p.Key, Ran: p.Ran,
-					Branch: p.Branch, InProcess: p.InProcess, Integration: p.Integration})
-			}
-			test.Files[file] = out
-		}
-		wire.Tests = append(wire.Tests, test)
+		wire.Tests = append(wire.Tests, listedCoverageTest{ID: t.ID, Files: toWire(t.Files)})
 	}
 	return c.Store.Write(ctx, ListedCoverageName, wire)
+}
+
+// ownCoverageWire is a plan's entry as it is stored: one JSON object.
+type ownCoverageWire struct {
+	Version  int                    `json:"version"`
+	Language string                 `json:"language"`
+	Dir      string                 `json:"dir"`
+	Tests    []string               `json:"tests,omitempty"`
+	Sources  []string               `json:"sources"`
+	Inputs   map[string]string      `json:"inputs"`
+	Files    map[string][]pieceWire `json:"files"`
+	Proven   []string               `json:"proven,omitempty"`
+	Unloaded []string               `json:"unloaded,omitempty"`
+}
+
+// ownName is the entry of the plan named name, from .metrics.
+func ownName(name string) string {
+	return ownCoverageFolder + "/" + name + ".json"
+}
+
+// Own reads the entry of the plan named name: nil when there is none,
+// Unreadable when it does not decode or is of another version.
+func (c CoverageCache) Own(ctx context.Context, name string) (*mutants.OwnCoverage, snapport.Failure) {
+	var wire ownCoverageWire
+	found, failure := c.Store.Read(ctx, ownName(name), &wire)
+	if failure != nil || !found {
+		return nil, failure
+	}
+	if wire.Version != listedCoverageVersion {
+		return nil, &snapport.Unreadable{Name: ownName(name), Reason: "it is of another version"}
+	}
+	return &mutants.OwnCoverage{Language: wire.Language, Dir: wire.Dir, Tests: wire.Tests, Sources: wire.Sources, Inputs: wire.Inputs,
+		Files: fromWire(wire.Files), Proven: wire.Proven, Unloaded: wire.Unloaded}, nil
+}
+
+// SaveOwn writes entry whole as the plan named name's, in place of the one
+// there.
+func (c CoverageCache) SaveOwn(ctx context.Context, name string, entry mutants.OwnCoverage) snapport.Failure {
+	return c.Store.Write(ctx, ownName(name), ownCoverageWire{Version: listedCoverageVersion, Language: entry.Language, Dir: entry.Dir,
+		Tests: entry.Tests, Sources: entry.Sources, Inputs: entry.Inputs, Files: toWire(entry.Files), Proven: entry.Proven, Unloaded: entry.Unloaded})
 }

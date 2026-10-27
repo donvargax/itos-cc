@@ -200,14 +200,14 @@ func (h Handler) Run(ctx context.Context, q RunQuery) (RunFound, error) {
 		Listing: h.listing(root, cfg),
 	}
 	suite := listedSuite(q, cfg)
-	var reuse *mutants.ListedReuse
 	if suite != nil {
 		opt.Listed = &mutants.Listed{Root: root, List: suite.List, All: suite.All, Select: suite.Select}
-		if !q.NoCoverageCache && h.CoverageCache != nil {
-			// A complete run's built-in measurement: read, and kept once
-			// it succeeded.
-			reuse = &mutants.ListedReuse{Cache: h.CoverageCache, Write: true, Progress: q.Progress}
-		}
+	}
+	var reuse *mutants.ListedReuse
+	if !q.NoCoverageCache && !rawCoverage(q) && h.CoverageCache != nil {
+		// A complete run's built-in measurement, each plan's own and the
+		// listed tests': read, and kept once it succeeded.
+		reuse = &mutants.ListedReuse{Cache: h.CoverageCache, Write: true, Progress: q.Progress}
 	}
 	exceptions := append(slices.Clone(cfg.Exceptions), moved...)
 	if strict {

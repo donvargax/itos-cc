@@ -27,7 +27,7 @@ func TestMutationCoverageConsumersUseActualBindings(t *testing.T) {
 	h := Handler{Coverage: m, Dir: root}
 	q := RunQuery{}
 	sources := []string{hit, miss}
-	r, err := h.loadCoverage(t.Context(), q, sources, port.OwnTests, nil, nil, nil, nil)
+	r, err := h.loadCoverage(t.Context(), q, strictCoverage{}, sources, port.OwnTests, nil, nil)
 	if err != nil || !r.Has(hit) || r.Has(miss) {
 		t.Fatalf("bound measurement: %v %v", r, err)
 	}
@@ -51,22 +51,22 @@ func TestMutationCoverageConsumersUseActualBindings(t *testing.T) {
 		t.Fatal("wrong inventory binding still supplied proof")
 	}
 	h.Coverage = nil
-	if _, err := h.loadCoverage(t.Context(), q, sources, port.OwnTests, nil, nil, nil, nil); err == nil || !strings.Contains(err.Error(), "not bound") {
+	if _, err := h.loadCoverage(t.Context(), q, strictCoverage{}, sources, port.OwnTests, nil, nil); err == nil || !strings.Contains(err.Error(), "not bound") {
 		t.Fatalf("missing binding escaped: %v", err)
 	}
 	h.Coverage = &covtest.Measurer{Aggregate: aggregate.Measurer{Dir: root, Files: m.Aggregate.Files}, Declarations: map[coverage.Unloaded]covtest.Measurement{}}
-	r, err = h.loadCoverage(t.Context(), q, sources, port.OwnTests, nil, nil, nil, nil)
+	r, err = h.loadCoverage(t.Context(), q, strictCoverage{}, sources, port.OwnTests, nil, nil)
 	if err != nil || r.Has(hit) {
 		t.Fatal("wrong measurement binding returned known real evidence")
 	}
 	h.Coverage = nil
-	if r, err := h.loadCoverage(t.Context(), RunQuery{NoCoverage: true}, sources, port.OwnTests, nil, nil, nil, nil); r != nil || err != nil {
+	if r, err := h.loadCoverage(t.Context(), RunQuery{NoCoverage: true}, strictCoverage{}, sources, port.OwnTests, nil, nil); r != nil || err != nil {
 		t.Fatal("unused capability demanded by no-coverage")
 	}
 	h.Coverage = m
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, err := h.loadCoverage(ctx, q, sources, port.OwnTests, nil, nil, nil, nil); err != context.Canceled {
+	if _, err := h.loadCoverage(ctx, q, strictCoverage{}, sources, port.OwnTests, nil, nil); err != context.Canceled {
 		t.Fatalf("caller cancellation lost: %v", err)
 	}
 }

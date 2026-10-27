@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/covrun"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/project"
@@ -201,8 +202,25 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 		stage("preparation", "aborted", err)
 		return prep, err
 	}
-	report, executions, coverageErr := covrun.RunSupervised(ctx, plans, sources, log, execute)
+	var served []*coverage.Report
+	measuring := sources
+	if plan.ListedReuse != nil {
+		// The plans whose own coverage a complete run of the same inputs
+		// kept run nothing: the frozen tree's inputs, taken before any
+		// coverage command runs, as that run takes them.
+		var patterns []string
+		if cfg.Tests != nil {
+			patterns = cfg.Tests.Support
+		}
+		if support, failure := e.Fingerprints.Support(ctx, root, patterns); failure == nil {
+			plans, measuring, served = e.servePlans(ctx, plan.ListedReuse, root, plans, sources, scope, reach, support)
+		}
+	}
+	report, executions, coverageErr := covrun.RunSupervised(ctx, plans, measuring, log, execute)
 	prep.Commands = append(prep.Commands, executions...)
+	if len(served) > 0 {
+		report = coverage.Merge(append(served, report)...)
+	}
 	prep.Report = report
 	if coverageErr != nil {
 		stage("coverage", "failed", coverageErr)
@@ -313,6 +331,25 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 	}
 	stage("preparation", "complete", nil)
 	return prep, nil
+}
+
+// servePlans is plans less those reuse serves from the cache, each keyed
+// at root as a complete run keys it (mutants.KeyPlan), sources less theirs,
+// and the coverage it served of them.
+func (e Environment) servePlans(ctx context.Context, reuse *mutants.ListedReuse, root string, plans []covrun.Plan, sources []string, scope covrun.Scope, reach covrun.Reach, support map[string]string) ([]covrun.Plan, []string, []*coverage.Report) {
+	var keys []*mutants.PlanKey
+	for _, id := range covrun.Identities(ctx, sources, scope, reach) {
+		keys = append(keys, mutants.KeyPlan(ctx, e.Toolchain, e.Fingerprints, root, id, scope == covrun.AllTests, support))
+	}
+	served, servedSources, _ := reuse.ServePlans(ctx, keys)
+	unserved := func(s string) bool { return !slices.Contains(servedSources, s) }
+	var rest []covrun.Plan
+	for _, p := range plans {
+		if unserved(p.Sources[0]) {
+			rest = append(rest, p)
+		}
+	}
+	return rest, slices.DeleteFunc(slices.Clone(sources), func(s string) bool { return !unserved(s) }), served
 }
 
 // resolvePreparationTools resolves, before any of them runs, the executable

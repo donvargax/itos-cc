@@ -19,7 +19,6 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage/port"
-	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/project"
 )
 
@@ -164,33 +163,7 @@ func PlansSupervised(ctx context.Context, sources []string, outDir string, scope
 }
 
 func buildPlans(ctx context.Context, sources []string, outDir string, scope Scope, reach Reach, execute CommandExecutor) ([]Plan, []CommandExecution, error) {
-	// tests is, for a Python, Dart or Kotlin source measured by the tests
-	// that reach it, those tests as PythonTests or DartTests runs them, or
-	// the test classes of its own module KotlinTests finds in them, joined:
-	// a group of its own.
-	type key struct{ lang, dir, tests string }
-	narrow := scope == OwnTests && reach != nil
-	groups := map[key][]string{}
-	for _, s := range sources {
-		spec := lang.Detect(s)
-		if spec == nil {
-			continue
-		}
-		dir := project.FindUp(ctx, s, markers[spec.Name]...)
-		if dir == "" {
-			dir = filepath.Dir(s)
-		}
-		k := key{spec.Name, dir, ""}
-		switch {
-		case spec.Name == "python" && narrow:
-			k.tests = "\x00" + strings.Join(PythonTests(dir, reach(s)), "\x00")
-		case spec.Name == "kotlin" && narrow:
-			k.tests = "\x00" + strings.Join(KotlinTests(ctx, reach(s))[dir], "\x00")
-		case spec.Name == "dart" && narrow:
-			k.tests = "\x00" + strings.Join(DartTests(dir, reach(s)), "\x00")
-		}
-		groups[k] = append(groups[k], s)
-	}
+	groups := groups(ctx, sources, scope, reach)
 	var plans []Plan
 	var executions []CommandExecution
 	var failures []error

@@ -70,6 +70,28 @@ func ListedContract(t *testing.T, open func(t *testing.T, split bool, fail strin
 			}
 		})
 	}
+	t.Run("a served source runs no plan and the listed tests measure it", func(t *testing.T) {
+		m, root := open(t, true, "")
+		file := filepath.Join(root, "main.go")
+		req := port.Request{Sources: []string{file}, Scope: port.OwnTests}
+		if plans := m.Plans(t.Context(), req); !reflect.DeepEqual(plans, []coverage.Plan{{Language: "go", Dir: root, Sources: []string{file}}}) {
+			t.Fatalf("plans %+v, want the module's one", plans)
+		}
+		if plans := m.Plans(t.Context(), port.Request{Sources: []string{file}, Reports: []string{"c.out"}}); plans != nil {
+			t.Fatalf("a request of reports has plans %+v", plans)
+		}
+		req.Served = []string{file}
+		r, failure := m.MeasureListed(t.Context(), req, tests(root))
+		if failure != nil {
+			t.Fatal(failure)
+		}
+		if r.Has(file) || r.Measures("go") {
+			t.Fatal("a plan measured the served source")
+		}
+		if !reflect.DeepEqual(r.LineTests(file, 5), []string{"A"}) {
+			t.Fatalf("the listed tests' coverage of the served source: A=%v", r.LineTests(file, 5))
+		}
+	})
 	for _, c := range []struct {
 		name, fail, command string
 		split               bool

@@ -105,7 +105,9 @@ func (m *Measurer) MeasureListed(ctx context.Context, req port.Request, tests *c
 	if m.RunDirectoryFailure != nil {
 		return nil, *m.RunDirectoryFailure
 	}
-	groups := m.groups(req.Sources)
+	// The sources the caller serves itself no plan measures; the listed
+	// tests' coverage measures every one.
+	groups := m.groups(slices.DeleteFunc(slices.Clone(req.Sources), func(s string) bool { return slices.Contains(req.Served, s) }))
 	var reports []*coverage.Report
 	for _, group := range orderedGroups(groups) {
 		root := group.Dir
@@ -169,6 +171,7 @@ func (m *Measurer) MeasureListed(ctx context.Context, req port.Request, tests *c
 	}
 	r := coverage.Merge(reports...)
 	if tests != nil {
+		groups := m.groups(req.Sources)
 		tc, _, _ := m.listed(ctx, groups, tests)
 		if failure := m.listedFailure(groups, tests); failure != nil && ctx.Err() == nil {
 			return nil, failure
@@ -180,6 +183,21 @@ func (m *Measurer) MeasureListed(ctx context.Context, req port.Request, tests *c
 		return nil, port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	return r, nil
+}
+
+// Plans are the plans MeasureListed measures req's sources by: one of each
+// language's declared build root holding some, sources no test reaches of
+// a Python, Kotlin or Dart root unreached; none for a request of reports.
+func (m *Measurer) Plans(_ context.Context, req port.Request) []coverage.Plan {
+	if len(req.Reports) > 0 || req.Existing || m.Declarations == nil {
+		return nil
+	}
+	groups := m.groups(req.Sources)
+	var plans []coverage.Plan
+	for _, group := range orderedGroups(groups) {
+		plans = append(plans, coverage.Plan{Language: group.Language, Dir: group.Dir, Sources: groups[group], Unreached: unreached(req, group, groups[group])})
+	}
+	return plans
 }
 
 // timedOut is the report d's command wrote before go test stopped
@@ -499,7 +517,8 @@ func (m *Measurer) CollectFresh(ctx context.Context, req port.Request) (*coverag
 	}
 	var reports []*coverage.Report
 	var failures []error
-	groups := m.groups(req.Sources)
+	// The sources the caller serves itself no plan measures.
+	groups := m.groups(slices.DeleteFunc(slices.Clone(req.Sources), func(s string) bool { return slices.Contains(req.Served, s) }))
 	admitted := map[string]bool{}
 	for _, sources := range groups {
 		for _, source := range sources {
@@ -507,7 +526,7 @@ func (m *Measurer) CollectFresh(ctx context.Context, req port.Request) (*coverag
 		}
 	}
 	for _, source := range req.Sources {
-		if !admitted[filepath.Clean(source)] {
+		if !admitted[filepath.Clean(source)] && !slices.Contains(req.Served, source) {
 			failures = append(failures, fmt.Errorf("supervised coverage has admitted source without a measurement plan: %s", source))
 		}
 	}

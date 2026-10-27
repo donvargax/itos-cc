@@ -26,6 +26,10 @@ type Request struct {
 	// and Kotlin's sources in OwnTests; nil measures them by the whole
 	// suite.
 	Reach Reach
+	// Served are sources of Sources whose own tests' coverage the caller
+	// holds already, from a cache: no plan measures them, while the listed
+	// tests' coverage beside it still measures every source.
+	Served []string
 }
 
 // Scope is which tests measure the sources.
