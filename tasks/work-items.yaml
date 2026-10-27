@@ -6151,3 +6151,15 @@ items:
       tools/testdata/architecture fixtures covering it. Possibly a backport candidate for the
       template the tool came from.
     refs: ["#61"]
+  - id: pinned-shared-across-worktrees
+    title: tools/bin/pinned reuses the main checkout's .tools in a linked worktree
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      pinned keeps its downloads under the checkout's own .tools, so each implementing agent's
+      worktree downloads golangci-lint again (15 MB); on slice-64 the download stalled at 7.8 MB for
+      the 300 s cap before a retry, while the main checkout already held the same pinned version.
+      Looking in the git common dir's checkout first, checksum unchanged, would skip it.
