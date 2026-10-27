@@ -6210,7 +6210,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [slice-69]
     kind: idea
     why: >
       The second half of q-102 (a), after slice-69 lands on its cache pieces (entry codec, port and
