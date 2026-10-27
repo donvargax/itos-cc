@@ -101,11 +101,9 @@ func identityExceptionSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^a blank line was added above Count's comment since the report$`, func() error {
 		return w.write(identityFile, strings.Replace(identitySource, "// Count", "\n// Count", 1))
 	})
-	sc.Step(`^Count's "x < 5" became "x < 6"$`, func() error {
-		return w.write(identityFile, strings.Replace(identitySource, "x < 5", "x < 6", 1))
-	})
+	sc.Step(`^Count's "x < 5" became "x < 6"$`, i.countChanged)
 	sc.Step(`^Count was renamed Below$`, func() error {
-		return w.write(identityFile, strings.ReplaceAll(identitySource, "Count", "Below"))
+		return i.edit(func(text string) string { return strings.ReplaceAll(text, "Count", "Below") })
 	})
 	sc.Step(`^nothing changed$`, func() error { return nil })
 	sc.Step(`^its "why" is "(changed|gone)", its "identity" the argument, and its fix names a report of the code as it is now$`, i.staleWhy)
@@ -117,6 +115,7 @@ func identityExceptionSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step("^its standard error names the survivor `<` → `<=` at board/board\\.go:5:11 with its identity \"([^\"]*)\"$", i.stderrNames)
 	sc.Step(`^with --json, the "mutation\.survived" problem's fix names "(.*)"$`, i.survivedFix)
 	i.namedSiteSteps(sc)
+	i.rehashSteps(sc)
 }
 
 // module writes and commits the module, board_test.go holding test, and
@@ -202,6 +201,12 @@ func (i *identityException) recorded(args, outcome string, code int) error {
 // snapshotRecords is whether the snapshot of board/board.go records
 // Count's mutant at 5:11 as outcome.
 func (i *identityException) snapshotRecords(outcome string) error {
+	return i.snapshotRecordsAt(5, outcome)
+}
+
+// snapshotRecordsAt is whether the snapshot of board/board.go records
+// Count's mutant at line, column 11, as outcome.
+func (i *identityException) snapshotRecordsAt(line int, outcome string) error {
 	data, err := i.w.d.Read(i.snapshotPath())
 	if err != nil {
 		return err
@@ -222,12 +227,12 @@ func (i *identityException) snapshotRecords(outcome string) error {
 	}
 	for _, u := range snap.Units {
 		for _, m := range u.Mutants {
-			if u.Name == "Count" && m.Line == 5 && m.Column == 11 && m.Original == "<" && m.Replacement == "<=" && m.Outcome == outcome {
+			if u.Name == "Count" && m.Line == line && m.Column == 11 && m.Original == "<" && m.Replacement == "<=" && m.Outcome == outcome {
 				return nil
 			}
 		}
 	}
-	return fmt.Errorf("the snapshot of board/board.go does not record Count's mutant at 5:11 %s\n%s", outcome, data)
+	return fmt.Errorf("the snapshot of board/board.go does not record Count's mutant at %d:11 %s\n%s", line, outcome, data)
 }
 
 // reported runs the counted run and keeps the identity it reports for the
