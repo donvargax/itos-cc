@@ -65,5 +65,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0061: Every package but cmd lives under internal/, the gate naming the few that may cross](0061-every-package-but-cmd-lives-under-internal-the-gate-naming-the-few-that-may-cross.md)
 - [ADR-0062: Every Did-you-mean follows kong's rule from the fork, which the settings adapter may import](0062-every-did-you-mean-follows-kong-s-rule-from-the-fork-which-the-settings-adapter-may-import.md)
 - [ADR-0063: itos-cc.yaml stays format version 1 until itos-cc 1.0](0063-itos-cc-yaml-stays-format-version-1-until-itos-cc-1-0.md)
+- [ADR-0064: Exceptions and extension keys are not coverage inputs](0064-exceptions-and-extension-keys-are-not-coverage-inputs.md)
 
 <!-- itos:decisions:end -->
