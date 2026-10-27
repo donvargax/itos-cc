@@ -94,3 +94,10 @@ Stage only your own files, by explicit path: untracked files you did not make ar
   main red, and a revert, which must name it too, reruns them. Give the task
   back to clear it. Recorded 2026-10-24 (T-208, ci 40152891755; T-187 the
   same day); last seen 2026-10-24; exit: permanent (judgment).
+- A task's check runs as CI runs it, alone, from the repository root: write
+  it the way the code is really invoked, and try it bare before adding the
+  task. A test package that runs only under a script (tools/testdata/
+  architecture under tools/bin/architecture-check) is checked by the
+  script; a bare `go test` of it always fails and turns main red with every
+  gate green. Recorded 2026-10-27 (T-222, ci 40455846120; T-210 the same
+  way earlier); last seen 2026-10-27; exit: permanent (judgment).
