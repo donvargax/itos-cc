@@ -134,6 +134,13 @@ func (q *countedMutation) setMode(mode string) error {
 	if err = w.d.Write(filepath.Join(q.e.outside, "counted-control.json"), data); err != nil {
 		return err
 	}
+	// The control, outside the project, changes what its tests run, which
+	// no input of a cached coverage holds: the cache is removed, as
+	// deleting it always may be (slice-69), so the next run measures the
+	// tests as they now run.
+	if err = w.d.Remove(filepath.Join(w.dir, ".metrics", "coverage", "cache")); err != nil {
+		return err
+	}
 	t := Tests{Language: "go", Command: q.e.command, Elapsed: 100 * time.Millisecond, Trace: &TestTrace{File: filepath.Join(q.e.outside, "trace.jsonl"), Source: "main.go", Coverage: true}}
 	site := Site{File: "main.go", Line: 3, Original: ">", Replacement: ">="}
 	if mode == "survive" {
