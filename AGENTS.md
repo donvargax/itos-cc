@@ -57,8 +57,11 @@ Stage only your own files, by explicit path: untracked files you did not make ar
   mutation packages are fine: they mutate fixtures, not this code.
 - A survivor the code proof finds in a function your push changed, even one
   older than the push, is yours: kill it with a test in that push. A repair
-  push re-judges the same site, since `--seed {base}` keeps the draw while
-  the range stands. When you judge the mutant truly equivalent, stop and
+  push usually re-judges the same site, as `--seed {base}` seeds the draw by
+  the range's start, but a site another push adds can outrank it and be
+  drawn instead (2026-10-26, bug-11 and T-219), so a green repair run is not
+  proof the first site died: show the kill by applying the mutant by hand
+  and running its package's tests. When you judge the mutant truly equivalent, stop and
   report it with your reasoning: the coordinator approves it, or sends it
   back for a test, before its exception lands in `itos-cc.yaml` with its
   reason; the person reviews the exceptions weekly.
