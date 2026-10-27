@@ -7155,3 +7155,28 @@
     Between agents, the coordinator moves the pin from 8.25.0 to the newest patch so the next agents
     read its guides and hooks, as T-209 did; a patch of the 8.25 line the person approved on
     2026-10-26 (T-218).
+- id: T-222
+  type: build
+  title: architecture-check reads its allowed imports from a committed file
+  why: >
+    Issue #61: tools/bin/architecture-check states which importers may reach under internal/slices
+    and internal/ inside its awk programs, so a project copying the layout, as docs/architecture.md
+    invites, must edit the script to state its own rows, and a row is not reviewable as a rule
+    change. Today outside() allows only cmd (graph's and config's rows went, T-194 to T-197, T-208)
+    and toplevel() keeps two permanent rows: features may import internal/project and the packages
+    under it, and tools/bin/release-notes and release-version may import internal/release and its
+    releasetest (ADR-0061). Decided by the coordinator (2026-10-27, a call inside the issue): the
+    rows move to a committed file, tools/architecture-allow.txt, one row per line, '<rule>
+    <importer> <allowed import>... # <ADR or reason>', with rule outside or toplevel, paths relative
+    to the module, a trailing /... meaning the package and those under it, blank and # lines
+    ignored; the script reads it beside itself's repository root, keeps cmd's allowance and the
+    internal-under-internal allowance as its fixed rules (they are the layout, not exceptions),
+    refuses a malformed row naming its line (exit 2, as a usage error), and refuses a row naming an
+    unknown rule. The script's comments say where the rows live; docs/go.md and docs/architecture.md
+    point at the file instead of the script. The fixtures in tools/testdata/architecture cover
+    reading the file: a row that allows, the same import refused without it, a malformed row, an
+    unknown rule. Behaviour for this repository is unchanged: the same rows, the same refusals. Then
+    file a backport issue on the template the script came from if it carries the script (the
+    coordinator does).
+  done_when:
+    - run: go test ./tools/testdata/architecture/...

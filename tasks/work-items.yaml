@@ -6113,20 +6113,13 @@ items:
       first. Asked: e.g. mutation except --rehash, recomputing the old hash from the source and,
       when it matches, writing the new one without judging mutants. Matters at each hash change.
     refs: ["#65"]
-  - id: architecture-exceptions-config
-    title: architecture-check reads its outside-slice exceptions from a committed file
+  - id: T-222
+    title: architecture-check reads its allowed imports from a committed file
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      #61: tools/bin/architecture-check names the packages allowed to import under internal/slices
-      (graph, config; ~lines 79-97) inside its awk program, so a project copying the layout must
-      edit the script, and the exception is not reviewable as a rule change. Read them (importer,
-      allowed prefixes, the ADR naming each) from a small committed file or flags, with
-      tools/testdata/architecture fixtures covering it. Possibly a backport candidate for the
-      template the tool came from.
+    kind: task
     refs: ["#61"]
   - id: pinned-shared-across-worktrees
     title: tools/bin/pinned reuses the main checkout's .tools in a linked worktree
