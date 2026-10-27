@@ -7226,3 +7226,12 @@
     prints each digit class's total from downloaded reports, so the next rebalance is one command;
     if two parts cannot both stay under about 16 minutes, say so in the report instead of adding a
     third (macOS already runs five jobs at once, GitHub's limit).
+- id: T-226
+  type: chore
+  title: Upgrade the repository pin to itos 8.25.2
+  why: >
+    Between agents, the coordinator moves the pin from 8.25.1 to the newest patch so the next agents
+    read its guides and hooks, as T-221 did; a patch of the 8.25 line the person approved on
+    2026-10-26 (T-218).
+  done_when:
+    - run: itos version
