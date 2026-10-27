@@ -6252,6 +6252,6 @@ items:
     title: Upgrade the repository pin to itos 8.25.2
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
