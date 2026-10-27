@@ -4386,6 +4386,30 @@ Feature: Mutation testing
       And the removal is reported with why "excluded"
       And "itos-cc mutation check --json" reports no "mutation.exception-stale" problem
 
+    # bug-12 (from the idea except-plain-slashed, found by slice-68's
+    # agent): bug-9 made every plain line of mutation run, check and sample
+    # name its file slash-separated from the working directory on every
+    # system, but mutation except's own lines (excepted, renewed, not
+    # renewed, pruned) still print the system's form, board\board.go on
+    # Windows; slice-68 fixed --rehash's alone (936781b4). Decided by the
+    # coordinator on 2026-10-27: every plain line mutation except prints
+    # names its file as bug-9's do; --json and the problems' messages name
+    # it as they do now. The separator is the presentation's value, as in
+    # bug-9, so its unit tests hold every line with Windows' separator and
+    # fail before the fix on any system. On Linux and macOS the scenario
+    # holds already, a guardrail; on Windows (cd.yml) it fails before the
+    # fix at its Then.
+    @bug-12 @ID-MUT-391 @wip
+    Scenario Outline: mutation except's plain lines name their file slash-separated
+      Given <given>
+      When I run "<command>"
+      Then a line of its standard output names "<file>" as written here, slash-separated
+
+      Examples:
+        | given                                                                                                   | command                              | file                     |
+        | itos-cc.yaml excepts a survivor in src/port/porttest/fake.go and excludes "**/porttest/**"               | itos-cc mutation except --prune      | src/port/porttest/fake.go |
+        | a Go project with a reviewed exception for an equivalent mutant in a function, and a commit that renames a string literal on another line of that function, and "itos-cc mutation run" has judged the function again and the mutant still survives | itos-cc mutation except --renew | the function's file |
+
     @slice-21 @ID-MUT-295
     Scenario: --prune keeps an entry that --renew or an edit can mend
       Given itos-cc.yaml excepts a survivor of "Board#count", and "Board#count" changed since the entry was written
