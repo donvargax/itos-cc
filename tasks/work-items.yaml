@@ -6189,3 +6189,17 @@ items:
       build it, and if so whether AGENTS.md then allows --site --own-tests locally. itos.yaml's
       proof comment names --site as the repair's proof and changes with that decision.
     refs: ["#68"]
+  - id: pid-file-read-race
+    title: Wait for the descendant PID file to hold a line before reading it in freshenv test
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      TestFreshPreparationOwnsCommandsAndPreservesListedReach (freshenv/preparation_test.go,
+      testOwnedPreparationCleanup) waits only for descendant.pid to exist, but the shell creates the
+      file at the redirect before echo writes the PID, so a fast read gets "" and strconv.Atoi
+      fails: ci.yml run 40456057099 (test (others)) failed so on the slice-67 push, which touched
+      nothing it runs. Wait until the file holds a newline-terminated PID, or write it to a
+      temporary name and rename.
