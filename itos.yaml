@@ -198,9 +198,11 @@ ci:
 # check) would fail every Go push. --fail-uncovered=lines holds the lines
 # the range adds or changes to strict coverage (itos-cc's =lines): old
 # uncovered code beside a change is not the range's. --seed {base} draws
-# the site by the range's start, not HEAD (itos-cc's default seed), so the
-# same site leads while the range stands: a repair push re-judges what
-# failed instead of drawing another. A range with no site passes. Both
+# the site by the range's start, not HEAD (itos-cc's default seed), so a
+# repair push usually re-judges what failed, though a site a later push
+# adds to the range can outrank it and be drawn instead: the repair proves
+# its kill with mutation run --site on the survivor's identity, the one
+# local mutation run AGENTS.md allows. A range with no site passes. Both
 # jobs set up what any drawn site needs, as nightly.yml does: Go, Node and
 # npm ci in viewer/, without which a viewer site fails its baseline, and
 # itos for mutation.tests' list command, whose tools/bin/listed-scenarios
