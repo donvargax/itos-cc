@@ -138,7 +138,7 @@ func (i *identityException) namedSiteSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the problem is "([^"]*)", with argument "([^"]*)" and why "([^"]*)"$`, n.unmatched)
 	sc.Step(`^the problems are two "([^"]*)", with arguments "([^"]*)" and "([^"]*)"$`, n.twoUnmatched)
 	sc.Step(`^no test or coverage command ran$`, func() error { return strictNoCommands(i.w.stderr) })
-	sc.Step(`^the problem is "([^"]*)", with flag "([^"]*)" and value "([^"]*)"$`, n.flagValue)
+	sc.Step(`^the problem is "([^"]*)", with flag "(--site)" and value "([^"]*)"$`, n.flagValue)
 	sc.Step(`^stderr warns that the run judged HEAD's commit and that board/board_test\.go goes unjudged$`, n.unjudged)
 	sc.Step(`^the selected site's stages are "own" survived, "listed-baseline" complete and "listed" killed, its scope "listed" with that test$`, n.listedStages)
 }
