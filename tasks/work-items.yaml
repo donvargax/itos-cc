@@ -6172,8 +6172,8 @@ items:
   - id: slice-67
     title: mutation run --site --own-tests judges named mutants by their own tests alone
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
