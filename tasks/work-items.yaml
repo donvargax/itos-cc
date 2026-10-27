@@ -6174,14 +6174,15 @@ items:
       fails: ci.yml run 40456057099 (test (others)) failed so on the slice-67 push, which touched
       nothing it runs. Wait until the file holds a newline-terminated PID, or write it to a
       temporary name and rename.
-  - id: coverage-reuse-own
+  - id: slice-70
     title: A file's own tests' coverage is reused while nothing it was measured from changed
     phase: 1
     owner: null
     status: todo
     depends_on: [slice-69]
-    kind: idea
+    kind: slice
     why: >
+      Was coverage-reuse-own.
       The second half of q-102 (a), after slice-69 lands on its cache pieces (entry codec, port and
       fake, key, stderr lines, --no-coverage-cache): each coverage plan's own-tests report is cached
       and reused under equal inputs, keeping each line's in-process and integration sources. Its
