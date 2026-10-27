@@ -157,3 +157,23 @@ func TestOwnTestsReachThePlanAndTheReport(t *testing.T) {
 		t.Errorf("without --own-tests: request %+v\n%s", request, out.String())
 	}
 }
+
+// A named run's plain report heads with what it named, and a drawn run's
+// with its seed and algorithm, whatever else its sampling says.
+func TestANamedReportHeadsWithWhatItNamed(t *testing.T) {
+	for _, c := range []struct {
+		sampling countedSampling
+		head     string
+	}{
+		{countedSampling{Algorithm: mutants.FreshNamedAlgorithm, Commit: "c0", Selected: 2, Executed: 1, Completion: "completed"},
+			"named mutation run at c0: 2 named, 1 executed, each judged alone\n"},
+		{countedSampling{Algorithm: mutants.FreshPlanVersion, Commit: "c0", Seed: "s", Budget: 1, Eligible: 3, Selected: 1, Executed: 1, Omitted: 2, Completion: "completed"},
+			"counted mutation run at c0: seed s, algorithm " + mutants.FreshPlanVersion + "\nbudget 1: 1 of 3 eligible sites selected, 1 executed, 2 omitted\n"},
+	} {
+		var out strings.Builder
+		(&Presentation{UI: &cli.UI{Stdout: &out}}).printCounted(&countedResult{Sampling: c.sampling})
+		if !strings.HasPrefix(out.String(), c.head) {
+			t.Errorf("report:\n%s\nwant it to start:\n%s", out.String(), c.head)
+		}
+	}
+}
