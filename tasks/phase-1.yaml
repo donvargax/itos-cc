@@ -7136,8 +7136,6 @@
     TEMP pointed at an empty folder leaves it empty). Giving every mutation trial its own TMPDIR in
     mutation run is a product change users' suites would see, and stays an idea for the person
     (mutation-trial-tmpdir).
-  done_when:
-    - run: go test ./internal/slices/mutation/adapters/worktrees/...
 - id: T-220
   type: refactor
   title: GoScope keeps the test packages it selects as a set
