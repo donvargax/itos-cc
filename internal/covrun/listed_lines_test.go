@@ -131,3 +131,19 @@ func TestTheListedTestsSayWhenTheirRunAndTheirConversionsEnd(t *testing.T) {
 		`itos-cc: coverage: the listed tests ran in [0-9]+\.[0-9]s; converting the coverage of 1 of them`,
 		`itos-cc: coverage: converted the coverage of 1 listed tests in [0-9]+\.[0-9]s`)
 }
+
+func TestOneListedTestOfAHarnessThatDoesNotSplitRunsAlone(t *testing.T) {
+	root := t.TempDir()
+	p, _ := listed(root)
+	rec := alone()
+	var log bytes.Buffer
+	// One test whose run of every test writes no data runs alone, as
+	// several do.
+	if _, failure := MeasureTests(context.Background(), p, filepath.Join(root, "data"), nil, &log, rec.execute); failure != nil {
+		t.Fatalf("listed coverage: %v\n%s", failure, log.String())
+	}
+	inOrder(t, log.String(),
+		`itos-cc: coverage .*\$ every test`,
+		`itos-cc: coverage .*\$ one test`,
+		`itos-cc: coverage: the listed tests ran one at a time in [0-9]+\.[0-9]s; converting the coverage of 1 of them`)
+}

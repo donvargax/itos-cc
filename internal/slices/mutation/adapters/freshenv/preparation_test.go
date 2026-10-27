@@ -360,7 +360,12 @@ func freshPreparationExecutor(t *testing.T, calls *[]string, fail func(*exec.Cmd
 			profile := coverageFlag(cmd.Args, "-coverprofile=")
 			return writeGoProfile(profile, filepath.Join(cmd.Dir, "main.go"))
 		}
-		if commandTool(cmd) == "go" && len(cmd.Args) > 3 && cmd.Args[1] == "tool" && cmd.Args[2] == "covdata" {
+		if commandTool(cmd) == "go" && slices.Equal(cmd.Args[1:], []string{"tool", "-n", "covdata"}) {
+			// Where covdata is, found once and then run directly.
+			_, err := fmt.Fprintln(cmd.Stdout, filepath.Join(cmd.Dir, "covdata"))
+			return err
+		}
+		if commandTool(cmd) == "covdata" && len(cmd.Args) > 2 && cmd.Args[1] == "textfmt" {
 			return writeGoProfile(coverageFlag(cmd.Args, "-o="), filepath.Join(cmd.Dir, "main.go"))
 		}
 		if len(cmd.Args) >= 3 && (cmd.Args[2] == "fresh-list" || cmd.Args[2] == "live-list" || cmd.Args[2] == "fresh-listed-all" || strings.HasPrefix(cmd.Args[2], "fresh-listed-select ")) {
