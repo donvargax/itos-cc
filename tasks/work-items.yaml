@@ -6035,3 +6035,17 @@ items:
     status: doing
     depends_on: []
     kind: task
+  - id: exclude-uncovered-inventory
+    title: mutation run --fail-uncovered=lines judges files itos-cc.yaml's exclude leaves out
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      #62: changed lines in an excluded file (exclude: ['**/porttest/**']) still fail strict
+      coverage as mutation.uncovered-statement, though no site is drawn there and docs/CLI.md says
+      exclude leaves sources out however they were chosen. A bug: the uncovered-statement inventory
+      should follow exclude. itos-cc's own pushes now run the proof (proof.code), so it may show
+      here too.
+    refs: ["#62"]
