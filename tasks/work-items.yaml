@@ -6163,8 +6163,8 @@ items:
   - id: T-224
     title: Wait for the descendant PID file to hold a line before reading it in freshenv test
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: slice-70
