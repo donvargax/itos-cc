@@ -6068,8 +6068,8 @@ items:
   - id: slice-65
     title: Listed tests' Go coverage is converted once-resolved and only for the measured packages
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [slice-64]
     kind: slice
     why: >
