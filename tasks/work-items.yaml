@@ -6228,7 +6228,7 @@ items:
   - id: T-225
     title: Rebalance cd.yml's features parts from their measured reports
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
