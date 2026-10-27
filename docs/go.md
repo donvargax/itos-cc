@@ -715,7 +715,8 @@ context-as-argument a context after any other parameter, tests included.
   `workdir`'s and `metricsdir`'s no longer do, since mutation's source edits and snapshot codec
   left them for `sources` and `snapshots` (T-161). `snapshots`' allows the snapshot port it
   reads and writes through, and `exceptions`' the `settings` adapter, the reading codec it
-  wraps, which `freshenv`'s allows too (T-197). `settings`' allows selection's port, whose
+  wraps, which `freshenv`'s allows too (T-197), and `testinputs`', which reads `itos-cc.yaml`'s
+  coverage input through it (`settings.Measured`, decision 64). `settings`' allows selection's port, whose
   `SettingsReader` its `Reader` implements beside the domain's, and `internal/project`, for
   the project root. `freshenv`
   serves mutants, yet its rule allows `internal/coverage` and its port too, since it reads Go coverage blocks (`coverage.GoBlock`) through that domain.

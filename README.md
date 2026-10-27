@@ -689,7 +689,7 @@ A complete run keeps the listed tests' coverage it measured in
 instead of running the listed tests for coverage again while nothing it
 was measured from changed: each measured file's build root as strict
 coverage evidence records it (its sources and tests, lock and config files,
-the whole `itos-cc.yaml`, the `support` files, the producer and the
+`itos-cc.yaml`'s settings but its exceptions, the `support` files, the producer and the
 toolchain's environment), what the list command printed, and each listed
 test's file. stderr says so, or names what changed and measures again. Any
 source edit misses, so the win is a second run over an unchanged tree, such
@@ -697,9 +697,9 @@ as one file judged twice, a `--site` run after a complete run of its
 commit, or a CI job restoring the folder for a later job of the same
 commit. `--count` and `--site` only read it, `--fail-uncovered` reuses it as
 evidence of the inputs it records, `--no-coverage-cache` neither reads nor
-writes it, and deleting the folder is always safe. Since `itos-cc.yaml` is
-hashed whole, `mutation except` makes the entry miss; check a new exception
-with `mutation check`, which runs nothing.
+writes it, and deleting the folder is always safe. An exception never
+changes what coverage measures, so `mutation except` leaves the entry
+serving, as it leaves strict evidence fresh.
 
 Each file's own tests' coverage is kept there the same way, one entry for
 each coverage plan: a language's build root and, for a Python, Kotlin or
@@ -1053,8 +1053,14 @@ files, the producer, the `flutter` that runs, `FLUTTER_ROOT` and
 `PUB_CACHE`; hidden folders, `.dart_tool` among them, `build/`, `coverage/`,
 `integration_test/` and `test_driver/` beside a `pubspec.yaml`, a Flutter
 app's platform folders and a nested package the workspace does not list are
-left out. Raw profiles and reports cannot be stamped with current
-hashes. `mutation sample` runs a few cached mutants
+left out. Project config is `itos-cc.yaml` as itos-cc reads it, every
+setting counting but `mutation.exceptions`, so excepting a survivor, or
+writing an `x-` key, a comment or another layout, leaves every language's
+evidence fresh (decision 64); a file that is not there counts as an empty
+one.
+Evidence recorded before itos-cc read the file so reads stale once, until
+a strict run measures it again. Raw profiles and reports cannot be stamped
+with current hashes. `mutation sample` runs a few cached mutants
 again, in CI say, and fails with `mutation.mismatch` when an outcome differs
 from the one recorded, whichever way: a kill that now survives, or a
 survivor now killed. Killed, timeout and over-limit agree. A mutant whose

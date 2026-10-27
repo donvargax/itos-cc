@@ -17,6 +17,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/covrun"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/project"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -550,16 +551,14 @@ func addCoverageInput(inputs map[string]string, projectRoot, path string) error 
 }
 
 // addProjectCoverageInputs records the inputs of every language's strict
-// coverage evidence beyond its build root: the project's itos-cc.yaml, or
-// that it has none, the configured support files and the producer.
+// coverage evidence beyond its build root: the project's itos-cc.yaml
+// (settingsInput), the configured support files and the producer.
 func addProjectCoverageInputs(inputs map[string]string, projectRoot, producer string, support map[string]string) error {
-	if config := filepath.Join(projectRoot, "itos-cc.yaml"); coverageFileExists(config) {
-		if err := addCoverageInput(inputs, projectRoot, config); err != nil {
-			return err
-		}
-	} else {
-		inputs["itos-cc.yaml"] = "absent"
+	measured, err := settingsInput(projectRoot)
+	if err != nil {
+		return err
 	}
+	inputs[settings.File] = measured
 	for path, hash := range support {
 		inputs["support:"+path] = hash
 	}

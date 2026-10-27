@@ -474,11 +474,12 @@ func (s *Inputs) Coverage(ctx context.Context, source, project, producer string,
 			out[filepath.ToSlash(name)] = inputHash(text)
 		}
 	}
-	if text, ok := s.Read(ctx, filepath.Join(project, "itos-cc.yaml")); ok {
-		out["itos-cc.yaml"] = inputHash(string(text))
-	} else {
-		out["itos-cc.yaml"] = "absent"
+	text, _ := s.Read(ctx, filepath.Join(project, "itos-cc.yaml"))
+	measured, err := settingsMeasured(text)
+	if err != nil {
+		return nil, inputError(err)
 	}
+	out["itos-cc.yaml"] = inputHash(measured)
 	for path, hash := range support {
 		out["support:"+path] = hash
 	}
@@ -508,4 +509,38 @@ func (s *Inputs) Coverage(ctx context.Context, source, project, producer string,
 		out["@flutter-env"] = s.envHash(s.dartFlutter(ctx, dir), "FLUTTER_ROOT", "PUB_CACHE")
 	}
 	return out, inputStopped(ctx)
+}
+
+// measuredSettings is what coverage is measured by in an itos-cc.yaml, as
+// the settings codec's Measured reads it (decision 64): the version it reads
+// as, exclude, mutation.tests and mutation.copy, and nothing else, so
+// mutation.exceptions, x- keys, comments and layout count nowhere. The
+// contract suite (FingerprintsContract) keeps it honest.
+type measuredSettings struct {
+	Version  int      `yaml:"version"`
+	Exclude  []string `yaml:"exclude"`
+	Mutation struct {
+		Tests struct {
+			List       string `yaml:"list"`
+			Run        string `yaml:"run"`
+			IDsPattern string `yaml:"ids_pattern"`
+			Join       struct {
+				Each string `yaml:"each"`
+				Sep  string `yaml:"sep"`
+			} `yaml:"join"`
+			Whole   string   `yaml:"whole"`
+			Support []string `yaml:"support"`
+		} `yaml:"tests"`
+		Copy []string `yaml:"copy"`
+	} `yaml:"mutation"`
+}
+
+// settingsMeasured is measuredSettings of text, the file's, nil for none,
+// which reads as version 1 with no setting.
+func settingsMeasured(text []byte) (string, error) {
+	settings := measuredSettings{Version: 1}
+	if err := yaml.Unmarshal(text, &settings); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%#v", settings), nil
 }

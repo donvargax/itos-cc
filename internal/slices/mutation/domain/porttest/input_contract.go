@@ -70,7 +70,7 @@ func FingerprintsContract(t *testing.T, makeInput InputFactory) {
 		if !reflect.DeepEqual(slices.Sorted(maps.Keys(inputs)), wantKeys) {
 			t.Fatalf("Go provenance population: %v", inputs)
 		}
-		if inputs["a.go"] != contractHash(source) || inputs["@producer"] != contractHash("actual producer") || inputs["itos-cc.yaml"] != "absent" || inputs["@go-env"] == "" {
+		if inputs["a.go"] != contractHash(source) || inputs["@producer"] != contractHash("actual producer") || inputs["itos-cc.yaml"] == "" || inputs["@go-env"] == "" {
 			t.Fatalf("Go facts: %v", inputs)
 		}
 
@@ -91,6 +91,59 @@ func FingerprintsContract(t *testing.T, makeInput InputFactory) {
 		suite, failure := b.Fingerprints.Suite(t.Context(), filepath.Join(b.Root, "a.go"), b.Root)
 		if failure != nil || !reflect.DeepEqual(suite, map[string]string{"a_test.go": contractHash(files["a_test.go"])}) {
 			t.Fatalf("Go suite: %v %v", suite, failure)
+		}
+	})
+	t.Run("itos-cc.yaml counts as what coverage is measured by", func(t *testing.T) {
+		// Decision 64: an exception, an x- key, a comment or the layout
+		// never changes what coverage measures; any other setting does.
+		const tests = "  tests:\n    list: list\n    run: run {pattern}\n    ids_pattern: \"{ids}\"\n    join:\n      each: \"{id}\"\n      sep: \",\"\n"
+		const exception = "  exceptions:\n    - file: a.go\n      function: board#Value\n      hash: abc\n      line_in_function: 1\n      column: 26\n      original: \"1\"\n      replacement: \"0\"\n      reason: reviewed\n      x-seen: today\n"
+		for _, c := range []struct{ name, source, marker string }{{"go", "a.go", "go.mod"}, {"python", "a.py", "pyproject.toml"}} {
+			t.Run(c.name, func(t *testing.T) {
+				measured := func(settings *string) (string, mutants.InputFailure) {
+					files := map[string]string{c.marker: "", c.source: "x = 1\n"}
+					if c.name == "go" {
+						files[c.marker], files[c.source] = "module board\n", "package board\nfunc Value() int { return 1 }\n"
+					}
+					if settings != nil {
+						files["itos-cc.yaml"] = *settings
+					}
+					b := makeInput(t, files, nil, nil)
+					inputs, failure := b.Fingerprints.Coverage(t.Context(), filepath.Join(b.Root, c.source), b.Root, "producer", nil)
+					return inputs["itos-cc.yaml"], failure
+				}
+				text := func(s string) *string { return &s }
+				none, failure := measured(nil)
+				if failure != nil || none == "" {
+					t.Fatalf("no itos-cc.yaml: %q %v", none, failure)
+				}
+				base, failure := measured(text("mutation:\n" + tests))
+				if failure != nil || base == none {
+					t.Fatalf("mutation.tests counts nothing: %q %v", base, failure)
+				}
+				for want, variants := range map[string][]string{
+					none: {"", "# only a comment\n", "version: 1\nmutation:\n" + exception, "x-owner: team\n"},
+					base: {
+						"version: 1\n# the team's tests\nmutation:\n" + exception + tests,
+						"x-owner: team\nmutation:\n  x-note: noted\n" + tests + exception,
+						"mutation: {tests: {list: 'list', run: \"run {pattern}\", ids_pattern: '{ids}', join: {each: '{id}', sep: ','}}}\n",
+					},
+				} {
+					for _, variant := range variants {
+						if got, failure := measured(text(variant)); failure != nil || got != want {
+							t.Fatalf("%q measured as another itos-cc.yaml: %q %v", variant, got, failure)
+						}
+					}
+				}
+				for _, variant := range []string{"exclude:\n  - unused.go\nmutation:\n" + tests, "mutation:\n" + tests + "    whole: run all\n", "mutation:\n" + tests + "  copy:\n    - dist\n"} {
+					if got, failure := measured(text(variant)); failure != nil || got == base {
+						t.Fatalf("%q measured as the tests alone: %q %v", variant, got, failure)
+					}
+				}
+				if _, failure := measured(text("mutation: [unclosed\n")); failure == nil {
+					t.Fatal("an itos-cc.yaml that cannot be read was measured")
+				}
+			})
 		}
 	})
 	t.Run("non-Go suite uses actual discovery policy", func(t *testing.T) {

@@ -150,26 +150,40 @@ func Read(root string) ([]byte, error) {
 // text names no root, so its selection settings have none: the caller that found the
 // file gives it.
 func Parse(data []byte) (*Config, error) {
+	c, _, err := parse(data)
+	return c, err
+}
+
+// parse is Parse, with the top of the document it read: nil for no text.
+func parse(data []byte) (*Config, *yaml.Node, error) {
 	var doc yaml.Node
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
-	c := &Config{}
 	if err := decoder.Decode(&doc); errors.Is(err, io.EOF) {
-		return c, nil
+		return &Config{}, nil, nil
 	} else if err != nil {
-		return nil, invalidYAML(err)
+		return nil, nil, invalidYAML(err)
 	}
-	if err := spelled(doc.Content[0], ""); err != nil {
-		return nil, err
+	top := doc.Content[0]
+	if err := spelled(top, ""); err != nil {
+		return nil, nil, err
 	}
 	if err := decoder.Decode(new(yaml.Node)); !errors.Is(err, io.EOF) {
-		return nil, &InvalidError{Reason: "a second document follows ---, and " + File + " holds one document alone", Fix: documentFix}
+		return nil, nil, &InvalidError{Reason: "a second document follows ---, and " + File + " holds one document alone", Fix: documentFix}
 	}
-	if err := version(doc.Content[0]); err != nil {
-		return nil, err
+	if err := version(top); err != nil {
+		return nil, nil, err
 	}
-	if err := unlisted(doc.Content[0], format, ""); err != nil {
-		return nil, err
+	if err := unlisted(top, format, ""); err != nil {
+		return nil, nil, err
 	}
+	c, err := decode(&doc)
+	return c, top, err
+}
+
+// decode is the config doc holds, a document whose spelling, version and
+// keys parse accepted.
+func decode(doc *yaml.Node) (*Config, error) {
+	c := &Config{}
 	var r raw
 	if err := doc.Decode(&r); err != nil {
 		return nil, invalidYAML(err)

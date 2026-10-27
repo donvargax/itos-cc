@@ -91,3 +91,28 @@ func TestGoCoverageInputsInARepositoryAreTheTrackedFiles(t *testing.T) {
 		t.Errorf("a.go hashed %s, not its working tree's bytes", got["a.go"])
 	}
 }
+
+// What only a disk can hold: an itos-cc.yaml the system cannot read, here
+// a folder of that name, fails Go's coverage inputs and every other
+// language's, never reading as no file. Every command refuses such a file
+// before it fingerprints anything, so no scenario reaches this.
+func TestCoverageInputsFailOnAnUnreadableItosCCYAML(t *testing.T) {
+	for source, files := range map[string]map[string]string{
+		"a.go": {"go.mod": "module board\n", "a.go": "package board\n"},
+		"a.py": {"pyproject.toml": "", "a.py": "x = 1\n"},
+	} {
+		root := t.TempDir()
+		for name, text := range files {
+			if err := os.WriteFile(filepath.Join(root, name), []byte(text), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := os.Mkdir(filepath.Join(root, "itos-cc.yaml"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		f := testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}
+		if got, failure := f.Coverage(t.Context(), filepath.Join(root, source), root, "producer", nil); failure == nil {
+			t.Errorf("%s: an itos-cc.yaml folder was measured: %v", source, got)
+		}
+	}
+}

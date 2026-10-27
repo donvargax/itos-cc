@@ -17,6 +17,7 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/project"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -32,8 +33,9 @@ var goEnvKeys = []string{
 // GoCoverageInputs fingerprints the nearest module's input boundary for
 // independently measured executable coverage: its go.mod and go.sum, the
 // Go files a build of the checkout can include (goModuleFiles), each
-// without the summary comment itos-cc writes, the project's itos-cc.yaml,
-// the configured support files, the producer and the Go environment.
+// without the summary comment itos-cc writes, the project's itos-cc.yaml
+// (settingsInput), the configured support files, the producer and the Go
+// environment.
 func GoCoverageInputs(ctx context.Context, runtime mutants.RuntimeInputs, source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
 	abs, err := filepath.Abs(source)
 	if err != nil {
@@ -78,12 +80,8 @@ func GoCoverageInputs(ctx context.Context, runtime mutants.RuntimeInputs, source
 			return nil, err
 		}
 	}
-	if config := filepath.Join(projectRoot, "itos-cc.yaml"); goCoverageFileExists(config) {
-		if err := addFile(config); err != nil {
-			return nil, err
-		}
-	} else {
-		out["itos-cc.yaml"] = "absent"
+	if out[settings.File], err = settingsInput(projectRoot); err != nil {
+		return nil, err
 	}
 	for path, hash := range support {
 		out["support:"+path] = hash
@@ -228,6 +226,24 @@ func goEnv(ctx context.Context, runtime mutants.RuntimeInputs, module string) (s
 		env = append(env, key+"="+values[key])
 	}
 	return strings.Join(env, "\x00"), nil
+}
+
+// settingsInput is the input of every language's strict coverage evidence
+// that the project's itos-cc.yaml is, at projectRoot: a hash of what
+// coverage is measured by in it (settings.Measured), so writing an
+// exception, an x- key or a comment leaves the evidence and the cached
+// coverage fresh (decision 64), while any other setting changed does not.
+// A file that is not there is measured as an empty one is.
+func settingsInput(projectRoot string) (string, error) {
+	data, err := settings.Read(projectRoot)
+	if err != nil {
+		return "", err
+	}
+	measured, err := settings.Measured(data)
+	if err != nil {
+		return "", err
+	}
+	return hashText(measured), nil
 }
 
 func hashText(text string) string {

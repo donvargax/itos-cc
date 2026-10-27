@@ -6272,9 +6272,9 @@ Feature: Mutation testing
   #   Given with --no-coverage, --coverage-report, --use-existing-coverage
   #   or --coverage-command, which use no cache, it is flags.conflict,
   #   exit 80.
-  # - itos-cc.yaml is hashed whole, as strict evidence hashes it, so
-  #   mutation except makes an entry miss; check a new exception with
-  #   mutation check, which runs nothing.
+  # - itos-cc.yaml counts as strict evidence counts it: since slice-71
+  #   (decision 64) without mutation.exceptions and x- keys, so mutation
+  #   except leaves an entry serving.
   # - The strict-go-coverage rule's "non-strict runs must not manufacture
   #   evidence" holds: the cache is a measurement, not evidence, until a
   #   strict run with equal inputs records evidence from it.
@@ -6448,7 +6448,7 @@ Feature: Mutation testing
   # slice the second run measures again, failing at its Then; the exclude
   # row holds already and is a guardrail.
   Rule: What coverage measures is not changed by an exception
-    @slice-71 @ID-MUT-393 @wip
+    @slice-71 @ID-MUT-393
     Scenario Outline: Writing <change> to itos-cc.yaml <outcome>
       Given the module of ID-MUT-122, whose harness splits the run
       And "itos-cc mutation run" has run
@@ -6462,7 +6462,7 @@ Feature: Mutation testing
         | an "x-note" key at the top                              | reuses the coverage      | the listed tests do not run for coverage, and stderr says the listed tests' coverage was reused         |
         | an exclude of a file the run does not measure           | measures again           | the listed tests run once for coverage, and stderr says the cached coverage does not serve, naming itos-cc.yaml |
 
-    @slice-71 @ID-MUT-394 @wip
+    @slice-71 @ID-MUT-394
     Scenario: Strict Go evidence stays fresh when an exception is written
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And "itos-cc mutation run --fail-uncovered board/board.go" has recorded its coverage evidence
