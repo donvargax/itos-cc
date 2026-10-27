@@ -6084,8 +6084,8 @@ items:
   - id: slice-64
     title: mutation run says on stderr each phase it ends and how long it took
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
