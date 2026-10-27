@@ -6116,8 +6116,8 @@ items:
   - id: T-222
     title: architecture-check reads its allowed imports from a committed file
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
     refs: ["#61"]
