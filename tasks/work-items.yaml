@@ -5998,12 +5998,9 @@ items:
     title: A Go file in a module with no tests, its package listed last, is measured by the whole module
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: bug
-    why: >
-      Promoted from the idea go-scope-last-package-dropped (2026-10-26), its spec ID-COV-51 in
-      features/coverage.feature.
   - id: slice-62
     title: Each worker's tests see a temporary folder of their own
     phase: 1
