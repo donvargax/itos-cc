@@ -1010,13 +1010,15 @@ Feature: Mutation testing
     # Before: the counted run prints neither listed-coverage line nor the
     # baseline's end, and its mutant line gives only "(<duration>)"; it
     # fails at the first Then. The stdout step is a guardrail that passes
-    # before; it is reported apart.
+    # before; it is reported apart. Both listed tests reach the fixture's
+    # line, so its mutant runs the selection of both, ID-A-01 the one that
+    # kills it, and its line names both.
     @slice-64 @ID-MUT-369 @wip
     Scenario Outline: A counted run accounts for its time between coverage and the result
       Given the counted listed fixture, whose selected mutant survives its own tests and is killed by ID-A-01
       When I run "itos-cc mutation run --count 1 <json>"
       Then stderr has, in order, the listed tests' coverage command, "itos-cc: coverage: the listed tests ran in <duration>; converting the coverage of 2 of them", "itos-cc: coverage: converted the coverage of 2 listed tests in <duration>", the own baseline's command and "itos-cc: baseline <dir> passed in <duration>: a mutant running it times out after <duration>"
-      And its mutant's line ends "survived its own tests, then killed with ID-A-01 (<duration>, the listed tests <duration>)"
+      And its mutant's line ends "survived its own tests, then killed with ID-A-01 ID-A-02 (<duration>, the listed tests <duration>)"
       And stdout is <stdout>, as a run before mutation-phase-progress gives it
 
       Examples:

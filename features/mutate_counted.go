@@ -53,7 +53,7 @@ func countedMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMut
 				q.id = strings.TrimPrefix(tag.Name, "@ID-MUT-")
 			}
 		}
-		if slices.Contains([]string{"173", "174", "175", "176", "177", "178", "179", "180", "181", "182", "183", "184", "185", "186", "212", "275"}, q.id) {
+		if slices.Contains([]string{"173", "174", "175", "176", "177", "178", "179", "180", "181", "182", "183", "184", "185", "186", "212", "275", "369"}, q.id) {
 			m.w.beforeRemove = q.cleanup
 		}
 		if slices.Contains(interruptIDs, q.id) {

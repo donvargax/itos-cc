@@ -35,6 +35,7 @@ func listedMutationSteps(sc *godog.ScenarioContext, m *mutateState) {
 	sc.Step(`^the list command prints "ID-A-01<tab>a\.feature" and "ID-A-02"$`, l.project)
 	sc.Step(`^a Go module whose harness, when ITOS_CC_TEST_COVERDIR is set, gives each test's binary GOCOVERDIR=<dir>/<test-id>$`, l.project)
 	sc.Step(`^its tests ID-A-01 and ID-A-02 reach different lines of the binary$`, l.project)
+	sc.Step(`^the module of ID-MUT-122, whose harness splits the run$`, l.project)
 	sc.Step(`^the module of ID-MUT-122, whose harness ignores ITOS_CC_TEST_COVERDIR$`, l.unsplit)
 	sc.Step(`^a mutant its file's own tests kill, and one only ID-A-02 kills$`, l.project)
 	sc.Step(`^a line only ID-A-01 reaches, and a line no test reaches$`, l.project)

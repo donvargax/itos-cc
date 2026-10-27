@@ -16,6 +16,7 @@ const countedListedProfile = "mode: set\nexample.com/ownership/main.go:4.2,5.13 
 
 func (q *countedMutation) listedSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^a selected committed mutant survives its file's own tests$`, q.listedProject)
+	sc.Step(`^the counted listed fixture, whose selected mutant survives its own tests and is killed by ID-A-01$`, q.listedFixture)
 	sc.Step(`^listed integration tests reach its line and kill it$`, q.listedReach)
 	sc.Step(`^count-one execution judges it$`, q.listedJudge)
 	sc.Step(`^own tests run before the applicable listed tests$`, q.ownBeforeListed)
@@ -58,6 +59,22 @@ func (q *countedMutation) listedProject() error {
 		return err
 	}
 	return q.auditProfile(countedListedProfile)
+}
+
+// listedFixture is listedProject's fixture for a run the scenario words
+// itself. The run draws its one mutant with a seed whose draw is Compare's,
+// subject.go's, of the fixture's four eligible sites (the draw ranks
+// each by the seed, its path and identity alone, so in both drivers), in
+// one worker: ordinary options, as listedJudge gives them, which make the
+// fixture's selected mutant the Given's.
+func (q *countedMutation) listedFixture() error {
+	if err := q.listedProject(); err != nil {
+		return err
+	}
+	q.e.m.w.prepare = func(args []string) []string {
+		return append(args, "--seed", "slice-64-2", "--workers", "1")
+	}
+	return nil
 }
 func (q *countedMutation) listedMode(mode string) error {
 	q.mode = mode
