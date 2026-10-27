@@ -13,6 +13,7 @@ import (
 	aggregate "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 // Moved from cmd with run's coverage consumers (T-100): coverage evidence
@@ -108,5 +109,25 @@ func TestAStrictRunTakesAFailedCoverageCommandForNoProof(t *testing.T) {
 	}
 	if gaps := h.unmeasuredToJudge(report, []string{src}, []mutants.FileCheck{{}}, false); len(gaps) != 0 {
 		t.Fatalf("a file with nothing to judge: gaps %+v", gaps)
+	}
+}
+
+// A strict run whose list command fails measures nothing, its failure the
+// listing's: the listed tests' coverage is neither measured nor served
+// (slice-69's reuse among them).
+func TestStrictCoverageStopsAtAFailedListing(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "a.go")
+	m := &covtest.Measurer{Aggregate: aggregate.Measurer{Dir: root, Files: map[string]string{source: "package a\n"}}}
+	lister := &mutantstest.Lister{Listings: map[string]map[string]mutantstest.Listing{root: {"list": {ExitCode: 3, Reason: "exit status 3"}}}}
+	h := Handler{Coverage: m, Dir: root, TestLister: lister}
+	suite := &mutants.Tests{List: "list", Run: "run {pattern}", IDsPattern: "{ids}", Each: "{id}", Sep: ","}
+	r, _, _, err := h.strictCoverage(t.Context(), RunQuery{}, strictCoverage{root: root, languages: []string{"go"}, suite: suite, reuse: &mutants.ListedReuse{}}, []string{source}, nil)
+	var failed mutants.ListingFailed
+	if r != nil || !errors.As(err, &failed) || failed.ExitCode != 3 {
+		t.Fatalf("a failed listing gave %v, %v", r, err)
+	}
+	if len(m.Entered) != 0 {
+		t.Fatalf("measured after a failed listing: %v", m.Entered)
 	}
 }
