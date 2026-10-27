@@ -6040,7 +6040,7 @@ items:
   - id: T-220
     title: GoScope keeps the test packages it selects as a set
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
