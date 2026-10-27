@@ -6164,3 +6164,178 @@ Feature: Mutation testing
         | --reason x          | flags.conflict  | flag "--reason"                 |
         | --renew             | flags.conflict  | flag "--renew"                  |
         | --prune             | flags.conflict  | flag "--prune"                  |
+
+  # slice-69 (coverage-reuse, issue #67): a one-file mutation run in a project whose
+  # listed tests run an end-to-end suite spent ~5 minutes measuring the
+  # listed tests' coverage before any mutant, and a second run over the same
+  # unchanged tree paid it again. Decided by the person on 2026-10-27
+  # (q-102 (a)): cache the listed tests' reach map and the own-tests
+  # coverage under .metrics/coverage, keyed on a fingerprint of the measured
+  # sources, test files and mutation.tests' support globs, reused by
+  # mutation run and --site when the key matches, said so on stderr, and
+  # restorable by a CI. Split in two: this rule holds the listed tests'
+  # coverage (this slice), a file's own tests' later (the idea
+  # coverage-reuse-own). Coordinator's calls inside q-102, from the
+  # drafter's recommendations (scratch spec-draft-rehash-reuse.md, Q-C1 to
+  # Q-C8):
+  # - An entry's inputs are the map strict coverage evidence records for
+  #   each measured file's build root: Fingerprints.Coverage, which is its
+  #   build root's sources and tests, lock and config files, the whole
+  #   itos-cc.yaml, the support files, the producer and the toolchain's
+  #   environment. The listed tests' entry also holds what the list
+  #   command printed (IDs, files, fingerprints) and the hash of each
+  #   listed test's file. The inputs are taken before the coverage
+  #   commands run. A file whose scope strict coverage refuses
+  #   (mutation.coverage-unsupported: an active go.work, a replace outside
+  #   the module) is neither cached nor reused.
+  # - The listed tests' entry holds, for each file the run measured, the
+  #   coverage of each listed test that wrote data, at its format's
+  #   precision (Go's blocks), as the run converted it (slice-65). A run
+  #   reuses it when its inputs are equal and it holds every file the run
+  #   measures. Otherwise the run measures, and the new measurement either
+  #   adds its files to the entry (same inputs) or replaces it.
+  # - A complete mutation run writes an entry right after its built-in
+  #   measurement succeeded, before any mutant runs: the listed coverage
+  #   run passed, and every plan measured its language with nothing
+  #   missing, failed or unmeasured by its collector. A run with
+  #   --coverage-report, --use-existing-coverage, --coverage-command or
+  #   --no-coverage writes and reads none. --count and --site read and
+  #   never write (MUT-185, slice-63 unchanged). mutation sample and crap
+  #   neither read nor write.
+  # - A strict run (--fail-uncovered) reuses a matching entry as matching
+  #   independent cached evidence (q-25, q-26): its inputs are the ones
+  #   strict evidence records, compared whole, so no old measurement takes
+  #   today's hashes. It records each judged function's evidence from it.
+  #   The raw coverage flags keep their strict conflicts.
+  # - The entries live in .metrics/coverage/cache/, inside the folder
+  #   itos-cc already ignores in git, apart from the report folders
+  #   --use-existing-coverage reads. Each is one JSON object with
+  #   "version": 1, written whole through a rename, so concurrent runs
+  #   never read half of one. There is one listed entry per project, and
+  #   one own entry per coverage plan (slice B). Nothing else is evicted,
+  #   and deleting the folder is always safe. An entry itos-cc cannot read,
+  #   or of a newer version, counts as not matching and is replaced.
+  # - On stderr, in place of the listed coverage command and slice-64's two
+  #   lines: "itos-cc: coverage: the listed tests' coverage reused from
+  #   .metrics/coverage/cache, its inputs unchanged". An entry that does
+  #   not serve the run says why before the run measures: "itos-cc:
+  #   coverage: the cached listed tests' coverage does not serve this run:
+  #   <input> changed[, <input> changed][ and <n> more]", or "… measured
+  #   no <file>", or "… cannot be read". stdout and --json are unchanged.
+  # - --no-coverage-cache measures as before, reading and writing no entry.
+  #   Given with --no-coverage, --coverage-report, --use-existing-coverage
+  #   or --coverage-command, which use no cache, it is flags.conflict,
+  #   exit 80.
+  # - itos-cc.yaml is hashed whole, as strict evidence hashes it, so
+  #   mutation except makes an entry miss; check a new exception with
+  #   mutation check, which runs nothing.
+  # - The strict-go-coverage rule's "non-strict runs must not manufacture
+  #   evidence" holds: the cache is a measurement, not evidence, until a
+  #   strict run with equal inputs records evidence from it.
+  # - The line saying an entry does not serve names up to three changed
+  #   inputs, then "and <n> more", so a CI's miss can be diagnosed.
+  # - Expectation: with a whole-build-root key any source edit misses; the
+  #   win is repeated runs over an unchanged tree. This repository's own
+  #   CI gains little: its proof judges a new tree each push.
+  # - A CI restores .metrics/coverage/cache and nothing else of
+  #   .metrics/coverage. An entry serves only a tree whose inputs are
+  #   unchanged: a re-run of a commit, or a later job of the same commit.
+  # Both drivers run each scenario but ID-MUT-387. Before the item,
+  # each fails at its first Then that says the listed tests did not run for
+  # coverage, or at the stderr line. ID-MUT-385's rows hold already and are
+  # guardrails, reported apart.
+  Rule: The listed tests' coverage is reused while nothing it was measured from changed
+
+    @slice-69 @ID-MUT-382 @wip
+    Scenario: A second run over an unchanged tree reuses the listed tests' coverage
+      Given the module of ID-MUT-122, whose harness splits the run
+      And "itos-cc mutation run" has run
+      When I run "itos-cc mutation run --mutate-all"
+      Then the list command runs once, and the listed tests do not run for coverage
+      And stderr says "itos-cc: coverage: the listed tests' coverage reused from .metrics/coverage/cache, its inputs unchanged"
+      And each line the binary ran is covered by the IDs of the tests that reached it, as in ID-MUT-122
+      And the mutant only ID-A-02 kills runs its own tests, survives them, then runs the run command selecting ID-A-02 alone, and is killed
+
+    @slice-69 @ID-MUT-383 @wip
+    Scenario Outline: A run measures again when an input of the cached coverage changed, naming it
+      Given the module of ID-MUT-122, whose harness splits the run
+      And "itos-cc mutation run" has run
+      And <change>
+      When I run "itos-cc mutation run --mutate-all"
+      Then the listed tests run once for coverage
+      And stderr says the cached listed tests' coverage does not serve this run, naming <named>, before the listed tests' coverage command
+      And "itos-cc mutation run --mutate-all" after it reuses the coverage it measured
+
+      Examples:
+        | change                                                         | named                     |
+        | a Go file of the module, no file the run mutates, changed      | that file                 |
+        | a test file of the module changed                              | that test file            |
+        | a.feature, the file the list names for ID-A-01, changed        | a.feature                 |
+        | a file a mutation.tests support glob matches changed           | that support file         |
+        | the list command now also prints "ID-A-03"                     | ID-A-03                   |
+        | itos-cc.yaml's mutation.tests.whole changed                    | itos-cc.yaml              |
+        | .metrics/coverage/cache's listed entry holds "not json"        | that it cannot be read    |
+
+    @slice-69 @ID-MUT-384 @wip
+    Scenario: A run measuring a file the cached coverage lacks adds it
+      Given the module of ID-MUT-122, with a second package b that the binary links
+      And "itos-cc mutation run a" has run
+      When I run "itos-cc mutation run b"
+      Then the listed tests run once for coverage, and stderr says the cached coverage measured no file of b
+      And "itos-cc mutation run --mutate-all a b" after it does not run the listed tests for coverage
+
+    @slice-69 @ID-MUT-385 @wip
+    Scenario Outline: Only a complete run's successful built-in measurement is cached
+      Given the module of ID-MUT-122, whose harness splits the run
+      And <run> has run
+      When I run "itos-cc mutation run --mutate-all"
+      Then the listed tests run once for coverage
+
+      Examples:
+        | run                                                                                    |
+        | "itos-cc mutation run --count 1", committed                                            |
+        | "itos-cc mutation run --site" naming the mutant only ID-A-02 kills, committed          |
+        | "itos-cc mutation run --use-existing-coverage"                                         |
+        | "itos-cc mutation run --no-coverage-cache"                                             |
+        | "itos-cc mutation run" whose listed tests' coverage run failed (ID-MUT-137's Given)     |
+
+    @slice-69 @ID-MUT-386 @wip
+    Scenario: A named site reuses what a complete run measured of the same commit, writing nothing
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And mutation.tests lists a test that reaches board/board.go line 5 and kills the mutant
+      And "itos-cc mutation run board/board.go" has run, nothing uncommitted
+      When I run "itos-cc mutation run --site board/board.go:5:11 --json"
+      Then no listed test ran for coverage, and stderr says the listed tests' coverage was reused
+      And the selected site's stages are "own" survived, "listed-baseline" complete and "listed" killed, its scope "listed" with that test
+      And .metrics/coverage/cache is byte for byte as it was
+      And the exit code is 0
+
+    # Binary-only for good: the strict Go blocks are the real cover
+    # profile's and covdata's, as ID-MUT-370's.
+    @slice-69 @ID-MUT-387 @binary-only @wip
+    Scenario Outline: A strict run reuses a matching cached measurement as independent evidence
+      Given a Go module whose binary links packages a and b, with listed tests ID-A-01, which reaches a and b, and ID-A-02, which reaches only b
+      And "<first>" has run
+      When I run "itos-cc mutation run --mutate-all --fail-uncovered a/a.go --json"
+      Then the listed tests do not run for coverage
+      And every judged function's coverage evidence is what "<first>" would record, with no uncovered statement it did not have
+      But once a/a.go's test changed, the strict run measures again and records evidence of the new inputs
+
+      Examples:
+        | first                                          |
+        | itos-cc mutation run a/a.go                    |
+        | itos-cc mutation run --fail-uncovered a/a.go   |
+
+    @slice-69 @ID-MUT-388 @wip
+    Scenario Outline: --no-coverage-cache measures without the cache, and only where a cache is read
+      Given the module of ID-MUT-122, whose harness splits the run
+      And "itos-cc mutation run" has run
+      When I run "itos-cc mutation run --mutate-all <flags> --json"
+      Then <outcome>
+
+      Examples:
+        | flags                                                   | outcome                                                                                              |
+        | --no-coverage-cache                                     | the listed tests run once for coverage, and .metrics/coverage/cache is byte for byte as it was         |
+        | --no-coverage-cache --no-coverage                       | the problem is "flags.conflict", with flag "--no-coverage-cache", exit 80                             |
+        | --no-coverage-cache --use-existing-coverage             | the problem is "flags.conflict", with flag "--no-coverage-cache", exit 80                             |
+        | --no-coverage-cache --coverage-report c.out             | the problem is "flags.conflict", with flag "--no-coverage-cache", exit 80                             |
