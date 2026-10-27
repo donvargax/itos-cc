@@ -494,3 +494,4 @@ questions:
   - id: q-105
     item: "exceptions-out-of-coverage-key"
     question: "Should writing an exception stop invalidating the coverage caches and strict Go evidence? Recommended (a): the itos-cc.yaml fingerprint used for coverage inputs leaves out mutation.exceptions and x- keys everywhere it is used (both caches and strict evidence), recorded strict evidence reading stale once after the upgrade, said in the upgrade note; (b) only the caches; (c) keep the whole file."
+    answer: "Person 2026-10-27: (a). The itos-cc.yaml fingerprint used for coverage inputs leaves out mutation.exceptions and x- keys wherever it is used, both coverage caches and strict Go evidence, since neither changes what coverage measures; recorded strict evidence reads stale once after the upgrade, which the release's upgrade note says."
