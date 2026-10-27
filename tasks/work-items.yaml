@@ -6156,3 +6156,17 @@ items:
       worktree downloads golangci-lint again (15 MB); on slice-64 the download stalled at 7.8 MB for
       the 300 s cap before a retry, while the main checkout already held the same pinned version.
       Looking in the git common dir's checkout first, checksum unchanged, would skip it.
+  - id: step-ambiguity-check
+    title: Refuse an ambiguous step definition without running the suite
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-63 added a step whose pattern also matched the text of ID-MUT-80 and ID-MUT-350,
+      mutation sample steps. Every local run named only the slice's scenarios by -scenarios, so
+      godog never met the ambiguity until CI ran the whole suite, failing test (cmd-b) and, through
+      the listed scenarios, the code proof (ci.yml 40441432498). A static check, matching every step
+      text of the feature files, outlines expanded, against every step pattern, would name an
+      ambiguous pair in seconds, as a hook or a static CI step.
