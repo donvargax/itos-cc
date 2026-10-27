@@ -1331,6 +1331,7 @@ Feature: Mutation testing
   # - The conversions' line of slice-64 says the limit:
   #   "itos-cc: coverage: converted the coverage of <n> listed tests, Go's
   #   limited to <k> packages, in <d>".
+  # - Both rows run over a range, as --fail-uncovered=lines needs --since (ID-MUT-226).
   Rule: The listed tests' Go coverage is converted only for the packages the run measures
 
     # Binary-only for good: the per-test data and its conversion are the
@@ -1351,7 +1352,7 @@ Feature: Mutation testing
       Examples:
         | flags                                  |
         | --count 1 --since <base> --seed <base> |
-        | a/a.go                                 |
+        | --since <base> a/a.go                  |
 
     # A guardrail for the command-line-arguments pattern: it passes before
     # the change, and it fails if the limit drops that pattern.

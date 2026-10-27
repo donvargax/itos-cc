@@ -221,8 +221,9 @@ func (c *coverageState) noLineBegins(text string) error {
 
 // saysLine is whether a line of stderr is text, or begins with it when
 // beginning, and holds names; each <dir> in text stands for the build root
-// of the sources the run named, as itos-cc names it, and a path is read
-// slash-separated, as a scenario writes it.
+// of the sources the run named, as itos-cc names it, each <duration> for a
+// duration's shape (durationShape), and a path is read slash-separated, as
+// a scenario writes it.
 func (c *coverageState) saysLine(text, names string, beginning bool) error {
 	var b strings.Builder
 	b.WriteString("^")
@@ -230,7 +231,7 @@ func (c *coverageState) saysLine(text, names string, beginning bool) error {
 		if i > 0 {
 			b.WriteString("(.+?)")
 		}
-		b.WriteString(regexp.QuoteMeta(piece))
+		b.WriteString(strings.ReplaceAll(regexp.QuoteMeta(piece), "<duration>", durationShape))
 	}
 	if !beginning {
 		b.WriteString("$")

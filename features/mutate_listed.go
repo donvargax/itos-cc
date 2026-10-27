@@ -37,6 +37,7 @@ func listedMutationSteps(sc *godog.ScenarioContext, m *mutateState) {
 	sc.Step(`^its tests ID-A-01 and ID-A-02 reach different lines of the binary$`, l.project)
 	sc.Step(`^the module of ID-MUT-122, whose harness splits the run$`, l.project)
 	sc.Step(`^the module of ID-MUT-122, whose harness ignores ITOS_CC_TEST_COVERDIR$`, l.unsplit)
+	sc.Step(`^the module of ID-MUT-122, whose harness builds its binary with "go build -cover" from main\.go's path rather than its package$`, l.fileList)
 	sc.Step(`^a mutant its file's own tests kill, and one only ID-A-02 kills$`, l.project)
 	sc.Step(`^a line only ID-A-01 reaches, and a line no test reaches$`, l.project)
 	sc.Step(`^a mutant only ID-A-02 kills$`, l.project)
@@ -73,6 +74,7 @@ func listedMutationSteps(sc *godog.ScenarioContext, m *mutateState) {
 	sc.Step(`^each line the binary ran is covered by the IDs of the tests that reached it$`, l.coverageIDs)
 	sc.Step(`^the run command runs once per listed test for coverage, each selecting that test alone$`, l.fallbackCoverage)
 	sc.Step(`^each line is covered by the same IDs as in ID-MUT-122$`, l.coverageIDs)
+	sc.Step(`^each line the binary ran is covered by the IDs of the tests that reached it, as in ID-MUT-122$`, l.coverageIDs)
 	sc.Step(`^the first is killed without any listed test running for it$`, l.ownFirst)
 	sc.Step(`^the second runs its own tests, survives them, then runs the run command selecting ID-A-02 alone, and is killed$`, l.listedKilled)
 	sc.Step(`^the first line's mutants run and are not uncovered$`, l.firstCovered)
@@ -277,6 +279,19 @@ func (l *listedMutation) unsplit() error {
 		return err
 	}
 	if err := l.replace("e2e/e2e_test.go", `split := os.Getenv("ITOS_CC_TEST_COVERDIR")`, `split := ""`); err != nil {
+		return err
+	}
+	return l.declare()
+}
+
+// fileList is ID-MUT-122's module whose harness builds its covered binary
+// from main.go's path, which Go records as the package
+// command-line-arguments, rather than from its package.
+func (l *listedMutation) fileList() error {
+	if err := l.project(); err != nil {
+		return err
+	}
+	if err := l.replace("e2e/e2e_test.go", `"-cover", "-o", bin, ".."}`, `"-cover", "-o", bin, "../main.go"}`); err != nil {
 		return err
 	}
 	return l.declare()

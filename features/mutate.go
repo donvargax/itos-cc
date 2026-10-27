@@ -104,6 +104,7 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 	notBuiltSteps(sc, m)
 	plainMatcherSteps(sc, m)
 	phaseProgressSteps(sc, m)
+	scopedConversionSteps(sc, m)
 
 	// Mutation sites.
 	sc.Step(`^the sites are:$`, m.sitesAre)
