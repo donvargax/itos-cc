@@ -182,7 +182,8 @@ func TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs(t *testing.T
 			writeFile(t, filepath.Join(dir, "go.sum"), "example.com/unused v1.0.0 h1:checksum\n")
 		}},
 		{name: "project configuration", want: "itos-cc.yaml", edit: func(t *testing.T, dir string) {
-			writeFile(t, filepath.Join(dir, "itos-cc.yaml"), strictFingerprintConfig+"# changed\n")
+			// A setting, not a comment, which counts nowhere (decision 64).
+			writeFile(t, filepath.Join(dir, "itos-cc.yaml"), "exclude: [unused.go]\n"+strictFingerprintConfig)
 		}},
 		{name: "support file", want: "support:support/dep.txt", edit: func(t *testing.T, dir string) {
 			writeFile(t, filepath.Join(dir, "support", "dep.txt"), "updated support input\n")
