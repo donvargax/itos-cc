@@ -7179,4 +7179,4 @@
     file a backport issue on the template the script came from if it carries the script (the
     coordinator does).
   done_when:
-    - run: go test ./tools/testdata/architecture/...
+    - run: tools/bin/architecture-check
