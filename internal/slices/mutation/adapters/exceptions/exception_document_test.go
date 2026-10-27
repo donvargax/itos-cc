@@ -110,6 +110,20 @@ func TestExceptDocumentFillsAnEmptyOrNullSetting(t *testing.T) {
 	}
 }
 
+// A null written as a value, after a space or a tab, goes with the space
+// before it, so the key ends its line as it would with no value.
+func TestExceptDocumentFillsAWrittenNullWithTheSpaceBeforeIt(t *testing.T) {
+	for _, text := range []string{"mutation: ~\n", "mutation:\t~\n", "mutation: \t null\n"} {
+		data, _, err := exceptions.ExceptDocument([]byte(text), quoted)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := "mutation:\n  exceptions:\n" + quotedLines("'"); string(data) != want {
+			t.Errorf("itos-cc.yaml %q given the entry\n%q\nwant\n%q", text, data, want)
+		}
+	}
+}
+
 // A document that is null, which Parse reads as no settings, holds no
 // mapping to keep: an entry added to it is a new document that Parse reads
 // back, as one added to no text is.
