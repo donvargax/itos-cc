@@ -6169,14 +6169,15 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: site-own-tests-only
-    title: A --site run can judge a mutant by its own tests alone, so a local repair check stays light
+  - id: slice-67
+    title: mutation run --site --own-tests judges named mutants by their own tests alone
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was site-own-tests-only.
       slice-63's mutation run --site is a counted run: before judging the named mutant it measures
       every listed scenario's reach (itos-cc.yaml's mutation.tests: about 470 scenarios here, ~55 s
       on CI, some starting Kotlin, Python or Dart tools), so a repair agent's local check of one
