@@ -194,3 +194,45 @@ func TestANotBuiltFileAndACountedSiteNameAWindowsFileWithSlashes(t *testing.T) {
 		t.Errorf("a counted run's plain output\n%s\nwant its site named src/board.go line 5 column 9", stdout.String())
 	}
 }
+
+// mutation except's plain lines name their file as run's do (bug-12):
+// excepted, renewed, not renewed, pruned, rehashed and not rehashed, a
+// site or a file alone. --json and the problems keep the system's form.
+func TestExceptsPlainLinesNameAWindowsFileWithSlashes(t *testing.T) {
+	t.Parallel()
+	var stdout bytes.Buffer
+	p := windows(&stdout, &bytes.Buffer{})
+	entry := mutants.Exception{File: `board\board.go`, Function: "board#Count", Hash: "ab", LineInFunction: 2, Column: 11,
+		Original: ">", Replacement: ">=", Reason: "reviewed"}
+	now := entry
+	now.Hash = "cd"
+	c := Except{}
+	c.excepted(p, ExceptFound{Exception: entry, Path: `board\board.go`, Line: 6, Column: 11})
+	c.excepted(p, ExceptFound{Exception: entry, Replaced: true, Path: `board\board.go`, Line: 6, Column: 11})
+	renew, renewProblems := c.renewed(p, RenewFound{Renewed: []mutants.Renewal{{Old: entry, New: now, Line: 6, Match: "line"}},
+		Left: []mutants.Unrenewed{{Exception: entry, Why: mutants.ExceptionKilled, Line: 6}, {Exception: entry, Why: mutants.ExceptionGone}}})
+	c.pruned(p, PruneFound{Pruned: []mutants.StaleException{
+		{Exception: entry, Why: mutants.ExceptionKilled, Line: 6}, {Exception: entry, Why: mutants.ExceptionExcluded}}})
+	rehash, rehashProblems := c.rehashed(p, RehashFound{Rehashed: []mutants.Renewal{{Old: entry, New: now, Line: 6}},
+		Left: []mutants.StaleException{{Exception: entry, Why: mutants.ExceptionChanged, Line: 6}, {Exception: entry, Why: mutants.ExceptionGone}}})
+	wantLines(t, "plain output", strings.Split(strings.TrimSuffix(stdout.String(), "\n"), "\n"),
+		"excepted board/board.go:6:11 `>` → `>=` in board#Count in itos-cc.yaml",
+		"excepted again board/board.go:6:11 `>` → `>=` in board#Count in itos-cc.yaml",
+		"renewed board/board.go:6:11 `>` → `>=` in board#Count (hash ab → cd) in itos-cc.yaml",
+		"  not renewed board/board.go:6:11 `>` → `>=` in board#Count (killed)",
+		"  not renewed board/board.go `>` → `>=` in board#Count (gone)",
+		"pruned board/board.go:6:11 `>` → `>=` in board#Count (killed) from itos-cc.yaml",
+		"pruned board/board.go `>` → `>=` in board#Count (excluded) from itos-cc.yaml",
+		"rehashed board/board.go:6:11 `>` → `>=` in board#Count (hash ab → cd) in itos-cc.yaml",
+		"  not rehashed board/board.go:6:11 `>` → `>=` in board#Count (changed)",
+		"  not rehashed board/board.go `>` → `>=` in board#Count (gone)",
+	)
+	if renew.Renewed[0].File != `board\board.go` || rehash.Rehashed[0].File != `board\board.go` {
+		t.Errorf("--json names the files %q and %q, want them as the system names them, board\\board.go", renew.Renewed[0].File, rehash.Rehashed[0].File)
+	}
+	for _, problem := range slices.Concat(renewProblems, rehashProblems) {
+		if !strings.HasPrefix(problem.Message, `board\board.go`) || problem.Subject("file") != `board\board.go` {
+			t.Errorf("the problem %q names its file %v, want it as the system names it, board\\board.go", problem.Message, problem.Subject("file"))
+		}
+	}
+}

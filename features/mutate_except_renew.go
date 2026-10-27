@@ -15,6 +15,7 @@ func (e *exceptionMutation) renewSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^a Go project with a reviewed exception for an equivalent mutant in a function$`, e.reviewRenew)
 	sc.Step(`^a commit that renames a string literal on another line of that function$`, e.renameLiteral)
 	sc.Step(`^"itos-cc mutation run" has judged the function again and the mutant still survives$`, e.rejudgeRenew)
+	sc.Step(`^a Go project with a reviewed exception for an equivalent mutant in Label of label\.go, and a commit that renames a string literal on another line of Label, and "itos-cc mutation run" has judged Label again and the mutant still survives$`, e.rejudgedLabel)
 	sc.Step(`^the exception names the function's current hash, line and column and keeps its reason$`, e.renewedEntry)
 	sc.Step(`^the renewal is reported with the old and new hash and the site$`, e.renewedReport)
 	sc.Step(`^"itos-cc mutation check" passes$`, e.renewedCheck)
@@ -47,6 +48,19 @@ func (e *exceptionMutation) renewProject() error {
 		}
 	}
 	return nil
+}
+
+// rejudgedLabel is ID-MUT-292's fixture in one step, for an outline
+// whose other rows set up their own (ID-MUT-391): Label's entry, the
+// literal renamed, and the run that judged it again.
+func (e *exceptionMutation) rejudgedLabel(ctx context.Context) error {
+	e.r.options()
+	for _, step := range []func() error{e.renewProject, e.reviewRenew, e.renameLiteral} {
+		if err := step(); err != nil {
+			return err
+		}
+	}
+	return e.rejudgeRenew(ctx)
 }
 func (e *exceptionMutation) declareRenew(killSign bool) error {
 	report := ""

@@ -144,6 +144,7 @@ func exceptionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceM
 	})
 	sc.Step(`^the "mutation\.exception-stale" problem, with why "changed", has a fix naming "itos-cc mutation except --renew" before "--reason"$`, e.renewFix)
 	sc.Step(`^"itos-cc mutation check src/board\.ts --json" gives it the same fix$`, e.sameFix)
+	sc.Step(`^a line of its standard output names "([^"]*)" as written here, slash-separated$`, func(file string) error { return namesFile(m.w, file) })
 	e.renewSteps(sc)
 	e.layoutSteps(sc)
 	e.extensionSteps(sc)
@@ -585,4 +586,18 @@ func (e *exceptionMutation) sameFix() error {
 		return fmt.Errorf("check fix %v, want %v, exit%d", p, old, e.s.m.w.exit)
 	}
 	return nil
+}
+
+// namesFile is whether a line of w's last standard output names file
+// exactly as given, slash-separated, as a word or a site's start: no
+// other separator read as a slash (bug-12).
+func namesFile(w *world, file string) error {
+	for _, line := range outputLines(w.stdout) {
+		for _, word := range strings.Fields(line) {
+			if word == file || strings.HasPrefix(word, file+":") {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("no line of stdout names %s\n%s", file, w.report())
 }

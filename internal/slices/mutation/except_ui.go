@@ -124,17 +124,22 @@ func (c Except) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 	if err != nil {
 		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then except the site again.")))
 	}
+	return ui.Emit(c.JSON, c.excepted(&Presentation{UI: ui, JSON: c.JSON}, found), nil)
+}
+
+// excepted is the --json object of found, the entry except wrote, whose
+// line plain output prints.
+func (c Except) excepted(p *Presentation, found ExceptFound) exceptResult {
 	e := found.Exception
-	result = exceptResult{Exception: &e, Replaced: found.Replaced}
 	if !c.JSON {
 		what := "excepted"
 		if found.Replaced {
 			what = "excepted again"
 		}
-		_, _ = fmt.Fprintf(ui.Stdout, "%s %s:%d:%d %s → %s in %s in %s\n", what, named(found.File, found.Path, ui.Rel), found.Line, found.Column,
+		_, _ = fmt.Fprintf(p.UI.Stdout, "%s %s:%d:%d %s → %s in %s in %s\n", what, named(found.File, found.Path, p.UI.Rel), found.Line, found.Column,
 			Quote(e.Original), Quote(e.Replacement), e.Function, "itos-cc.yaml")
 	}
-	return ui.Emit(c.JSON, result, nil)
+	return exceptResult{Exception: &e, Replaced: found.Replaced}
 }
 
 // exceptQuery is the query of arg, a site or, holding an identity's
@@ -175,6 +180,15 @@ func (c Except) renew(ctx context.Context, ui *cli.UI, h Handler) int {
 	if err != nil {
 		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then renew again.")))
 	}
+	result, problems := c.renewed(&Presentation{UI: ui, JSON: c.JSON}, found)
+	return ui.Emit(c.JSON, result, problems)
+}
+
+// renewed is the --json object of found, what --renew renewed and left,
+// whose lines plain output prints, and the problem of each entry left.
+func (c Except) renewed(p *Presentation, found RenewFound) (renewResult, []*cli.Problem) {
+	ui := p.UI
+	result := renewResult{Renewed: []renewedJSON{}, NotRenewed: []notRenewedJSON{}}
 	for _, r := range found.Renewed {
 		rel := ui.Rel(sourcePath(found.Root, r.New.File))
 		result.Renewed = append(result.Renewed, renewedJSON{File: rel, Function: r.New.Function, Line: r.Line, Column: r.New.Column,
@@ -202,17 +216,17 @@ func (c Except) renew(ctx context.Context, ui *cli.UI, h Handler) int {
 		if u.Rehashable {
 			because, fix = because+"; "+previousHash, rehashFix+" Otherwise: "+fix
 		}
-		p := cli.NewProblem(cli.CodeNo, "mutation.exception-stale",
+		problem := cli.NewProblem(cli.CodeNo, "mutation.exception-stale",
 			fmt.Sprintf("%s: the entry in %s for %s was not renewed: %s", at, "itos-cc.yaml", change, because), fix)
-		p = p.With("file", rel).With("function", u.Function).With("column", u.Column).
+		problem = problem.With("file", rel).With("function", u.Function).With("column", u.Column).
 			With("original", u.Original).With("replacement", u.Replacement).With("why", u.Why)
 		if u.Line != 0 {
-			p = p.With("line", u.Line)
+			problem = problem.With("line", u.Line)
 		}
-		p.Shown = true
-		problems = append(problems, p)
+		problem.Shown = true
+		problems = append(problems, problem)
 	}
-	return ui.Emit(c.JSON, result, problems)
+	return result, problems
 }
 
 // prune is mutation except --prune: each entry of itos-cc.yaml stale as
@@ -235,17 +249,24 @@ func (c Except) prune(ctx context.Context, ui *cli.UI, h Handler) int {
 	if err != nil {
 		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then prune again.")))
 	}
+	return ui.Emit(c.JSON, c.pruned(&Presentation{UI: ui, JSON: c.JSON}, found), nil)
+}
+
+// pruned is the --json object of found, what --prune removed, whose lines
+// plain output prints.
+func (c Except) pruned(p *Presentation, found PruneFound) pruneResult {
+	result := pruneResult{Pruned: []notRenewedJSON{}}
 	for _, s := range found.Pruned {
 		result.Pruned = append(result.Pruned, notRenewedJSON{Exception: s.Exception, Why: s.Why, Line: s.Line})
 		if !c.JSON {
-			at := ui.Rel(sourcePath(found.Root, s.File))
+			at := p.UI.Rel(sourcePath(found.Root, s.File))
 			if s.Line != 0 {
 				at = fmt.Sprintf("%s:%d:%d", at, s.Line, s.Column)
 			}
-			_, _ = fmt.Fprintf(ui.Stdout, "pruned %s %s → %s in %s (%s) from %s\n", at, Quote(s.Original), Quote(s.Replacement), s.Function, s.Why, "itos-cc.yaml")
+			_, _ = fmt.Fprintf(p.UI.Stdout, "pruned %s %s → %s in %s (%s) from %s\n", at, Quote(s.Original), Quote(s.Replacement), s.Function, s.Why, "itos-cc.yaml")
 		}
 	}
-	return ui.Emit(c.JSON, result, nil)
+	return result
 }
 
 // rehash is mutation except --rehash: each entry of itos-cc.yaml that no
@@ -276,6 +297,16 @@ func (c Except) rehash(ctx context.Context, ui *cli.UI, h Handler) int {
 	if err != nil {
 		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then rehash again.")))
 	}
+	result, problems := c.rehashed(&Presentation{UI: ui, JSON: c.JSON}, found)
+	return ui.Emit(c.JSON, result, problems)
+}
+
+// rehashed is the --json object of found, what --rehash carried over and
+// left, whose lines plain output prints, and the problem of each entry
+// left.
+func (c Except) rehashed(p *Presentation, found RehashFound) (rehashResult, []*cli.Problem) {
+	ui := p.UI
+	result := rehashResult{Rehashed: []rehashedJSON{}, NotRehashed: []notRenewedJSON{}}
 	for _, r := range found.Rehashed {
 		rel := ui.Rel(sourcePath(found.Root, r.Old.File))
 		result.Rehashed = append(result.Rehashed, rehashedJSON{File: rel, Function: r.Old.Function, Line: r.Line, Column: r.Old.Column,
@@ -302,17 +333,17 @@ func (c Except) rehash(ctx context.Context, ui *cli.UI, h Handler) int {
 		if s.Why == mutants.ExceptionGone {
 			because, fix = "its file, its function, or any site of its change in it is gone", pruneFix
 		}
-		p := cli.NewProblem(cli.CodeNo, "mutation.exception-stale",
+		problem := cli.NewProblem(cli.CodeNo, "mutation.exception-stale",
 			fmt.Sprintf("%s: the entry in %s for %s was not rehashed: %s", at, "itos-cc.yaml", change, because), fix)
-		p = p.With("file", rel).With("function", s.Function).With("column", s.Column).
+		problem = problem.With("file", rel).With("function", s.Function).With("column", s.Column).
 			With("original", s.Original).With("replacement", s.Replacement).With("why", s.Why)
 		if s.Line != 0 {
-			p = p.With("line", s.Line)
+			problem = problem.With("line", s.Line)
 		}
 		// Not Shown: stderr gives its fix, which the line above does not.
-		problems = append(problems, p)
+		problems = append(problems, problem)
 	}
-	return ui.Emit(c.JSON, result, problems)
+	return result, problems
 }
 
 // notRehashedChangedFix is the fix of an entry --rehash left as changed.

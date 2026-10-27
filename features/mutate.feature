@@ -4406,9 +4406,9 @@ Feature: Mutation testing
       Then a line of its standard output names "<file>" as written here, slash-separated
 
       Examples:
-        | given                                                                                                   | command                              | file                     |
-        | itos-cc.yaml excepts a survivor in src/port/porttest/fake.go and excludes "**/porttest/**"               | itos-cc mutation except --prune      | src/port/porttest/fake.go |
-        | a Go project with a reviewed exception for an equivalent mutant in a function, and a commit that renames a string literal on another line of that function, and "itos-cc mutation run" has judged the function again and the mutant still survives | itos-cc mutation except --renew | the function's file |
+        | given                                                                                                                                                                                                                                      | command                         | file                      |
+        | itos-cc.yaml excepts a survivor in src/port/porttest/fake.go and excludes "**/porttest/**"                                                                                                                                                 | itos-cc mutation except --prune | src/port/porttest/fake.go |
+        | a Go project with a reviewed exception for an equivalent mutant in Label of label.go, and a commit that renames a string literal on another line of Label, and "itos-cc mutation run" has judged Label again and the mutant still survives | itos-cc mutation except --renew | label.go                  |
 
     @slice-21 @ID-MUT-295
     Scenario: --prune keeps an entry that --renew or an edit can mend
