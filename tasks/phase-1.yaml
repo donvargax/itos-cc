@@ -7115,3 +7115,25 @@
     read its guides and hooks, as T-214 did; the person approved it 2026-10-26.
   done_when:
     - run: itos version
+- id: T-219
+  type: test
+  title: The worktrees tests sweep and make worker copies in a temporary folder of their own
+  why: >
+    T-217 found the nightly recording a kill only a race made (nightly 40299431695, cd.yml
+    40412787808): the worktrees package's tests build Workers, whose newWorkerScratch
+    (internal/slices/mutation/adapters/worktrees/worker_scratch.go) sweeps os.TempDir() for
+    abandoned worker folders and makes its own there with os.MkdirTemp("", ...), and the nightly
+    runs that package's trials side by side, so one trial meets the folders another is making or
+    removing, and any mutant of removeAbandonedWorkers or abandoned can be recorded killed or
+    survived by chance. Decided by the coordinator (2026-10-26): the tests get a temporary folder of
+    their own; the product does not change for users. Make the folder newWorkerScratch sweeps and
+    makes its copies in a value the Workers adapter holds (empty meaning os.TempDir(), so
+    cmd/itos-cc's wiring needs no change), and have every test that builds Workers or calls
+    newWorkerScratch give it t.TempDir(); only where something beyond the adapter (git, a toolchain)
+    makes the folders, set TMPDIR, TMP and TEMP to a t.TempDir with t.Setenv instead. Check that no
+    test of the package still reaches the system temporary folder (a test run with TMPDIR, TMP and
+    TEMP pointed at an empty folder leaves it empty). Giving every mutation trial its own TMPDIR in
+    mutation run is a product change users' suites would see, and stays an idea for the person
+    (mutation-trial-tmpdir).
+  done_when:
+    - run: go test ./internal/slices/mutation/adapters/worktrees/...
