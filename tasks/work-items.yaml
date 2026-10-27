@@ -6065,3 +6065,17 @@ items:
       sites named. This repository's own repairs met it: T-217 and T-219's agents applied mutants by
       hand.
     refs: ["#68"]
+  - id: since-upper-bound
+    title: mutation run --since takes an upper bound, so a fixed seed keeps its draw
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      #63: --count 1 --since <ref> --seed <ref> judges <ref>...HEAD, so the drawn site changes as
+      HEAD moves: a task's check pinned to CI's draw draws another site minutes later. Proposed
+      --until <ref> or --range a..b, or judging exactly the sites a previous --json named
+      (judge-named-site covers that half). This repository met it today with two agents pushing into
+      one red range.
+    refs: ["#63"]
