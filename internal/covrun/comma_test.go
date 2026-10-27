@@ -148,3 +148,85 @@ func TestGoListedCoverageUnderAPathHoldingACommaIsConverted(t *testing.T) {
 		}
 	}
 }
+
+func TestAListedTestsFolderWhoseNameHoldsACommaIsMovedToOneNamedByItsIndex(t *testing.T) {
+	dir := t.TempDir()
+	writeFiles(t, dir, map[string]string{"ID-A,01/covmeta.1": "meta", "ID-A,01/sub/covmeta.2": "another test's", "ID-B/covmeta.3": "kept"})
+	moved, err := splitFolder(filepath.Join(dir, "ID-A,01"), dir, 4)
+	if want := filepath.Join(dir, ".split", "4"); err != nil || moved != want {
+		t.Fatalf("moved to %q (%v), want %q", moved, err, want)
+	}
+	if text, err := os.ReadFile(filepath.Join(moved, "covmeta.1")); err != nil || string(text) != "meta" {
+		t.Errorf("the moved folder holds %q (%v), want the test's covmeta.1", text, err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "ID-A,01", "sub", "covmeta.2")); err != nil {
+		t.Errorf("another test's folder within it moved: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(moved, "sub")); !os.IsNotExist(err) {
+		t.Errorf("the folder within it was moved too: %v", err)
+	}
+	if kept, err := splitFolder(filepath.Join(dir, "ID-B"), dir, 5); err != nil || kept != filepath.Join(dir, "ID-B") {
+		t.Errorf("a name without a comma gave %q (%v), want it kept", kept, err)
+	}
+}
+
+func TestAListedTestsFolderThatCannotBeMovedIsAnError(t *testing.T) {
+	for name, files := range map[string]map[string]string{
+		"no folder for the moved data":    {"ID-A,01/covmeta.1": "", ".split": "a file"},
+		"no folder to move":               {},
+		"a moved file that cannot be put": {"ID-A,01/covmeta.1": "", ".split/0/covmeta.1/x": ""},
+	} {
+		t.Run(name, func(t *testing.T) {
+			dir := t.TempDir()
+			writeFiles(t, dir, files)
+			if moved, err := splitFolder(filepath.Join(dir, "ID-A,01"), dir, 0); err == nil {
+				t.Errorf("moved to %q, want an error", moved)
+			}
+		})
+	}
+}
+
+func TestAListedTestWhoseFolderCannotBeMovedIsLoggedOrFailsTheSupervisedMeasure(t *testing.T) {
+	root, bin := commaModule(t)
+	file := filepath.Join(root, "main.go")
+	// The harness splits the run under an ID holding a comma, and where
+	// the moved data would go is a file.
+	harness := func(_ context.Context, cmd *exec.Cmd) error {
+		switch cmd.Args[len(cmd.Args)-1] {
+		case "one test":
+			return nil
+		case "every test":
+		default:
+			return cmd.Run()
+		}
+		for _, kv := range cmd.Env {
+			if dir, ok := strings.CutPrefix(kv, TestCoverDirEnv+"="); ok {
+				runCovered(t, bin, filepath.Join(dir, "ID-A,01"))
+				return os.WriteFile(filepath.Join(dir, ".split"), nil, 0o600)
+			}
+		}
+		return nil
+	}
+	p := PerTest{Root: root, Tests: []Test{{ID: "ID-A,01"}}, All: "every test", Select: func([]string) string { return "one test" }}
+	dir := filepath.Join(root, ".metrics", "listed")
+	var log bytes.Buffer
+	tc, failed := MeasureTests(t.Context(), p, dir, []string{file}, &log, harness)
+	if failed != nil || tc == nil || tc.Of("ID-A,01") != nil || !strings.Contains(log.String(), "itos-cc: coverage: ID-A,01: ") {
+		t.Errorf("measured %v (%v), want ID-A,01 left out and logged\n%s", tc, failed, log.String())
+	}
+	_, _, err := MeasureTestsSupervised(t.Context(), p, dir, []string{file}, &log, harness)
+	if err == nil || !strings.Contains(err.Error(), "prepare coverage for listed test ID-A,01") {
+		t.Errorf("the supervised measure gave %v, want its failure to move ID-A,01's data", err)
+	}
+}
+
+func TestOnlyGoConvertsAListedTestsDataFromTheFoldersParent(t *testing.T) {
+	root := t.TempDir()
+	d := filepath.Join(root, ".metrics", "listed", "ID-A-01")
+	if got := goTestCollector(t.Context(), root, nil).convertDir(d); got != filepath.Dir(d) {
+		t.Errorf("Go converts in %q, want the folder's parent %q", got, filepath.Dir(d))
+	}
+	if got := (testCollector{language: "python", dir: root}).convertDir(d); got != root {
+		t.Errorf("Python converts in %q, want its own folder %q", got, root)
+	}
+}

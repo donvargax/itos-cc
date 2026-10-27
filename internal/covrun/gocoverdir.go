@@ -103,9 +103,9 @@ func (p Plan) integrate(log io.Writer) (string, string) {
 		return "", p.ConverterMissing
 	}
 	for _, args := range p.conversions() {
-		logf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
+		logf(log, "itos-cc: coverage %s$ %s\n", p.convertDir(), displayArgs(args))
 		cmd := exec.Command(args[0], args[1:]...) //nolint:gosec // the plan's conversion of its coverage data, which this package names
-		cmd.Dir, cmd.Env = p.Dir, p.convertEnv()
+		cmd.Dir, cmd.Env = p.convertDir(), p.convertEnv()
 		cmd.Stdout = log
 		cmd.Stderr = log
 		if err := cmd.Run(); err != nil {
@@ -114,6 +114,14 @@ func (p Plan) integrate(log io.Writer) (string, string) {
 		}
 	}
 	return p.Integration, ""
+}
+
+// convertDir is where p's Convert commands run: ConvertDir, else Dir.
+func (p Plan) convertDir() string {
+	if p.ConvertDir != "" {
+		return p.ConvertDir
+	}
+	return p.Dir
 }
 
 // conversions is p's Convert commands: those ConvertWritten gives from the

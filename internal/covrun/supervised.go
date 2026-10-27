@@ -238,11 +238,16 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 	if err := run(ctx, "all", p.All, wholeEnv(collectors, dir)); err != nil {
 		return nil, executions, err
 	}
-	for _, id := range ids {
+	for i, id := range ids {
 		candidate := filepath.Join(dir, id)
-		if anyWritten(collectors, candidate) {
-			written[id] = candidate
+		if !anyWritten(collectors, candidate) {
+			continue
 		}
+		candidate, err := splitFolder(candidate, dir, i)
+		if err != nil {
+			return nil, executions, fmt.Errorf("prepare coverage for listed test %s: %w", id, err)
+		}
+		written[id] = candidate
 	}
 	alone := len(written) == 0 && len(ids) > 0
 	if alone {
@@ -294,10 +299,10 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 				return nil, executions, fmt.Errorf("convert listed test %s coverage: %w", id, err)
 			}
 			cmd := exec.CommandContext(ctx, args[0], args[1:]...) //nolint:gosec // the collector's conversion of a listed test's data, which this package names
-			cmd.Dir, cmd.Stdout, cmd.Stderr = c.dir, log, log
+			cmd.Dir, cmd.Stdout, cmd.Stderr = c.convertDir(d), log, log
 			cmd.Env = unsetEnv(project.NoBytecodeEnv(nil), c.vars...)
 			err = execute(ctx, cmd)
-			executions = append(executions, CommandExecution{Args: args, Dir: c.dir, Err: err})
+			executions = append(executions, CommandExecution{Args: args, Dir: c.convertDir(d), Err: err})
 			if err != nil {
 				return nil, executions, fmt.Errorf("convert listed test %s coverage: %w", id, err)
 			}
@@ -338,11 +343,11 @@ func (p Plan) integrateSupervised(ctx context.Context, log io.Writer, execute Co
 		return "", p.ConverterMissing, nil, nil
 	}
 	for _, args := range p.conversions() {
-		logf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
+		logf(log, "itos-cc: coverage %s$ %s\n", p.convertDir(), displayArgs(args))
 		cmd := exec.CommandContext(ctx, args[0], args[1:]...) //nolint:gosec // the plan's conversion of its coverage data, which this package names
-		cmd.Dir, cmd.Env, cmd.Stdout, cmd.Stderr = p.Dir, p.convertEnv(), log, log
+		cmd.Dir, cmd.Env, cmd.Stdout, cmd.Stderr = p.convertDir(), p.convertEnv(), log, log
 		err := execute(ctx, cmd)
-		calls = append(calls, CommandExecution{Args: append([]string{}, args...), Dir: p.Dir, Err: err})
+		calls = append(calls, CommandExecution{Args: append([]string{}, args...), Dir: p.convertDir(), Err: err})
 		if err != nil {
 			return "", "", calls, fmt.Errorf("convert %s integration coverage: %w", p.Language, err)
 		}

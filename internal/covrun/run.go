@@ -64,6 +64,10 @@ type Plan struct {
 	CoverEnv      []string
 	Written       string
 	Convert       [][]string
+	// ConvertDir, when set, is where the Convert commands run, else Dir:
+	// Go's run in CoverDir's parent, naming CoverDir by its bare name, as
+	// go tool covdata reads -i as a comma-separated list (bug-13).
+	ConvertDir string
 	// ConvertWritten, when set, gives the Convert commands from the files
 	// Written found, sorted, such as the .exec files jacococli merges.
 	ConvertWritten func(written []string) [][]string
@@ -316,7 +320,8 @@ func goPlanWithScope(dir, out string, sources []string, own bool, pkgs, testing 
 	}
 	if coverDir != "" {
 		plan.CoverDir, plan.CoverEnv, plan.Written = coverDir, []string{coverDirEnv + "=" + coverDir}, "covmeta.*"
-		plan.Convert = [][]string{{"go", "tool", "covdata", "textfmt", "-i=" + coverDir, "-o=" + plan.Integration}}
+		plan.ConvertDir = out
+		plan.Convert = [][]string{{"go", "tool", "covdata", "textfmt", "-i=" + filepath.Base(coverDir), "-o=" + plan.Integration}}
 	}
 	return plan
 }

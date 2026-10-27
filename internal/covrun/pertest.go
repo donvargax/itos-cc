@@ -71,6 +71,10 @@ type testCollector struct {
 	// report is then empty.
 	written func(d string) bool
 	convert func(d, out string) ([]string, string)
+	// inParent, when set, runs convert's command in d's parent, which it
+	// names d in by its bare name: go tool covdata reads -i as a
+	// comma-separated list (bug-13).
+	inParent bool
 	// tool, when set, is the command that prints the path of the program
 	// convert's commands start, their first word: run once a measure,
 	// before its first conversion (tools), the program then run directly.
@@ -160,17 +164,53 @@ func goTestCollector(ctx context.Context, root string, sources []string) testCol
 		written:  func(d string) bool { return hasCoverData(d, ownCoverHash()) },
 		tool:     goCovdata,
 		packages: packages,
+		inParent: true,
 		convert: func(d, out string) ([]string, string) {
 			if !measured {
 				return nil, ""
 			}
-			args := []string{"covdata", "textfmt", "-i=" + d, "-o=" + out + ".out"}
+			args := []string{"covdata", "textfmt", "-i=" + filepath.Base(d), "-o=" + out + ".out"}
 			if len(packages) > 0 {
 				args = append(args, "-pkg="+strings.Join(append([]string{commandLineArguments}, packages...), ","))
 			}
 			return args, out + ".out"
 		},
 	}
+}
+
+// convertDir is where c's conversion of the data in d runs.
+func (c testCollector) convertDir(d string) string {
+	if c.inParent {
+		return filepath.Dir(d)
+	}
+	return c.dir
+}
+
+// splitFolder is d, where the harness had listed test i write its data,
+// named by its ID, or, when that name holds a comma, which covdata would
+// read as a list (bug-13), <dir>/.split/<i>, to which d's files are moved;
+// folders in d, another test's, stay.
+func splitFolder(d, dir string, i int) (string, error) {
+	if !strings.Contains(filepath.Base(d), ",") {
+		return d, nil
+	}
+	moved := filepath.Join(dir, ".split", strconv.Itoa(i))
+	if err := os.MkdirAll(moved, 0o755); err != nil { //nolint:gosec // a listed test's own coverage folder keeps its 0755, as the others
+		return "", err
+	}
+	entries, err := os.ReadDir(d)
+	if err != nil {
+		return "", err
+	}
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		if err := os.Rename(filepath.Join(d, e.Name()), filepath.Join(moved, e.Name())); err != nil {
+			return "", err
+		}
+	}
+	return moved, nil
 }
 
 // tools is what each collector's tool printed, by language, found once a
@@ -329,10 +369,17 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 		return nil, testsFailed(ctx, p.All, err)
 	}
 	written := map[string]string{}
-	for _, id := range ids {
-		if d := filepath.Join(dir, id); anyWritten(collectors, d) {
-			written[id] = d
+	for i, id := range ids {
+		d := filepath.Join(dir, id)
+		if !anyWritten(collectors, d) {
+			continue
 		}
+		d, err := splitFolder(d, dir, i)
+		if err != nil {
+			logf(log, "itos-cc: coverage: %s: %v\n", id, err)
+			continue
+		}
+		written[id] = d
 	}
 	alone := len(written) == 0 && len(ids) > 0
 	if alone {
@@ -383,7 +430,7 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 				continue
 			}
 			cmd := exec.Command(args[0], args[1:]...) //nolint:gosec // the collector's conversion of a listed test's data, which this package names
-			cmd.Dir, cmd.Env = c.dir, unsetEnv(project.NoBytecodeEnv(nil), c.vars...)
+			cmd.Dir, cmd.Env = c.convertDir(d), unsetEnv(project.NoBytecodeEnv(nil), c.vars...)
 			if out, err := cmd.CombinedOutput(); err != nil {
 				logf(log, "itos-cc: coverage: %s: %s: %v\n%s", id, displayArgs(args), err, out)
 				continue

@@ -1080,7 +1080,7 @@ Feature: Mutation testing
     # folder named after a test ID that could hold one is named by its
     # index or a hash instead); -o keeps its absolute path, a single one.
     # Before the fix both rows find no line covered, failing at the Then.
-    @bug-13 @ID-MUT-392 @binary-only @wip
+    @bug-13 @ID-MUT-392 @binary-only
     Scenario Outline: A project under a path holding a comma keeps its <coverage>
       Given <module>, at a folder named "with,comma"
       When I run "<command>"
