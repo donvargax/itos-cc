@@ -72,6 +72,18 @@ func identityExceptionSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^\.metrics/mutate holds no snapshot of board/board\.go$`, i.noSnapshot)
 	sc.Step(`^a snapshot of board/board\.go is stale, a later commit having changed board/board_test\.go$`, i.staleSnapshot)
 	sc.Step("^\"itos-cc mutation run --count 5 --json\" reported the survivor `<` → `<=` at board/board\\.go:5:11 with its identity$", i.reported)
+	sc.Step(`^a Go project whose "example\.com/fx/board#Count" survives its test, and a counted run that named its identity$`, func() error {
+		if err := i.module(identityTest, true); err != nil {
+			return err
+		}
+		return i.reported()
+	})
+	sc.Step(`^I run "itos-cc mutation except" with that identity and --reason '([^']*)'$`, func(reason string) error {
+		if i.counted == "" {
+			return fmt.Errorf("no counted run reported an identity")
+		}
+		return w.runWith(w.env(), "mutation except '"+i.counted+"' --reason '"+reason+"'")
+	})
 	sc.Step(`^I except that identity with --reason 'x is never 5'$`, func() error {
 		if i.counted == "" {
 			return fmt.Errorf("no counted run reported an identity")
