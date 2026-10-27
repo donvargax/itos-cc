@@ -7226,5 +7226,3 @@
     prints each digit class's total from downloaded reports, so the next rebalance is one command;
     if two parts cannot both stay under about 16 minutes, say so in the report instead of adding a
     third (macOS already runs five jobs at once, GitHub's limit).
-  done_when:
-    - run: go tool actionlint .github/workflows/cd.yml
