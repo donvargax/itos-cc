@@ -1,13 +1,13 @@
 package domain
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"path"
 	"path/filepath"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"
@@ -98,13 +98,10 @@ func AdmitNamed(ctx context.Context, plan *FreshPlan, tree selport.Tree, around 
 	for _, rel := range tracked {
 		committed[rel] = true
 	}
-	source := map[string]bool{}
+	// The discovered sources, by their paths in the frozen root.
+	source := make(map[string]bool, len(sources))
 	for _, discovered := range sources {
-		rel, err := filepath.Rel(plan.FrozenRoot, discovered)
-		if err != nil {
-			return err
-		}
-		source[filepath.ToSlash(rel)] = true
+		source[filepath.Clean(discovered)] = true
 	}
 	plan.Seed, plan.Algorithm, plan.NotBuilt = "", FreshNamedAlgorithm, nil
 	files := map[string]*namedFile{}
@@ -115,29 +112,21 @@ func AdmitNamed(ctx context.Context, plan *FreshPlan, tree selport.Tree, around 
 			}
 		}
 	}()
-	open := func(rel string) (*namedFile, error) {
-		if f, ok := files[rel]; ok {
-			return f, nil
-		}
-		f, err := openNamed(ctx, plan, tree, around, tools, rel, committed[rel], source[rel], exclude)
-		if err != nil {
-			return nil, err
-		}
-		files[rel] = f
-		return f, nil
-	}
 	var unmatched []UnmatchedSite
 	var units []FreshUnit
 	seen, unitSeen := map[string]bool{}, map[string]bool{}
 	plan.Eligible, plan.Selected, plan.Omitted, plan.Named = nil, nil, nil, nil
 	for _, named := range sites {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
 		rel := path.Clean(named.File)
-		f, err := open(rel)
-		if err != nil {
-			return err
+		f, opened := files[rel]
+		if !opened {
+			// A cancelled context stops the read of its first file.
+			var err error
+			f, err = openNamed(ctx, plan, tree, around, tools, rel, committed[rel], exclude, source)
+			files[rel] = f
+			if err != nil {
+				return err
+			}
 		}
 		found, miss := namedCandidates(f, named)
 		if miss != nil {
@@ -170,11 +159,8 @@ func AdmitNamed(ctx context.Context, plan *FreshPlan, tree selport.Tree, around 
 		return FreshUnmatched{Sites: unmatched}
 	}
 	plan.Eligible = slices.Clone(plan.Selected)
-	sort.Slice(units, func(i, j int) bool {
-		if units[i].Path != units[j].Path {
-			return units[i].Path < units[j].Path
-		}
-		return units[i].StartLine < units[j].StartLine
+	slices.SortFunc(units, func(a, b FreshUnit) int {
+		return cmp.Or(strings.Compare(a.Path, b.Path), cmp.Compare(a.StartLine, b.StartLine))
 	})
 	plan.Units = units
 	return nil
@@ -184,32 +170,28 @@ func AdmitNamed(ctx context.Context, plan *FreshPlan, tree selport.Tree, around 
 // no site of it can be named: gone when it is not committed, excluded when
 // exclude leaves its source out, no-site when it is no source (a test, or
 // a language with none), not-built when only another system builds it.
-func openNamed(ctx context.Context, plan *FreshPlan, tree selport.Tree, around langport.Surroundings, tools Toolchain, rel string, committed, source bool, exclude fileselection.Exclusion) (*namedFile, error) {
+// A file that cannot be read, a platform that cannot be told, or source
+// that cannot be parsed is an error, beside a namedFile holding nothing.
+func openNamed(ctx context.Context, plan *FreshPlan, tree selport.Tree, around langport.Surroundings, tools Toolchain, rel string, committed bool, exclude fileselection.Exclusion, source map[string]bool) (*namedFile, error) {
 	frozen := filepath.Join(plan.FrozenRoot, filepath.FromSlash(rel))
 	switch {
 	case !committed:
 		return &namedFile{why: UnmatchedGone}, nil
 	case exclude.Excludes(frozen):
 		return &namedFile{why: UnmatchedExcluded}, nil
-	case !source:
+	case !source[frozen]:
 		return &namedFile{why: UnmatchedNoSite}, nil
 	}
 	text, failure := tree.Read(ctx, frozen)
 	if failure != nil {
-		return nil, fmt.Errorf("read committed %s: %w", rel, failure)
+		return &namedFile{}, fmt.Errorf("read committed %s: %w", rel, failure)
 	}
 	built, platform, err := builtHere(ctx, tools, map[string]Platform{}, frozen, text)
-	if err != nil {
-		return nil, err
-	}
-	if !built {
-		return &namedFile{why: UnmatchedNotBuilt, platform: platform}, nil
+	if err != nil || !built {
+		return &namedFile{why: UnmatchedNotBuilt, platform: platform}, err
 	}
 	file, err := lang.Parse(ctx, around, lang.Detect(rel), frozen, text)
-	if err != nil {
-		return nil, fmt.Errorf("parse committed %s: %w", rel, err)
-	}
-	return &namedFile{file: file}, nil
+	return &namedFile{file: file}, err
 }
 
 // namedCandidates are the sites of f named names: every site at its

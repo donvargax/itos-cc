@@ -3,8 +3,10 @@ package mutation
 import (
 	"context"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/cli"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -77,5 +79,17 @@ func TestANamedRunInterruptedWhilePlanningSaysWhatSiteBounds(t *testing.T) {
 	}
 	if kept.found == nil || kept.found.Report.Sampling.Completion != "interrupted" || kept.found.Report.Sampling.Bounds != namedBounds {
 		t.Errorf("found %+v, want an interrupted report bounded as --site bounds", kept.found)
+	}
+}
+
+// A --site run on Windows is count.platform, naming --site, before
+// anything is observed. ID-MUT-248 holds it natively on Windows alone, and
+// the code proof measures this system's in-process tests.
+func TestANamedRunOnWindowsIsRefusedNamingSite(t *testing.T) {
+	var out, errOut strings.Builder
+	ui := &cli.UI{Stdout: &out, Stderr: &errOut}
+	code := Run{Site: []string{"a.go:3:9"}, Repeat: 1, JSON: true}.Run(t.Context(), ui, Handler{Platform: "windows"}, cli.Written{"site": {"a.go:3:9"}})
+	if code != cli.CodeEnvironment || !strings.Contains(out.String(), `"count.platform"`) || !strings.Contains(out.String(), "mutation run --site supports Linux and macOS") {
+		t.Errorf("exit %d\n%s%s", code, out.String(), errOut.String())
 	}
 }
