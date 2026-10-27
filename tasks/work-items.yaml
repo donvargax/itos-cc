@@ -6205,3 +6205,18 @@ items:
       fails: ci.yml run 40456057099 (test (others)) failed so on the slice-67 push, which touched
       nothing it runs. Wait until the file holds a newline-terminated PID, or write it to a
       temporary name and rename.
+  - id: coverage-reuse-own
+    title: A file's own tests' coverage is reused while nothing it was measured from changed
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The second half of q-102 (a), after slice-69 lands on its cache pieces (entry codec, port and
+      fake, key, stderr lines, --no-coverage-cache): each coverage plan's own-tests report is cached
+      and reused under equal inputs, keeping each line's in-process and integration sources. Its
+      drafted scenarios (Go, TypeScript rows, and integration coverage kept, binary-only) are in the
+      coordinator's scratch spec-draft-rehash-reuse.md, slice B. Cheap in Go, where it gains little;
+      worth it for Python, Kotlin and Dart plans.
+    refs: ["#67"]
