@@ -6042,3 +6042,125 @@ Feature: Mutation testing
       And it ends as interrupted, which a shell reads as 130
       # at any other time a second interrupt ends the command at once, which
       # unit tests hold with fake signals
+
+  # slice-68 (except-rehash, issue #65): v0.18.0 left comments out of a
+  # function's hash (b214f151), so every exception of a function holding a
+  # comment read stale though neither it nor its tests changed, and --renew
+  # carried it over only from fresh results, which took a complete run of
+  # its file first (174 sites for six entries). The person chose on
+  # 2026-10-27 (q-101 (a)) that mutation except --rehash rewrite an entry
+  # whose function, hashed by the algorithm it was written under, still
+  # matches, itos-cc keeping the current and the previous algorithm.
+  # Decided by the coordinator inside q-101, from the drafter's findings
+  # (scratch spec-draft-rehash-reuse.md):
+  # - Only one release ever changed the hash. The previous algorithm is
+  #   itos-cc's before 0.18.0: the function's text less its inline units,
+  #   comments included. Today's also leaves out comments (slice-11). This
+  #   itos-cc computes both; a function with no comment hashes the same
+  #   under both.
+  # - No hash_version key yet: an entry written before the key would name
+  #   none, and itos-cc would write it only for a version other than
+  #   today's, so never now. The key comes with the next hash change, which
+  #   after itos-cc 1.0 brings a format version too (decision 63). Until
+  #   then --rehash tries the previous algorithm on every entry that does
+  #   not hold.
+  # - Whether an entry holds is unchanged: its function's hash now and its
+  #   site at its place.
+  # - --rehash runs no command, reads no snapshot and needs no toolchain.
+  #   For each entry that does not hold: if the function of its
+  #   namespace#name in its file, hashed by the previous algorithm, has the
+  #   entry's hash, and its site of the entry's change is at its
+  #   line_in_function and column, the entry's hash becomes today's. Only
+  #   that line changes; its other keys, x- keys, comments and the file's
+  #   quoting stay (slice-20, 55, 66). It never adds a missing line_text.
+  # - An entry it cannot match is left byte for byte, and is
+  #   mutation.exception-stale, exit 1, why "changed" when a function of its
+  #   name is in its file, else "gone" (--rehash looks in no other file);
+  #   the fix for changed is --renew after mutation run, for gone --prune.
+  # - Plain output is a line per rehash, "rehashed <file>:<line>:<column>
+  #   `o` → `r` in <function> (hash <old> → <new>) in itos-cc.yaml", and
+  #   "  not rehashed <file>[:<line>:<column>] `o` → `r` in <function>
+  #   (<why>)". --json has "rehashed" [{file, function, line, column,
+  #   line_in_function, original, replacement, reason, old_hash,
+  #   new_hash}] and "not_rehashed" [{the entry's keys, why, line when
+  #   found}]. Exit 0 when no entry is left that does not hold.
+  # - It takes no site (args.unexpected), and no --reason, --renew or
+  #   --prune (flags.conflict), exit 80. The order after an upgrade is
+  #   --rehash, then mutation run on what is still stale, then --renew,
+  #   then --prune.
+  # - mutation run, mutation check and --renew's not-renewed entry: when
+  #   the previous algorithm hashes the entry's function to the entry's
+  #   hash, why stays "changed", the message says the entry was written
+  #   under itos-cc's previous hash and the function changed only in what
+  #   the hash now leaves out, and the fix names 'itos-cc mutation except
+  #   --rehash' first.
+  # - Not here: snapshots under .metrics/mutate, which the next run judges;
+  #   strict coverage evidence's function_hash; an older itos-cc's printed
+  #   identity (exception.identity-stale, as today).
+  # Every scenario runs in both drivers. Before the slice --rehash is
+  # flags.unknown, exit 80; each scenario fails at its first Then that
+  # reads itos-cc.yaml, the JSON, the rule or the fix.
+  Rule: An exception written under itos-cc's previous hash is rehashed without a run
+
+    @slice-68 @ID-MUT-377 @wip
+    Scenario: --rehash carries an entry over when only the hash changed, running nothing
+      Given a Go module whose "example.com/fx/board#Count" holds "// below five counts" above its "return x < 5", so its `<` → `<=` is at board/board.go:6:11
+      And itos-cc.yaml excepts that mutant under Count's hash before 0.18.0, "af13bea3308d9ebf", with line_in_function 3 and "x-ticket: QA-12"
+      And it also excepts a survivor of "example.com/fx/board#Over", which holds
+      And .metrics/mutate holds no snapshot of board/board.go
+      When I run "itos-cc mutation except --rehash --json" with no Go toolchain on the PATH
+      Then the entry's hash is "b1a8f41702cd975f", and no other line of itos-cc.yaml changed
+      And "rehashed" lists it with "old_hash" "af13bea3308d9ebf", "new_hash" "b1a8f41702cd975f", line 6 and column 11
+      And "not_rehashed" is empty, and the exit code is 0
+      And no test or coverage command ran, and .metrics/mutate was not written
+      And without --json, on the file as it was, its standard output says "rehashed board/board.go:6:11 `<` → `<=` in example.com/fx/board#Count (hash af13bea3308d9ebf → b1a8f41702cd975f) in itos-cc.yaml"
+      And "itos-cc mutation check board/board.go --json" then reports no "mutation.exception-stale" problem
+
+    @slice-68 @ID-MUT-378 @wip
+    Scenario Outline: An entry --rehash cannot match is left as it was, named with why
+      Given the module and the entry of ID-MUT-377
+      And <change>
+      When I run "itos-cc mutation except --rehash --json"
+      Then itos-cc.yaml is byte for byte as it was
+      And the problem is "mutation.exception-stale", with function "example.com/fx/board#Count" and why "<why>", and its fix names "<fix>"
+      And "not_rehashed" lists the entry with why "<why>"
+      And the exit code is 1
+
+      Examples:
+        | change                                     | why     | fix                              |
+        | Count's "x < 5" became "x < 6"             | changed | itos-cc mutation except --renew  |
+        | Count was renamed Below                    | gone    | itos-cc mutation except --prune  |
+
+    @slice-68 @ID-MUT-379 @wip
+    Scenario: A stale entry the previous hash still matches names --rehash as its fix
+      Given the module and the entry of ID-MUT-377
+      And "itos-cc mutation run board/board.go" has recorded the mutant surviving
+      When I run "itos-cc mutation check board/board.go --json"
+      Then the "mutation.exception-stale" problem, with why "changed", has a fix naming "itos-cc mutation except --rehash" before "--renew"
+      And its message says the entry was written under itos-cc's previous hash
+      And "itos-cc mutation run board/board.go --json" gives it the same fix
+      But once Count's "x < 5" became "x < 6", its fix is ID-MUT-242's, naming no "--rehash"
+
+    @slice-68 @ID-MUT-380 @wip
+    Scenario: --renew, finding no results, names --rehash for an entry the previous hash matches
+      Given the module and the entry of ID-MUT-377
+      And .metrics/mutate holds no snapshot of board/board.go
+      When I run "itos-cc mutation except --renew --json"
+      Then "not_renewed" lists the entry with why "no-results"
+      And its "mutation.exception-stale" problem's fix names "itos-cc mutation except --rehash" before "mutation run"
+      And the exit code is 1
+
+    @slice-68 @ID-MUT-381 @wip
+    Scenario Outline: --rehash takes no site, no reason, and neither --renew nor --prune
+      Given the module and the entry of ID-MUT-377
+      When I run "itos-cc mutation except --rehash <args> --json"
+      Then the problem is "<rule>", with <subject>
+      And the exit code is 80
+      And itos-cc.yaml is byte for byte as it was
+
+      Examples:
+        | args                | rule            | subject                         |
+        | board/board.go:6:11 | args.unexpected | argument "board/board.go:6:11"  |
+        | --reason x          | flags.conflict  | flag "--reason"                 |
+        | --renew             | flags.conflict  | flag "--renew"                  |
+        | --prune             | flags.conflict  | flag "--prune"                  |
