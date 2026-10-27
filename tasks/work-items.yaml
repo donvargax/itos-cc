@@ -6090,8 +6090,8 @@ items:
   - id: slice-66
     title: mutation except --renew keeps the quoting the file already uses
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
