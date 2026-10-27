@@ -106,6 +106,7 @@ func listedMutationSteps(sc *godog.ScenarioContext, m *mutateState) {
 	listedImporterSteps(sc, l)
 	coverageReuseSteps(sc, l)
 	ownCoverageReuseSteps(sc, l.m)
+	commaPathSteps(sc, l)
 }
 
 func (l *listedMutation) project() error {
