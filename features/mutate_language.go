@@ -18,6 +18,9 @@ type languageMutation struct {
 	id, language, file, trace      string
 	before                         map[string]string
 	dependencyTarget, frozenSource string
+	// system is the folder ID-MUT-353's and ID-MUT-354's runs have as the
+	// system's temporary folder (tempProject).
+	system string
 }
 
 func languageMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMutation) {
@@ -61,6 +64,7 @@ func languageMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMu
 	l.suiteSteps(sc)
 	l.dartSteps(sc)
 	l.dartFreshSteps(sc)
+	l.tempSteps(sc)
 }
 
 func (l *languageMutation) run(args string) error { return l.m.w.runWith(l.m.w.env(), args) }
