@@ -7197,5 +7197,3 @@
     and the 30-minute timeout stays a hang guard. A unit test of the features package holds that a
     tag the pattern matches runs in exactly one part. The release and other jobs that need the test
     parts keep needing every part.
-  done_when:
-    - run: go tool actionlint .github/workflows/cd.yml

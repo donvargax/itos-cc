@@ -6205,6 +6205,6 @@ items:
     title: cd.yml splits the features part in two, as cmd-a and cmd-b split cmd/itos-cc
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
