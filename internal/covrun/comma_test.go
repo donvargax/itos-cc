@@ -230,3 +230,12 @@ func TestOnlyGoConvertsAListedTestsDataFromTheFoldersParent(t *testing.T) {
 		t.Errorf("Python converts in %q, want its own folder %q", got, root)
 	}
 }
+
+func TestAPlansConversionsRunInItsConvertDirElseItsDir(t *testing.T) {
+	if got := (Plan{Dir: "project"}).convertDir(); got != "project" {
+		t.Errorf("a plan without ConvertDir converts in %q, want its Dir", got)
+	}
+	if got := (Plan{Dir: "project", ConvertDir: "run"}).convertDir(); got != "run" {
+		t.Errorf("a plan with ConvertDir converts in %q, want it", got)
+	}
+}
