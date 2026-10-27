@@ -437,7 +437,7 @@ func testOwnedPreparationCleanup(t *testing.T) {
 	pidFile := filepath.Join(t.TempDir(), "descendant.pid")
 	ctx, cancel := context.WithCancel(context.Background())
 	finished := make(chan error, 1)
-	cmd = exec.CommandContext(ctx, "sh", "-c", "sleep 30 & echo $! > \"$1\"; wait", "sh", pidFile)
+	cmd = exec.CommandContext(ctx, "sh", "-c", "sleep 30 & echo $! > \"$1.tmp\" && mv \"$1.tmp\" \"$1\"; wait", "sh", pidFile)
 	go func() { finished <- owned.Run(ctx, cmd) }()
 	deadline := time.Now().Add(5 * time.Second)
 	for {
