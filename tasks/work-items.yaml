@@ -5994,8 +5994,8 @@ items:
   - id: T-219
     title: The worktrees tests sweep and make worker copies in a temporary folder of their own
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: T-218
