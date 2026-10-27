@@ -6248,3 +6248,13 @@ items:
       (the shared Go build cache and its locks, covdata, Defender scanning the temp folders, the
       binary driver's parallelism) and remove the contention, or mark them to run one at a time;
       tools/bin/scenario-digits (T-225) sums a run's reports by ID digit.
+  - id: bug-13
+    title: Go coverage conversions lose all data under a project path holding a comma
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: bug
+    why: >
+      Promoted from the idea covdata-comma-path (2026-10-27); its spec is ID-MUT-392 in
+      features/mutate.feature.
