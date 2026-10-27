@@ -3,6 +3,7 @@ package mutation
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -281,7 +282,7 @@ func (c Except) rehash(ctx context.Context, ui *cli.UI, h Handler) int {
 			LineInFunction: r.Old.LineInFunction, Original: r.Old.Original, Replacement: r.Old.Replacement, Reason: r.Old.Reason,
 			OldHash: r.Old.Hash, NewHash: r.New.Hash})
 		if !c.JSON {
-			_, _ = fmt.Fprintf(ui.Stdout, "rehashed %s:%d:%d %s → %s in %s (hash %s → %s) in %s\n", rel, r.Line, r.Old.Column,
+			_, _ = fmt.Fprintf(ui.Stdout, "rehashed %s:%d:%d %s → %s in %s (hash %s → %s) in %s\n", Slashed(rel, filepath.Separator), r.Line, r.Old.Column,
 				Quote(r.Old.Original), Quote(r.Old.Replacement), r.Old.Function, r.Old.Hash, r.New.Hash, "itos-cc.yaml")
 		}
 	}
@@ -295,7 +296,7 @@ func (c Except) rehash(ctx context.Context, ui *cli.UI, h Handler) int {
 		}
 		change := fmt.Sprintf("%s → %s in %s", Quote(s.Original), Quote(s.Replacement), s.Function)
 		if !c.JSON {
-			_, _ = fmt.Fprintf(ui.Stdout, "  not rehashed %s %s (%s)\n", at, change, s.Why)
+			_, _ = fmt.Fprintf(ui.Stdout, "  not rehashed %s %s (%s)\n", Slashed(at, filepath.Separator), change, s.Why)
 		}
 		because, fix := "its function changed in more than what the hash now leaves out", notRehashedChangedFix
 		if s.Why == mutants.ExceptionGone {
