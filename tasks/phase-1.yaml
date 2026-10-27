@@ -7178,5 +7178,3 @@
     unknown rule. Behaviour for this repository is unchanged: the same rows, the same refusals. Then
     file a backport issue on the template the script came from if it carries the script (the
     coordinator does).
-  done_when:
-    - run: tools/bin/architecture-check

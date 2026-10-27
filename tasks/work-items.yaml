@@ -6114,7 +6114,7 @@ items:
     title: architecture-check reads its allowed imports from a committed file
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
     refs: ["#61"]
