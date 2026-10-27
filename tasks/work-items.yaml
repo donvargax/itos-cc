@@ -6079,3 +6079,18 @@ items:
       (judge-named-site covers that half). This repository met it today with two agents pushing into
       one red range.
     refs: ["#63"]
+  - id: listed-coverage-scoped-conversion
+    title: A counted run converts listed tests' coverage only for the judged files' packages
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      #73: a consumer's per-push proof (--count 1, ~1000 listed IDs with per-test coverage) takes
+      ~167 s for one judged site: 62 s measuring the listed tests whole, then ~88 s mostly one go
+      tool covdata textfmt per ID with no -pkg (covrun/supervised.go ~263-290, the converter in
+      pertest.go; split read from source, not timed). Cheapest cut: textfmt -pkg=<packages of the
+      selected files>, keeping the fail-closed check. Caching the reach map (option 2) overlaps
+      coverage-reuse (#67).
+    refs: ["#73"]
