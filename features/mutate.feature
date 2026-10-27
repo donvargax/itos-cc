@@ -4256,7 +4256,7 @@ Feature: Mutation testing
     # - Nothing else of an entry's layout changes (slice-20, slice-55).
     # Before the slice the reason is single-quoted, failing at the Then;
     # the plain and single rows hold already and are guardrails.
-    @slice-66 @ID-MUT-372 @wip
+    @slice-66 @ID-MUT-372
     Scenario Outline: A string mutation except must quote takes the quote the file uses
       Given a Go project whose "example.com/fx/board#Count" survives its test, and a counted run that named its identity
       And itos-cc.yaml quotes its strings <style>
@@ -4270,7 +4270,7 @@ Feature: Mutation testing
         | with single quotes, as `exclude: ['**/gen/**']` | 'x is never 5: the caller checks'         |
         | nowhere, as `exclude: [gen/**]`                 | 'x is never 5: the caller checks'         |
 
-    @slice-66 @ID-MUT-373 @wip
+    @slice-66 @ID-MUT-373
     Scenario: A renewed entry's quoted reason keeps the file's double quotes
       Given a Go project with a reviewed exception for an equivalent mutant in a function, its reason "x is never 5: the caller checks"
       And itos-cc.yaml quotes its strings with double quotes, as `exclude: ["**/gen/**"]`

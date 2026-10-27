@@ -97,8 +97,10 @@ func withoutList(data []byte) (any, error) {
 }
 
 // encodeList writes edit by re-encoding the whole document, each entry it
-// keeps or replaces keeping its comments, and each it replaces its x- keys.
+// keeps or replaces keeping its comments, and each it replaces its x- keys,
+// each it writes quoting as the document does (quoteOf).
 func encodeList(doc *yaml.Node, edit listEdit) ([]byte, error) {
+	quote := quoteOf(doc)
 	if doc.Kind == 0 {
 		doc.Kind = yaml.DocumentNode
 	}
@@ -112,8 +114,8 @@ func encodeList(doc *yaml.Node, edit listEdit) ([]byte, error) {
 			continue
 		}
 		if e, ok := edit.replace[i]; ok {
-			var entry yaml.Node
-			if err := entry.Encode(e); err != nil {
+			entry, err := entryNode(e, quote)
+			if err != nil {
 				return nil, err
 			}
 			entry.Content = append(entry.Content, extensions(was.Content)...)
@@ -123,8 +125,8 @@ func encodeList(doc *yaml.Node, edit listEdit) ([]byte, error) {
 		content = append(content, was)
 	}
 	for _, e := range edit.add {
-		var entry yaml.Node
-		if err := entry.Encode(e); err != nil {
+		entry, err := entryNode(e, quote)
+		if err != nil {
 			return nil, err
 		}
 		content = append(content, &entry)
@@ -134,11 +136,13 @@ func encodeList(doc *yaml.Node, edit listEdit) ([]byte, error) {
 }
 
 // text is a document's bytes by line, lines counted from 1 and columns in
-// characters, as yaml.v3 counts them.
+// characters, as yaml.v3 counts them, with the line break and the quote the
+// entries written into it take.
 type text struct {
 	data   []byte
 	starts []int // the offset of each line
 	eol    string
+	quote  yaml.Style // the quote of the strings it writes that need one (quoteOf)
 }
 
 func newText(data []byte) *text {
@@ -243,6 +247,46 @@ func nodes(doc *yaml.Node) []*yaml.Node {
 	return out
 }
 
+// quoteOf is the quote the strings a writer adds to doc take when they
+// need one, the quote doc already uses (slice-66, issue #64):
+// yaml.DoubleQuotedStyle when it holds more double-quoted scalars than
+// single-quoted ones, any key or value, else 0, the codec's own choice,
+// which is single quotes.
+func quoteOf(doc *yaml.Node) yaml.Style {
+	lead := 0 // how many more double-quoted scalars doc holds than single-quoted
+	for _, n := range nodes(doc) {
+		switch {
+		case n.Style&yaml.DoubleQuotedStyle != 0:
+			lead++
+		case n.Style&yaml.SingleQuotedStyle != 0:
+			lead--
+		}
+	}
+	if lead > 0 {
+		return yaml.DoubleQuotedStyle
+	}
+	return 0
+}
+
+// entryNode is e as the codec encodes it, each string it would write in
+// single quotes written in double quotes when quote is
+// yaml.DoubleQuotedStyle; a string that needs no quotes stays plain.
+func entryNode(e mutants.Exception, quote yaml.Style) (yaml.Node, error) {
+	var entry yaml.Node
+	err := entry.Encode(e)
+	if quote != yaml.DoubleQuotedStyle {
+		return entry, err
+	}
+	for _, n := range entry.Content {
+		// yaml.v3 quotes a scalar written alone as it does a block mapping's,
+		// and cannot fail to write one.
+		if out, _ := yaml.Marshal(n); bytes.HasPrefix(out, []byte("'")) {
+			n.Style = yaml.DoubleQuotedStyle
+		}
+	}
+	return entry, err
+}
+
 // after is the line of the first node after n and all it holds, or the end
 // of the document from n on.
 func (t *text) after(all []*yaml.Node, n *yaml.Node) int {
@@ -304,18 +348,19 @@ func detached(ns []*yaml.Node) []*yaml.Node {
 }
 
 // entryText is e as a block entry of a list whose dashes are at column
-// dash, its keys in the codec's order, then ext, the x- keys of the entry
-// it rewrites and their values (extensions), with the comments yaml.v3
-// gives them, the lines directly above each included; each line ends with
-// eol.
-func entryText(e mutants.Exception, ext []*yaml.Node, dash int, eol string) (string, bool) {
-	var entry yaml.Node
+// dash, its keys in the codec's order, quoted as t.quote says (entryNode),
+// then ext, the x- keys of the entry it rewrites and their values
+// (extensions), with the comments yaml.v3 gives them, the lines directly
+// above each included; each line ends with t.eol.
+func (t *text) entryText(e mutants.Exception, ext []*yaml.Node, dash int) (string, bool) {
 	var buf bytes.Buffer
 	enc := yaml.NewEncoder(&buf)
 	enc.SetIndent(2)
-	if entry.Encode(e) != nil || enc.Encode(&yaml.Node{Kind: yaml.MappingNode, Content: append(entry.Content, ext...)}) != nil || enc.Close() != nil {
+	entry, err := entryNode(e, t.quote)
+	if err != nil || enc.Encode(&yaml.Node{Kind: yaml.MappingNode, Content: append(entry.Content, ext...)}) != nil || enc.Close() != nil {
 		return "", false
 	}
+	eol := t.eol
 	var b strings.Builder
 	for i, l := range strings.Split(strings.TrimSuffix(buf.String(), "\n"), "\n") {
 		switch {
@@ -331,14 +376,14 @@ func entryText(e mutants.Exception, ext []*yaml.Node, dash int, eol string) (str
 
 // entriesText is entries as block entries (entryText), each the first of
 // exts, by index, as its x- keys, none past them.
-func entriesText(entries []mutants.Exception, exts [][]*yaml.Node, dash int, eol string) (string, bool) {
+func (t *text) entriesText(entries []mutants.Exception, exts [][]*yaml.Node, dash int) (string, bool) {
 	var b strings.Builder
 	for i, e := range entries {
 		var ext []*yaml.Node
 		if i < len(exts) {
 			ext = exts[i]
 		}
-		s, ok := entryText(e, ext, dash, eol)
+		s, ok := t.entryText(e, ext, dash)
 		if !ok {
 			return "", false
 		}
@@ -365,6 +410,7 @@ func isFlow(n *yaml.Node) bool { return n.Style&yaml.FlowStyle != 0 }
 // it touches; false when data's layout is one it does not splice.
 func splice(data []byte, doc *yaml.Node, edit listEdit) ([]byte, bool) {
 	t := newText(data)
+	t.quote = quoteOf(doc)
 	all := nodes(doc)
 	if doc.Kind == 0 || len(doc.Content) == 0 {
 		return t.appendTo(t.documentEnd(1), 0, "mutation", edit)
@@ -418,7 +464,7 @@ func (t *text) appendTo(line, indent int, name string, edit listEdit) ([]byte, b
 		pad += "  "
 	}
 	head += pad + "exceptions:" + t.eol
-	entries, ok := entriesText(edit.add, nil, len(pad)+3, t.eol)
+	entries, ok := t.entriesText(edit.add, nil, len(pad)+3)
 	if !ok {
 		return nil, false
 	}
@@ -457,7 +503,7 @@ func (t *text) fillNull(k, v *yaml.Node, child string, edit listEdit) ([]byte, b
 		pad += 2
 		head = strings.Repeat(" ", pad) + child + ":" + t.eol
 	}
-	entries, ok := entriesText(edit.add, nil, pad+3, t.eol)
+	entries, ok := t.entriesText(edit.add, nil, pad+3)
 	if !ok {
 		return nil, false
 	}
@@ -498,7 +544,7 @@ func (t *text) rewriteFlow(all []*yaml.Node, k, v *yaml.Node, edit listEdit) ([]
 	}
 	with := " []" + t.eol
 	if list := edit.result(entries); len(list) > 0 {
-		s, ok := entriesText(list, exts, k.Column+2, t.eol)
+		s, ok := t.entriesText(list, exts, k.Column+2)
 		if !ok {
 			return nil, false
 		}
@@ -562,7 +608,7 @@ func (t *text) spliceBlock(all []*yaml.Node, k, seq *yaml.Node, edit listEdit) (
 			}
 			edits = append(edits, change{t.start(start), end, ""})
 		case replaced:
-			with, ok := entryText(e, detached(extensions(n.Content)), seq.Column, t.eol)
+			with, ok := t.entryText(e, detached(extensions(n.Content)), seq.Column)
 			if !ok {
 				return nil, false
 			}
@@ -577,7 +623,7 @@ func (t *text) spliceBlock(all []*yaml.Node, k, seq *yaml.Node, edit listEdit) (
 		}
 	}
 	if len(edit.add) > 0 {
-		with, ok := entriesText(edit.add, nil, seq.Column, t.eol)
+		with, ok := t.entriesText(edit.add, nil, seq.Column)
 		if !ok {
 			return nil, false
 		}
