@@ -489,3 +489,4 @@ questions:
   - id: q-104
     item: "except-rehash"
     question: "Does itos-cc.yaml's format version move while itos-cc is still 0.x? docs/CONFIG.md says every key added comes with a new version (q-98's slice-53), so q-101's hash version key would make files version 2, which an older pinned itos-cc refuses."
+    answer: "Person 2026-10-27: no. A file format version must not move while itos-cc is still 0.x; versioning the format starts after itos-cc 1.0. Until then itos-cc.yaml stays version 1 and keys are added within it (an older itos-cc meeting a key it does not know refuses it as an unknown key, as today), so q-101's hash version key and any other new key land in version 1."
