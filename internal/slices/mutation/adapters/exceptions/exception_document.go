@@ -61,6 +61,37 @@ func RenewDocument(data []byte, renewals []mutants.Renewal) ([]byte, error) {
 	return writeList(data, doc, c.Exceptions, edit)
 }
 
+// RehashDocument gives each renewal's complete Old entry, each entry once,
+// its New's hash, and writes only a full batch, changing only the text of
+// those entries' hashes (spliceHashes): their other keys, x- keys and
+// comments, and every other byte of the document, stay. A hash whose text
+// it cannot change in place is written as RenewDocument writes an entry,
+// Old with New's hash.
+func RehashDocument(data []byte, renewals []mutants.Renewal) ([]byte, error) {
+	c, doc, err := read(data)
+	if err != nil {
+		return nil, err
+	}
+	edit := listEdit{n: len(c.Exceptions), replace: map[int]mutants.Exception{}}
+	done := make([]bool, len(c.Exceptions))
+	for _, r := range renewals {
+		i := entryOf(c.Exceptions, done, r.Old)
+		if i < 0 {
+			return nil, fmt.Errorf("%s: no entry for %s in %s to rehash", settings.File, r.Old.Function, r.Old.File)
+		}
+		e := r.Old
+		e.Hash = r.New.Hash
+		edit.replace[i] = e
+	}
+	if edit.empty() {
+		return data, nil
+	}
+	if out, ok := spliceHashes(data, doc, edit); ok {
+		return out, nil
+	}
+	return writeList(data, doc, c.Exceptions, edit)
+}
+
 // PruneDocument removes each of entries, a complete entry of the current
 // document, each entry once, with the comment lines directly above it,
 // and writes only a full batch, changing only those lines.

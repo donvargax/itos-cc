@@ -29,9 +29,15 @@ type runFixture struct {
 
 func newRunFixture(t *testing.T) *runFixture {
 	t.Helper()
+	return newRunFixtureOf(t, runSource)
+}
+
+// newRunFixtureOf is newRunFixture with board.go holding source.
+func newRunFixtureOf(t *testing.T, source string) *runFixture {
+	t.Helper()
 	root := t.TempDir()
 	path := filepath.Join(root, "board.go")
-	files := map[string]string{path: runSource, filepath.Join(root, "go.mod"): "module example.test/board\n", filepath.Join(root, "board_test.go"): "package board\n"}
+	files := map[string]string{path: source, filepath.Join(root, "go.mod"): "module example.test/board\n", filepath.Join(root, "board_test.go"): "package board\n"}
 	relative := map[string]string{}
 	for name, text := range files {
 		rel, _ := filepath.Rel(root, name)

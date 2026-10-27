@@ -49,6 +49,14 @@ type PruneFound struct {
 	Pruned []mutants.StaleException
 }
 
+// RehashFound is what --rehash carried over and left, the settings' root
+// naming their files.
+type RehashFound struct {
+	Root     string
+	Rehashed []mutants.Renewal
+	Left     []mutants.StaleException
+}
+
 // errNoExceptions is the missing Exceptions binding, worded as cmd's was.
 var errNoExceptions = errors.New("mutation Exceptions binding is missing")
 
@@ -183,6 +191,34 @@ func (h Handler) Renew(ctx context.Context) (RenewFound, error) {
 		return RenewFound{}, failure
 	}
 	return RenewFound{Root: root, Renewed: renewed, Left: left}, nil
+}
+
+// Rehash reads the settings, returning at once when they hold no
+// exception, then judges each entry that no longer holds by its own file
+// alone, running nothing and reading no snapshot (mutants.Rehash): those
+// written under itos-cc's previous hash, whose function changed only in
+// what the hash now leaves out, alone go through the Exceptions writer made
+// for the settings' root, which gives each its function's hash now.
+func (h Handler) Rehash(ctx context.Context) (RehashFound, error) {
+	root, cfg, err := h.settings(ctx)
+	if err != nil {
+		return RehashFound{}, err
+	}
+	if len(cfg.Exceptions) == 0 {
+		return RehashFound{Root: root}, nil
+	}
+	rehashed, left, err := mutants.Rehash(ctx, cfg.Exceptions, h.options(root, nil, nil, nil, nil, nil), h.Status)
+	if err != nil {
+		return RehashFound{}, err
+	}
+	writer, err := h.exceptions(root)
+	if err != nil {
+		return RehashFound{}, err
+	}
+	if failure := writer.Rehash(ctx, rehashed); failure != nil {
+		return RehashFound{}, failure
+	}
+	return RehashFound{Root: root, Rehashed: rehashed, Left: left}, nil
 }
 
 // Prune observes as Renew does, then judges every entry as a check of the

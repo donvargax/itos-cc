@@ -92,13 +92,31 @@ with the comment lines directly above each. It takes no site, no --reason
 and no --renew, and exits 0 once it has written, even when entries it
 keeps are stale.
 
+--rehash carries over each entry written under itos-cc's previous hash,
+which kept comments in a function's hash until 0.18.0, running nothing,
+reading no snapshot and needing no toolchain: an entry that no longer
+holds whose function, by namespace#name in its file, hashed as before
+0.18.0, has the entry's hash, with a site of its change at its place,
+takes the function's hash now. Only that hash changes: its other keys,
+x- keys and comments, and the file's quoting, stay, and no line_text is
+added. Each entry it cannot match is left as it was, as
+mutation.exception-stale: changed, for mutation run then --renew, or gone,
+for --prune; it looks in no other file. mutation run, mutation check and
+--renew name --rehash first in the fix of an entry it would carry over.
+It takes no site, no --reason, and neither --renew nor --prune. After an
+upgrade past 0.18.0, run --rehash, then mutation run on what is still
+stale, then --renew, then --prune.
+
 Plain output is one line, "excepted again" when it replaced an entry:
   excepted <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name> in itos-cc.yaml
 and with --renew a line per renewal and per entry left stale:
   renewed <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name> (hash <old> → <new>) in itos-cc.yaml
   not renewed <file>[:<line>:<column>] ` + "`original` → `replacement`" + ` in <namespace#name> (<why>)
 and with --prune a line per entry removed:
-  pruned <file>[:<line>:<column>] ` + "`original` → `replacement`" + ` in <namespace#name> (<why>) from itos-cc.yaml`,
+  pruned <file>[:<line>:<column>] ` + "`original` → `replacement`" + ` in <namespace#name> (<why>) from itos-cc.yaml
+and with --rehash a line per rehash and per entry left stale:
+  rehashed <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name> (hash <old> → <new>) in itos-cc.yaml
+  not rehashed <file>[:<line>:<column>] ` + "`original` → `replacement`" + ` in <namespace#name> (<why>)`,
 		JSON: `"exception": {"file", "function", "hash",
    "line_in_function", "column", "original", "replacement", "reason",
    "line_text"}, "replaced": true|false; with --renew instead
@@ -108,24 +126,27 @@ and with --prune a line per entry removed:
    "match": "line"|"place"|"only"}], "not_renewed": [{the entry's keys,
    "why", "line" when its site is found}]; with --prune instead
    "pruned": [{the entry's keys, "why": "gone"|"killed"|"excluded", "line"
-   when its site is found}]`,
+   when its site is found}]; with --rehash instead "rehashed": [{"file",
+   "function", "line", "column", "line_in_function", "original",
+   "replacement", "reason", "old_hash", "new_hash"}], "not_rehashed": [{the
+   entry's keys, "why": "changed"|"gone", "line" when its site is found}]`,
 		Rules: []string{
 			"exception.no-survivor     the site is no survivor a fresh snapshot records: file, line, column",
 			"exception.excluded        the site is in a source itos-cc.yaml excludes: file",
 			"exception.identity-stale  the identity names no site of the code as it is now: file, function, identity, why: changed (with hash, the function's now)|gone",
-			"mutation.exception-stale  with --renew, an entry that no longer holds was not renewed: file, function, line (when its site is found), column, original, replacement, why: killed|changed|gone|ambiguous|no-results|uncovered",
-			"flags.conflict            --renew with --reason, or --prune with --reason or --renew: flag",
+			"mutation.exception-stale  with --renew, an entry that no longer holds was not renewed: file, function, line (when its site is found), column, original, replacement, why: killed|changed|gone|ambiguous|no-results|uncovered; with --rehash, not rehashed, why: changed|gone",
+			"flags.conflict            --renew with --reason, --prune with --reason or --renew, or --rehash with --reason, --renew or --prune: flag",
 			"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
 			"flags.value-missing       no --reason, and the site re-points no stale entry: flag",
 			"flags.value-invalid       an empty --reason: flag, value",
 			"args.missing              no site given",
 			"args.invalid              the site is not <file>:<line>:<column>, nor a mutant's identity: argument",
-			"args.unexpected           more than one site, or a site with --renew or --prune: argument",
+			"args.unexpected           more than one site, or a site with --renew, --prune or --rehash: argument",
 		},
 		Exits: []cli.Exit{
-			{Code: 0, Meaning: "the survivor is excepted in itos-cc.yaml; with --renew, no entry is left stale; with --prune, the entries nothing can mend are removed"},
-			{Code: 1, Meaning: "with --renew, an entry that no longer holds could not be renewed"},
-			{Code: cli.CodeUsage, Meaning: "a usage or config error: no site, or no --reason for a site that re-points no stale entry, a site that is no recorded survivor or is in an excluded source, an identity the code as it is now does not have, --renew or --prune with a site or --reason, --prune with --renew, or an itos-cc.yaml that cannot be read"},
+			{Code: 0, Meaning: "the survivor is excepted in itos-cc.yaml; with --renew or --rehash, no entry is left stale; with --prune, the entries nothing can mend are removed"},
+			{Code: 1, Meaning: "with --renew or --rehash, an entry that no longer holds could not be renewed or rehashed"},
+			{Code: cli.CodeUsage, Meaning: "a usage or config error: no site, or no --reason for a site that re-points no stale entry, a site that is no recorded survivor or is in an excluded source, an identity the code as it is now does not have, --renew, --prune or --rehash with a site or --reason, --prune with --renew, --rehash with --renew or --prune, or an itos-cc.yaml that cannot be read"},
 		},
 		Examples: []string{
 			"itos-cc mutation except src/board.ts:3:13 --reason 'c is set again before it is read'",
@@ -133,6 +154,7 @@ and with --prune a line per entry removed:
 			"itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason 'x is never 5'  # from a counted run's report",
 			"itos-cc mutation except --renew  # after mutation run, carry stale entries whose mutant is unchanged",
 			"itos-cc mutation except --prune  # after mutation run, remove entries stale as gone, killed or excluded",
+			"itos-cc mutation except --rehash  # after upgrading past 0.18.0, carry entries over to the hash now, running nothing",
 		},
 	}
 }

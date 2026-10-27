@@ -114,8 +114,22 @@ func LineOrder(a, b Site) int {
 // (commentSpans), so a change to a unit's comments alone keeps its hash.
 // Changing anything else inside the unit, whitespace included, changes it.
 func UnitHash(f *lang.File, u lang.Unit) string {
+	return unitHash(f, u, commentSpans(f, u))
+}
+
+// PreviousUnitHash is a unit's hash as itos-cc took it before 0.18.0
+// (b214f151), the one release that changed it: its code without its
+// inline units, its comments included. A unit with no comment has the same
+// hash under both. mutation except --rehash carries an exception written
+// under it over to UnitHash.
+func PreviousUnitHash(f *lang.File, u lang.Unit) string {
+	return unitHash(f, u, nil)
+}
+
+// unitHash fingerprints u's code less cut, byte ranges of it, and its
+// inline units.
+func unitHash(f *lang.File, u lang.Unit, cut []span) string {
 	h := sha256.New()
-	cut := commentSpans(f, u)
 	for _, inner := range f.InnerNodes(u) {
 		cut = append(cut, span{inner.StartByte(), inner.EndByte()})
 	}

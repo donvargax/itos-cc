@@ -3,10 +3,13 @@ package mutation
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/cli"
+	selport "github.com/donvargax/itos-cc/internal/selection/port"
+	selporttest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
@@ -119,5 +122,48 @@ func TestNeitherASiteNorAnIdentityIsRefusedBeforeAnythingIsObserved(t *testing.T
 	}
 	if got := (IdentityStale{Identity: "a.go:p#F@1:2:ab:3:<><=", Why: "gone"}).Error(); got != "a.go:p#F@1:2:ab:3:<><= is gone" {
 		t.Fatalf("stale identity: %q", got)
+	}
+}
+
+// No public scenario reaches what stops --rehash: a missing binding, an
+// itos-cc.yaml with no entry, and a writer that refuses the document, which
+// the UI words as config.invalid with its own fix.
+func TestRehashStopsAtWhatItCannotReadOrWrite(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "project")
+	src := "package board\n\nfunc Pos(x int) bool {\n\t// positive\n\treturn x > 0\n}\n"
+	path := filepath.Join(root, "board.go")
+	status := &mutantstest.SourceEdits{Files: map[string]string{path: src}}
+	inputs := &mutantstest.Inputs{Dir: root, Files: map[string]string{path: src}}
+	tree := selporttest.TreeOf(root, map[string]string{"board.go": src}, nil)
+	// Pos's hash before 0.18.0, comment included, measured with sha256sum.
+	entry := mutants.Exception{File: "board.go", Function: "board#Pos", Hash: "fad22ef65cb5e4a3", LineInFunction: 3, Column: 11,
+		Original: ">", Replacement: ">=", Reason: "reviewed"}
+	settings := func(entries ...mutants.Exception) *mutantstest.Settings {
+		return &mutantstest.Settings{Value: mutants.Config{Selection: selport.Settings{Root: root}, Exceptions: entries}}
+	}
+	if _, err := (Handler{}).Rehash(t.Context()); err == nil || err.Error() != "mutation settings binding is missing" {
+		t.Errorf("no Settings: %v", err)
+	}
+	if found, err := (Handler{Settings: settings()}).Rehash(t.Context()); err != nil || found.Root != root || found.Rehashed != nil || found.Left != nil {
+		t.Errorf("no entry: %+v %v", found, err)
+	}
+	if _, err := (Handler{Settings: settings(entry), Tree: tree, Surroundings: inputs}).Rehash(t.Context()); err == nil {
+		t.Error("no Status binding accepted")
+	}
+	h := Handler{Settings: settings(entry), Tree: tree, Surroundings: inputs, Status: status}
+	if _, err := h.Rehash(t.Context()); !errors.Is(err, errNoExceptions) {
+		t.Errorf("no Exceptions: %v", err)
+	}
+	store := &mutantstest.Exceptions{Entries: []mutants.Exception{entry}}
+	h.Exceptions = func(string) mutants.Exceptions { return store }
+	found, err := h.Rehash(t.Context())
+	if err != nil || len(found.Rehashed) != 1 || store.Entries[0].Hash == entry.Hash || store.Writes != 1 {
+		t.Fatalf("rehash: %+v %v, entries %+v", found, err, store.Entries)
+	}
+	store.Entries, store.Failure = []mutants.Exception{entry}, mutants.ExceptionInvalid{Reason: "wrong shape", Key: "mutation"}
+	var out, errOut strings.Builder
+	ui := &cli.UI{Stdout: &out, Stderr: &errOut}
+	if code := (Except{Rehash: true}).Run(t.Context(), ui, h); code != cli.CodeUsage || !strings.Contains(errOut.String(), "wrong shape. Fix it, then rehash again.") || out.Len() != 0 {
+		t.Errorf("refused document: exit %d, %q %q", code, out.String(), errOut.String())
 	}
 }

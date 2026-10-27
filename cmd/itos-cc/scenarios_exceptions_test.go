@@ -39,10 +39,19 @@ func (s memoryExceptions) Except(ctx context.Context, e mutation.Exception) (boo
 	return replaced, memoryExceptionFailure(s.memory.Write(path, updated))
 }
 func (s memoryExceptions) Renew(ctx context.Context, renewals []mutation.Renewal) mutation.ExceptionFailure {
+	return s.rewrite(ctx, len(renewals), func(data []byte) ([]byte, error) { return exceptions.RenewDocument(data, renewals) })
+}
+func (s memoryExceptions) Rehash(ctx context.Context, renewals []mutation.Renewal) mutation.ExceptionFailure {
+	return s.rewrite(ctx, len(renewals), func(data []byte) ([]byte, error) { return exceptions.RehashDocument(data, renewals) })
+}
+
+// rewrite writes itos-cc.yaml as update makes it from the bytes it holds
+// now, when n, the entries it updates, is not 0.
+func (s memoryExceptions) rewrite(ctx context.Context, n int, update func([]byte) ([]byte, error)) mutation.ExceptionFailure {
 	if ctx.Err() != nil {
 		return mutation.ExceptionCancelled{Cause: context.Cause(ctx)}
 	}
-	if len(renewals) == 0 {
+	if n == 0 {
 		return nil
 	}
 	path := filepath.Join(s.root, settings.File)
@@ -50,7 +59,7 @@ func (s memoryExceptions) Renew(ctx context.Context, renewals []mutation.Renewal
 	if err != nil {
 		return memoryExceptionFailure(err)
 	}
-	updated, err := exceptions.RenewDocument(data, renewals)
+	updated, err := update(data)
 	if err != nil {
 		return memoryExceptionFailure(err)
 	}

@@ -21,7 +21,7 @@ The rules are adapted from [itos-template](https://github.com/donvargax/itos-tem
 The mutation slice's settings adapter, `internal/slices/mutation/adapters/settings` (the
 top-level `config` package until T-197), reads `itos-cc.yaml` (`settings.Parse`) for every
 command, and the slice's exceptions adapter writes it (`mutation except`, `mutation except
---renew` and `mutation except --prune`), reading it with `settings.Parse` first. Its keys are `version`, `exclude`, `mutation.exceptions`,
+--renew`, `mutation except --prune` and `mutation except --rehash`), reading it with `settings.Parse` first. Its keys are `version`, `exclude`, `mutation.exceptions`,
 `mutation.tests` and `mutation.copy` (`docs/CLI.md`, rule 38). Against the rules below, the loader as it stands:
 
 | Rule | What the loader does now |
@@ -36,7 +36,7 @@ command, and the slice's exceptions adapter writes it (`mutation except`, `mutat
 | 13 | Holds no secrets. |
 | 14 | Its keys are documented in `docs/CLI.md` and README, without a typed reference of every default. |
 | 15–16 | No command prints the file with its defaults, and no JSON Schema is published. |
-| 17 | `mutation except`, `--renew` and `--prune` change only the lines of the entries they write or remove (a removed entry with the comment lines directly above it), in block style with the codec's key order, keeping every other byte of the document, its other entries included, and its permissions; an entry they rewrite keeps its `x-` keys, with their values and the comment lines directly above each, after the keys they write (slice-55); a string they write that needs quotes takes the quote the document already uses, double quotes when it holds more double-quoted scalars than single-quoted ones (every key and value as read, `x-` keys' included), single quotes otherwise, and one that needs none stays plain (slice-66); a list written in flow style is rewritten whole in block style, and a flow-style `mutation` mapping, which they cannot splice into, has the whole document re-encoded. |
+| 17 | `mutation except`, `--renew` and `--prune` change only the lines of the entries they write or remove (a removed entry with the comment lines directly above it), in block style with the codec's key order, keeping every other byte of the document, its other entries included, and its permissions; an entry they rewrite keeps its `x-` keys, with their values and the comment lines directly above each, after the keys they write (slice-55); a string they write that needs quotes takes the quote the document already uses, double quotes when it holds more double-quoted scalars than single-quoted ones (every key and value as read, `x-` keys' included), single quotes otherwise, and one that needs none stays plain (slice-66); a list written in flow style is rewritten whole in block style, and a flow-style `mutation` mapping, which they cannot splice into, has the whole document re-encoded. `mutation except --rehash` changes only the text of each hash it carries over, in the style it is written in, a plain one that would no longer read as a string taking the quote the document uses, block or flow alike; a hash written otherwise (tagged, escaped, a block scalar) has its entry rewritten as `--renew` rewrites one (slice-68). |
 
 A file that is not there is an empty configuration. One whose text the loader refuses is
 `config.invalid`, exit 80; one the disk cannot read is an internal failure, exit 100.

@@ -80,6 +80,21 @@ func (s *Exceptions) Prune(ctx context.Context, entries []mutants.Exception) mut
 	return nil
 }
 func (s *Exceptions) Renew(ctx context.Context, renewals []mutants.Renewal) mutants.ExceptionFailure {
+	return s.replace(ctx, renewals, func(r mutants.Renewal) mutants.Exception { return r.New })
+}
+
+// Rehash gives each renewal's Old entry its New's hash alone.
+func (s *Exceptions) Rehash(ctx context.Context, renewals []mutants.Renewal) mutants.ExceptionFailure {
+	return s.replace(ctx, renewals, func(r mutants.Renewal) mutants.Exception {
+		e := r.Old
+		e.Hash = r.New.Hash
+		return e
+	})
+}
+
+// replace writes, in place of each renewal's complete Old entry, each entry
+// once, what with makes of it, and only a complete batch.
+func (s *Exceptions) replace(ctx context.Context, renewals []mutants.Renewal, with func(mutants.Renewal) mutants.Exception) mutants.ExceptionFailure {
 	if ctx.Err() != nil {
 		return mutants.ExceptionCancelled{Cause: context.Cause(ctx)}
 	}
@@ -105,7 +120,7 @@ func (s *Exceptions) Renew(ctx context.Context, renewals []mutants.Renewal) muta
 		if at < 0 {
 			return mutants.ExceptionFailed{Cause: fmt.Errorf("no entry for %s in %s to renew", r.Old.Function, r.Old.File)}
 		}
-		entries[at] = r.New
+		entries[at] = with(r)
 		done[at] = true
 	}
 	s.Entries = entries

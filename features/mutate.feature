@@ -6102,7 +6102,7 @@ Feature: Mutation testing
   # reads itos-cc.yaml, the JSON, the rule or the fix.
   Rule: An exception written under itos-cc's previous hash is rehashed without a run
 
-    @slice-68 @ID-MUT-377 @wip
+    @slice-68 @ID-MUT-377
     Scenario: --rehash carries an entry over when only the hash changed, running nothing
       Given a Go module whose "example.com/fx/board#Count" holds "// below five counts" above its "return x < 5", so its `<` → `<=` is at board/board.go:6:11
       And itos-cc.yaml excepts that mutant under Count's hash before 0.18.0, "af13bea3308d9ebf", with line_in_function 3 and "x-ticket: QA-12"
@@ -6116,7 +6116,7 @@ Feature: Mutation testing
       And without --json, on the file as it was, its standard output says "rehashed board/board.go:6:11 `<` → `<=` in example.com/fx/board#Count (hash af13bea3308d9ebf → b1a8f41702cd975f) in itos-cc.yaml"
       And "itos-cc mutation check board/board.go --json" then reports no "mutation.exception-stale" problem
 
-    @slice-68 @ID-MUT-378 @wip
+    @slice-68 @ID-MUT-378
     Scenario Outline: An entry --rehash cannot match is left as it was, named with why
       Given the module and the entry of ID-MUT-377
       And <change>
@@ -6131,7 +6131,7 @@ Feature: Mutation testing
         | Count's "x < 5" became "x < 6"             | changed | itos-cc mutation except --renew  |
         | Count was renamed Below                    | gone    | itos-cc mutation except --prune  |
 
-    @slice-68 @ID-MUT-379 @wip
+    @slice-68 @ID-MUT-379
     Scenario: A stale entry the previous hash still matches names --rehash as its fix
       Given the module and the entry of ID-MUT-377
       And "itos-cc mutation run board/board.go" has recorded the mutant surviving
@@ -6141,7 +6141,7 @@ Feature: Mutation testing
       And "itos-cc mutation run board/board.go --json" gives it the same fix
       But once Count's "x < 5" became "x < 6", its fix is ID-MUT-242's, naming no "--rehash"
 
-    @slice-68 @ID-MUT-380 @wip
+    @slice-68 @ID-MUT-380
     Scenario: --renew, finding no results, names --rehash for an entry the previous hash matches
       Given the module and the entry of ID-MUT-377
       And .metrics/mutate holds no snapshot of board/board.go
@@ -6150,7 +6150,7 @@ Feature: Mutation testing
       And its "mutation.exception-stale" problem's fix names "itos-cc mutation except --rehash" before "mutation run"
       And the exit code is 1
 
-    @slice-68 @ID-MUT-381 @wip
+    @slice-68 @ID-MUT-381
     Scenario Outline: --rehash takes no site, no reason, and neither --renew nor --prune
       Given the module and the entry of ID-MUT-377
       When I run "itos-cc mutation except --rehash <args> --json"

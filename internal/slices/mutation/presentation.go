@@ -178,6 +178,10 @@ func (p *Presentation) StaleExceptions(ctx context.Context, rel string, stale []
 			fix = "Run 'itos-cc mutation except --renew' after mutation run: it carries the entry over, keeping its reason, when its mutant is unchanged. " +
 				"If it is not renewed and the mutant still survives and changes no behaviour, except it at its site now with 'itos-cc mutation except " + rel + ":<line>:<column>', " +
 				"which replaces this entry and keeps its reason unless --reason gives another; otherwise remove its entry from " + "itos-cc.yaml" + "."
+			if e.Rehashable {
+				message = fmt.Sprintf("%s: the entry in %s for %s was written under itos-cc's previous hash, and the function changed only in what the hash now leaves out", at, "itos-cc.yaml", change)
+				fix = rehashFix + " Otherwise " + strings.ToLower(fix[:1]) + fix[1:]
+			}
 		case mutants.ExceptionGone:
 			message = fmt.Sprintf("%s: the entry in %s for %s names a site the function no longer has", at, "itos-cc.yaml", change)
 			if e.Line == 0 {

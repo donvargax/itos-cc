@@ -56,6 +56,11 @@ type Unrenewed struct {
 	Exception
 	Why  string
 	Line int
+	// Rehashable is, for an entry left before its mutant's outcome was
+	// read, whether it was written under itos-cc's previous hash in its own
+	// file and its function changed only in what the hash now leaves out
+	// (Rehashable), which mutation except --rehash carries over with no run.
+	Rehashable bool
 }
 
 // Renew renews each exception of exceptions that no longer holds when its
@@ -159,14 +164,17 @@ func Renew(ctx context.Context, exceptions []Exception, sources []string, opt Ch
 			}
 			continue
 		}
+		// Only in its own file: --rehash looks in no other.
+		_, _, rehashable := Rehashable(e, f.file, f.sites)
+		rehashable = rehashable && snapshot.Key(opt.Root, f.file.Path) == e.File
 		fn, ok := f.function(unit)
 		if !ok {
-			left = append(left, Unrenewed{Exception: e, Why: RenewNoResults})
+			left = append(left, Unrenewed{Exception: e, Why: RenewNoResults, Rehashable: rehashable})
 			continue
 		}
 		m, match, why := matchMutant(e, u.StartLine, fn.Mutants, f.file.Src)
 		if why != "" {
-			left = append(left, Unrenewed{Exception: e, Why: why})
+			left = append(left, Unrenewed{Exception: e, Why: why, Rehashable: rehashable})
 			continue
 		}
 		if why := survivedWhy(m); why != "" {

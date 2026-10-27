@@ -25,6 +25,11 @@ type StaleException struct {
 	// NewFile is, with ExceptionMoved, the file that holds the function
 	// now, from the project root, as an entry names its file.
 	NewFile string
+	// Rehashable is, with ExceptionChanged, whether the entry was written
+	// under itos-cc's previous hash and its function changed only in what
+	// the hash now leaves out (Rehashable), which mutation except --rehash
+	// carries over with no run.
+	Rehashable bool
 }
 
 // exceptionsOf is the entries of exceptions for the file rel.
@@ -88,7 +93,8 @@ func ApplyExceptions(exceptions []Exception, rel string, f *lang.File, sites []S
 		}
 		i, why, line := Locate(e, f, sites)
 		if why != "" {
-			out.Stale = append(out.Stale, StaleException{Exception: e, Why: why, Line: line})
+			_, _, rehashable := Rehashable(e, f, sites)
+			out.Stale = append(out.Stale, StaleException{Exception: e, Why: why, Line: line, Rehashable: rehashable})
 			continue
 		}
 		out.Held[i] = e

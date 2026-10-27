@@ -60,6 +60,25 @@ func ExceptionsContract(t *testing.T, open func(*testing.T, []mutants.Exception,
 			t.Fatalf("partial batch: %v %+v", failure, f.Entries())
 		}
 	})
+	t.Run("rehash writes the hash alone, a complete batch", func(t *testing.T) {
+		f := open(t, []mutants.Exception{a, a, b}, false)
+		next := a
+		next.Hash, next.Reason, next.LineText = "new", "not written", "not written"
+		failure := f.Store.Rehash(t.Context(), []mutants.Renewal{{Old: a, New: next}})
+		rehashed := a
+		rehashed.Hash = "new"
+		if failure != nil || !reflect.DeepEqual(f.Entries(), []mutants.Exception{rehashed, a, b}) {
+			t.Fatalf("rehash: %v %+v", failure, f.Entries())
+		}
+		before := f.Entries()
+		missing := b
+		missing.Reason = "not the complete old value"
+		failure = f.Store.Rehash(t.Context(), []mutants.Renewal{{Old: a, New: next}, {Old: missing, New: next}})
+		var failed mutants.ExceptionFailed
+		if !errors.As(failure, &failed) || !reflect.DeepEqual(f.Entries(), before) {
+			t.Fatalf("partial batch: %v %+v", failure, f.Entries())
+		}
+	})
 	t.Run("complete entry duplicate removal", func(t *testing.T) {
 		f := open(t, []mutants.Exception{a, a, b}, false)
 		if failure := f.Store.Prune(t.Context(), []mutants.Exception{a}); failure != nil || !reflect.DeepEqual(f.Entries(), []mutants.Exception{a, b}) {
@@ -83,6 +102,12 @@ func ExceptionsContract(t *testing.T, open func(*testing.T, []mutants.Exception,
 		}
 		if failure := f.Store.Renew(t.Context(), []mutants.Renewal{{Old: a, New: b}}); failure == nil {
 			t.Fatal("missing renewal succeeded")
+		}
+		if failure := f.Store.Rehash(t.Context(), nil); failure != nil {
+			t.Fatal(failure)
+		}
+		if failure := f.Store.Rehash(t.Context(), []mutants.Renewal{{Old: a, New: b}}); failure == nil {
+			t.Fatal("missing rehash succeeded")
 		}
 		if failure := f.Store.Prune(t.Context(), nil); failure != nil {
 			t.Fatal(failure)
@@ -112,6 +137,10 @@ func ExceptionsContract(t *testing.T, open func(*testing.T, []mutants.Exception,
 		failure = f.Store.Prune(ctx, []mutants.Exception{a})
 		if !errors.As(failure, &stopped) || !errors.Is(failure, cause) || !reflect.DeepEqual(f.Entries(), []mutants.Exception{a}) {
 			t.Fatalf("prune cancellation: %v %+v", failure, f.Entries())
+		}
+		failure = f.Store.Rehash(ctx, []mutants.Renewal{{Old: a, New: b}})
+		if !errors.As(failure, &stopped) || !errors.Is(failure, cause) || !reflect.DeepEqual(f.Entries(), []mutants.Exception{a}) {
+			t.Fatalf("rehash cancellation: %v %+v", failure, f.Entries())
 		}
 	})
 }

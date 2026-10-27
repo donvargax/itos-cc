@@ -113,14 +113,15 @@ type Sample struct {
 // Except accepts a site or renews the current exception entries. Reason is
 // nil when omitted, so an explicit empty one stays distinct.
 type Except struct {
-	Reason *string  `placeholder:"TEXT" help:"why no test can kill the mutant; required, but for a site that re-points a stale entry, which keeps its reason, and with --renew or --prune"`
+	Reason *string  `placeholder:"TEXT" help:"why no test can kill the mutant; required, but for a site that re-points a stale entry, which keeps its reason, and with --renew, --prune or --rehash"`
 	Renew  bool     `help:"renew each stale entry whose mutant is unchanged, after mutation run, keeping its reason"`
 	Prune  bool     `help:"remove each entry stale as gone, killed or excluded, after mutation run"`
+	Rehash bool     `help:"carry each entry written under itos-cc's previous hash over to its hash now, running nothing"`
 	JSON   bool     `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 	Site   []string `arg:"" optional:"" name:"site" help:"the recorded survivor’s file, line and column, or its identity as mutation run --count reports it"`
 }
 
 // Synopsis retains except's two alternative invocation forms.
 func (Except) Synopsis() string {
-	return "<file>:<line>:<column>|<identity> --reason TEXT [options] | --renew [options] | --prune [options]"
+	return "<file>:<line>:<column>|<identity> --reason TEXT [options] | --renew [options] | --prune [options] | --rehash [options]"
 }

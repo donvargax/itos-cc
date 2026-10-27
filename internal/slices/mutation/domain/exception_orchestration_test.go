@@ -23,7 +23,13 @@ func sampleOptions(f *runFixture) mutants.SampleOptions {
 }
 func survivingFixture(t *testing.T) (*runFixture, mutants.Site) {
 	t.Helper()
-	f := newRunFixture(t)
+	return survivingFixtureOf(t, runSource)
+}
+
+// survivingFixtureOf is survivingFixture with board.go holding source.
+func survivingFixtureOf(t *testing.T, source string) (*runFixture, mutants.Site) {
+	t.Helper()
+	f := newRunFixtureOf(t, source)
 	parsed, err := selected.Parse(t.Context(), f.options.Tree, f.inputs, f.path)
 	if err != nil {
 		t.Fatal(err)

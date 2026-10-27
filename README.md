@@ -1183,6 +1183,22 @@ the one stale entry of that file, function, `original` and `replacement`:
 the entry is replaced, reported as `excepted again`, and keeps its reason
 unless `--reason` gives another, so `--reason` may be left out then.
 
+itos-cc 0.18.0 left comments out of a function's hash, so an entry written
+before it for a function holding a comment reads stale though nothing
+changed. `mutation except --rehash` carries such entries over, running
+nothing, reading no snapshot and needing no toolchain: an entry that no
+longer holds whose function, by name in its file, hashed as before 0.18.0,
+has the entry's hash, with a site of its change at its place, takes the
+function's hash now. Only that hash changes; the entry's other keys, its
+`x-` keys and comments, and the file's quoting stay, and no `line_text` is
+added. Each rehash is reported with its old and new hash and the site
+(`--json` lists `rehashed` and `not_rehashed`), and each entry it cannot
+match stays `mutation.exception-stale`, `changed` or `gone`, exit 1; it
+looks in no other file. The fix `mutation run`, `mutation check` and
+`--renew` give an entry it would carry over names it first. After upgrading
+past 0.18.0: `mutation except --rehash`, then `mutation run` on what is
+still stale, then `mutation except --renew`, then `mutation except --prune`.
+
 Killed mutants are kept per function in `.metrics/mutate/`, so the day's
 runs reuse the night's kills for code that has not changed. A run whose
 every mutant is reused says `itos-cc: every mutant reused from

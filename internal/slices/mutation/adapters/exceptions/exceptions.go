@@ -11,7 +11,7 @@ import (
 )
 
 // Exceptions updates the current configuration at an explicit project root.
-// It writes through ExceptDocument, RenewDocument and PruneDocument, the codec the in-process
+// It writes through ExceptDocument, RenewDocument, PruneDocument and RehashDocument, the codec the in-process
 // scenario driver's memory fixtures write through too.
 type Exceptions struct{ RootDir string }
 
@@ -37,6 +37,9 @@ func (e Exceptions) Except(ctx context.Context, exception mutants.Exception) (bo
 }
 func (e Exceptions) Renew(ctx context.Context, renewals []mutants.Renewal) mutants.ExceptionFailure {
 	return e.rewrite(ctx, len(renewals), func(data []byte) ([]byte, error) { return RenewDocument(data, renewals) })
+}
+func (e Exceptions) Rehash(ctx context.Context, renewals []mutants.Renewal) mutants.ExceptionFailure {
+	return e.rewrite(ctx, len(renewals), func(data []byte) ([]byte, error) { return RehashDocument(data, renewals) })
 }
 func (e Exceptions) Prune(ctx context.Context, entries []mutants.Exception) mutants.ExceptionFailure {
 	return e.rewrite(ctx, len(entries), func(data []byte) ([]byte, error) { return PruneDocument(data, entries) })
