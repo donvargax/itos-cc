@@ -184,25 +184,26 @@ jobs:
         run: go test -timeout 30m -run '^Test[A-E]' ./cmd/itos-cc
       - if: matrix.part == 'cmd-b'
         run: go test -timeout 30m -skip '^Test[A-E]' ./cmd/itos-cc
-      # features-a runs the scenarios with an ID whose number ends 0 to 4,
-      # by -scenarios, and features-b, by -skip-scenarios on the same
-      # pattern, every other live scenario and the package's other tests,
-      # so each runs in exactly one of them (features/README.md). One
-      # features part took 23.4 minutes on Windows, 11.5 on macOS and 10.4
-      # on Ubuntu (run 40470585402, go test 1355, 650 and 596 seconds), and
-      # once passed the hang guard on Windows (run 40465433031). No log
-      # prints a scenario's time, so the pattern is balanced by the only
-      # whole-suite report, refactor-proof's on Ubuntu (run 40113359992),
-      # its language-tool scenarios left out, as here, and ID-MUT-383's
-      # 590 Windows seconds: about 1170 and 1020 Ubuntu scenario-seconds,
-      # 53 and 47 in a hundred. The last digit spreads every area, and the
+      # features-a runs the scenarios with an ID whose number ends 0, 2, 4,
+      # 7, 8 or 9, by -scenarios, and features-b, by -skip-scenarios on the
+      # same pattern, every other live scenario and the package's other
+      # tests, so each runs in exactly one of them (features/README.md).
+      # One features part took 23.4 minutes on Windows, 11.5 on macOS and
+      # 10.4 on Ubuntu (run 40470585402), and once passed the hang guard on
+      # Windows (run 40465433031). Balanced by the scenarios' times the
+      # parts' reports measured in run 40475634739 (Windows, macOS, Ubuntu:
+      # 7395, 2217 and 1996 scenario-seconds; ID-MUT-121 to 124 about 520
+      # to 580 each on Windows, ID-MUT-383's rows 912), this pattern splits
+      # them 3668 and 3727, 1125 and 1092, 985 and 1011, MUT-121 to 124 two
+      # and two. Its first, endings 0 to 4, split Windows 4962 and 2432,
+      # 23.1 and 12.4 minutes. The last digit spreads every area, and the
       # scenarios still to come, across both halves, where a range of IDs
       # would leave each new scenario to the same one. Each part keeps its
       # scenarios' times in a cucumber report, for the next balance.
       - if: matrix.part == 'features-a'
-        run: go test -timeout 30m -run '^TestFeatures$' ./features -scenarios='^@ID-[A-Z]+-[0-9]*[0-4]$' -scenario-report 'features-a.json'
+        run: go test -timeout 30m -run '^TestFeatures$' ./features -scenarios='^@ID-[A-Z]+-[0-9]*[024789]$' -scenario-report 'features-a.json'
       - if: matrix.part == 'features-b'
-        run: go test -timeout 30m ./features -skip-scenarios='^@ID-[A-Z]+-[0-9]*[0-4]$' -scenario-report 'features-b.json'
+        run: go test -timeout 30m ./features -skip-scenarios='^@ID-[A-Z]+-[0-9]*[024789]$' -scenario-report 'features-b.json'
       - name: Preserve the features part's scenario times
         if: always() && startsWith(matrix.part, 'features-')
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2; same pin as release.yml
