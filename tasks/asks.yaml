@@ -475,7 +475,7 @@ questions:
     answer: "Person 2026-10-25: (a). The fork's new exported function is kong's rule, then Closest's stem test (all but the typed word's last letter, four letters at least, begins exactly one candidate) only when kong's finds nothing; kong's own closestCandidates stays untouched; itos-cc deletes internal/cli's distance and the settings adapter's edits; CLI-15 keeps \"Did you mean 'mutation'?\"."
     decision: none
   - id: q-101
-    item: "except-rehash"
+    item: "slice-68"
     question: "except-rehash (issue #65) lets exceptions survive an itos-cc upgrade that changes how a function is hashed (v0.18.0 left comments out of the hash, so every exception read stale and --renew needed a full fresh run first). Recommended (a): record a hash version in each entry (hash_version, absent meaning today's) and have mutation except --rehash rewrite an entry whose function, hashed by the version it names, still matches, keeping only the current algorithm plus the previous one inside itos-cc, so a stale-by-algorithm entry is renewed without judging mutants. (b) --rehash recomputes every past algorithm itos-cc ever shipped to find the match: no format change, but itos-cc carries all old hash code forever. (c) Do nothing: hash changes are rare, and a release that changes the hash says so and the user runs --renew after a complete run, as today. (a) needs a new itos-cc.yaml key, so a format version 2."
     answer: "(a), as recommended (person, 2026-10-27): a hash version on each entry, absent meaning today's, and mutation except --rehash rewriting an entry whose function still matches by the version it names; itos-cc keeps the current and the previous algorithm; the new key brings itos-cc.yaml's format version 2."
   - id: q-102
@@ -487,7 +487,7 @@ questions:
     question: "site-own-tests-only: mutation run --site measures every listed scenario's reach before judging (about 470 scenarios here, ~55 s on CI, some starting real language tools), so allowing it locally for repair agents (your call on 2026-10-26, based on my wrong claim that it takes seconds) brings the whole suite onto this machine; AGENTS.md went back to proving kills by hand overnight. Recommended (a): add --own-tests to mutation run --site, judging the named mutants by their own tests only and saying in its report that listed tests were not run, and let AGENTS.md allow --site --own-tests locally. (b) Keep --site for CI and consumers only; repair agents keep applying mutants by hand. (c) Allow the full --site locally anyway, accepting the ~1 minute and the language tools."
     answer: "(a), as recommended (person, 2026-10-27): mutation run --site --own-tests judges the named mutants by their own tests only, its report saying listed tests were not run, and AGENTS.md allows --site --own-tests locally for the one survivor a repair kills."
   - id: q-104
-    item: "except-rehash"
+    item: "slice-68"
     question: "Does itos-cc.yaml's format version move while itos-cc is still 0.x? docs/CONFIG.md says every key added comes with a new version (q-98's slice-53), so q-101's hash version key would make files version 2, which an older pinned itos-cc refuses."
     answer: "Person 2026-10-27: no. A file format version must not move while itos-cc is still 0.x; versioning the format starts after itos-cc 1.0. Until then itos-cc.yaml stays version 1 and keys are added within it (an older itos-cc meeting a key it does not know refuses it as an unknown key, as today), so q-101's hash version key and any other new key land in version 1."
     decision: 63

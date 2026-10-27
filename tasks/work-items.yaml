@@ -6100,14 +6100,15 @@ items:
       use double quotes, so every renewal is followed by formatter churn. Keep the entry's or the
       file's quoting style, as slice-55 keeps flow mappings it does not touch.
     refs: ["#64"]
-  - id: except-rehash
+  - id: slice-68
     title: mutation except rehashes entries whose function changed only in what the hash now ignores
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was except-rehash.
       #65: after v0.18.0 left comments out of a function's hash, exceptions recorded under the old
       hash read stale though nothing changed, and --renew needs a complete fresh run of the file
       first. Asked: e.g. mutation except --rehash, recomputing the old hash from the source and,
