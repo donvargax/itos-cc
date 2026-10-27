@@ -6031,3 +6031,20 @@ items:
       folder per worker or per trial, removed after, would make those outcomes independent. It
       changes what the user's tests see (a tool that caches under TMPDIR loses its cache, a path a
       test prints differs), so it is the person's call, with a scenario.
+  - id: worktrees-callers-own-tmpdir
+    title: Tests outside worktrees that open its Workers make worker folders in a temporary folder of their own
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-219 gave the worktrees package tests their own folder through Workers.TempDir, but two tests
+      elsewhere still open worktrees.Workers{} with none, so their pools sweep and make worker
+      folders in the system temporary folder:
+      internal/slices/mutation/adapters/freshenv/trial_unreached_test.go (RunFreshTrials with
+      WorkerFactory worktrees.Workers{}) and
+      cmd/itos-cc/mutation_unreached_baseline_retained_test.go (mutation.Options WorkerFactory
+      worktrees.Workers{}). Side by side with other runs, a sweep there can remove a live trial
+      folder only once its lock is free, but they still meet other runs folders, the race T-217
+      found. Giving each a TempDir of t.TempDir() would close it.
