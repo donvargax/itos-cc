@@ -6087,14 +6087,15 @@ items:
       strict mode when its fingerprint matches. Bigger than listed-coverage-scoped-conversion;
       judge-named-site makes it hurt less.
     refs: ["#67"]
-  - id: except-renew-quoting
+  - id: slice-66
     title: mutation except --renew keeps the quoting the file already uses
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was except-renew-quoting.
       #64: --renew rewrites renewed entries with single-quoted scalars while the file and formatters
       use double quotes, so every renewal is followed by formatter churn. Keep the entry's or the
       file's quoting style, as slice-55 keeps flow mappings it does not touch.
