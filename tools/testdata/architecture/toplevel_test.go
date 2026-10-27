@@ -16,7 +16,8 @@ type toplevelFixture struct {
 
 // Every package but cmd lives under internal/ (ADR-0061), so a package
 // outside internal/ and cmd/ imports none under it, from its code or its
-// tests, but the rows docs/go.md names: features internal/project alone,
+// tests, but the rows tools/architecture-allow.txt holds, which
+// architecture-check reads (T-222): features internal/project alone,
 // tools/bin/release-notes and release-version internal/release alone, its
 // releasetest with it; metrics', coverage's and config's rows went when
 // they moved under internal/, and graph's and server's when graph became a

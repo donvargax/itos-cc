@@ -54,25 +54,91 @@ siblings() {
 	return 1
 }
 
+# The rows allowing an import that outside or toplevel, below, refuse are
+# tools/architecture-allow.txt's, beside this script in its repository
+# (T-222), so a project copying the layout states its own rows without
+# editing the script, and a row is reviewed as a rule change: one row a
+# line, '<rule> <importer> <allowed import>... # <ADR or reason>', the
+# rule outside or toplevel, each path relative to the module, a trailing
+# /... naming the package and those under it, one without it that
+# package alone. Blank lines and those starting with # hold no row, and
+# no file is no row. cmd's allowance and what is under internal/ importing
+# internal/ are the layout, not rows, so they stay below.
+allow="$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)/architecture-allow.txt"
+
+# rows: refuse each malformed row of the file, or one naming an unknown
+# rule, naming its line, as a usage error.
+rows() {
+	[ -f "$allow" ] || return 0
+	awk -v file="$allow" '
+		/^[ \t]*(#|$)/ { next }
+		{
+			at = index($0, "#")
+			reason = ""
+			if (at > 0) reason = substr($0, at + 1)
+			gsub(/[ \t]/, "", reason)
+			head = $0
+			if (at > 0) head = substr($0, 1, at - 1)
+			if (reason == "" || split(head, field) < 3) {
+				print "architecture-check: " file ":" NR ": malformed row \047" $0 "\047; a row is \047<rule> <importer> <allowed import>... # <ADR or reason>\047"
+				bad = 1
+			} else if (field[1] != "outside" && field[1] != "toplevel") {
+				print "architecture-check: " file ":" NR ": unknown rule \047" field[1] "\047 in \047" $0 "\047; a row\047s rule is outside or toplevel"
+				bad = 1
+			}
+		}
+		END { exit bad ? 2 : 0 }' "$allow" >&2 || exit 2
+}
+
+# rowsawk holds what outside's and toplevel's awk programs share: under,
+# whether path is folder or a package under it; and row, whether a row of
+# the rule the program sets allows importer importing imported, the rows
+# read from the file before the first line.
+rowsawk='
+	function under(path, folder) {
+		return path == module "/" folder || index(path, module "/" folder "/") == 1
+	}
+	function names(path, pattern) {
+		if (pattern ~ /\/\.\.\.$/) return under(path, substr(pattern, 1, length(pattern) - 4))
+		return path == module "/" pattern
+	}
+	function row(importer, imported, i) {
+		for (i = 1; i <= count; i++) {
+			if (names(importer, importers[i]) && names(imported, imports[i])) return 1
+		}
+		return 0
+	}
+	BEGIN {
+		while ((getline line < allow) > 0) {
+			sub(/#.*/, "", line)
+			n = split(line, field)
+			if (n < 3 || field[1] != rule) continue
+			for (i = 3; i <= n; i++) {
+				count++
+				importers[count] = field[2]
+				imports[count] = field[i]
+			}
+		}
+	}'
+
 # outside <package>...: refuse a package outside internal/slices importing
 # one under it, from its code or its tests, unless the importer is under
-# cmd/, which assembles the slices (ADR-0051, T-167): engines stay behind
-# stable APIs the slices import, never the reverse. depguard's slices rule
-# covers internal/** only, and server, features and tools/ have no rule,
-# so this holds it over the same go list fields as siblings. graph's row
-# went when it became the graph slice, reaching mutation's judgment
-# through a port of its own (T-208).
+# cmd/, which assembles the slices, or an outside row allows it (ADR-0051,
+# T-167): engines stay behind stable APIs the slices import, never the
+# reverse. depguard's slices rule covers internal/** only, and server,
+# features and tools/ have no rule, so this holds it over the same go list
+# fields as siblings. graph's row went when it became the graph slice,
+# reaching mutation's judgment through a port of its own (T-208), so no
+# outside row is left.
 outside() {
+	rows
 	module=$(go list -m)
 	listed=$(go list -f '{{$p := .ImportPath}}{{range .Imports}}{{$p}} code {{.}}{{"\n"}}{{end}}{{range .TestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}{{range .XTestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}' "$@")
-	refused=$(printf '%s\n' "$listed" | awk -v module="$module" '
-		function under(path, folder) {
-			return path == module "/" folder || index(path, module "/" folder "/") == 1
+	refused=$(printf '%s\n' "$listed" | awk -v module="$module" -v allow="$allow" -v rule=outside "$rowsawk"'
+		function allowed(importer, imported) {
+			return index(importer, module "/cmd/") == 1 || row(importer, imported)
 		}
-		function allowed(importer) {
-			return index(importer, module "/cmd/") == 1
-		}
-		NF == 3 && !under($1, "internal/slices") && under($3, "internal/slices") && !allowed($1) {
+		NF == 3 && !under($1, "internal/slices") && under($3, "internal/slices") && !allowed($1, $3) {
 			if (seen[$1 " " $3]++) next
 			from = ""
 			if ($2 == "tests") from = " from its tests"
@@ -80,36 +146,32 @@ outside() {
 		}')
 	[ -z "$refused" ] && return 0
 	printf '%s\n' "$refused" | while IFS= read -r line; do
-		echo "architecture-check: $line; only cmd imports any package under internal/slices (ADR-0051)" >&2
+		echo "architecture-check: $line; only cmd imports any package under internal/slices, but the rows tools/architecture-allow.txt holds (ADR-0051)" >&2
 	done
 	return 1
 }
 
 # toplevel <package>...: refuse a package outside internal/ and cmd/
-# importing one under internal/, from its code or its tests, unless its row
-# allows it (ADR-0061): every package but cmd lives under internal/, so
-# nothing else reaches into it. Permanent rows: features imports
-# internal/project alone, a package under it with it, since the harness asks
-# discovery's own rules, never a copy; tools/bin/release-notes and
-# release-version import internal/release alone, its releasetest with it,
-# as the template lays the release tools out. project's, metrics',
-# coverage's and config's rows went with them under internal/ (T-194 to
-# T-197), and graph's and server's when graph became a slice and server
-# took a builder of its own, which cmd binds (T-208). depguard covers
-# internal/** only, so this holds it over the same go list fields as
-# outside.
+# importing one under internal/, from its code or its tests, unless a
+# toplevel row allows it (ADR-0061): every package but cmd lives under
+# internal/, so nothing else reaches into it. Its permanent rows, in the
+# file: features imports internal/project alone, a package under it with
+# it, since the harness asks discovery's own rules, never a copy;
+# tools/bin/release-notes and release-version import internal/release
+# alone, its releasetest with it, as the template lays the release tools
+# out. project's, metrics', coverage's and config's rows went with them
+# under internal/ (T-194 to T-197), and graph's and server's when graph
+# became a slice and server took a builder of its own, which cmd binds
+# (T-208). depguard covers internal/** only, so this holds it over the
+# same go list fields as outside.
 toplevel() {
+	rows
 	module=$(go list -m)
 	listed=$(go list -f '{{$p := .ImportPath}}{{range .Imports}}{{$p}} code {{.}}{{"\n"}}{{end}}{{range .TestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}{{range .XTestImports}}{{$p}} tests {{.}}{{"\n"}}{{end}}' "$@")
-	refused=$(printf '%s\n' "$listed" | awk -v module="$module" '
-		function under(path, folder) {
-			return path == module "/" folder || index(path, module "/" folder "/") == 1
-		}
+	refused=$(printf '%s\n' "$listed" | awk -v module="$module" -v allow="$allow" -v rule=toplevel "$rowsawk"'
 		function allowed(importer, imported) {
 			if (under(importer, "cmd") || under(importer, "internal")) return 1
-			if (under(importer, "features")) return under(imported, "internal/project")
-			if (under(importer, "tools/bin/release-notes") || under(importer, "tools/bin/release-version")) return under(imported, "internal/release")
-			return 0
+			return row(importer, imported)
 		}
 		NF == 3 && under($3, "internal") && !allowed($1, $3) {
 			if (seen[$1 " " $3]++) next
@@ -119,7 +181,7 @@ toplevel() {
 		}')
 	[ -z "$refused" ] && return 0
 	printf '%s\n' "$refused" | while IFS= read -r line; do
-		echo "architecture-check: $line; only cmd and what is under internal/ import a package under internal/, but the rows docs/go.md names (ADR-0061)" >&2
+		echo "architecture-check: $line; only cmd and what is under internal/ import a package under internal/, but the rows tools/architecture-allow.txt holds (ADR-0061)" >&2
 	done
 	return 1
 }

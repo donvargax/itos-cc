@@ -669,11 +669,13 @@ context-as-argument a context after any other parameter, tests included.
   depguard's `slices` rule covers
   `internal/` alone, and `server`, `features` and `tools` have
   no rule, so `tools/bin/architecture-check` holds it over the same `go list` fields as the
-  sibling rule and names both packages.
+  sibling rule and names both packages, letting by what an `outside` row of
+  `tools/architecture-allow.txt` allows; none is left.
 - Top level: every package but `cmd` lives under `internal/` (ADR-0061), so a package outside
   `internal/` and `cmd/`, with its subpackages, imports none under `internal/`, from its code or
-  its tests, but by a row naming it. Permanent rows: `features` imports `internal/project` alone,
-  since the harness asks discovery's own rules, never a copy, and `tools/bin/release-notes` and
+  its tests, but by a `toplevel` row of `tools/architecture-allow.txt` naming it. Permanent
+  rows: `features` imports `internal/project` alone, since the harness asks discovery's own
+  rules, never a copy, and `tools/bin/release-notes` and
   `tools/bin/release-version` `internal/release` alone, its `releasetest` with it, the
   template's layout. Each move under `internal/` deleted its row: `project`'s when it became
   `internal/project` (T-194), `metrics`' when it folded into `internal/metricsdir` (T-195),
@@ -684,6 +686,15 @@ context-as-argument a context after any other parameter, tests included.
   `internal/`, never at the top level. depguard covers `internal/` alone, so
   `tools/bin/architecture-check`'s toplevel holds it over the outside check's `go list` fields
   and names both packages, and whether from the importer's tests.
+- The rows: `tools/bin/architecture-check` reads them from `tools/architecture-allow.txt`, beside
+  it in the repository (T-222), so a project copying the layout states its own without editing
+  the script, and a row is reviewed as a rule change. One row a line,
+  `<rule> <importer> <allowed import>... # <ADR or reason>`: the rule `outside` or `toplevel`,
+  each path relative to the module, a trailing `/...` naming the package and those under it, one
+  without it that package alone; blank lines and those starting with `#` hold none, and no file
+  is no row. A malformed row, one naming no import or no reason, or one naming an unknown rule
+  is refused naming its line, as a usage error (exit 2). `cmd` importing the slices, and what is
+  under `internal/` importing `internal/`, are the layout, held in the script, not rows.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
 - `workdir`, `metricsdir`, `coveragetools`, and the mutation adapters' `worktrees`,
@@ -733,8 +744,8 @@ context-as-argument a context after any other parameter, tests included.
   the `domain` and `slices` rules refuse it, so no domain or slice imports it, and of the
   adapters only those wrapping it (`workdir`, `metricsdir`, `worktrees`, `testtools`,
   `testinputs`, `githistory`, `freshenv`) and the `imports` engine allow it; `cmd` imports it
-  too, the graph slice's tests by its own rule, and `features` by its row in the top-level
-  check. `slices` and `slice-fakes` leave it out.
+  too, the graph slice's tests by its own rule, and `features` by its row in
+  `tools/architecture-allow.txt` for the top-level check. `slices` and `slice-fakes` leave it out.
 - `covrun`: the coverage runner's code imports nothing of ours but the coverage domain and its
   port, `internal/lang` and `internal/project` (ADR-0061, T-196); its tests may use the
   coverage port's fake too. It is an adapter-side engine like `processes`: it runs processes

@@ -1,0 +1,9 @@
+# The rows tools/bin/architecture-check reads (T-222), each allowing an import its outside or
+# toplevel check refuses. One row a line, '<rule> <importer> <allowed import>... # <ADR or reason>':
+# the rule outside or toplevel, each path relative to the module, a trailing /... naming the
+# package and those under it, one without it that package alone. cmd importing the slices, and
+# what is under internal/ importing internal/, are the layout the script holds, not rows.
+
+toplevel features/... internal/project/... # ADR-0061: the harness asks discovery's own rules, never a copy
+toplevel tools/bin/release-notes/... internal/release/... # ADR-0061: the template's release tools, releasetest for their tests
+toplevel tools/bin/release-version/... internal/release/... # ADR-0061: the template's release tools, releasetest for their tests

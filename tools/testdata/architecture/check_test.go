@@ -770,7 +770,7 @@ func Code(failure sealed.Failure) int {
 	checkOutside(t, check, dir, compile.Env, module)
 	// Every package but cmd lives under internal/ (ADR-0061): a package
 	// outside internal/ and cmd/ imports none under it, from its code or
-	// its tests, but what its row in docs/go.md allows, which
+	// its tests, but what its row in tools/architecture-allow.txt allows, which
 	// architecture-check --toplevel holds over the same go list fields.
 	checkToplevel(t, check, dir, compile.Env, module)
 	// The rows that allow an import --outside or --toplevel refuses are

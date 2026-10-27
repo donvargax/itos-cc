@@ -58,10 +58,10 @@ must accept and refuse. depguard matches a prefix and covers `internal/` alone, 
 it cannot hold are checks of their own over `go list ./...`: no slice imports a sibling slice
 (`--siblings`), nothing outside `internal/slices` imports a slice but `cmd` (`--outside`),
 nothing outside `internal/` and `cmd/` imports a package under `internal/` but the rows
-`docs/go.md` names, `features` importing `internal/project` and the release tools
-`internal/release` (`--toplevel`, ADR-0061), and the binary links no `porttest` (`--linked`). Further rules: `mocks`
-(no mocking library anywhere), `rapid` (the property library only in a domain's tests) and
-`kong`.
+`tools/architecture-allow.txt` holds, which the script reads (T-222), `features` importing
+`internal/project` and the release tools `internal/release` (`--toplevel`, ADR-0061), and the
+binary links no `porttest` (`--linked`). Further rules: `mocks` (no mocking library anywhere),
+`rapid` (the property library only in a domain's tests) and `kong`.
 
 A slice declares itself and cmd assembles it. Its package holds `Command`, a `cli.Declaration`
 (name, help line, a fresh `*CLI` per parser); `Ports`, an interface it owns naming each port its
