@@ -6259,12 +6259,6 @@ items:
     title: Writing an exception leaves the coverage caches and strict evidence fresh
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was exceptions-out-of-coverage-key.
-      A side agent's note (2026-10-27): slices 69 and 70 fingerprint itos-cc.yaml whole among
-      coverage inputs, as strict Go evidence does, so mutation except invalidates every cache entry
-      and all strict evidence, defeating issue #67's own loop (confirm a survivor, except it, run
-      again). Exceptions never change what coverage measures.
