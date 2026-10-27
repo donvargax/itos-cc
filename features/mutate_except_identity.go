@@ -104,6 +104,7 @@ func identityExceptionSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^its message says the mutant is recorded killed, at board/board\.go:5:11$`, i.killedMessage)
 	sc.Step("^its standard error names the survivor `<` → `<=` at board/board\\.go:5:11 with its identity \"([^\"]*)\"$", i.stderrNames)
 	sc.Step(`^with --json, the "mutation\.survived" problem's fix names "(.*)"$`, i.survivedFix)
+	i.namedSiteSteps(sc)
 }
 
 // module writes and commits the module, board_test.go holding test, and
