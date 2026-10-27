@@ -403,15 +403,15 @@ func GoScope(dir string, sources []string) (pkgs, testing []string, why string) 
 		}
 		return nil, nil, why
 	}
-	tested := map[string]bool{}
+	tested := map[string]struct{}{} // a set: only its keys are read
 	for p := range selected {
-		tested[p] = true
+		tested[p] = struct{}{}
 	}
 	for _, b := range binaries {
 		for _, d := range b.deps {
 			// A package recompiled for a test reads "p [q.test]".
 			if d, _, _ := strings.Cut(d, " "); selected[d] {
-				tested[b.path] = true
+				tested[b.path] = struct{}{}
 				break
 			}
 		}
