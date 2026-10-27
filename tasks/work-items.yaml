@@ -6100,15 +6100,9 @@ items:
     title: mutation except rehashes entries whose function changed only in what the hash now ignores
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [slice-66]
     kind: slice
-    why: >
-      Was except-rehash.
-      #65: after v0.18.0 left comments out of a function's hash, exceptions recorded under the old
-      hash read stale though nothing changed, and --renew needs a complete fresh run of the file
-      first. Asked: e.g. mutation except --rehash, recomputing the old hash from the source and,
-      when it matches, writing the new one without judging mutants. Matters at each hash change.
     refs: ["#65"]
   - id: T-222
     title: architecture-check reads its allowed imports from a committed file
