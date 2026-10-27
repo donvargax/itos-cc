@@ -559,9 +559,18 @@ test. What keeps `mutation run` fast:
   the tests' process group, sampled every 50 ms on Linux; macOS and
   Windows measure none, so no memory cap holds there, which the run says
   once on stderr.
+  Every command a worker starts in its copy, the baselines, the mutants, a
+  counted run's trials and the copy's own preparation, such as
+  `flutter pub get --offline`, runs
+  with `TMPDIR`, `TMP` and `TEMP` naming a temporary folder of that
+  worker's own, on every system, so what a test makes, sweeps or names
+  there never meets another worker's; it is kept across the worker's runs,
+  never emptied between them, so what a tool caches there stays warm. The
+  coverage run, and a failing baseline's run in the project's own folder,
+  keep the system's.
   The copies live in an `itos-cc-mutate-` directory of the temporary
-  directory (`itos-cc-fresh-` for a counted run's trials), removed when the
-  run ends. A run killed before then leaves it, and the next run removes
+  directory (`itos-cc-fresh-` for a counted run's trials), beside each
+  worker's temporary folder, all removed when the run ends. A run killed before then leaves it, and the next run removes
   it: a run holds a lock on `owner.lock` in its directory while it runs,
   which the OS releases when the process dies, so a run never removes the
   copies of one still going, such as an agent's while a commit hook runs.

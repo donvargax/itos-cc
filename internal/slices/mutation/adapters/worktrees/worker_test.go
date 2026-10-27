@@ -104,6 +104,8 @@ func TestCommandRunnerFixtureHelper(t *testing.T) {
 		}
 	case "pristine":
 		pristineHelper(t)
+	case "temp":
+		tempHelper(t)
 	case "ignored":
 		// As Ready, it writes into .idea, a folder every copy leaves out.
 		if testing.Short() {

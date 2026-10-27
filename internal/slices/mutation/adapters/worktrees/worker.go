@@ -74,8 +74,12 @@ func (w *worker) tree(c Command) (string, []string) {
 // copyOf returns the worker's copy of c.Root, creating it on first use:
 // the tree tree says c needs, then c.Ready run once in it, before any
 // command runs there, and the record of it as made. c runs in c.Root's
-// place in it.
+// place in it. The worker's temporary folder is made first, and again if
+// a run removed it.
 func (w *worker) copyOf(ctx context.Context, c Command) (string, error) {
+	if err := os.MkdirAll(w.temp(), 0o700); err != nil {
+		return "", err
+	}
 	tree, members := w.tree(c)
 	rel, err := filepath.Rel(tree, c.Root)
 	if err != nil {
@@ -127,6 +131,13 @@ func (w *worker) made(ctx context.Context, c Command, tree, dst, root string, br
 	return cp, keepReady(dst, cp.kept, record, readied)
 }
 
+// temp is the worker's temporary folder, which every command it starts in
+// its copies sees as TMPDIR, TMP and TEMP (slice-62): beside its copies in
+// the run's scratch folder, never inside one, kept across its commands
+// and removed with the scratch folder, so tests that make, sweep or name
+// things in their temporary folder never meet another worker's.
+func (w *worker) temp() string { return filepath.Join(w.dir, "tmp") }
+
 func exists(path string) bool {
 	_, err := os.Lstat(path)
 	return err == nil
@@ -136,7 +147,7 @@ func exists(path string) bool {
 // c.Dir's place in it, failing with its output when it fails.
 func (w *worker) ready(ctx context.Context, c Command, root string) error {
 	cmd := exec.CommandContext(ctx, c.Ready[0], c.Ready[1:]...) //nolint:gosec // the selected package's own toolchain readying the worker's private copy
-	w.prepared(cmd, c, root)
+	w.prepared(cmd, c, root, w.temp())
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &out
@@ -381,14 +392,15 @@ func (w *worker) run(parent context.Context, c Command, limits mutants.Limits) (
 	if err != nil {
 		return result{}, err
 	}
-	return w.runIn(parent, c, root, limits)
+	return w.runIn(parent, c, root, w.temp(), limits)
 }
 
-// runIn executes c in root, c.Root's place where it runs, under parent,
-// within limits: the worker's copy of it, or c.Root itself for a run in
-// the project. The runner keeps the output bounded, and kills a run over a
-// cap.
-func (w *worker) runIn(parent context.Context, c Command, root string, limits mutants.Limits) (result, error) {
+// runIn executes c in root, c.Root's place where it runs, with temp as its
+// temporary folder, under parent, within limits: the worker's copy of it
+// and the worker's own folder, or c.Root itself and "", the system's, for
+// a run in the project. The runner keeps the output bounded, and kills a
+// run over a cap.
+func (w *worker) runIn(parent context.Context, c Command, root, temp string, limits mutants.Limits) (result, error) {
 	ctx := parent
 	if limits.Timeout > 0 {
 		var cancel context.CancelFunc
@@ -401,7 +413,7 @@ func (w *worker) runIn(parent context.Context, c Command, root string, limits mu
 	} else {
 		cmd = exec.CommandContext(ctx, c.Args[0], c.Args[1:]...) //nolint:gosec // execute the selected test command with its unchanged argv
 	}
-	w.prepared(cmd, c, root)
+	w.prepared(cmd, c, root, temp)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &out
@@ -410,9 +422,10 @@ func (w *worker) runIn(parent context.Context, c Command, root string, limits mu
 }
 
 // prepared runs cmd, one of c's, in root, the worker's copy of c.Root, from
-// c.Dir's place in it, with c's path variable set and the worker's own
-// preparation applied.
-func (w *worker) prepared(cmd *exec.Cmd, c Command, root string) {
+// c.Dir's place in it, with c's path variable set, TMPDIR, TMP and TEMP
+// naming temp, every system's names for it, unless it is "", and the
+// worker's own preparation applied.
+func (w *worker) prepared(cmd *exec.Cmd, c Command, root, temp string) {
 	cmd.Dir = filepath.Join(root, strings.TrimPrefix(c.Dir, c.Root))
 	cmd.Env = project.NoBytecodeEnv(nil)
 	if c.PathEnv != "" {
@@ -424,6 +437,11 @@ func (w *worker) prepared(cmd *exec.Cmd, c Command, root string) {
 			paths = append(paths, old)
 		}
 		cmd.Env = append(cmd.Env, c.PathEnv+"="+strings.Join(paths, string(os.PathListSeparator)))
+	}
+	if temp != "" {
+		// os/exec keeps the last of a name set twice, its case ignored on
+		// Windows, so these replace what the command inherits.
+		cmd.Env = append(cmd.Env, "TMPDIR="+temp, "TMP="+temp, "TEMP="+temp)
 	}
 	if w.prepare != nil {
 		w.prepare(cmd)

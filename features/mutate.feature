@@ -375,7 +375,7 @@ Feature: Mutation testing
     # in a folder outside the project, never by appending to one file
     # (T-213). Before the slice every trial sees the system's folder, and
     # both scenarios fail at their first Then.
-    @slice-62 @ID-MUT-353 @binary-only @wip
+    @slice-62 @ID-MUT-353 @binary-only
     Scenario: Each worker's tests see a temporary folder of their own
       Given a Go package whose test records the temporary folder it sees, and TMPDIR, TMP and TEMP, with several mutants
       When I run "itos-cc mutation run --workers 2 --json" for its file
@@ -383,7 +383,7 @@ Feature: Mutation testing
       And the trials of a worker saw the same folder, two workers never the same, and none the system's or inside a worker's copy
       And the mutants are judged as a single worker judges them
 
-    @slice-62 @ID-MUT-354 @binary-only @wip
+    @slice-62 @ID-MUT-354 @binary-only
     Scenario: What a worker's tests leave in their temporary folder is gone after the run
       Given a Go package whose test writes a file with a name of its own to its temporary folder and leaves it, with several mutants
       When I run "itos-cc mutation run --workers 2" for its file

@@ -140,8 +140,9 @@ func (p *pool) enter(ctx context.Context) (done func(), failure mutants.WorkerFa
 }
 
 // InProject runs c in c.Dir itself, through the first worker's runner and
-// preparation, with no copy, Ready or timeout, and names what git ignores
-// that a copy of its tree leaves out.
+// preparation, with no copy, Ready or timeout, and the system's temporary
+// folder, as the coverage run has, and names what git ignores that a copy
+// of its tree leaves out.
 func (p *pool) InProject(ctx context.Context, c mutants.Command) (mutants.ProjectRun, mutants.WorkerFailure) {
 	w := p.workers[0].worker
 	tree, _ := w.tree(c)
@@ -151,7 +152,7 @@ func (p *pool) InProject(ctx context.Context, c mutants.Command) (mutants.Projec
 		return run, failure
 	}
 	defer done()
-	r, err := w.runIn(ctx, c, c.Root, mutants.Limits{})
+	r, err := w.runIn(ctx, c, c.Root, "", mutants.Limits{})
 	run.Result = r
 	return run, failed(ctx, err)
 }
