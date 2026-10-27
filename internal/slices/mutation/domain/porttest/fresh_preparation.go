@@ -73,6 +73,16 @@ func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport
 	sources := mutants.FreshMeasurementSources(p)
 	inputs := *f.Inputs
 	inputs.Dir = p.FrozenRoot
+	if f.Inputs.Tracked != nil {
+		// The frozen tree is the commit read into a repository of its
+		// own: git tracks every file of it.
+		inputs.Tracked = maps.Clone(f.Inputs.Tracked)
+		for path := range f.Inputs.Files {
+			if inside(p.FrozenRoot, path) {
+				inputs.Tracked[path] = true
+			}
+		}
+	}
 	if f.Inputs.Imports != nil {
 		inputs.Imports = map[string][]string{}
 		for path, edges := range f.Inputs.Imports {
@@ -138,6 +148,7 @@ func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport
 	}
 	stage("tools", "complete", nil)
 	var perTest *coverage.PerTest
+	var key *mutants.ListedKey
 	if listedTests != nil {
 		if f.Lister == nil {
 			return stop("listed-tests", errors.New("fresh test listing binding is missing"))
@@ -176,6 +187,12 @@ func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport
 		}
 		perTest = &coverage.PerTest{Root: p.FrozenRoot, Tests: listed, Select: listedTests.Select, All: listedTests.All(ids)}
 		stage("listed-tests", "complete", nil)
+		if p.ListedReuse != nil {
+			// The frozen tree's inputs, before any coverage command runs.
+			if support, failed := inputs.Support(ctx, p.FrozenRoot, listedTests.Support); failed == nil {
+				key = mutants.KeyListed(ctx, &inputs, &inputs, p.FrozenRoot, sources, mutants.ParseInventory(listing.Stdout), support)
+			}
+		}
 	}
 	req := covport.Request{Sources: sources, Scope: scope, AllTests: scope == covport.AllTests, Reach: func(path string) []string { return reach[path] }}
 	// The parser reads actual independently declared tool-format artifacts. A
@@ -192,13 +209,16 @@ func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport
 	}
 	stage("coverage", "complete", nil)
 	if perTest != nil {
-		tc, err := f.Coverage.MeasureFreshTests(ctx, req, perTest)
-		if err != nil {
-			return stop("listed-coverage", err)
-		}
-		if f.Measured != nil {
-			if err := f.Measured(ctx, p, perTest); err != nil {
+		tc := p.ListedReuse.Serve(ctx, key)
+		if tc == nil {
+			var err error
+			if tc, err = f.Coverage.MeasureFreshTests(ctx, req, perTest); err != nil {
 				return stop("listed-coverage", err)
+			}
+			if f.Measured != nil {
+				if err := f.Measured(ctx, p, perTest); err != nil {
+					return stop("listed-coverage", err)
+				}
 			}
 		}
 		report.SetTests(tc)

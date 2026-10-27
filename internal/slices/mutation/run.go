@@ -24,18 +24,21 @@ type RunQuery struct {
 	FailUncovered, LinesOnly bool
 	FailFast                 bool
 	NoCoverage               bool
-	UseExistingCoverage      bool
-	AllTests                 bool
-	CoverageCommand          *string
-	CoverageReports          []string
-	TestCommand              *string
-	Workers                  int
-	TimeoutFactor            float64
-	OutputFactor             float64
-	MemoryFactor             float64
-	MutateAll                bool
-	Annotate                 bool
-	Progress                 SelectionProgress
+	// NoCoverageCache measures the listed tests' coverage with no entry of
+	// the cache read or written.
+	NoCoverageCache     bool
+	UseExistingCoverage bool
+	AllTests            bool
+	CoverageCommand     *string
+	CoverageReports     []string
+	TestCommand         *string
+	Workers             int
+	TimeoutFactor       float64
+	OutputFactor        float64
+	MemoryFactor        float64
+	MutateAll           bool
+	Annotate            bool
+	Progress            SelectionProgress
 }
 
 // RunFound is what run observed up to where it stopped: the settings' root,
@@ -197,19 +200,25 @@ func (h Handler) Run(ctx context.Context, q RunQuery) (RunFound, error) {
 		Listing: h.listing(root, cfg),
 	}
 	suite := listedSuite(q, cfg)
+	var reuse *mutants.ListedReuse
 	if suite != nil {
 		opt.Listed = &mutants.Listed{Root: root, List: suite.List, All: suite.All, Select: suite.Select}
+		if !q.NoCoverageCache && h.CoverageCache != nil {
+			// A complete run's built-in measurement: read, and kept once
+			// it succeeded.
+			reuse = &mutants.ListedReuse{Cache: h.CoverageCache, Write: true, Progress: q.Progress}
+		}
 	}
 	exceptions := append(slices.Clone(cfg.Exceptions), moved...)
 	if strict {
 		gaps, err := h.strict(ctx, q, &opt, strictCoverage{root: root, languages: strictLanguages, strictGo: strictGo, sources: sources, judge: judge,
-			tests: tests, support: support, exceptions: exceptions, scope: scope, suite: suite, reach: reach})
+			tests: tests, support: support, exceptions: exceptions, scope: scope, suite: suite, reach: reach, reuse: reuse})
 		if gaps != nil || err != nil {
 			found.Gaps = gaps
 			return found, err
 		}
 	} else if !q.NoCoverage {
-		opt.Measurement = &mutants.RunMeasurement{Measurer: h.Coverage, Lister: h.TestLister,
+		opt.Measurement = &mutants.RunMeasurement{Measurer: h.Coverage, Lister: h.TestLister, Reuse: reuse,
 			Request: covport.Request{Reports: reports(q.CoverageReports), Command: given(q.CoverageCommand), Existing: q.UseExistingCoverage, AllTests: q.AllTests, Scope: covport.OwnTests, Reach: reach}}
 		if q.FailUncovered && !rawCoverage(q) {
 			// Strict: a language the per-language commands measured
@@ -300,6 +309,7 @@ type strictCoverage struct {
 	scope      mutants.LineScope
 	suite      *mutants.Tests
 	reach      covport.Reach
+	reuse      *mutants.ListedReuse
 }
 
 // strict sets opt's coverage for strict coverage of s's languages: the
@@ -374,7 +384,7 @@ func (h Handler) strict(ctx context.Context, q RunQuery, opt *mutants.Options, s
 			return kept[relTo(dir, path)+"\x00"+function]
 		}
 	}
-	report, measuredProducer, listedFiles, err := h.strictCoverage(ctx, q, s.root, measured, s.languages, s.suite, opt.Listing, s.reach)
+	report, measuredProducer, listedFiles, err := h.strictCoverage(ctx, q, s, measured, opt.Listing)
 	if err != nil {
 		return nil, err
 	}

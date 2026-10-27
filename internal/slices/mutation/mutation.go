@@ -57,6 +57,7 @@ are chosen; a test never is.`, Examples: []string{
 type Run struct {
 	cli.Selection
 	NoCoverage          bool        `name:"no-coverage" help:"skip coverage; complexity only"`
+	NoCoverageCache     bool        `name:"no-coverage-cache" help:"measure the listed tests' coverage, never reusing or keeping it in .metrics/coverage/cache"`
 	UseExistingCoverage bool        `help:"read reports already on disk instead of running tests"`
 	AllTests            bool        `help:"run the whole test suite, integration and end-to-end tests included"`
 	CoverageCommand     string      `placeholder:"CMD" help:"run this shell command instead of the per-language commands (with --coverage-report)"`

@@ -462,7 +462,27 @@ only when such a test's file changed. A list command that fails is
 tests.list-failed: nothing is
 judged and no snapshot is written. Listed tests are not run with
 --no-coverage, --all-tests, --test-command, --use-existing-coverage,
---coverage-command, or --coverage-report.`,
+--coverage-command, or --coverage-report.
+
+A complete run keeps the listed tests' coverage it measured in
+.metrics/coverage/cache, once the built-in commands measured every file
+with nothing missing and the listed tests' coverage run passed, before
+any mutant runs. A later run, --count and --site among them, reuses it in
+place of the listed tests' coverage run, saying so on stderr, while what
+it was measured from is unchanged: each measured file's build root as
+strict coverage evidence records it (its sources and tests, lock and
+config files, the whole itos-cc.yaml, the support files, the producer and
+the toolchain's environment), what the list command printed, and each
+listed test's file, all taken before any coverage command runs; and it
+measured every file the run measures. Otherwise the run says why on
+stderr, naming up to three changed inputs, the files it lacks, or that it
+cannot be read, and measures: a complete run then adds its files to the
+entry, or replaces it. A file whose coverage scope strict coverage
+refuses is neither kept nor reused. --count and --site write nothing
+there, and --fail-uncovered reuses the entry as independent evidence of
+the inputs it records. Deleting the folder is always safe; a CI may
+restore it between jobs of one commit. --no-coverage-cache measures as
+before, reading and writing no entry.`,
 		JSON: `"files": [{"file", "killed", "survived", "excepted", "uncovered", "ran",
    "reused", "baseline": "passed"|"failed"|"not-run", whether this run
    ran the file's own tests without any mutant: "passed" only when they
@@ -539,6 +559,7 @@ judged and no snapshot is written. Listed tests are not run with
 			"flags.conflict            --since with --changed: flag",
 			"flags.conflict            --fail-uncovered with --no-coverage, or strict Go, Python, TypeScript, Kotlin or Dart coverage with raw coverage flags: flag",
 			"flags.conflict            --fail-uncovered=lines without --since: flag",
+			"flags.conflict            --no-coverage-cache with --no-coverage, --use-existing-coverage, --coverage-command or --coverage-report: flag",
 			"flags.conflict            --seed or --repeat without --count, or --count with a flag it refuses, --fail-fast included, or --site with one of those or --count, --seed or --since, or --own-tests without --site or with --all-tests: flag",
 			"args.unexpected           a path beside --site: argument",
 			"count.platform            --count or --site on a platform other than Linux and macOS, that is Windows (#29): platform",

@@ -6246,7 +6246,7 @@ Feature: Mutation testing
   # guardrails, reported apart.
   Rule: The listed tests' coverage is reused while nothing it was measured from changed
 
-    @slice-69 @ID-MUT-382 @wip
+    @slice-69 @ID-MUT-382
     Scenario: A second run over an unchanged tree reuses the listed tests' coverage
       Given the module of ID-MUT-122, whose harness splits the run
       And "itos-cc mutation run" has run
@@ -6256,7 +6256,7 @@ Feature: Mutation testing
       And each line the binary ran is covered by the IDs of the tests that reached it, as in ID-MUT-122
       And the mutant only ID-A-02 kills runs its own tests, survives them, then runs the run command selecting ID-A-02 alone, and is killed
 
-    @slice-69 @ID-MUT-383 @wip
+    @slice-69 @ID-MUT-383
     Scenario Outline: A run measures again when an input of the cached coverage changed, naming it
       Given the module of ID-MUT-122, whose harness splits the run
       And "itos-cc mutation run" has run
@@ -6276,7 +6276,7 @@ Feature: Mutation testing
         | itos-cc.yaml's mutation.tests.whole changed                    | itos-cc.yaml              |
         | .metrics/coverage/cache's listed entry holds "not json"        | that it cannot be read    |
 
-    @slice-69 @ID-MUT-384 @wip
+    @slice-69 @ID-MUT-384
     Scenario: A run measuring a file the cached coverage lacks adds it
       Given the module of ID-MUT-122, with a second package b that the binary links
       And "itos-cc mutation run main.go" has run
@@ -6284,7 +6284,7 @@ Feature: Mutation testing
       Then the listed tests run once for coverage, and stderr says the cached coverage measured no file of b
       And "itos-cc mutation run --mutate-all main.go b" after it does not run the listed tests for coverage
 
-    @slice-69 @ID-MUT-385 @wip
+    @slice-69 @ID-MUT-385
     Scenario Outline: Only a complete run's successful built-in measurement is cached
       Given the module of ID-MUT-122, whose harness splits the run
       And <run> has run
@@ -6299,7 +6299,7 @@ Feature: Mutation testing
         | "itos-cc mutation run --no-coverage-cache"                                             |
         | "itos-cc mutation run" whose listed tests' coverage run failed (ID-MUT-137's Given)     |
 
-    @slice-69 @ID-MUT-386 @wip
+    @slice-69 @ID-MUT-386
     Scenario: A named site reuses what a complete run measured of the same commit, writing nothing
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And mutation.tests lists a test that reaches board/board.go line 5 and kills the mutant
@@ -6312,7 +6312,7 @@ Feature: Mutation testing
 
     # Binary-only for good: the strict Go blocks are the real cover
     # profile's and covdata's, as ID-MUT-370's.
-    @slice-69 @ID-MUT-387 @binary-only @wip
+    @slice-69 @ID-MUT-387 @binary-only
     Scenario Outline: A strict run reuses a matching cached measurement as independent evidence
       Given a Go module whose binary links packages a and b, with listed tests ID-A-01, which reaches a and b, and ID-A-02, which reaches only b
       And "<first>" has run
@@ -6326,7 +6326,7 @@ Feature: Mutation testing
         | itos-cc mutation run a/a.go                    |
         | itos-cc mutation run --fail-uncovered a/a.go   |
 
-    @slice-69 @ID-MUT-388 @wip
+    @slice-69 @ID-MUT-388
     Scenario Outline: --no-coverage-cache measures without the cache, and only where a cache is read
       Given the module of ID-MUT-122, whose harness splits the run
       And "itos-cc mutation run" has run

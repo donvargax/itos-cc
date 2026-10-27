@@ -1197,7 +1197,8 @@ pass it on. A mutation run is handed mutation's fakes
 scenario declared the folder's tests do (`Driver.Tests`), the `History` of the fake Git,
 `Toolchain`, `Fingerprints` and `Reach` from the files, the run's `Run.Env` and the import
 adjacency the world declares before each run (`features/imports.go`), the listed tests'
-`Lister`, coverage's `MutationMeasurer`, and a counted run's `Fresh` over the fake
+`Lister`, coverage's `MutationMeasurer`, the `CoverageCache` of the listed tests' coverage,
+the snapshots adapter's over the same store, and a counted run's `Fresh` over the fake
 repository. It refuses `serve`, still on its legacy handler, so nothing reaches the real disk
 or network. A scenario only one driver can run carries `@binary-only` or `@in-process-only`,
 never a copy, and the other passes it by; a step a driver cannot do fails naming the tag, or

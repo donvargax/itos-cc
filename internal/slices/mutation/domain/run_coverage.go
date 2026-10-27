@@ -24,6 +24,9 @@ type RunMeasurement struct {
 	Measurer coverage.MutationMeasurer
 	Request  covport.Request
 	Lister   TestLister
+	// Reuse, when set, serves the listed tests' coverage from the cache,
+	// and keeps what the run measures of them there (MeasureReusing).
+	Reuse *ListedReuse
 }
 
 // ListingFailed is the actual unsuccessful configured command, before trials.
@@ -180,6 +183,7 @@ func (opt Options) Measure(ctx context.Context, sources []string, strict bool) (
 		return nil, nil
 	}
 	var perTest *coverage.PerTest
+	var key *ListedKey
 	if opt.Listed != nil && opt.Listed.List != "" {
 		listing := opt.Listing
 		if listing == nil {
@@ -197,6 +201,9 @@ func (opt Options) Measure(ctx context.Context, sources []string, strict bool) (
 			opt.Listed.Files[test.ID] = test.File
 		}
 		perTest.All = opt.Listed.All(ids)
+		if m.Reuse != nil {
+			key = KeyListed(ctx, opt.Toolchain, opt.Fingerprints, opt.Root, sources, inv, opt.Support)
+		}
 	}
 	if m.Request.Command != "" && len(m.Request.Reports) == 0 {
 		err := CoverageReportRequired{}
@@ -211,7 +218,7 @@ func (opt Options) Measure(ctx context.Context, sources []string, strict bool) (
 	}
 	req := m.Request
 	req.Sources = sources
-	value, failure := m.Measurer.MeasureListed(ctx, req, perTest)
+	value, failure := MeasureReusing(ctx, m.Measurer, req, perTest, m.Reuse, key)
 	if failure != nil {
 		if ctx.Err() != nil {
 			return nil, context.Cause(ctx)

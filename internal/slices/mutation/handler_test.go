@@ -41,6 +41,7 @@ type ports struct {
 	fresh        mutants.Fresh
 	freshWorkers mutants.Workers
 	coverage     coverage.MutationMeasurer
+	cache        mutants.CoverageCache
 	platform     string
 	dir          string
 	exceptions   func(root string) mutants.Exceptions
@@ -71,6 +72,11 @@ func (p ports) MutationSnapshotReader() mutants.MutationSnapshotReader {
 	return p.reader
 }
 func (p ports) CoverageMutationMeasurer() coverage.MutationMeasurer { return p.coverage }
+func (p ports) MutationCoverageCache() mutants.CoverageCache        { return p.cache }
+
+// coverageCache is a CoverageCache NewHandler only copies, never asks.
+type coverageCache struct{ mutants.CoverageCache }
+
 func (p ports) MutationExceptions() func(root string) mutants.Exceptions {
 	return p.exceptions
 }
@@ -94,7 +100,7 @@ func TestNewHandlerIsBuiltOverItsPorts(t *testing.T) {
 		toolchain: &mutantstest.Inputs{}, fingerprints: &mutantstest.Inputs{}, reach: &mutantstest.Inputs{},
 		workers: &mutantstest.Workers{}, snapshots: &mutantstest.Snapshots{}, edits: &mutantstest.SourceEdits{},
 		lister: &mutantstest.Lister{}, fresh: &mutantstest.Fresh{}, freshWorkers: &mutantstest.Workers{},
-		coverage: &coverageporttest.Measurer{}, platform: "plan9", dir: "/work",
+		coverage: &coverageporttest.Measurer{}, cache: &coverageCache{}, platform: "plan9", dir: "/work",
 		exceptions:  func(root string) mutants.Exceptions { return writer },
 		repository:  func(context.Context) (string, error) { return "/repository", nil },
 		physicalDir: func(context.Context) (string, error) { return "/physical", nil },
@@ -113,7 +119,7 @@ func TestNewHandlerIsBuiltOverItsPorts(t *testing.T) {
 		{"Toolchain", h.Toolchain, p.toolchain}, {"Fingerprints", h.Fingerprints, p.fingerprints}, {"Reach", h.Reach, p.reach},
 		{"Workers", h.Workers, p.workers}, {"Snapshots", h.Snapshots, p.snapshots}, {"SourceEdits", h.SourceEdits, p.edits},
 		{"TestLister", h.TestLister, p.lister}, {"Fresh", h.Fresh, p.fresh}, {"FreshWorkers", h.FreshWorkers, p.freshWorkers},
-		{"Coverage", h.Coverage, p.coverage}, {"Platform", h.Platform, p.platform}, {"Dir", h.Dir, p.dir},
+		{"Coverage", h.Coverage, p.coverage}, {"CoverageCache", h.CoverageCache, p.cache}, {"Platform", h.Platform, p.platform}, {"Dir", h.Dir, p.dir},
 	} {
 		if port.got != port.want {
 			t.Errorf("handler's %s = %v, want the Ports' own %v", port.name, port.got, port.want)

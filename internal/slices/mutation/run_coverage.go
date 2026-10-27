@@ -18,40 +18,46 @@ import (
 )
 
 // strictCoverage measures sources for strict coverage, with the built-in
-// commands of each language, the listed tests' coverage beside it, and
-// lists the executable lines of each file of a line-precision language no
-// test loaded without running a test (coverage.Report.Inventory). The
-// listed tests are listing's, the run's listing of suite. It returns the
-// report, Go's producer and the file of each listed test.
-func (h Handler) strictCoverage(ctx context.Context, q RunQuery, root string, sources, languages []string, suite *mutants.Tests, listing *mutants.ListOnce, reach covport.Reach) (*coverage.Report, string, map[string]string, error) {
+// commands of each language, the listed tests' coverage beside it, served
+// from the cache when s's reuse serves it, and lists the executable lines
+// of each file of a line-precision language no test loaded without running
+// a test (coverage.Report.Inventory). The listed tests are listing's, the
+// run's listing of s's suite. It returns the report, Go's producer and the
+// file of each listed test.
+func (h Handler) strictCoverage(ctx context.Context, q RunQuery, s strictCoverage, sources []string, listing *mutants.ListOnce) (*coverage.Report, string, map[string]string, error) {
+	root := s.root
 	perTest := (*coverage.PerTest)(nil)
+	var key *mutants.ListedKey
 	listedFiles := map[string]string{}
-	if suite != nil {
+	if suite := s.suite; suite != nil {
 		if listing == nil {
 			listing = mutants.NewListOnce(h.TestLister, root, suite.List)
 		}
-		listed, err := h.listTests(ctx, q, listing)
+		inv, err := listing.List(ctx, q.Progress)
 		if err != nil {
-			return nil, "", nil, err
+			return nil, "", nil, ranInto(err)
 		}
-		perTest = &coverage.PerTest{Root: root, Tests: listed, Select: suite.Select}
+		perTest = &coverage.PerTest{Root: root, Tests: inv.Tests, Select: suite.Select}
 		var ids []string
-		for _, test := range listed {
+		for _, test := range inv.Tests {
 			ids = append(ids, test.ID)
 			listedFiles[test.ID] = test.File
 		}
 		perTest.All = suite.All(ids)
+		if s.reuse != nil {
+			key = mutants.KeyListed(ctx, h.Toolchain, h.Fingerprints, root, sources, inv, s.support)
+		}
 	}
 	scope := covport.OwnTests
 	if q.AllTests {
 		scope = covport.AllTests
 	}
 	producer := mutants.CoverageProducer("go", q.AllTests)
-	report, err := h.loadCoverage(ctx, q, sources, scope, perTest, reach)
+	report, err := h.loadCoverage(ctx, q, sources, scope, perTest, s.reach, s.reuse, key)
 	if err != nil {
 		return nil, "", nil, err
 	}
-	for _, language := range languages {
+	for _, language := range s.languages {
 		// A command that fails leaves its files without proof, which the
 		// run reports as missing evidence; it logged why.
 		if h.Coverage == nil {
@@ -73,14 +79,16 @@ func (h Handler) strictCoverage(ctx context.Context, q RunQuery, root string, so
 // --no-coverage, through the mutation coverage binding. scope is the tests
 // that run without --all-tests. With perTest, when the coverage commands
 // run, it also measures each listed test's coverage, in the run's own
-// folder. The binding owns progress and test output. reach, in OwnTests, is
-// the test files that reach each source, which measure Python's and
-// Kotlin's; nil measures them by the whole suite. A stopped run is
-// reported as ctx's cause, as mutation reports a stop, and listed tests
-// whose coverage run failed as tests.coverage-failed (RunError). Its one caller,
-// strict coverage, has refused every raw coverage flag before it
-// (StrictCoverageFlag), --coverage-command among them.
-func (h Handler) loadCoverage(ctx context.Context, q RunQuery, sources []string, scope covport.Scope, perTest *coverage.PerTest, reach covport.Reach) (*coverage.Report, error) {
+// folder, or serves it from the cache when reuse serves key
+// (mutants.MeasureReusing). The binding owns progress and test output.
+// reach, in OwnTests, is the test files that reach each source, which
+// measure Python's and Kotlin's; nil measures them by the whole suite. A
+// stopped run is reported as ctx's cause, as mutation reports a stop, and
+// listed tests whose coverage run failed as tests.coverage-failed
+// (RunError). Its one caller, strict coverage, has refused every raw
+// coverage flag before it (StrictCoverageFlag), --coverage-command among
+// them.
+func (h Handler) loadCoverage(ctx context.Context, q RunQuery, sources []string, scope covport.Scope, perTest *coverage.PerTest, reach covport.Reach, reuse *mutants.ListedReuse, key *mutants.ListedKey) (*coverage.Report, error) {
 	if q.NoCoverage {
 		return nil, nil
 	}
@@ -89,7 +97,7 @@ func (h Handler) loadCoverage(ctx context.Context, q RunQuery, sources []string,
 	if h.Coverage == nil {
 		return nil, fmt.Errorf("mutation coverage capability is not bound")
 	}
-	report, failure := h.Coverage.MeasureListed(ctx, req, perTest)
+	report, failure := mutants.MeasureReusing(ctx, h.Coverage, req, perTest, reuse, key)
 	if failure != nil {
 		if ctx.Err() != nil {
 			return nil, context.Cause(ctx)
@@ -100,16 +108,6 @@ func (h Handler) loadCoverage(ctx context.Context, q RunQuery, sources []string,
 		return nil, failure
 	}
 	return report, nil
-}
-
-// listTests is the tests listing reads, running the list command of
-// mutation.tests at the project root through the TestLister unless the run
-// already did: one a line, its ID, then, after a tab, optionally its file,
-// and after another, optionally its fingerprint. A command that fails is
-// tests.list-failed.
-func (h Handler) listTests(ctx context.Context, q RunQuery, listing *mutants.ListOnce) ([]coverage.Test, error) {
-	listed, err := listing.List(ctx, q.Progress)
-	return listed.Tests, ranInto(err)
 }
 
 // unmeasuredToJudge is, under --fail-uncovered, each build root of a

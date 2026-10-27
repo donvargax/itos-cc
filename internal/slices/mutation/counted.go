@@ -23,11 +23,14 @@ import (
 // uncovered sites judge and the run's limits. Progress is where its
 // observations go as they happen, its report among them.
 type CountedQuery struct {
-	Paths                    []string
-	Since, Seed              string
-	Count                    int
-	Sites                    []mutants.FreshSite
-	OwnTestsOnly             bool
+	Paths        []string
+	Since, Seed  string
+	Count        int
+	Sites        []mutants.FreshSite
+	OwnTestsOnly bool
+	// NoCoverageCache measures the listed tests' reach with no entry of
+	// the cache read.
+	NoCoverageCache          bool
 	Repeat                   int
 	AllTests                 bool
 	FailUncovered, LinesOnly bool
@@ -120,6 +123,15 @@ func (h Handler) Counted(ctx context.Context, q CountedQuery) error {
 		return CountedPlanFailed{Since: q.Since, Failure: planFailure, Flag: flag}
 	}
 	defer fresh.Release(ctx, plan)
+	if !q.NoCoverageCache && h.CoverageCache != nil {
+		// A counted run reads what a complete run of the same inputs
+		// measured of the listed tests, and writes nothing (MUT-185).
+		var progress mutants.Progress
+		if q.Progress != nil {
+			progress = q.Progress
+		}
+		plan.ListedReuse = &mutants.ListedReuse{Cache: h.CoverageCache, Progress: progress}
+	}
 	s := &result.Sampling
 	budget := q.Count
 	if named {

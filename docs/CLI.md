@@ -737,6 +737,18 @@ mutation.tests lists did not run`, and `--json` adds `"own_tests": true`.
 `--own-tests` without `--site`, or with `--all-tests`, is `flags.conflict`,
 exit 80: it narrows a named judgment and nothing else.
 
+`mutation run` keeps the listed tests' coverage a complete run measured in
+`.metrics/coverage/cache` and reuses it while nothing it was measured from
+changed (slice-69, q-102): stderr says `itos-cc: coverage: the listed
+tests' coverage reused from .metrics/coverage/cache, its inputs unchanged`
+in place of their coverage command, or, before the run measures, why the
+entry does not serve it (`... does not serve this run: <input> changed, ...
+and <n> more`, `it measured no <file>` or `it cannot be read`). stdout and
+`--json` are unchanged. `--count` and `--site` read it and write nothing.
+`--no-coverage-cache` measures as before, reading and writing no entry;
+given with `--no-coverage`, `--use-existing-coverage`, `--coverage-command`
+or `--coverage-report`, which use no cache, it is `flags.conflict`, exit 80.
+
 `mutation run --fail-fast` stops a complete run at the first actionable final
 judgment it observes, and reports it under the rule and exit code a run
 without it would. Its `--json` object stays one object and adds keys only:

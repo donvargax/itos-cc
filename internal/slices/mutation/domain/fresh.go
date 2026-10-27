@@ -70,6 +70,11 @@ type FreshPlan struct {
 	// then lists no test and measures no listed reach, whatever the
 	// settings list, and leaves its Tests nil, so no trial runs one.
 	OwnTestsOnly bool
+	// ListedReuse, when set, serves the listed tests' coverage preparation
+	// measures from the cache of the live project, the plan's Root, which
+	// it never writes (MUT-185): preparation keys the frozen tree's inputs
+	// (KeyListed) and measures only what the cache does not serve.
+	ListedReuse *ListedReuse
 }
 
 // FreshSettings is the settings file a counted run reads at its commit, at

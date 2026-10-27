@@ -684,6 +684,23 @@ report coverage per test so far, and listed tests are not run with
 `--no-coverage`, `--all-tests`, `--test-command`, or coverage read from
 reports.
 
+A complete run keeps the listed tests' coverage it measured in
+`.metrics/coverage/cache`, which git ignores, and a later run reuses it
+instead of running the listed tests for coverage again while nothing it
+was measured from changed: each measured file's build root as strict
+coverage evidence records it (its sources and tests, lock and config files,
+the whole `itos-cc.yaml`, the `support` files, the producer and the
+toolchain's environment), what the list command printed, and each listed
+test's file. stderr says so, or names what changed and measures again. Any
+source edit misses, so the win is a second run over an unchanged tree, such
+as one file judged twice, a `--site` run after a complete run of its
+commit, or a CI job restoring the folder for a later job of the same
+commit. `--count` and `--site` only read it, `--fail-uncovered` reuses it as
+evidence of the inputs it records, `--no-coverage-cache` neither reads nor
+writes it, and deleting the folder is always safe. Since `itos-cc.yaml` is
+hashed whole, `mutation except` makes the entry miss; check a new exception
+with `mutation check`, which runs nothing.
+
 `--since <ref>` judges only the functions the commits since `<ref>`
 changed, `git diff <ref>...HEAD`: a branch's own commits, never uncommitted
 work, so a gate judges a task by what it committed. A deleted line counts as

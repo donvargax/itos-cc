@@ -41,6 +41,9 @@ type Handler struct {
 	TestLister  mutants.TestLister
 	Coverage    coverage.MutationMeasurer
 	Metrics     snapport.Store
+	// CoverageCache keeps the listed tests' coverage between runs, which
+	// a complete run reads and writes, and a counted one only reads.
+	CoverageCache mutants.CoverageCache
 	// A counted run's: Fresh prepares the committed inputs, FreshWorkers
 	// runs the trials in them, Repository is the top of the Git repository
 	// holding the working directory and PhysicalDir the working directory,
@@ -83,6 +86,7 @@ type Ports interface {
 	MutationFresh() mutants.Fresh
 	MutationFreshWorkers() mutants.Workers
 	CoverageMutationMeasurer() coverage.MutationMeasurer
+	MutationCoverageCache() mutants.CoverageCache
 	MutationPlatform() string
 	WorkingDir() string
 	MutationExceptions() func(root string) mutants.Exceptions
@@ -102,7 +106,7 @@ func NewHandler(_ context.Context, p Ports) (Handler, error) {
 		Fingerprints: p.MutationFingerprints(), Reach: p.MutationReach(), Workers: p.MutationWorkers(),
 		Exceptions: p.MutationExceptions(), Dir: p.WorkingDir(),
 		Snapshots: p.MutationSnapshots(), SourceEdits: p.MutationSourceEdits(), TestLister: p.MutationTestLister(),
-		Coverage: p.CoverageMutationMeasurer(), Metrics: p.SnapshotStore(),
+		Coverage: p.CoverageMutationMeasurer(), Metrics: p.SnapshotStore(), CoverageCache: p.MutationCoverageCache(),
 		Fresh: p.MutationFresh(), FreshWorkers: p.MutationFreshWorkers(),
 		Repository: p.MutationRepository(), PhysicalDir: p.MutationPhysicalDir(), Platform: p.MutationPlatform(),
 	}, nil

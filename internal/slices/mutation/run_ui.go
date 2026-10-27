@@ -137,6 +137,12 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 	if written.given("own-tests") && !written.given("site") {
 		return ui.Emit(c.JSON, nil, []*cli.Problem{flagConflict("--own-tests", "--own-tests narrows the judgment of the mutants --site names, and is given without it")})
 	}
+	for _, flag := range []string{"no-coverage", "use-existing-coverage", "coverage-command", "coverage-report"} {
+		if written.given("no-coverage-cache") && written.given(flag) {
+			return ui.Emit(c.JSON, nil, []*cli.Problem{flagConflict("--no-coverage-cache",
+				"--no-coverage-cache bypasses the cache of the listed tests' coverage the built-in commands measure, and --"+flag+" uses no cache")})
+		}
+	}
 	if written.given("count") || written.given("seed") || written.given("repeat") || written.given("site") {
 		return c.counted(ctx, ui, h, written)
 	}
@@ -158,6 +164,7 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 		LinesOnly:           linesOnly,
 		FailFast:            c.FailFast,
 		NoCoverage:          c.NoCoverage,
+		NoCoverageCache:     c.NoCoverageCache,
 		UseExistingCoverage: c.UseExistingCoverage,
 		AllTests:            c.AllTests,
 		CoverageCommand:     written.value("coverage-command", c.CoverageCommand),

@@ -216,7 +216,7 @@ func (c Run) counted(ctx context.Context, ui *cli.UI, h Handler, written Written
 			fmt.Sprintf("Run it on Linux or macOS, or run mutation run without %s; native Windows support is #29.", mode)).With("platform", h.Platform)})
 	}
 	progress := &countedProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, p: &Presentation{UI: ui, JSON: c.JSON, Tree: h.Tree}}
-	err := h.Counted(ctx, CountedQuery{Paths: c.Paths, Since: c.Since, Seed: c.Seed, Count: c.Count, Sites: sites, OwnTestsOnly: c.OwnTests, Repeat: c.Repeat, AllTests: c.AllTests,
+	err := h.Counted(ctx, CountedQuery{Paths: c.Paths, Since: c.Since, Seed: c.Seed, Count: c.Count, Sites: sites, OwnTestsOnly: c.OwnTests, NoCoverageCache: c.NoCoverageCache, Repeat: c.Repeat, AllTests: c.AllTests,
 		FailUncovered: c.FailUncovered != nil, LinesOnly: c.FailUncovered != nil && *c.FailUncovered == "lines",
 		Workers: c.Workers, TimeoutFactor: c.TimeoutFactor, OutputFactor: c.OutputFactor, MemoryFactor: c.MemoryFactor, Progress: progress})
 	if err != nil {

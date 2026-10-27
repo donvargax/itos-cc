@@ -170,12 +170,13 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 	stage("tools", "complete", nil)
 
 	var perTest *covrun.PerTest
+	var key *mutants.ListedKey
 	if listedTests != nil {
 		if err := ctx.Err(); err != nil {
 			stage("preparation", "aborted", err)
 			return prep, err
 		}
-		listed, executions, listErr := listFreshTests(ctx, e.Platform, root, listedTests.List, log, execute)
+		listed, output, executions, listErr := listFreshTests(ctx, e.Platform, root, listedTests.List, log, execute)
 		prep.Commands = append(prep.Commands, executions...)
 		if listErr != nil {
 			stage("listed-tests", "failed", listErr)
@@ -188,6 +189,13 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 		}
 		perTest = &covrun.PerTest{Root: root, Tests: listed, Select: listedTests.Select, All: listedTests.All(ids)}
 		stage("listed-tests", "complete", nil)
+		if plan.ListedReuse != nil {
+			// The frozen tree's inputs, taken before any coverage command
+			// runs, as a complete run of the same commit takes them.
+			if support, failure := e.Fingerprints.Support(ctx, root, listedTests.Support); failure == nil {
+				key = mutants.KeyListed(ctx, e.Toolchain, e.Fingerprints, root, sources, mutants.ParseInventory(output), support)
+			}
+		}
 	}
 	if err := ctx.Err(); err != nil {
 		stage("preparation", "aborted", err)
@@ -202,16 +210,21 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 	}
 	stage("coverage", "complete", nil)
 	if perTest != nil {
-		if err := ctx.Err(); err != nil {
-			stage("preparation", "aborted", err)
-			return prep, err
-		}
-		listedCoverage, executions, listedErr := covrun.MeasureTestsSupervised(ctx, *perTest,
-			filepath.Join(private, "listed-coverage"), sources, log, execute)
-		prep.Commands = append(prep.Commands, executions...)
-		if listedErr != nil {
-			stage("listed-coverage", "failed", listedErr)
-			return prep, fmt.Errorf("measure listed-test reach: %w", listedErr)
+		listedCoverage := plan.ListedReuse.Serve(ctx, key)
+		if listedCoverage == nil {
+			if err := ctx.Err(); err != nil {
+				stage("preparation", "aborted", err)
+				return prep, err
+			}
+			var executions []covrun.CommandExecution
+			var listedErr error
+			listedCoverage, executions, listedErr = covrun.MeasureTestsSupervised(ctx, *perTest,
+				filepath.Join(private, "listed-coverage"), sources, log, execute)
+			prep.Commands = append(prep.Commands, executions...)
+			if listedErr != nil {
+				stage("listed-coverage", "failed", listedErr)
+				return prep, fmt.Errorf("measure listed-test reach: %w", listedErr)
+			}
 		}
 		report.SetTests(listedCoverage)
 		stage("listed-coverage", "complete", nil)
@@ -385,9 +398,9 @@ func hasGoUnits(units []mutants.FreshUnit) bool {
 	return false
 }
 
-func listFreshTests(ctx context.Context, platform, root, line string, log io.Writer, execute covrun.CommandExecutor) ([]covrun.Test, []covrun.CommandExecution, error) {
+func listFreshTests(ctx context.Context, platform, root, line string, log io.Writer, execute covrun.CommandExecutor) ([]covrun.Test, string, []covrun.CommandExecution, error) {
 	if strings.TrimSpace(line) == "" {
-		return nil, nil, errors.New("frozen mutation.tests.list command is empty")
+		return nil, "", nil, errors.New("frozen mutation.tests.list command is empty")
 	}
 	name, flag := "sh", "-c"
 	if platform == "windows" {
@@ -400,11 +413,11 @@ func listFreshTests(ctx context.Context, platform, root, line string, log io.Wri
 	err := execute(ctx, cmd)
 	call := covrun.CommandExecution{Args: append([]string{}, cmd.Args...), Dir: root, Err: err}
 	if err != nil {
-		return nil, []covrun.CommandExecution{call}, err
+		return nil, "", []covrun.CommandExecution{call}, err
 	}
 	tests, err := mutants.ParseFreshTests(output.String())
 	if err != nil {
-		return nil, []covrun.CommandExecution{call}, err
+		return nil, "", []covrun.CommandExecution{call}, err
 	}
 	for _, test := range tests {
 		if test.File == "" {
@@ -412,10 +425,10 @@ func listFreshTests(ctx context.Context, platform, root, line string, log io.Wri
 		}
 		info, err := os.Stat(filepath.Join(root, filepath.FromSlash(test.File)))
 		if err != nil || !info.Mode().IsRegular() {
-			return nil, []covrun.CommandExecution{call}, fmt.Errorf("listed test %q file %q is not a committed regular input: %v", test.ID, test.File, err)
+			return nil, "", []covrun.CommandExecution{call}, fmt.Errorf("listed test %q file %q is not a committed regular input: %v", test.ID, test.File, err)
 		}
 	}
-	return tests, []covrun.CommandExecution{call}, nil
+	return tests, output.String(), []covrun.CommandExecution{call}, nil
 }
 
 func installFrozenRuntimeGit(ctx context.Context, plan *mutants.FreshPlan, execute covrun.CommandExecutor, calls *[]covrun.CommandExecution) (string, error) {
