@@ -6245,9 +6245,6 @@ items:
     title: Go coverage conversions lose all data under a project path holding a comma
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: bug
-    why: >
-      Promoted from the idea covdata-comma-path (2026-10-27); its spec is ID-MUT-392 in
-      features/mutate.feature.
