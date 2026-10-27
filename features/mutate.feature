@@ -6279,10 +6279,10 @@ Feature: Mutation testing
     @slice-69 @ID-MUT-384 @wip
     Scenario: A run measuring a file the cached coverage lacks adds it
       Given the module of ID-MUT-122, with a second package b that the binary links
-      And "itos-cc mutation run a" has run
+      And "itos-cc mutation run main.go" has run
       When I run "itos-cc mutation run b"
       Then the listed tests run once for coverage, and stderr says the cached coverage measured no file of b
-      And "itos-cc mutation run --mutate-all a b" after it does not run the listed tests for coverage
+      And "itos-cc mutation run --mutate-all main.go b" after it does not run the listed tests for coverage
 
     @slice-69 @ID-MUT-385 @wip
     Scenario Outline: Only a complete run's successful built-in measurement is cached

@@ -32,9 +32,19 @@ func (l *listedMutation) coverageRuns() []string {
 }
 
 func (l *listedMutation) splitCoverage() error {
+	// Every test the list prints, both of the fixture's unless a step
+	// made it print others.
+	ids := []string{"ID-A-01", "ID-A-02"}
+	if l.slice39List != "" {
+		ids = nil
+		for _, line := range outputLines(l.slice39List) {
+			id, _, _ := strings.Cut(line, "\t")
+			ids = append(ids, id)
+		}
+	}
 	runs := l.coverageRuns()
-	if len(runs) != 1 || !strings.HasSuffix(runs[0], "-tests=ID-A-01,ID-A-02") {
-		return fmt.Errorf("coverage runs %q, want one selecting both", runs)
+	if len(runs) != 1 || !strings.HasSuffix(runs[0], "-tests="+strings.Join(ids, ",")) {
+		return fmt.Errorf("coverage runs %q, want one selecting %s", runs, strings.Join(ids, " "))
 	}
 	return nil
 }

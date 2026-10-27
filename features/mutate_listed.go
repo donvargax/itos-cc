@@ -104,6 +104,7 @@ func listedMutationSteps(sc *godog.ScenarioContext, m *mutateState) {
 	sc.Step(`^no problem is "([^"]+)"$`, l.noProblem)
 	slice39FingerprintSteps(sc, l)
 	listedImporterSteps(sc, l)
+	coverageReuseSteps(sc, l)
 }
 
 func (l *listedMutation) project() error {
@@ -186,8 +187,14 @@ func (l *listedMutation) declare() error {
 			lines[line] = ids
 		}
 	}
+	files := map[string]map[int][]string{"main.go": lines}
+	// slice-69's package b, which the binary runs for both listed tests.
+	b := l.m.read(listedBFile)
+	if b != "" {
+		files[listedBFile] = map[int][]string{listedBLine: {"ID-A-01", "ID-A-02"}}
+	}
 	t := Tests{Language: "go", Command: "go test -count=1 -failfast ./.", Elapsed: time.Second, Listed: &ListedTests{
-		Files: map[string]string{"ID-A-01": "a.feature", "ID-A-02": ""}, Lines: map[string]map[int][]string{"main.go": lines}, Split: !strings.Contains(l.m.read("e2e/e2e_test.go"), `split := ""`), Elapsed: map[string]time.Duration{"ID-A-01": time.Second, "ID-A-02": time.Second},
+		Files: map[string]string{"ID-A-01": "a.feature", "ID-A-02": ""}, Lines: files, Split: !strings.Contains(l.m.read("e2e/e2e_test.go"), `split := ""`), Elapsed: map[string]time.Duration{"ID-A-01": time.Second, "ID-A-02": time.Second},
 		Surviving: map[string][]Site{}, TimingOut: map[string][]Site{},
 	}}
 	sites, err := l.m.sitesOf("main.go")
@@ -209,6 +216,12 @@ func (l *listedMutation) declare() error {
 		}
 		if s.line == lineAt("for n > 1 {") {
 			t.Listed.TimingOut["ID-A-01"] = append(t.Listed.TimingOut["ID-A-01"], site)
+		}
+	}
+	if b != "" {
+		site := Site{File: listedBFile, Line: listedBLine, Original: "*", Replacement: "/"}
+		for _, id := range []string{"ID-A-01", "ID-A-02"} {
+			t.Listed.Surviving[id] = append(t.Listed.Surviving[id], site)
 		}
 	}
 	if l.fresh {
@@ -238,6 +251,9 @@ func (l *listedMutation) declare() error {
 	// The harness records each run of its programs in listed.log: the own
 	// tests' of package main, the listed tests' of e2e, the list command's.
 	trace := &TestTrace{File: filepath.Join(l.m.records, "listed.log"), Source: "main.go", Tests: map[string]string{"main_test.go": "own", "e2e/e2e_test.go": "run"}, CoverDir: true}
+	if b != "" {
+		trace.Tests[listedBTestFile] = "own"
+	}
 	t.Trace = trace
 	if t.Listed != nil {
 		t.Listed.ListTrace = trace.File
@@ -247,6 +263,14 @@ func (l *listedMutation) declare() error {
 	}
 	if t.Listed != nil {
 		if err := w.d.Tests(w.dir, Tests{Language: "go", Command: "go test -count=1 ./e2e -args -tests={pattern}", Trace: trace}); err != nil {
+			return err
+		}
+	}
+	if b != "" && t.Listed != nil {
+		// No own test reaches b: its one mutant survives them, and the
+		// listed tests, which never check what it returns.
+		site := Site{File: listedBFile, Line: listedBLine, Original: "*", Replacement: "/"}
+		if err := w.d.Tests(w.dir, Tests{Language: "go", Command: "go test -count=1 -failfast ./b", Elapsed: time.Second, Surviving: []Site{site}}); err != nil {
 			return err
 		}
 	}
@@ -260,7 +284,11 @@ func (l *listedMutation) declare() error {
 		}
 		report += fmt.Sprintf("DA:%d,%d\n", line, hits)
 	}
-	return w.d.Coverage(w.dir, Coverage{Language: "go", Report: report + "end_of_record\n"})
+	report += "end_of_record\n"
+	if b != "" {
+		report += fmt.Sprintf("TN:\nSF:%s\nDA:%d,0\nend_of_record\n", listedBFile, listedBLine)
+	}
+	return w.d.Coverage(w.dir, Coverage{Language: "go", Report: report})
 }
 
 var listedLineTests = map[int][]string{

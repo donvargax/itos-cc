@@ -22,6 +22,10 @@ type scopedConversion struct {
 	// counted is whether the scenario's run is a counted one, which
 	// itos-cc makes on Linux and macOS alone.
 	counted bool
+	// sited is whether the module's base commit holds a/a.go as the change
+	// leaves it, its site there from the start: slice-69's strict run
+	// reuses what an earlier run of a/a.go measured.
+	sited bool
 }
 
 func scopedConversionSteps(sc *godog.ScenarioContext, m *mutateState) {
@@ -31,6 +35,9 @@ func scopedConversionSteps(sc *godog.ScenarioContext, m *mutateState) {
 		for _, step := range scenario.Steps {
 			if strings.Contains(step.Text, "--count") {
 				s.counted = true
+			}
+			if strings.Contains(step.Text, "--fail-uncovered a/a.go --json") {
+				s.sited = true
 			}
 		}
 		return ctx, nil
@@ -145,6 +152,11 @@ func (s *scopedConversion) module() error {
 	}
 	if err := s.m.writeAll(scopedFiles); err != nil {
 		return err
+	}
+	if s.sited {
+		if err := w.write("a/a.go", scopedChanged); err != nil {
+			return err
+		}
 	}
 	w.prepare = func(args []string) []string {
 		for i, arg := range args {
