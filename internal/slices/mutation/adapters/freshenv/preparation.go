@@ -334,13 +334,11 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 }
 
 // servePlans is plans less those reuse serves from the cache, each keyed
-// at root as a complete run keys it (mutants.KeyPlan), sources less theirs,
+// at root as a complete run keys them (mutants.KeyPlanGroups), sources
+// less theirs,
 // and the coverage it served of them.
 func (e Environment) servePlans(ctx context.Context, reuse *mutants.ListedReuse, root string, plans []covrun.Plan, sources []string, scope covrun.Scope, reach covrun.Reach, support map[string]string) ([]covrun.Plan, []string, []*coverage.Report) {
-	var keys []*mutants.PlanKey
-	for _, id := range covrun.Identities(ctx, sources, scope, reach) {
-		keys = append(keys, mutants.KeyPlan(ctx, e.Toolchain, e.Fingerprints, root, id, scope == covrun.AllTests, support))
-	}
+	keys := mutants.KeyPlanGroups(ctx, e.Toolchain, e.Fingerprints, root, covrun.Identities(ctx, sources, scope, reach), scope == covrun.AllTests, support)
 	served, servedSources, _ := reuse.ServePlans(ctx, keys)
 	unserved := func(s string) bool { return !slices.Contains(servedSources, s) }
 	var rest []covrun.Plan

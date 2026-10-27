@@ -65,7 +65,8 @@ func TestAPlansOwnCoverageEntryReadsBackAsItWasWritten(t *testing.T) {
 		Inputs: map[string]string{"py/a.py": "h1", "@producer": "h2"},
 		Files: map[string][]mutants.CachedPiece{"py/a.py": {{Start: 1, End: 1, Total: 1, Covered: 1, InProcess: true, Integration: true},
 			{Start: 2, End: 2, Total: 2, Covered: 1, Branch: true}}},
-		Proven: []string{"py/a.py"}, Unloaded: []string{"py/b.py"}}
+		Listed: map[string][]mutants.CachedPiece{"py/b.py": {{Start: 3, End: 3, Total: 1}}},
+		Proven: []string{"py/a.py", "py/b.py"}, Unloaded: []string{"py/b.py"}}
 	if failure := cache.SaveOwn(t.Context(), "python-1-2", want); failure != nil {
 		t.Fatal(failure)
 	}

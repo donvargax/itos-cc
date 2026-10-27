@@ -28,10 +28,12 @@ type OwnCoverage struct {
 	// Inputs are the hashes Fingerprints.Coverage gives of its build root,
 	// by their names there.
 	Inputs map[string]string
-	// Files are the pieces of each source the report names; Proven the
-	// sources whose executable lines it lists completely, and Unloaded
-	// those no test loaded, both sorted.
-	Files            map[string][]CachedPiece
+	// Files are the pieces of each source the report names, and Listed
+	// the lines it listed, unexecuted, of a source no test loaded (a
+	// Kotlin module's report lists them); Proven the sources whose
+	// executable lines it lists completely, and Unloaded those no test
+	// loaded, both sorted.
+	Files, Listed    map[string][]CachedPiece
 	Proven, Unloaded []string
 }
 
@@ -53,31 +55,48 @@ const (
 )
 
 // KeyPlans is the key of each plan m measures req's sources by, measured at
-// root (KeyPlan): none when u serves nothing, or req reads reports rather
-// than run the built-in commands. A plan the cache cannot serve is left
-// out.
+// root (KeyPlanGroups): none when u serves nothing, or req reads reports
+// rather than run the built-in commands.
 func (u *ListedReuse) KeyPlans(ctx context.Context, m coverage.MutationMeasurer, req covport.Request, tools Toolchain, fp Fingerprints, root string, support map[string]string) []*PlanKey {
 	if u == nil || u.Cache == nil || len(req.Reports) > 0 || req.Existing {
 		return nil
 	}
+	return KeyPlanGroups(ctx, tools, fp, root, m.Plans(ctx, req), req.AllTests || req.Scope == covport.AllTests, support)
+}
+
+// KeyPlanGroups is the key of each of plans (KeyPlan) whose build root's
+// plans of its language all have one: the runner measures them together,
+// as it lists an unreached Kotlin plan's lines from its module's report,
+// so the cache serves a build root's plans whole or none of them.
+func KeyPlanGroups(ctx context.Context, tools Toolchain, fp Fingerprints, root string, plans []coverage.Plan, all bool, support map[string]string) []*PlanKey {
 	var keys []*PlanKey
-	for _, plan := range m.Plans(ctx, req) {
-		if key := KeyPlan(ctx, tools, fp, root, plan, req.AllTests || req.Scope == covport.AllTests, support); key != nil {
-			keys = append(keys, key)
+	unkeyed := map[string]bool{}
+	for _, plan := range plans {
+		key := KeyPlan(ctx, tools, fp, root, plan, all, support)
+		if key == nil {
+			unkeyed[group(plan)] = true
+			continue
 		}
+		keys = append(keys, key)
 	}
-	return keys
+	return slices.DeleteFunc(keys, func(k *PlanKey) bool { return unkeyed[group(k.plan)] })
+}
+
+// group is plan's language and build root, the plans the runner measures
+// together.
+func group(plan coverage.Plan) string {
+	return plan.Language + "\x00" + plan.Dir
 }
 
 // KeyPlan is the key of plan's own coverage, measured at root by its own
 // tests or, with all, its build root's whole suite: nil when the cache
-// cannot serve it, as the plan runs nothing (Unreached), its scope is one
-// strict coverage refuses (mutation.coverage-unsupported) or an input
-// cannot be read. The name is the plan's language, then a hash of its
-// build root from root and one of its own tests, so it names the plan in
-// any checkout of the project.
+// cannot serve it, as its scope is one strict coverage refuses
+// (mutation.coverage-unsupported) or an input cannot be read. The name is
+// the plan's language, then a hash of its build root from root and, for a
+// plan of its own tests, one of them, none for an unreached plan's, so it
+// names the plan in any checkout of the project.
 func KeyPlan(ctx context.Context, tools Toolchain, fp Fingerprints, root string, plan coverage.Plan, all bool, support map[string]string) *PlanKey {
-	if fp == nil || plan.Unreached || len(plan.Sources) == 0 {
+	if fp == nil || len(plan.Sources) == 0 {
 		return nil
 	}
 	source := plan.Sources[0]
@@ -95,7 +114,7 @@ func KeyPlan(ctx context.Context, tools Toolchain, fp Fingerprints, root string,
 	}
 	slices.Sort(key.entry.Sources)
 	key.name = plan.Language + "-" + shortHash(key.entry.Dir)
-	if plan.Tests != nil {
+	if plan.Tests != nil || plan.Unreached {
 		key.name += "-" + shortHash(strings.Join(plan.Tests, "\x00"))
 	}
 	return key
@@ -107,12 +126,38 @@ func shortHash(text string) string {
 	return hex.EncodeToString(sum[:4])
 }
 
-// ServePlan is the coverage of key's plan, its paths at the key's root,
-// when the entry kept of it was measured from what key says, of the same
+// ServePlans is the coverage u serves of the plans of keys, the sources of
+// the plans it served, and the keys of those it did not. It serves a plan
+// when the entry kept of it was measured from what its key says, of the
+// same sources, its paths then at the key's root, and every plan of its
+// build root and language among keys is served too (KeyPlanGroups); it
+// says which it served, and why an entry there does not serve the run.
+func (u *ListedReuse) ServePlans(ctx context.Context, keys []*PlanKey) (served []*coverage.Report, sources []string, rest []*PlanKey) {
+	reports := make([]*coverage.Report, len(keys))
+	unserved := map[string]bool{}
+	for i, key := range keys {
+		if reports[i] = u.lookup(ctx, key); reports[i] == nil {
+			unserved[group(key.plan)] = true
+		}
+	}
+	for i, key := range keys {
+		if unserved[group(key.plan)] {
+			rest = append(rest, key)
+			continue
+		}
+		report(u.Progress, RunEvent{Kind: OwnCoverageReused, File: key.plan.Dir})
+		served = append(served, reports[i])
+		sources = append(sources, key.plan.Sources...)
+	}
+	return served, sources, rest
+}
+
+// lookup is the coverage of key's plan the entry kept of it holds, at the
+// key's root, when it was measured from what key says, of the same
 // sources; nil otherwise, having said why an entry there does not serve
-// the run. A nil reuse or key serves nothing.
-func (u *ListedReuse) ServePlan(ctx context.Context, key *PlanKey) *coverage.Report {
-	if u == nil || key == nil || u.Cache == nil {
+// the run. A nil reuse serves nothing.
+func (u *ListedReuse) lookup(ctx context.Context, key *PlanKey) *coverage.Report {
+	if u == nil || u.Cache == nil {
 		return nil
 	}
 	entry, failure := u.Cache.Own(ctx, key.name)
@@ -130,27 +175,7 @@ func (u *ListedReuse) ServePlan(ctx context.Context, key *PlanKey) *coverage.Rep
 		report(u.Progress, RunEvent{Kind: OwnCoverageUnserved, File: key.plan.Dir, Failure: *why})
 		return nil
 	}
-	report(u.Progress, RunEvent{Kind: OwnCoverageReused, File: key.plan.Dir})
-	files := map[string][]coverage.Piece{}
-	for file, pieces := range entry.Files {
-		files[atRoot(key.root, file)] = pieces
-	}
-	return coverage.FromPlan(entry.Language, key.plan.Dir, files, key.paths(entry.Proven), key.paths(entry.Unloaded))
-}
-
-// ServePlans is the coverage u serves of the plans of keys (ServePlan),
-// the sources of the plans it served, and the keys of those it did not.
-func (u *ListedReuse) ServePlans(ctx context.Context, keys []*PlanKey) (served []*coverage.Report, sources []string, rest []*PlanKey) {
-	for _, key := range keys {
-		r := u.ServePlan(ctx, key)
-		if r == nil {
-			rest = append(rest, key)
-			continue
-		}
-		served = append(served, r)
-		sources = append(sources, key.plan.Sources...)
-	}
-	return served, sources, rest
+	return coverage.FromPlan(entry.Language, key.plan.Dir, key.atRoot(entry.Files), key.atRoot(entry.Listed), key.paths(entry.Proven), key.paths(entry.Unloaded))
 }
 
 // unserved is why kept, an entry of the plan k names, does not serve a run
@@ -189,12 +214,15 @@ func (u *ListedReuse) KeepPlans(ctx context.Context, keys []*PlanKey, report *co
 	}
 	for _, key := range keys {
 		entry := key.entry
-		entry.Files = map[string][]CachedPiece{}
+		entry.Files, entry.Listed = map[string][]CachedPiece{}, map[string][]CachedPiece{}
 		unloaded := report.Unloaded(key.plan.Language)
 		for _, source := range key.plan.Sources {
 			rel := snapshot.Key(key.root, source)
 			if report.Has(source) {
 				entry.Files[rel] = report.Pieces(source)
+			}
+			if listed := report.Listed(source); listed != nil {
+				entry.Listed[rel] = listed
 			}
 			if report.Proves(source) {
 				entry.Proven = append(entry.Proven, rel)
@@ -207,6 +235,16 @@ func (u *ListedReuse) KeepPlans(ctx context.Context, keys []*PlanKey, report *co
 		slices.Sort(entry.Unloaded)
 		_ = u.Cache.SaveOwn(ctx, key.name, entry)
 	}
+}
+
+// atRoot is files, by paths the cache keeps, by their paths at the key's
+// root.
+func (k *PlanKey) atRoot(files map[string][]CachedPiece) map[string][]coverage.Piece {
+	out := map[string][]coverage.Piece{}
+	for file, pieces := range files {
+		out[atRoot(k.root, file)] = pieces
+	}
+	return out
 }
 
 // paths is each of files, paths the cache keeps, at the key's root.

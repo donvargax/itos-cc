@@ -137,6 +137,7 @@ type ownCoverageWire struct {
 	Sources  []string               `json:"sources"`
 	Inputs   map[string]string      `json:"inputs"`
 	Files    map[string][]pieceWire `json:"files"`
+	Listed   map[string][]pieceWire `json:"listed,omitempty"`
 	Proven   []string               `json:"proven,omitempty"`
 	Unloaded []string               `json:"unloaded,omitempty"`
 }
@@ -158,12 +159,13 @@ func (c CoverageCache) Own(ctx context.Context, name string) (*mutants.OwnCovera
 		return nil, &snapport.Unreadable{Name: ownName(name), Reason: "it is of another version"}
 	}
 	return &mutants.OwnCoverage{Language: wire.Language, Dir: wire.Dir, Tests: wire.Tests, Sources: wire.Sources, Inputs: wire.Inputs,
-		Files: fromWire(wire.Files), Proven: wire.Proven, Unloaded: wire.Unloaded}, nil
+		Files: fromWire(wire.Files), Listed: fromWire(wire.Listed), Proven: wire.Proven, Unloaded: wire.Unloaded}, nil
 }
 
 // SaveOwn writes entry whole as the plan named name's, in place of the one
 // there.
 func (c CoverageCache) SaveOwn(ctx context.Context, name string, entry mutants.OwnCoverage) snapport.Failure {
 	return c.Store.Write(ctx, ownName(name), ownCoverageWire{Version: listedCoverageVersion, Language: entry.Language, Dir: entry.Dir,
-		Tests: entry.Tests, Sources: entry.Sources, Inputs: entry.Inputs, Files: toWire(entry.Files), Proven: entry.Proven, Unloaded: entry.Unloaded})
+		Tests: entry.Tests, Sources: entry.Sources, Inputs: entry.Inputs, Files: toWire(entry.Files), Listed: toWire(entry.Listed), Proven: entry.Proven,
+		Unloaded: entry.Unloaded})
 }

@@ -148,7 +148,7 @@ func TestARunKeepsOnlyACompletePlanMeasurement(t *testing.T) {
 	if len(cache.ownSaved) != 0 {
 		t.Fatalf("kept a measurement with a gap: %v", cache.ownSaved)
 	}
-	reuse.KeepPlans(t.Context(), []*mutants.PlanKey{key}, coverage.FromPlan("go", f.root, nil, nil, []string{filepath.Join(f.root, "a.go")}))
+	reuse.KeepPlans(t.Context(), []*mutants.PlanKey{key}, coverage.FromPlan("go", f.root, nil, nil, nil, []string{filepath.Join(f.root, "a.go")}))
 	if entry := cache.own[cache.ownSaved[0]]; !slices.Equal(entry.Unloaded, []string{"a.go"}) || len(entry.Files) != 0 {
 		t.Fatalf("kept %+v, want a.go unloaded", entry)
 	}
@@ -175,13 +175,8 @@ func TestNoKeyServesAPlanTheCacheCannotServe(t *testing.T) {
 		t.Error("a key without fingerprints")
 	}
 	key := mutants.KeyPlan(t.Context(), f.inputs, f.inputs, f.root, plan, false, nil)
-	if (*mutants.ListedReuse)(nil).ServePlan(t.Context(), key) != nil || reuse.ServePlan(t.Context(), nil) != nil {
-		t.Error("no reuse, or no key, served a plan")
-	}
-	unreached := plan
-	unreached.Unreached = true
-	if mutants.KeyPlan(t.Context(), f.inputs, f.inputs, f.root, unreached, false, nil) != nil {
-		t.Error("a key of a plan that runs nothing")
+	if served, _, rest := (*mutants.ListedReuse)(nil).ServePlans(t.Context(), []*mutants.PlanKey{key}); served != nil || len(rest) != 1 {
+		t.Error("no reuse served a plan")
 	}
 	f.inputs.Files[filepath.Join(f.root, "package.json")] = "{}\n"
 	ts := filepath.Join(f.root, "src", "a.ts")
@@ -196,12 +191,52 @@ func TestNoKeyServesAPlanTheCacheCannotServe(t *testing.T) {
 	delete(f.inputs.Files, filepath.Join(f.root, "go.work"))
 	cache := &listedCache{}
 	own := &mutants.ListedReuse{Cache: cache, Write: true}
-	reports := coverage.FromPlan("python", f.root, nil, nil, nil)
-	for _, p := range []coverage.Plan{plan, {Language: "go", Dir: f.root, Sources: req.Sources, Tests: []string{"a_test.go"}}} {
+	reports := coverage.FromPlan("python", f.root, nil, nil, nil, nil)
+	for _, p := range []coverage.Plan{plan, {Language: "go", Dir: f.root, Sources: req.Sources, Tests: []string{"a_test.go"}},
+		{Language: "go", Dir: f.root, Sources: req.Sources, Unreached: true}} {
 		own.KeepPlans(t.Context(), []*mutants.PlanKey{mutants.KeyPlan(t.Context(), f.inputs, f.inputs, f.root, p, false, nil)}, reports)
 	}
-	if len(cache.ownSaved) != 2 || cache.ownSaved[0] == cache.ownSaved[1] {
-		t.Errorf("a plan of its own tests is kept as its build root's: %v", cache.ownSaved)
+	if len(cache.ownSaved) != 3 || cache.ownSaved[0] == cache.ownSaved[1] || cache.ownSaved[0] == cache.ownSaved[2] || cache.ownSaved[1] == cache.ownSaved[2] {
+		t.Errorf("a plan of its own tests, or one no test reaches, is kept as its build root's: %v", cache.ownSaved)
+	}
+}
+
+// A build root's plans are served whole or not at all: one of them the
+// cache cannot key, or holds no entry of, leaves its siblings measured
+// too, as the runner lists an unreached Kotlin plan's lines from its
+// module's report; another build root's are served apart. What a plan's
+// report listed of a file no test loaded is kept and served with it.
+func TestABuildRootsPlansAreServedWhole(t *testing.T) {
+	f := newOwnCacheFixture(t)
+	a, b := filepath.Join(f.root, "a.go"), filepath.Join(f.root, "b.go")
+	elsewhere := t.TempDir()
+	c := filepath.Join(elsewhere, "c.go")
+	f.inputs.Files[filepath.Join(elsewhere, "go.mod")] = "module example.com/c\n\ngo 1.22\n"
+	f.inputs.Files[c] = "package c\n"
+	plans := []coverage.Plan{{Language: "go", Dir: f.root, Sources: []string{a}, Tests: []string{"t1"}},
+		{Language: "go", Dir: f.root, Sources: []string{b}, Unreached: true}, {Language: "go", Dir: elsewhere, Sources: []string{c}}}
+	keys := mutants.KeyPlanGroups(t.Context(), f.inputs, f.inputs, f.root, plans, false, nil)
+	if len(keys) != 3 {
+		t.Fatalf("keyed %d plans, want all three", len(keys))
+	}
+	if got := mutants.KeyPlanGroups(t.Context(), f.inputs, f.inputs, f.root, append(plans, coverage.Plan{Language: "go", Dir: f.root}), false, nil); len(got) != 1 {
+		t.Errorf("a build root with a plan of no key kept %d keys, want the other root's alone", len(got))
+	}
+	cache := &listedCache{}
+	measured := coverage.FromPlan("go", f.root, map[string][]coverage.Piece{a: {{Start: 3, End: 3, Total: 1, Covered: 1, Key: "3.14,3.24"}}},
+		map[string][]coverage.Piece{b: {{Start: 3, End: 3, Total: 1, Key: "3.14,3.24"}}}, []string{a, b}, []string{b})
+	(&mutants.ListedReuse{Cache: cache, Write: true}).KeepPlans(t.Context(), keys[:2], measured)
+	events := &runEvents{}
+	served, sources, rest := (&mutants.ListedReuse{Cache: cache, Progress: events}).ServePlans(t.Context(), keys)
+	if len(served) != 2 || !slices.Equal(sources, []string{a, b}) || len(rest) != 1 || len(events.values) != 2 {
+		t.Fatalf("served %d plans of %v, left %d, said %+v; want the kept root's two", len(served), sources, len(rest), events.values)
+	}
+	if lines, proved := coverage.Merge(served...).Lines(b); !proved || len(lines) != 1 || lines[0].Covered {
+		t.Errorf("b.go's listed lines %v proved %v, want its one line unexecuted", lines, proved)
+	}
+	delete(cache.own, cache.ownSaved[1])
+	if served, _, rest := (&mutants.ListedReuse{Cache: cache}).ServePlans(t.Context(), keys[:2]); len(served) != 0 || len(rest) != 2 {
+		t.Errorf("a build root missing one plan's entry served %d plans, left %d; want none served", len(served), len(rest))
 	}
 }
 

@@ -104,13 +104,35 @@ func (r *Report) Proves(file string) bool {
 	return r != nil && r.proven[file]
 }
 
+// Listed is the executable lines List recorded of file, a static
+// inventory's or its module report's, none of them executed, as pieces.
+func (r *Report) Listed(file string) []Piece {
+	if r == nil {
+		return nil
+	}
+	var out []Piece
+	for _, s := range r.inventory[file] {
+		out = append(out, Piece{Start: s.Start, End: s.End, Total: s.Total, Key: s.Key})
+	}
+	return out
+}
+
 // FromPlan makes the report of a plan of language in its build root dir
 // whose commands all succeeded and wrote their reports, as a store kept
-// it: the pieces of each file it names (FromPieces), its language
-// measured, each of proven listed completely (Lines), and each of
-// unloaded loaded by no test (Unloaded).
-func FromPlan(language, dir string, files map[string][]Piece, proven, unloaded []string) *Report {
+// it: the pieces of each file it names (FromPieces), the lines listed of
+// each file of listed (Listed), its language measured, each of proven
+// listed completely (Lines), and each of unloaded loaded by no test
+// (Unloaded).
+func FromPlan(language, dir string, files, listed map[string][]Piece, proven, unloaded []string) *Report {
 	r := FromPieces(files)
+	for file, pieces := range listed {
+		if r.inventory == nil {
+			r.inventory = map[string][]Segment{}
+		}
+		for _, p := range pieces {
+			r.inventory[file] = append(r.inventory[file], Segment{Start: p.Start, End: p.End, Total: p.Total, Key: p.Key})
+		}
+	}
 	r.MarkMeasured(language)
 	r.proven, r.unloaded = map[string]bool{}, map[string]Unloaded{}
 	for _, file := range proven {

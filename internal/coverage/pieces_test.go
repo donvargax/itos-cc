@@ -88,7 +88,7 @@ func TestTestsGiveEachListedTestsCoverage(t *testing.T) {
 // its build root (slice-70's cache).
 func TestFromPlanKeepsWhatAPlanProved(t *testing.T) {
 	files := map[string][]coverage.Piece{"/w/a.py": {{Start: 1, End: 1, Total: 1, Covered: 1, InProcess: true}}}
-	r := coverage.FromPlan("python", "/w", files, []string{"/w/a.py"}, []string{"/w/b.py"})
+	r := coverage.FromPlan("python", "/w", files, nil, []string{"/w/a.py"}, []string{"/w/b.py"})
 	if !r.Measures("python") || r.Measures("go") {
 		t.Error("the plan's language is measured, and no other")
 	}
@@ -105,7 +105,17 @@ func TestFromPlanKeepsWhatAPlanProved(t *testing.T) {
 		t.Errorf("a.py's lines %v proved %v, want its one covered line", lines, proved)
 	}
 	var none *coverage.Report
-	if none.Proves("/w/a.py") {
-		t.Error("a nil report proves nothing")
+	if none.Proves("/w/a.py") || none.Listed("/w/a.py") != nil {
+		t.Error("a nil report proves and lists nothing")
+	}
+	// A file no test loaded whose lines a module's report listed keeps
+	// them, unexecuted, and its proof.
+	listed := map[string][]coverage.Piece{"/w/c.py": {{Start: 4, End: 4, Total: 1, Key: "4"}}}
+	r = coverage.FromPlan("python", "/w", nil, listed, []string{"/w/c.py"}, []string{"/w/c.py"})
+	if lines, proved := r.Lines("/w/c.py"); !proved || len(lines) != 1 || lines[0].Line != 4 || lines[0].Covered {
+		t.Errorf("c.py's listed lines %v proved %v, want line 4 unexecuted", lines, proved)
+	}
+	if got := r.Listed("/w/c.py"); len(got) != 1 || got[0] != listed["/w/c.py"][0] {
+		t.Errorf("c.py listed %+v, want what was kept", got)
 	}
 }
