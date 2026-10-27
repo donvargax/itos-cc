@@ -1069,6 +1069,28 @@ Feature: Mutation testing
       And a mutant the test notices is killed, and one it does not notice survives
       And only the mutants on lines the binary never ran are uncovered
 
+    # bug-13 (from the idea covdata-comma-path, found by slice-70's agent):
+    # go tool covdata textfmt reads -i as a comma-separated list, and itos-cc
+    # passed it the run's folders by their absolute paths, so under a
+    # project path holding a comma the integration data and the listed
+    # tests' per-test data converted to nothing, with no error. Decided by
+    # the coordinator on 2026-10-27: every covdata command itos-cc starts
+    # runs in the parent of the folder it reads, with -i that folder's bare
+    # name, which itos-cc chooses and which never holds a comma (a per-test
+    # folder named after a test ID that could hold one is named by its
+    # index or a hash instead); -o keeps its absolute path, a single one.
+    # Before the fix both rows find no line covered, failing at the Then.
+    @bug-13 @ID-MUT-392 @binary-only @wip
+    Scenario Outline: A project under a path holding a comma keeps its <coverage>
+      Given <module>, at a folder named "with,comma"
+      When I run "<command>"
+      Then <outcome>
+
+      Examples:
+        | coverage                          | module                                                                                                    | command                                           | outcome                                                                          |
+        | integration coverage              | a Go module whose only test builds its binary with go build -cover when GOCOVERDIR is set, and runs it, as ID-MUT-117's | itos-cc mutation run --all-tests --fail-uncovered | the lines the binary ran are covered, and only the mutants on lines it never ran are uncovered |
+        | listed tests' per-test coverage   | the module of ID-MUT-122, whose harness splits the run                                                    | itos-cc mutation run                              | each line the binary ran is covered by the IDs of the tests that reached it, as in ID-MUT-122 |
+
     @integration-coverage @ID-MUT-118 @binary-only
     Scenario: A project whose binary writes no coverage behaves as before
       Given a Go module whose only test builds its binary without -cover and runs it
