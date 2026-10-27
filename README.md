@@ -604,6 +604,7 @@ itos-cc mutation list src/billing                            # the mutation site
 itos-cc mutation check --since origin/main --fail-uncovered  # a commit hook: cached results, nothing run
 itos-cc mutation sample                                      # in CI: do 20 cached results still hold?
 itos-cc mutation run --count 20 --since origin/main          # bounded and fresh: 20 committed sites, no cache (Linux and macOS)
+itos-cc mutation run --site src/board.ts:3:13                # one mutant a report named, judged alone and fresh (Linux and macOS)
 itos-cc mutation except src/board.ts:3:13 --reason '…'       # an equivalent mutant: no test can kill it
 ```
 
@@ -905,6 +906,18 @@ decision 38). It runs on Linux and macOS, where every command it
 starts runs in a process group it owns; a command that detaches from its
 process group or session is not followed. On Windows it fails with
 `count.platform` (#29).
+
+`--site SITE`, repeatable, judges the mutants it names alone, freshly, as a
+counted run judges what it draws: SITE is `<file>:<line>:<column>`, every
+mutant at that position, or the identity a counted run reports, one mutant,
+found even when its function only moved. It judges the HEAD commit, so
+commit the test that should kill it first; coverage and listed reach are
+measured for the named functions alone, and each mutant runs its own tests,
+then the listed tests that reach it, as the nightly does. It exits 0 when
+every named mutant is killed or excepted; a survivor or an uncovered one
+fails, exit 1, and a site that names no mutant is `site.unmatched`, exit 80,
+before anything runs. It writes nothing, refuses `--count`, `--seed`,
+`--since` and paths, and runs on Linux and macOS.
 
 `--fail-fast` stops a complete run at the first actionable failure it
 observes, in the order judgments finish, for a quick fix-and-retry loop: an

@@ -66,7 +66,7 @@ holds unchanged, keeps its `<file>:<line>:<column>`: a problem is printed only w
 | 0    | Success.                                                                               |
 | 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python, TypeScript, Kotlin or Dart line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a mutant its tests decide differently run to run, sampled, recorded by `mutation run`, or judged by `mutation run --count --repeat`, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails, the listed tests' coverage run that fails. |
 | 75   | A temporary failure: the same command can pass when run again unchanged.               |
-| 80   | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor or is in an excluded source. |
+| 80   | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor or is in an excluded source, a site `mutation run --site` names that names no mutant of the commit. |
 | 81   | An unknown command or subcommand.                                                      |
 | 82   | A requirement not met: the environment lacks something, a tool, a report, a git repository. |
 | 100  | An internal error that itos-cc could not classify, a panic included. Report it.        |
@@ -139,7 +139,7 @@ output of the commands it runs passes as it is.
 | `flags.conflict`             | 80   | mutation run, mutation check, mutation sample, mutation except | `flag`                                        |
 | `command.unknown`            | 81   | itos-cc, mutation | `command`                                                |
 | `command.missing`            | 80   | itos-cc --json, mutation --json | none                                       |
-| `args.unexpected`            | 80   | version, graph, help, mutation except | `argument`                           |
+| `args.unexpected`            | 80   | version, graph, help, mutation except, mutation run --site | `argument`              |
 | `args.missing`               | 80   | mutation except | none                                                       |
 | `args.invalid`               | 80   | mutation except | `argument`                                                 |
 | `config.invalid`             | 80   | crap, dry, units, mutation run, mutation list, mutation check, mutation sample, mutation except | `file`, and `key` for an `exclude` or `mutation.copy` glob (`exclude[1]`, `mutation.copy[0]`) |
@@ -151,11 +151,12 @@ output of the commands it runs passes as it is.
 | `since.bad-ref`              | 80   | mutation run, mutation check, mutation sample | `ref`                                         |
 | `since.no-git`               | 82   | mutation run, mutation check, mutation sample | none                                          |
 | `sample.no-git`              | 82   | mutation sample, without `--seed` | none                                     |
-| `count.platform`             | 82   | mutation run --count | `platform`                                            |
-| `count.no-git`               | 82   | mutation run --count | none                                                  |
-| `count.unsupported-scope`    | 80   | mutation run --count | none                                                  |
-| `count.preparation-failed`   | 1, 82 (a tool missing) | mutation run --count | `stage`                             |
-| `count.trial-failed`         | 1    | mutation run --count | `file`, `line`, `column`, `function`, `original`, `replacement`, `identity` |
+| `count.platform`             | 82   | mutation run --count, --site | `platform`                                    |
+| `count.no-git`               | 82   | mutation run --count, --site | none                                          |
+| `count.unsupported-scope`    | 80   | mutation run --count, --site | none                                          |
+| `count.preparation-failed`   | 1, 82 (a tool missing) | mutation run --count, --site | `stage`                     |
+| `count.trial-failed`         | 1    | mutation run --count, --site | `file`, `line`, `column`, `function`, `original`, `replacement`, `identity` |
+| `site.unmatched`             | 80, 82 (`not-built`) | mutation run --site | `argument`, `why` (`no-site`, `gone`, `changed`, with `hash` the function's hash now, `excluded`, or `not-built`, with `platform`) |
 | `fail-fast.platform`         | 82   | mutation run --fail-fast | `platform`                                        |
 | `coverage.command-needs-report` | 80 | crap, mutation run | none                                                    |
 | `coverage.measured-nothing`  | 1    | crap --threshold, mutation run --fail-uncovered (a coverage command that failed, even after writing its report, or wrote none, where its language has mutants to judge) | `dir`, `language`, or `report`                            |
@@ -163,8 +164,8 @@ output of the commands it runs passes as it is.
 | `coverage.no-report`         | 82   | crap --threshold | `dir`, `language`                                         |
 | `coverage.report-unreadable` | 80   | crap --threshold | `report`                                                  |
 | `crap.threshold`             | 1    | crap           | `file`, `line`, `function`, `crap`, `threshold`             |
-| `mutation.survived`          | 1    | mutation run, mutation check | `file`, `line`, `column`, `function`, `original`, `replacement`; with `--count` `identity`, which its message names and its fix's `mutation except` takes |
-| `mutation.uncovered`         | 1    | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `line`, `column`, `function`, `original`, `replacement` |
+| `mutation.survived`          | 1    | mutation run, mutation check | `file`, `line`, `column`, `function`, `original`, `replacement`; with `--count` or `--site` `identity`, which its message names and its fix's `mutation except` takes |
+| `mutation.uncovered`         | 1    | mutation run --fail-uncovered, mutation run --site, mutation check --fail-uncovered | `file`, `line`, `column`, `function`, `original`, `replacement`; with `--count` or `--site` `identity` |
 | `mutation.uncovered-statement` | 1 | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `function`, `line` |
 | `mutation.coverage-missing`  | 1    | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `function`, `line` |
 | `mutation.coverage-stale`    | 1    | mutation check --fail-uncovered | `file`, `function`, `line` |
@@ -654,7 +655,45 @@ the plain line of a flaky counted site reads `flaky <change> in
 <function>, <file> line <line> column <column>: <outcome>, <outcome>`. A
 counted run still writes nothing. `--repeat` below 1 is
 `flags.value-invalid`, exit 80, and on `mutation run` without `--count`
-`flags.conflict`, as `--seed` is.
+or `--site` `flags.conflict`, as `--seed` is.
+
+`mutation run --site SITE`, repeatable, judges the mutants it names alone,
+freshly, as a counted run judges what it draws (slice-63, issue #68): the
+`HEAD` commit's files, frozen, with the uncommitted-input warning above;
+coverage and listed reach measured for the named sites' functions only;
+each mutant's own tests, the whole suite with `--all-tests`, then, if it
+survives them, the listed tests that reach its line after their
+selection's clean baseline; `--repeat N` as with `--count`; and the
+exceptions of the named functions. SITE is a site, `<file>:<line>:<column>`,
+its file from the working directory, naming every mutant at that position,
+or the identity a counted run reports, its file from the repository's top,
+naming one mutant: its function by name, and namespace where it is the
+unit's own, whose hash is the identity's, its lines choosing among several,
+so a function that only moved is still found. Arguments naming the same
+mutant judge it once. Every argument is resolved before any command runs;
+one that names no mutant is `site.unmatched`, a problem for each such
+argument with its `argument` and `why`: `no-site` (no mutation site at that
+position, a test file's included), `gone` (the file is not in the commit,
+or the identity's function or site is gone), `changed` (a function of its
+name with another hash, `hash` the hash now), `excluded` (`itos-cc.yaml`'s
+`exclude` leaves its source out), each exit 80, or `not-built` (a Go file
+only another system builds, with `platform`), exit 82; nothing runs. A
+malformed SITE is `flags.value-invalid`. It refuses what `--count`
+refuses, and `--count`, `--seed` and `--since` (`flags.conflict`) and
+paths (`args.unexpected`), exit 80; it runs on Linux and macOS, and on
+Windows is `count.platform`, exit 82, the machinery's problems staying
+`count.*`, their messages naming `--site`. It exits 0 when every named
+mutant is killed, timed out, over a cap or excepted by a valid exception;
+a survivor is `mutation.survived`, its message naming its identity and its
+fix the `mutation except` that takes it, and an uncovered named mutant is
+`mutation.uncovered`, with or without `--fail-uncovered`, both exit 1. It
+writes nothing, as a counted run. Its `--json` is a counted run's object,
+whose `"sampling"` counts the named mutants as `"budget"`, `"eligible"` and
+`"selected"`, `"omitted"` 0, `"algorithm"` `"named"` and no `"seed"`,
+with `"named"`: `[{"argument", "identities": [...]}]`, each argument in
+the order given with the identities it named. There is no `--until` or
+range (issue #63): `--site` with the identity a CI log prints is the pinned
+check of one mutant.
 
 `mutation run --fail-fast` stops a complete run at the first actionable final
 judgment it observes, and reports it under the rule and exit code a run

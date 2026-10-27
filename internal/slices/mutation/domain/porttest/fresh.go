@@ -2,6 +2,7 @@ package porttest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"maps"
@@ -51,7 +52,7 @@ func (f *Fresh) Plan(ctx context.Context, r mutants.FreshRequest) (*mutants.Fres
 	if f.DecodeConfig == nil || f.Inputs == nil || f.Tree == nil {
 		return nil, mutants.FreshFailed{Cause: fmt.Errorf("fresh planning bindings are missing")}
 	}
-	if r.Count <= 0 {
+	if r.Count <= 0 && len(r.Sites) == 0 {
 		return nil, mutants.FreshFailed{Cause: fmt.Errorf("fresh plan count must be positive")}
 	}
 	requested := r.Root
@@ -172,9 +173,18 @@ func (f *Fresh) Plan(ctx context.Context, r mutants.FreshRequest) (*mutants.Fres
 		}
 	}
 	names := slices.Sorted(maps.Keys(committed))
-	if err := mutants.AdmitFresh(ctx, plan, tree, around, around, sources, names, sel.Exclusion{Root: frozen, Exclude: exclude}, changed, r.Count); err != nil {
+	if len(r.Sites) > 0 {
+		err = mutants.AdmitNamed(ctx, plan, tree, around, around, sources, names, sel.Exclusion{Root: frozen, Exclude: exclude}, r.Sites)
+	} else {
+		err = mutants.AdmitFresh(ctx, plan, tree, around, around, sources, names, sel.Exclusion{Root: frozen, Exclude: exclude}, changed, r.Count)
+	}
+	if err != nil {
 		if cause := context.Cause(ctx); cause != nil {
 			return nil, mutants.FreshCancelled{Cause: cause}
+		}
+		var unmatched mutants.FreshUnmatched
+		if errors.As(err, &unmatched) {
+			return nil, unmatched
 		}
 		return nil, mutants.FreshFailed{Cause: err}
 	}

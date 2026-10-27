@@ -79,12 +79,12 @@ func failureError(failure Failure, rel func(string) string) error {
 	case StrictCoverageFlag:
 		return flagConflict(failure.Flag, failure.Flag+" is not admitted with strict "+LanguageName(failure.Language)+" coverage; use a fresh built-in or listed measurement")
 	case CountedNoGit:
-		return countedNoGit(failure.Cause)
+		return countedNoGit(failure.Cause, failure.Flag)
 	case OutsideRepository:
 		return cli.NewProblem(cli.CodeUsage, "paths.unmatched", fmt.Sprintf("%q is outside the repository that --count judges", failure.Argument),
 			"Name paths inside the repository.").With("argument", failure.Argument)
 	case CountedPlanFailed:
-		return countedPlanError(failure.Failure, failure.Since)
+		return countedPlanError(failure.Failure, failure.Since, failure.Flag)
 	}
 	return failure
 }
@@ -129,10 +129,10 @@ func flagConflict(flag, message string) *cli.Problem {
 	return cli.NewProblem(cli.CodeUsage, "flags.conflict", message, "Drop the incompatible flag and run again.").With("flag", flag)
 }
 
-// countedNoGit is a counted run with no Git repository to judge, err saying
-// why.
-func countedNoGit(err error) *cli.Problem {
-	return cli.NewProblem(cli.CodeEnvironment, "count.no-git", "mutation run --count needs a Git repository with a commit at HEAD: "+err.Error(),
+// countedNoGit is a counted run of flag, --count or --site, with no Git
+// repository to judge, err saying why.
+func countedNoGit(err error, flag string) *cli.Problem {
+	return cli.NewProblem(cli.CodeEnvironment, "count.no-git", "mutation run "+flag+" needs a Git repository with a commit at HEAD: "+err.Error(),
 		"Run it inside a Git repository, after committing the code to judge.")
 }
 
@@ -143,8 +143,9 @@ func countedNoGit(err error) *cli.Problem {
 const countedConfigHint = "Fix it in a commit: a counted run reads the itos-cc.yaml HEAD holds"
 
 // countedPlanError words the fresh plan Fresh refused, since the --since
-// ref as written; a failure or a cancellation is itself.
-func countedPlanError(failure mutants.FreshFailure, since string) error {
+// ref as written, of a run of flag, --count or --site; a failure or a
+// cancellation is itself.
+func countedPlanError(failure mutants.FreshFailure, since, flag string) error {
 	switch f := failure.(type) {
 	case mutants.FreshInvalid:
 		own := f.Fix
@@ -155,7 +156,7 @@ func countedPlanError(failure mutants.FreshFailure, since string) error {
 	case mutants.FreshRefused:
 		switch f.Kind {
 		case mutants.FreshRepository:
-			return countedNoGit(failure)
+			return countedNoGit(failure, flag)
 		case mutants.FreshSince:
 			return cli.NewProblem(cli.CodeUsage, "since.bad-ref", fmt.Sprintf("--since %s: not a commit in this repository", since),
 				"Name a commit, branch, or tag that exists, such as origin/main.").With("ref", since)
@@ -166,12 +167,49 @@ func countedPlanError(failure mutants.FreshFailure, since string) error {
 				"Let itos-cc make its private directory where git rev-parse --git-path itos names it, under this checkout or its git directory: remove a symlink or file in its place, then run again.").
 				With("stage", "scratch")
 		case mutants.FreshUnsupported:
-			return cli.NewProblem(cli.CodeUsage, "count.unsupported-scope", "mutation run --count cannot judge this repository's committed inputs: "+failure.Error(),
-				"Judge paths without it, or run mutation run without --count.")
+			return cli.NewProblem(cli.CodeUsage, "count.unsupported-scope", "mutation run "+flag+" cannot judge this repository's committed inputs: "+failure.Error(),
+				"Judge paths without it, or run mutation run without "+flag+".")
 		}
+	case mutants.FreshUnmatched:
+		var problems []error
+		for _, site := range f.Sites {
+			problems = append(problems, siteUnmatched(site))
+		}
+		return errors.Join(problems...)
 	case mutants.FreshFailed, mutants.FreshCancelled:
 	}
 	return failure
+}
+
+// siteUnmatched is site.unmatched: an argument of --site that names no
+// mutant of the commit, and why. Only another system building its file is
+// a requirement not met, 82; every other why is the caller's, 80.
+func siteUnmatched(site mutants.UnmatchedSite) *cli.Problem {
+	code, why, fix := cli.CodeUsage, "", "Name a mutant of the code HEAD commits, as mutation run lists it or a report of the code as it is now names it, and commit the code first."
+	switch site.Why {
+	case mutants.UnmatchedNoSite:
+		why = "no mutation site is at that line and column of a source"
+		fix = "Name a mutation site, as mutation list prints it: its file, line and column, or its identity."
+	case mutants.UnmatchedChanged:
+		why = "its function changed since, its hash now " + site.Hash
+	case mutants.UnmatchedExcluded:
+		why = "its source is one the exclude of itos-cc.yaml leaves out"
+		fix = "Name a site of a source mutation run judges, or take its file out of exclude in a commit first."
+	case mutants.UnmatchedNotBuilt:
+		code, why = cli.CodeEnvironment, "only another system builds its file; this is "+site.Platform.String()
+		fix = "Run it where the file is built."
+	default:
+		why = "its file is not in the commit, or its function or site is gone"
+	}
+	p := cli.NewProblem(code, "site.unmatched", fmt.Sprintf("--site %s names no mutant, so nothing was judged: %s", site.Argument, why), fix).
+		With("argument", site.Argument).With("why", site.Why)
+	if site.Why == mutants.UnmatchedChanged {
+		p = p.With("hash", site.Hash)
+	}
+	if site.Why == mutants.UnmatchedNotBuilt {
+		p = p.With("platform", site.Platform.String())
+	}
+	return p
 }
 
 // freshPreparationMessage says why counted preparation failed, the
@@ -180,12 +218,8 @@ func freshPreparationMessage(failure mutants.FreshFailure) string {
 	switch f := failure.(type) {
 	case mutants.FreshInvalid:
 		return "read frozen committed config: itos-cc.yaml: " + f.Reason
-	case mutants.FreshRefused:
-		return f.Cause.Error()
-	case mutants.FreshFailed:
-		return f.Cause.Error()
-	case mutants.FreshCancelled:
-		return f.Cause.Error()
+	case mutants.FreshRefused, mutants.FreshFailed, mutants.FreshCancelled, mutants.FreshUnmatched:
+		return f.Error()
 	}
 	return ""
 }

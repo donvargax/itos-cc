@@ -77,9 +77,11 @@ type StrictCoverageFlag struct {
 }
 
 // CountedNoGit is a counted run outside a Git repository: Cause says why
-// the working directory's top level could not be told.
+// the working directory's top level could not be told, and Flag is the
+// run's, --count or --site.
 type CountedNoGit struct {
 	Cause error
+	Flag  string
 }
 
 // OutsideRepository is a path given to a counted run, as written, that is
@@ -89,10 +91,11 @@ type OutsideRepository struct {
 }
 
 // CountedPlanFailed is the fresh plan Fresh refused or failed, for the
-// --since ref as written.
+// --since ref as written, of a run of Flag, --count or --site.
 type CountedPlanFailed struct {
 	Since   string
 	Failure mutants.FreshFailure
+	Flag    string
 }
 
 func (LinesWithoutSince) failure()  {}

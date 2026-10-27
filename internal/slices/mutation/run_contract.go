@@ -239,9 +239,27 @@ is not a pass of a range whose tests or measurement failed. --count runs
 on Linux and macOS, where every command it starts runs in a process group
 it owns (a command that detaches from its group or session is not
 followed); Windows is #29. It refuses --changed, --no-coverage, existing
-or raw coverage, --test-command and --mutate-all, and --seed and --repeat
-need it. With --all-tests the own stage runs the whole suite, and a
+or raw coverage, --test-command and --mutate-all; --seed needs it, and
+--repeat it or --site. With --all-tests the own stage runs the whole suite, and a
 survivor still runs the listed tests that reach it.
+
+--site SITE, repeatable, judges only the mutants it names, freshly, as a
+counted run judges the sites it draws: the HEAD commit's files, frozen,
+with the same warning of uncommitted inputs, coverage and listed reach
+measured for the named sites' functions alone, each mutant's own tests
+(the whole suite with --all-tests), then, if it survives them, the listed
+tests that reach its line, and --repeat as with --count. SITE is a site,
+<file>:<line>:<column>, its file from the working directory, naming every
+mutant at that position, or the identity a counted run reports, its file
+from the repository's top, naming one mutant, found by its function's
+name and hash even when the function only moved. Arguments naming one
+mutant judge it once. Every argument is resolved before any command
+runs: one that names no mutant is site.unmatched, a problem for each, its
+why no-site, gone, changed, excluded or not-built. It exits 0 when every
+named mutant is killed, timed out, over a cap or excepted; a survivor
+and an uncovered named mutant fail, --fail-uncovered or not. It writes
+nothing, refuses what --count refuses, and --count, --seed, --since and
+paths, and runs on Linux and macOS.
 
 SIGINT or SIGTERM interrupts a run, complete or counted, as it does every
 command: no command starts after it, the judgment then running is
@@ -471,7 +489,8 @@ judged and no snapshot is written. Listed tests are not run with
    repository's top; with
    --count, instead of "files" and "orphans":
    "sampling": {"budget", "eligible", "selected", "executed", "omitted",
-   "seed", "algorithm", "commit", "since", "since_base",
+   "seed" (none with --site), "algorithm" ("named" with --site), "commit",
+   "since", "since_base",
    "assurance": "sampled"|"not-applicable",
    "completion": "completed"|"stopped"|"interrupted"|"not-applicable",
    "stop", "bounds", "uncommitted": ["<path>"]},
@@ -487,10 +506,13 @@ judged and no snapshot is written. Listed tests are not run with
    and for a site judged more than once (--repeat) "outcomes":
    ["<outcome>", ...], with "flaky": true when they are not all alike}],
    "subjects": {"judged": [{"file", "function"}], "omitted": [...]},
-   "stages": [{"name", "state": "complete"|"failed"|"skipped"|"aborted", "error"}]`,
+   "stages": [{"name", "state": "complete"|"failed"|"skipped"|"aborted", "error"}],
+   and with --site "named": [{"argument", "identities": ["<identity>"]}],
+   each argument in the order given with the mutants it named`,
 		Rules: []string{
-			"mutation.survived         a mutant survived: file, line, column, function, original, replacement; with --count identity, which the message names and the fix's mutation except takes",
-			"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
+			"mutation.survived         a mutant survived: file, line, column, function, original, replacement; with --count or --site identity, which the message names and the fix's mutation except takes",
+			"mutation.uncovered        with --fail-uncovered, or a mutant --site names, no test executes a mutant: file, line, column, function, original, replacement",
+			"site.unmatched            a --site argument names no mutant of the commit, so nothing runs: argument, why: no-site|gone|changed (with hash)|excluded|not-built (with platform, exit 82)",
 			"mutation.flaky            a mutant's runs differ from the outcome recorded, then agree, or those of one recorded flaky differ: file, line, column, function, original, replacement, recorded, outcome, outcomes, scope; with --count --repeat a site's runs are not all alike: file, line, column, function, original, replacement, identity, outcome, outcomes",
 			"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python, TypeScript, Kotlin or Dart line is uncovered: file, function, line",
 			"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript, Kotlin or Dart function lacks complete measured coverage evidence: file, function, line",
@@ -508,8 +530,9 @@ judged and no snapshot is written. Listed tests are not run with
 			"flags.conflict            --since with --changed: flag",
 			"flags.conflict            --fail-uncovered with --no-coverage, or strict Go, Python, TypeScript, Kotlin or Dart coverage with raw coverage flags: flag",
 			"flags.conflict            --fail-uncovered=lines without --since: flag",
-			"flags.conflict            --seed or --repeat without --count, or --count with a flag it refuses, --fail-fast included: flag",
-			"count.platform            --count on a platform other than Linux and macOS, that is Windows (#29): platform",
+			"flags.conflict            --seed or --repeat without --count, or --count with a flag it refuses, --fail-fast included, or --site with one of those or --count, --seed or --since: flag",
+			"args.unexpected           a path beside --site: argument",
+			"count.platform            --count or --site on a platform other than Linux and macOS, that is Windows (#29): platform",
 			"fail-fast.platform        --fail-fast on a platform other than Linux and macOS, that is Windows (#29), before any command runs: platform",
 			"count.no-git              --count outside a Git repository, or before its first commit",
 			"count.unsupported-scope   --count over committed content it cannot judge, such as a symlink or a submodule",
@@ -520,9 +543,9 @@ judged and no snapshot is written. Listed tests are not run with
 		},
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "every mutant that ran was killed"},
-			{Code: 1, Meaning: "a mutant survived or is flaky, a mutant is uncovered with --fail-uncovered or coverage measured nothing where it has mutants to judge, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is not judged"},
-			{Code: cli.CodeUsage, Meaning: "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, a --count or --repeat below 1, --seed or --repeat without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
-			{Code: cli.CodeEnvironment, Meaning: "--changed or --since outside a git repository; with --fail-uncovered, a coverage tool missing where it has mutants to judge; --count outside a Git repository with a commit, on Windows, or with a required tool missing; --fail-fast on Windows"},
+			{Code: 1, Meaning: "a mutant survived or is flaky, a mutant is uncovered with --fail-uncovered or named by --site, coverage measured nothing where it has mutants to judge, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count or --site a preparation step failed or a selected mutant is not judged"},
+			{Code: cli.CodeUsage, Meaning: "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, a --count or --repeat below 1, --seed or --repeat without --count or --site, committed content --count cannot judge, a --site that names no mutant, or an itos-cc.yaml that cannot be read"},
+			{Code: cli.CodeEnvironment, Meaning: "--changed or --since outside a git repository; with --fail-uncovered, a coverage tool missing where it has mutants to judge; --count or --site outside a Git repository with a commit, on Windows, or with a required tool missing; a --site in a file only another system builds; --fail-fast on Windows"},
 		},
 		Examples: []string{
 			"itos-cc mutation run --changed",
@@ -530,6 +553,7 @@ judged and no snapshot is written. Listed tests are not run with
 			"itos-cc mutation run --since origin/main --fail-uncovered=lines  # coverage of the changed lines alone",
 			"itos-cc mutation run --all-tests --json                    # nightly",
 			"itos-cc mutation run --count 20 --since origin/main        # a bounded fresh check of committed work (Linux and macOS)",
+			"itos-cc mutation run --site board/board.go:5:11            # one mutant a report named, judged alone (Linux and macOS)",
 			"itos-cc mutation run --changed --fail-fast                 # stop at the first survivor while fixing (Linux and macOS)",
 		},
 	}

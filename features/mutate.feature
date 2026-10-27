@@ -4537,7 +4537,7 @@ Feature: Mutation testing
   # ran" and ".metrics/mutate was not written" already pass: guardrails.
   Rule: A site a report names is judged alone, freshly, with the tests the nightly picks
 
-    @slice-63 @ID-MUT-355 @wip
+    @slice-63 @ID-MUT-355
     Scenario Outline: A named survivor that a committed test now kills passes, judged alone (<form>)
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And board/board.go also holds Over, whose `>` → `>=` at board/board.go:10:11 its test survives too
@@ -4552,7 +4552,7 @@ Feature: Mutation testing
         | identity | board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=  |
         | position | board/board.go:5:11                                                     |
 
-    @slice-63 @ID-MUT-356 @wip
+    @slice-63 @ID-MUT-356
     Scenario: A named site's plain report says what was judged and what it proves
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And a later commit's test also checks Count(5)
@@ -4561,7 +4561,7 @@ Feature: Mutation testing
       And stdout says that only the judgments above are proven and nothing was written
       And no stdout line starts with a path or holds "board/board.go:5:11"
 
-    @slice-63 @ID-MUT-357 @wip
+    @slice-63 @ID-MUT-357
     Scenario Outline: A named site that still survives fails, unless a valid exception takes it
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And <exception>
@@ -4573,7 +4573,7 @@ Feature: Mutation testing
         | itos-cc.yaml excepts nothing                                 | the problem is "mutation.survived", its message naming the identity, its fix "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason" | 1    |
         | itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5" | the selected site is "survived", "excepted" "x is never 5", and there is no problem                                                                 | 0    |
 
-    @slice-63 @ID-MUT-358 @wip
+    @slice-63 @ID-MUT-358
     Scenario: A named site no test executes fails, with no trial, even without --fail-uncovered
       Given a committed Go module whose "example.com/fx/board#Count" no test calls
       When I run "itos-cc mutation run --site board/board.go:5:11 --json"
@@ -4581,7 +4581,7 @@ Feature: Mutation testing
       And no mutation trial ran
       And the exit code is 1
 
-    @slice-63 @ID-MUT-359 @wip
+    @slice-63 @ID-MUT-359
     Scenario: Several sites are named, and one mutant named twice is judged once
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And board/board.go also holds Over, whose `>` → `>=` at board/board.go:10:11 its test survives too
@@ -4593,7 +4593,7 @@ Feature: Mutation testing
       And the only problem is "mutation.survived", at board/board.go line 10 column 11
       And the exit code is 1
 
-    @slice-63 @ID-MUT-360 @wip
+    @slice-63 @ID-MUT-360
     Scenario: An identity whose function only moved is judged where it is now
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And a later commit added a blank line above Count's comment, and its test also checks Count(5)
@@ -4601,7 +4601,7 @@ Feature: Mutation testing
       Then stdout says "killed `<` → `<=` in example.com/fx/board#Count, board/board.go line 6 column 11"
       And the exit code is 0
 
-    @slice-63 @ID-MUT-361 @wip
+    @slice-63 @ID-MUT-361
     Scenario Outline: A site that names no mutant is refused before any command runs, naming why
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And <change>, committed
@@ -4619,7 +4619,7 @@ Feature: Mutation testing
         | itos-cc.yaml excludes "board/**"         | board/board.go:5:11                                                     | excluded  | 80   |
         | board/board.go became board/board_plan9.go | board/board_plan9.go:5:11                                             | not-built | 82   |
 
-    @slice-63 @ID-MUT-362 @wip
+    @slice-63 @ID-MUT-362
     Scenario: Every unmatched site is named at once, and nothing is judged
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       When I run "itos-cc mutation run --site board/board.go:5:11 --site board/board.go:5:12 --site board/gone.go:1:1 --json"
@@ -4627,7 +4627,7 @@ Feature: Mutation testing
       And no test or coverage command ran
       And the exit code is 80
 
-    @slice-63 @ID-MUT-363 @wip
+    @slice-63 @ID-MUT-363
     Scenario Outline: --site refuses what would make it something else
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       When I run "itos-cc mutation run <args> --json"
@@ -4646,7 +4646,7 @@ Feature: Mutation testing
         | --site board/board.go                                  | flags.value-invalid | flag "--site" and value "board/board.go" |
         | --site ''                                              | flags.value-invalid | flag "--site" and value ""       |
 
-    @slice-63 @ID-MUT-364 @wip
+    @slice-63 @ID-MUT-364
     Scenario: --repeat confirms a named kill is no flake
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       But its test kills that mutant on one run and misses it on the next, with nothing it hashes changed
@@ -4654,7 +4654,7 @@ Feature: Mutation testing
       Then the problem is "mutation.flaky", with outcomes "killed", "survived"
       And the exit code is 1
 
-    @slice-63 @ID-MUT-365 @wip
+    @slice-63 @ID-MUT-365
     Scenario: A named site is judged at HEAD, and an uncommitted test is named as unjudged
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And board/board_test.go now also checks Count(5), not committed
@@ -4663,7 +4663,7 @@ Feature: Mutation testing
       And the problem is "mutation.survived", at board/board.go line 5 column 11
       And the exit code is 1
 
-    @slice-63 @ID-MUT-366 @wip
+    @slice-63 @ID-MUT-366
     Scenario: Listed tests that reach a named site judge it after its own tests, as the nightly's do
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And mutation.tests lists a test that reaches board/board.go line 5 and kills the mutant
@@ -5752,7 +5752,7 @@ Feature: Mutation testing
         | --count 1   | count.platform     |
         | --fail-fast | fail-fast.platform |
 
-      @slice-63 @wip
+      @slice-63
       Examples:
         | mode            | rule           |
         | --site a.go:3:9 | count.platform |

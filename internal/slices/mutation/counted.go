@@ -16,14 +16,16 @@ import (
 )
 
 // CountedQuery carries a counted run's domain values once: the paths, the
-// --since ref and the seed as written, "" when omitted, the budget, how
-// many times each trial runs (--repeat), the scope its trials run, how uncovered sites judge and the run's limits.
-// Progress is where its observations go as they happen, its report among
-// them.
+// --since ref and the seed as written, "" when omitted, the budget, or the
+// sites named instead of a draw (--site), a position's file as written,
+// how many times each trial runs (--repeat), the scope its trials run, how
+// uncovered sites judge and the run's limits. Progress is where its
+// observations go as they happen, its report among them.
 type CountedQuery struct {
 	Paths                    []string
 	Since, Seed              string
 	Count                    int
+	Sites                    []mutants.FreshSite
 	Repeat                   int
 	AllTests                 bool
 	FailUncovered, LinesOnly bool
@@ -65,6 +67,9 @@ type CountedFound struct {
 	Prep               *mutants.FreshPreparation
 	Strict, StrictGo   bool
 	LinesOnly          bool
+	// Named is whether the sites were named (--site): an uncovered one
+	// fails the run, strict or not.
+	Named bool
 }
 
 // Counted judges at most Count committed sites freshly, drawn with the seed
@@ -81,11 +86,20 @@ func (h Handler) Counted(ctx context.Context, q CountedQuery) error {
 	if h.Repository == nil {
 		return errors.New("mutation repository binding is missing")
 	}
+	named := len(q.Sites) > 0
+	flag, bounds := "--count", countedBounds
+	if named {
+		flag, bounds = "--site", namedBounds
+	}
 	root, err := h.Repository(ctx)
 	if err != nil {
-		return CountedNoGit{Cause: err}
+		return CountedNoGit{Cause: err, Flag: flag}
 	}
 	paths, err := h.countedPaths(ctx, root, q.Paths)
+	if err != nil {
+		return err
+	}
+	sites, err := h.namedSites(ctx, root, q.Sites)
 	if err != nil {
 		return err
 	}
@@ -93,21 +107,28 @@ func (h Handler) Counted(ctx context.Context, q CountedQuery) error {
 	if fresh == nil {
 		return errors.New("mutation Fresh binding is missing")
 	}
-	plan, planFailure := fresh.Plan(ctx, mutants.FreshRequest{Root: root, Paths: paths, Since: q.Since, Count: q.Count, Seed: q.Seed})
+	plan, planFailure := fresh.Plan(ctx, mutants.FreshRequest{Root: root, Paths: paths, Since: q.Since, Count: q.Count, Seed: q.Seed, Sites: sites})
 	if planFailure != nil {
 		if ctx.Err() != nil {
 			result.Sampling = countedSampling{Budget: q.Count, Assurance: "sampled", Completion: "interrupted",
-				Stop: "interrupted while planning the selection", Bounds: countedBounds, Uncommitted: []string{}}
+				Stop: "interrupted while planning the selection", Bounds: bounds, Uncommitted: []string{}}
 			q.present(ctx, CountedFound{Report: result, Interrupted: context.Cause(ctx)})
 			return nil
 		}
-		return CountedPlanFailed{Since: q.Since, Failure: planFailure}
+		return CountedPlanFailed{Since: q.Since, Failure: planFailure, Flag: flag}
 	}
 	defer fresh.Release(ctx, plan)
 	s := &result.Sampling
-	*s = countedSampling{Budget: q.Count, Eligible: len(plan.Eligible), Selected: len(plan.Selected), Omitted: len(plan.Omitted),
+	budget := q.Count
+	if named {
+		budget = len(plan.Selected)
+	}
+	*s = countedSampling{Budget: budget, Eligible: len(plan.Eligible), Selected: len(plan.Selected), Omitted: len(plan.Omitted),
 		Seed: plan.Seed, Algorithm: plan.Algorithm, Commit: plan.Commit, Since: plan.SinceRef, SinceBase: plan.SinceBase,
-		Assurance: "sampled", Completion: "completed", Bounds: countedBounds, Uncommitted: plan.UncommittedInputs()}
+		Assurance: "sampled", Completion: "completed", Bounds: bounds, Uncommitted: plan.UncommittedInputs()}
+	for _, n := range plan.Named {
+		result.Named = append(result.Named, countedNamed{Argument: n.Argument, Identities: n.Identities})
+	}
 	if len(s.Uncommitted) > 0 && q.Progress != nil {
 		q.Progress.Unjudged(plan.Commit, s.Uncommitted)
 	}
@@ -188,7 +209,7 @@ func (h Handler) Counted(ctx context.Context, q CountedQuery) error {
 		return err
 	}
 	interrupted := ctx.Err() != nil
-	found := CountedFound{Report: result, Judged: true, Stale: stale, Plan: plan, Prep: prep, Strict: strict, StrictGo: strictGo, LinesOnly: q.LinesOnly}
+	found := CountedFound{Report: result, Judged: true, Stale: stale, Plan: plan, Prep: prep, Strict: strict, StrictGo: strictGo, LinesOnly: q.LinesOnly, Named: named}
 	if interrupted {
 		s.Completion, s.Stop = "interrupted", "interrupted while selected sites were judged"
 		found.Interrupted = context.Cause(ctx)
@@ -352,26 +373,62 @@ func (h Handler) countedPaths(ctx context.Context, root string, args []string) (
 	if len(args) == 0 {
 		return nil, nil
 	}
-	if h.PhysicalDir == nil {
-		return nil, errors.New("mutation working directory binding is missing")
-	}
-	wd, err := h.PhysicalDir(ctx)
+	wd, err := h.workingDir(ctx)
 	if err != nil {
 		return nil, err
 	}
 	var paths []string
 	for _, arg := range args {
-		abs := arg
-		if !filepath.IsAbs(abs) {
-			abs = filepath.Join(wd, arg)
-		}
-		rel, err := filepath.Rel(root, filepath.Clean(abs))
-		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		rel, inside := rootRelative(wd, root, arg)
+		if !inside {
 			return nil, OutsideRepository{Argument: arg}
 		}
-		paths = append(paths, filepath.ToSlash(rel))
+		paths = append(paths, rel)
 	}
 	return paths, nil
+}
+
+// namedSites are sites with each position's file, given from the working
+// directory, made a slash path from root, as an identity's file is; a file
+// outside root becomes "", which no commit holds.
+func (h Handler) namedSites(ctx context.Context, root string, sites []mutants.FreshSite) ([]mutants.FreshSite, error) {
+	out := slices.Clone(sites)
+	wd := ""
+	for k, site := range out {
+		if site.Identity != nil {
+			continue
+		}
+		if wd == "" {
+			var err error
+			if wd, err = h.workingDir(ctx); err != nil {
+				return nil, err
+			}
+		}
+		out[k].File, _ = rootRelative(wd, root, site.File)
+	}
+	return out, nil
+}
+
+// workingDir is the physical working directory the paths given are from.
+func (h Handler) workingDir(ctx context.Context) (string, error) {
+	if h.PhysicalDir == nil {
+		return "", errors.New("mutation working directory binding is missing")
+	}
+	return h.PhysicalDir(ctx)
+}
+
+// rootRelative is arg, a path from wd, as a slash path from root, and
+// whether it is within root; "" when it is not.
+func rootRelative(wd, root, arg string) (string, bool) {
+	abs := arg
+	if !filepath.IsAbs(abs) {
+		abs = filepath.Join(wd, arg)
+	}
+	rel, err := filepath.Rel(root, filepath.Clean(abs))
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", false
+	}
+	return filepath.ToSlash(rel), true
 }
 
 func countedSubjectsOf(plan *mutants.FreshPlan) countedSubjects {

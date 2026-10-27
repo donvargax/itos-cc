@@ -73,7 +73,8 @@ type Run struct {
 	FailFast            bool        `help:"stop at the first actionable failure, cancelling the work still running; Linux and macOS"`
 	Count               int         `placeholder:"N" help:"judge at most N committed mutation sites freshly, drawn across the whole selection; Linux and macOS"`
 	Seed                string      `placeholder:"TEXT" help:"with --count, seed the draw with TEXT instead of the HEAD commit's id"`
-	Repeat              int         `placeholder:"N" default:"1" help:"with --count, run each trial N times; outcomes not all alike are mutation.flaky"`
+	Repeat              int         `placeholder:"N" default:"1" help:"with --count or --site, run each trial N times; outcomes not all alike are mutation.flaky"`
+	Site                []string    `placeholder:"SITE" sep:"none" help:"judge only the mutants SITE names, freshly: <file>:<line>:<column>, or an identity as a counted run reports it; Linux and macOS"`
 	JSON                bool        `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 }
 

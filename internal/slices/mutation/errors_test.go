@@ -22,7 +22,7 @@ func TestAConfigRefusalKeepsItsOwnFix(t *testing.T) {
 		own, shared      string
 	}{
 		{"settings", settingsError(mutants.SettingsInvalid{Reason: "r", Key: "x", Fix: "own"}), settingsError(mutants.SettingsInvalid{Reason: "r", Key: "x"}), "own", "Fix it: exclude lists"},
-		{"counted plan", countedPlanError(mutants.FreshInvalid{Reason: "r", Key: "x", Fix: "own"}, ""), countedPlanError(mutants.FreshInvalid{Reason: "r", Key: "x"}, ""), "Fix it in a commit: a counted run reads the itos-cc.yaml HEAD holds. own", "Fix it in a commit"},
+		{"counted plan", countedPlanError(mutants.FreshInvalid{Reason: "r", Key: "x", Fix: "own"}, "", "--count"), countedPlanError(mutants.FreshInvalid{Reason: "r", Key: "x"}, "", "--count"), "Fix it in a commit: a counted run reads the itos-cc.yaml HEAD holds. own", "Fix it in a commit"},
 		{"writer", updateError(mutants.ExceptionInvalid{Reason: "r", Key: "x", Fix: "own"}, "caller's"), updateError(mutants.ExceptionInvalid{Reason: "r", Key: "x"}, "caller's"), "own", "caller's"},
 	} {
 		var p *cli.Problem

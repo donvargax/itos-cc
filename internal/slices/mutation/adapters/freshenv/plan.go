@@ -61,9 +61,11 @@ func releasePlan(p *FreshPlan) error {
 // paths; since, when non-empty, further restricts candidates to changed
 // functions. The sources the committed itos-cc.yaml excludes are no
 // candidates, whatever paths name; a committed itos-cc.yaml that cannot be
-// read is its *settings.InvalidError.
-func (e Environment) plan(ctx context.Context, repoRoot string, paths []string, since string, count int, seed string) (*FreshPlan, error) {
-	if count <= 0 {
+// read is its *settings.InvalidError. sites, when there are any, name the
+// mutants judged instead of a draw (mutants.AdmitNamed), and count is
+// unused.
+func (e Environment) plan(ctx context.Context, repoRoot string, paths []string, since string, count int, seed string, sites []mutants.FreshSite) (*FreshPlan, error) {
+	if count <= 0 && len(sites) == 0 {
 		return nil, errors.New("fresh plan count must be positive")
 	}
 	if err := ctx.Err(); err != nil {
@@ -201,7 +203,15 @@ func (e Environment) plan(ctx context.Context, repoRoot string, paths []string, 
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	if err := mutants.AdmitFresh(ctx, plan, e.Tree, e.Surroundings, e.Toolchain, discovered.Sources, tracked, exclude, changed, count); err != nil {
+	admit := func() error {
+		return mutants.AdmitFresh(ctx, plan, e.Tree, e.Surroundings, e.Toolchain, discovered.Sources, tracked, exclude, changed, count)
+	}
+	if len(sites) > 0 {
+		admit = func() error {
+			return mutants.AdmitNamed(ctx, plan, e.Tree, e.Surroundings, e.Toolchain, discovered.Sources, tracked, exclude, sites)
+		}
+	}
+	if err := admit(); err != nil {
 		return nil, err
 	}
 	cleanup = false

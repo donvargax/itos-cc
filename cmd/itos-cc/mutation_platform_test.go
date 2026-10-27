@@ -22,6 +22,7 @@ func TestUnsupportedPlatformRefusalsTakeThePlatformAsAValue(t *testing.T) {
 		rule string
 	}{
 		{"counted", []string{"--count", "1"}, "count.platform"},
+		{"named", []string{"--site", "main.go:3:9"}, "count.platform"},
 		{"fail-fast", []string{"--fail-fast"}, "fail-fast.platform"},
 	} {
 		t.Run(c.mode, func(t *testing.T) {

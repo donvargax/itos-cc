@@ -44,7 +44,7 @@ func (e Environment) Plan(ctx context.Context, r mutants.FreshRequest) (*mutants
 	if e.Command == nil || e.Tree == nil || e.Surroundings == nil {
 		return nil, mutants.FreshFailed{Cause: errors.New("fresh planning bindings are missing")}
 	}
-	p, err := e.plan(ctx, r.Root, r.Paths, r.Since, r.Count, r.Seed)
+	p, err := e.plan(ctx, r.Root, r.Paths, r.Since, r.Count, r.Seed, r.Sites)
 	return p, failure(ctx, "", err)
 }
 func (e Environment) Prepare(ctx context.Context, p *mutants.FreshPlan, scope covrun.Scope) (*mutants.FreshPreparation, mutants.FreshFailure) {

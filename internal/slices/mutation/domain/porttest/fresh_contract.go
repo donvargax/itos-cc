@@ -136,4 +136,5 @@ func FreshContract(t *testing.T, open func(*testing.T) FreshFixture) {
 			t.Errorf("uncommitted inputs = %q, want %q", p.UncommittedInputs(), want)
 		}
 	})
+	FreshNamedContract(t, open)
 }

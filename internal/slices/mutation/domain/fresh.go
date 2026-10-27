@@ -11,13 +11,16 @@ import (
 	fileselection "github.com/donvargax/itos-cc/internal/selection"
 )
 
-// FreshRequest bounds a cache-independent judgment of committed inputs.
+// FreshRequest bounds a cache-independent judgment of committed inputs:
+// Count sites drawn with Seed from Paths and Since's changed functions, or,
+// with Sites, the mutants they name alone (AdmitNamed).
 type FreshRequest struct {
 	Root  string
 	Paths []string
 	Since string
 	Count int
 	Seed  string
+	Sites []FreshSite
 }
 
 // FreshPlan is a cache-independent selection of committed mutation sites.
@@ -57,6 +60,9 @@ type FreshPlan struct {
 	// by their root-relative slash paths: no unit or site of theirs is
 	// admitted (AdmitFresh).
 	NotBuilt []NotBuilt
+	// Named is, for a plan of named sites (AdmitNamed), each argument with
+	// the identities it named; nil for a drawn plan.
+	Named []FreshNamed
 }
 
 // FreshSettings is the settings file a counted run reads at its commit, at

@@ -13,6 +13,9 @@ import (
 // countedBounds says what --count bounds, in the report and in plain output.
 const countedBounds = "--count bounds mutant trials, not discovery, coverage, listing, baseline commands or total latency"
 
+// namedBounds says what --site bounds, in the report and in plain output.
+const namedBounds = "--site bounds mutant trials to the named mutants, not discovery, coverage, listing, baseline commands or total latency"
+
 // countedResult is the --json object of a counted run.
 type countedResult struct {
 	Sampling countedSampling    `json:"sampling"`
@@ -23,9 +26,18 @@ type countedResult struct {
 	// by their paths from the repository's top, none of whose sites is
 	// eligible; left out when there are none.
 	NotBuilt []notBuiltFile `json:"not_built,omitempty"`
+	// Named is, for a --site run, each argument in the order given with
+	// the identities of the mutants it named; left out otherwise.
+	Named []countedNamed `json:"named,omitempty"`
 	// cleanups are the owned process groups of trials whose cleanup did
 	// not finish, which the run reports each as mutation.cleanup-failed.
 	cleanups []mutants.WorkerCleanupFailed
+}
+
+// countedNamed is an argument of a --site run and the identities it named.
+type countedNamed struct {
+	Argument   string   `json:"argument"`
+	Identities []string `json:"identities"`
 }
 
 // preparationStage is one observed stage of a counted run, in its report.
@@ -38,14 +50,15 @@ type preparationStage struct {
 // countedSampling is what was drawn and what of it ran. Assurance is
 // "sampled": a pass proves the judgments listed, never the population.
 // Uncommitted are the inputs whose uncommitted changes the run left
-// unjudged, judging them as Commit holds them.
+// unjudged, judging them as Commit holds them. A --site run draws nothing:
+// its Seed is left out and its Algorithm is "named".
 type countedSampling struct {
 	Budget      int      `json:"budget"`
 	Eligible    int      `json:"eligible"`
 	Selected    int      `json:"selected"`
 	Executed    int      `json:"executed"`
 	Omitted     int      `json:"omitted"`
-	Seed        string   `json:"seed"`
+	Seed        string   `json:"seed,omitempty"`
 	Algorithm   string   `json:"algorithm"`
 	Commit      string   `json:"commit"`
 	Since       string   `json:"since,omitempty"`
@@ -122,32 +135,67 @@ type countedProgress struct {
 
 // counted refuses what the flags alone refuse before anything is observed,
 // assembles the counted query once, then presents the report, or the
-// failure with no result object.
+// failure with no result object. A --site run is a counted run whose
+// sites are named, not drawn: it refuses what --count refuses, and --count,
+// --seed, --since and paths too.
 func (c Run) counted(ctx context.Context, ui *cli.UI, h Handler, written Written) int {
-	for _, flag := range []struct{ name, why string }{
+	named := written.given("site")
+	mode := "--count"
+	counts := map[string]int{"count": c.Count, "repeat": c.Repeat}
+	refused := []struct{ name, why string }{
 		{"seed", "--seed seeds the selection of --count, and is given without it"},
 		{"repeat", "--repeat repeats the trials of --count, and is given without it"},
-	} {
-		if !written.given("count") && written.given(flag.name) {
+	}
+	if named {
+		mode = "--site"
+		delete(counts, "count")
+		refused = []struct{ name, why string }{
+			{"count", "--site names the mutants it judges, and --count draws them: give one or the other"},
+			{"seed", "--seed seeds the draw of --count, and --site draws nothing"},
+			{"since", "--site names the mutants it judges, and --since chooses functions: name the sites alone"},
+		}
+	}
+	for _, flag := range refused {
+		if (named || !written.given("count")) && written.given(flag.name) {
 			return ui.Emit(c.JSON, nil, []*cli.Problem{flagConflict("--"+flag.name, flag.why)})
 		}
 	}
-	if problem := written.belowOne(map[string]int{"count": c.Count, "repeat": c.Repeat}); problem != nil {
+	if named && len(c.Paths) > 0 {
+		return ui.Emit(c.JSON, nil, []*cli.Problem{cli.NewProblem(cli.CodeUsage, "args.unexpected",
+			fmt.Sprintf("mutation run --site takes no path, as each site names its file, but was given %q", c.Paths[0]),
+			"Drop the path; name each mutant with --site.").With("argument", c.Paths[0])})
+	}
+	if problem := written.belowOne(counts); problem != nil {
 		return ui.Emit(c.JSON, nil, []*cli.Problem{problem})
 	}
 	if written.given("seed") && c.Seed == "" {
 		return ui.Emit(c.JSON, nil, []*cli.Problem{cli.NewProblem(cli.CodeUsage, "flags.value-invalid", "--seed needs a non-empty TEXT", "Give it a seed, or leave it out to seed with HEAD.").
 			With("flag", "--seed").With("value", "")})
 	}
+	var sites []mutants.FreshSite
+	for _, arg := range c.Site {
+		site, ok := namedSite(arg)
+		if !ok {
+			return ui.Emit(c.JSON, nil, []*cli.Problem{cli.NewProblem(cli.CodeUsage, "flags.value-invalid",
+				fmt.Sprintf("--site needs a site, <file>:<line>:<column>, or an identity as a counted run reports it, and was given %q", arg),
+				"Name a mutant as mutation run lists it, such as board/board.go:5:11, or by the identity a counted run's report gives it.").
+				With("flag", "--site").With("value", arg)})
+		}
+		sites = append(sites, site)
+	}
+	changed := "--changed judges the working tree, and --count judges committed inputs only; use --since"
+	if named {
+		changed = "--changed judges the working tree, and --site judges committed inputs only: commit the work, then name its sites"
+	}
 	for _, flag := range []struct{ name, why string }{
-		{"changed", "--changed judges the working tree, and --count judges committed inputs only; use --since"},
-		{"no-coverage", "--count measures coverage freshly, so strict coverage and listed reach are never bypassed"},
-		{"use-existing-coverage", "--count measures coverage freshly from the committed inputs"},
-		{"coverage-command", "--count measures coverage freshly with the built-in commands"},
-		{"coverage-report", "--count measures coverage freshly from the committed inputs"},
-		{"test-command", "--count runs each mutant's own tests, the per-language default"},
-		{"mutate-all", "--count runs every selected site fresh already"},
-		{"fail-fast", "--count judges every selected site and stays aggregate; --fail-fast stops complete runs"},
+		{"changed", changed},
+		{"no-coverage", mode + " measures coverage freshly, so strict coverage and listed reach are never bypassed"},
+		{"use-existing-coverage", mode + " measures coverage freshly from the committed inputs"},
+		{"coverage-command", mode + " measures coverage freshly with the built-in commands"},
+		{"coverage-report", mode + " measures coverage freshly from the committed inputs"},
+		{"test-command", mode + " runs each mutant's own tests, the per-language default"},
+		{"mutate-all", mode + " runs every selected site fresh already"},
+		{"fail-fast", mode + " judges every selected site and stays aggregate; --fail-fast stops complete runs"},
 	} {
 		if written.given(flag.name) {
 			return ui.Emit(c.JSON, nil, []*cli.Problem{flagConflict("--"+flag.name, flag.why)})
@@ -155,17 +203,29 @@ func (c Run) counted(ctx context.Context, ui *cli.UI, h Handler, written Written
 	}
 	if h.Platform != "linux" && h.Platform != "darwin" {
 		return ui.Emit(c.JSON, nil, []*cli.Problem{cli.NewProblem(cli.CodeEnvironment, "count.platform",
-			fmt.Sprintf("mutation run --count supports Linux and macOS, where every command's process tree is owned; this is %s", h.Platform),
-			"Run it on Linux or macOS, or run mutation run without --count; native Windows support is #29.").With("platform", h.Platform)})
+			fmt.Sprintf("mutation run %s supports Linux and macOS, where every command's process tree is owned; this is %s", mode, h.Platform),
+			fmt.Sprintf("Run it on Linux or macOS, or run mutation run without %s; native Windows support is #29.", mode)).With("platform", h.Platform)})
 	}
 	progress := &countedProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, p: &Presentation{UI: ui, JSON: c.JSON, Tree: h.Tree}}
-	err := h.Counted(ctx, CountedQuery{Paths: c.Paths, Since: c.Since, Seed: c.Seed, Count: c.Count, Repeat: c.Repeat, AllTests: c.AllTests,
+	err := h.Counted(ctx, CountedQuery{Paths: c.Paths, Since: c.Since, Seed: c.Seed, Count: c.Count, Sites: sites, Repeat: c.Repeat, AllTests: c.AllTests,
 		FailUncovered: c.FailUncovered != nil, LinesOnly: c.FailUncovered != nil && *c.FailUncovered == "lines",
 		Workers: c.Workers, TimeoutFactor: c.TimeoutFactor, OutputFactor: c.OutputFactor, MemoryFactor: c.MemoryFactor, Progress: progress})
 	if err != nil {
 		return ui.Emit(c.JSON, nil, ui.Problems(countedError(err, ui.Rel)))
 	}
 	return ui.Emit(c.JSON, progress.report, progress.p.Problems)
+}
+
+// namedSite reads a --site value: an identity, told apart as mutation
+// except tells it, its file from the repository's top, or a site,
+// <file>:<line>:<column>, its file as written, from the working directory.
+func namedSite(arg string) (mutants.FreshSite, bool) {
+	if mutants.IsIdentity(arg) {
+		id, ok := mutants.ParseIdentity(arg)
+		return mutants.FreshSite{Argument: arg, File: id.File, Identity: &id}, ok
+	}
+	file, line, column, ok := parseSite(arg)
+	return mutants.FreshSite{Argument: arg, File: file, Line: line, Column: column}, ok
 }
 
 // Unjudged warns that the run judges commit, so the uncommitted changes
@@ -205,10 +265,11 @@ func (r *countedProgress) Counted(ctx context.Context, found CountedFound) {
 	switch {
 	case found.Judged:
 		// With --fail-uncovered=lines, an uncovered site fails, and strict Go
-		// coverage is judged, on the lines the range changed alone.
+		// coverage is judged, on the lines the range changed alone; a named
+		// site that is uncovered fails, strict or not.
 		plan := found.Plan
 		p.reportCounted(found.Report, func(site countedSite) bool {
-			return found.Strict && (!found.LinesOnly || plan.ChangedLines(site.File, site.Line, site.Line))
+			return found.Named || found.Strict && (!found.LinesOnly || plan.ChangedLines(site.File, site.Line, site.Line))
 		}, found.Interrupted != nil)
 		if found.Interrupted != nil {
 			p.report(countedInterrupted(found.Interrupted))
@@ -248,18 +309,22 @@ func countedInterrupted(cause error) *cli.Problem {
 	return cli.Internal(cause)
 }
 
-// printCounted writes the plain report: the draw, each selected site, and
-// what a sampled pass does and does not prove.
+// printCounted writes the plain report: the draw, or the sites named, each
+// selected site, and what a sampled pass does and does not prove.
 func (p *Presentation) printCounted(r *countedResult) {
 	if p.JSON {
 		return
 	}
 	out := p.UI.Stdout
 	s := r.Sampling
-	_, _ = fmt.Fprintf(out, "counted mutation run at %s: seed %s, algorithm %s\n", s.Commit, s.Seed, s.Algorithm)
-	if s.Completion == "not-applicable" {
+	switch {
+	case s.Algorithm == mutants.FreshNamedAlgorithm:
+		_, _ = fmt.Fprintf(out, "named mutation run at %s: %d named, %d executed, each judged alone\n", s.Commit, s.Selected, s.Executed)
+	case s.Completion == "not-applicable":
+		_, _ = fmt.Fprintf(out, "counted mutation run at %s: seed %s, algorithm %s\n", s.Commit, s.Seed, s.Algorithm)
 		_, _ = fmt.Fprintf(out, "not applicable: the committed selection has no eligible mutation site (%d eligible, %d selected)\n", s.Eligible, s.Selected)
-	} else {
+	default:
+		_, _ = fmt.Fprintf(out, "counted mutation run at %s: seed %s, algorithm %s\n", s.Commit, s.Seed, s.Algorithm)
 		_, _ = fmt.Fprintf(out, "budget %d: %d of %d eligible sites selected, %d executed, %d omitted\n", s.Budget, s.Selected, s.Eligible, s.Executed, s.Omitted)
 	}
 	for _, site := range r.Selected {
@@ -289,7 +354,7 @@ func (p *Presentation) printCounted(r *countedResult) {
 		_, _ = fmt.Fprintf(out, "stopped: %s\n", s.Stop)
 	}
 	_, _ = fmt.Fprintln(out, "sampled assurance: only the judgments above are proven; this is not a complete mutation result, and no snapshot, annotation or coverage cache was written")
-	_, _ = fmt.Fprintln(out, countedBounds)
+	_, _ = fmt.Fprintln(out, s.Bounds)
 }
 
 // reportCounted reports each selected site that fails the run: a flaky
