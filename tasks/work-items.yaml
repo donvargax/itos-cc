@@ -6043,14 +6043,15 @@ items:
     depends_on: []
     kind: idea
     refs: ["#62"]
-  - id: judge-named-site
-    title: mutation run judges one named site
+  - id: slice-63
+    title: mutation run --site judges the named sites alone
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was judge-named-site.
       #68: confirming that a test kills a survivor a report named (file:line:column and operator)
       takes a run over the whole file, minutes, judging and reporting sites nobody asked about; seen
       again confirming exceptions, a run killed past 10 minutes. Asked: a selection by site (e.g.
