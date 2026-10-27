@@ -1,0 +1,53 @@
+#!/bin/sh
+# scenario-digits: sums the features parts' scenario times by the last digit
+# of each scenario's ID number, the digit cd.yml's features-a and features-b
+# split on (T-223, T-225), so a rebalance is one command over the parts'
+# downloaded -scenario-report files (features/README.md).
+#
+# usage: tools/bin/scenario-digits [-a <digits>] <report.json>...
+#   e.g. gh run download <run> -n features-a-windows-latest -D a
+#        gh run download <run> -n features-b-windows-latest -D b
+#        tools/bin/scenario-digits -a 024789 a/features-a.json b/features-b.json
+#
+# Prints, for each digit, its scenarios and their seconds (every step's
+# duration summed), then the total. With -a, the seconds of the part whose
+# IDs end in one of <digits> (features-a) and of every other (features-b).
+# Scenario-seconds, not minutes: a part runs as many scenarios at once as
+# its runner has CPUs, so its time is about its seconds over that count,
+# plus building, and never below its longest scenario. A scenario with no
+# @ID-<AREA>-<number> tag is counted under "-", and with -a in features-b,
+# as -skip-scenarios leaves it there. Needs jq.
+set -eu
+
+usage='usage: tools/bin/scenario-digits [-a <digits>] <report.json>...'
+digits=
+while getopts a: opt; do
+	case $opt in
+	a) digits=$OPTARG ;;
+	*) echo "$usage" >&2; exit 2 ;;
+	esac
+done
+shift $((OPTIND - 1))
+if [ $# -eq 0 ]; then
+	echo "$usage" >&2
+	exit 2
+fi
+case $digits in
+*[!0-9]*) echo "scenario-digits: -a takes digits, not $digits" >&2; exit 2 ;;
+esac
+
+jq -s -r --arg a "$digits" '
+	[ .[][].elements[]
+	  | { digit: ([ .tags[]?.name | capture("^@ID-[A-Z]+-[0-9]*(?<d>[0-9])$").d ] | first // "-"),
+	      seconds: ([ .steps[]?.result.duration // 0 ] | add // 0) / 1e9 } ]
+	| . as $all
+	| (group_by(.digit)[]
+	   | "\(.[0].digit)\t\(length) scenarios\t\([ .[].seconds ] | add | round) s"),
+	  "all\t\($all | length) scenarios\t\([ $all[].seconds ] | add | round) s",
+	  (if $a == "" then empty else
+	     ($all | map(.digit as $d | select($d != "-" and ($a | contains($d))))) as $in
+	     | ($all | map(.digit as $d | select($d == "-" or ($a | contains($d) | not)))) as $out
+	     | "a [\($a)]\t\($in | length) scenarios\t\([ $in[].seconds ] | add // 0 | round) s",
+	       "b\t\($out | length) scenarios\t\([ $out[].seconds ] | add // 0 | round) s"
+	   end)
+' "$@"
