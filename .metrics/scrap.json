@@ -2558,11 +2558,11 @@
         {
           "name": "TestUnsupportedPlatformRefusalsTakeThePlatformAsAValue",
           "start_line": 17,
-          "end_line": 46,
+          "end_line": 47,
           "table": true,
           "score": 2.6,
           "lines": 23,
-          "raw_lines": 30,
+          "raw_lines": 31,
           "decisions": 0,
           "assertions": 3,
           "mocks": 0
@@ -3887,69 +3887,69 @@
       "file": "cmd/itos-cc/strict_go_coverage_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 81.5,
+      "pressure": 78.6,
       "examples": 5,
       "setup_lines": 0,
-      "average_score": 17.3,
+      "average_score": 16.7,
       "max_score": 25.9,
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing\" (lines 41-112) is 72 lines: split it into examples that each check one behavior"
+          "text": "\"TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing\" (lines 42-113) is 72 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs\" (lines 148-224) is 35 lines: split it into examples that each check one behavior"
+          "text": "\"TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs\" (lines 149-225) is 35 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestStrictGoCheckRejectsPartialOrMisattributedEvidence\" (lines 239-295) is 57 lines: split it into examples that each check one behavior"
+          "text": "\"TestStrictGoCheckRejectsPartialOrMisattributedEvidence\" (lines 240-296) is 57 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing\" (lines 15-36) takes 4 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestStrictGoReportsExecutableFunctionInUnloadedPackageAsUncovered\" (lines 18-37) takes 3 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing\" (lines 41-112) takes 5 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing\" (lines 42-113) takes 5 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing\" (lines 41-112) makes 12 assertions: it checks several behaviors; split it"
+          "text": "\"TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing\" (lines 42-113) makes 12 assertions: it checks several behaviors; split it"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestStrictGoCoverageFingerprintStalesOnModuleTestChange\" (lines 116-144) takes 3 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestStrictGoCoverageFingerprintStalesOnModuleTestChange\" (lines 117-145) takes 3 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs\" (lines 148-224) takes 3 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs\" (lines 149-225) takes 3 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestStrictGoCheckRejectsPartialOrMisattributedEvidence\" (lines 239-295) takes 6 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestStrictGoCheckRejectsPartialOrMisattributedEvidence\" (lines 240-296) takes 6 branches or loops: a test should not need logic; split the cases"
         }
       ],
       "clusters": null,
       "details": [
         {
-          "name": "TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing",
-          "start_line": 15,
-          "end_line": 36,
-          "score": 12.4,
+          "name": "TestStrictGoReportsExecutableFunctionInUnloadedPackageAsUncovered",
+          "start_line": 18,
+          "end_line": 37,
+          "score": 9.5,
           "smells": [
             "logic"
           ],
-          "lines": 22,
-          "raw_lines": 22,
-          "decisions": 4,
+          "lines": 20,
+          "raw_lines": 20,
+          "decisions": 3,
           "assertions": 2,
           "mocks": 0
         },
         {
           "name": "TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing",
-          "start_line": 41,
-          "end_line": 112,
+          "start_line": 42,
+          "end_line": 113,
           "score": 25.9,
           "smells": [
             "large",
@@ -3964,8 +3964,8 @@
         },
         {
           "name": "TestStrictGoCoverageFingerprintStalesOnModuleTestChange",
-          "start_line": 116,
-          "end_line": 144,
+          "start_line": 117,
+          "end_line": 145,
           "score": 11.3,
           "smells": [
             "logic"
@@ -3978,8 +3978,8 @@
         },
         {
           "name": "TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs",
-          "start_line": 148,
-          "end_line": 224,
+          "start_line": 149,
+          "end_line": 225,
           "table": true,
           "score": 12.5,
           "smells": [
@@ -3994,8 +3994,8 @@
         },
         {
           "name": "TestStrictGoCheckRejectsPartialOrMisattributedEvidence",
-          "start_line": 239,
-          "end_line": 295,
+          "start_line": 240,
+          "end_line": 296,
           "table": true,
           "score": 24.4,
           "smells": [
@@ -5516,19 +5516,19 @@
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestFeatures\" (lines 99-156) is 58 lines: split it into examples that each check one behavior"
+          "text": "\"TestFeatures\" (lines 103-160) is 58 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestFeatures\" (lines 99-156) takes 6 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestFeatures\" (lines 103-160) takes 6 branches or loops: a test should not need logic; split the cases"
         }
       ],
       "clusters": null,
       "details": [
         {
           "name": "TestFeatures",
-          "start_line": 99,
-          "end_line": 156,
+          "start_line": 103,
+          "end_line": 160,
           "score": 24.6,
           "smells": [
             "large",
@@ -5542,8 +5542,8 @@
         },
         {
           "name": "TestOptedIn",
-          "start_line": 267,
-          "end_line": 285,
+          "start_line": 283,
+          "end_line": 301,
           "table": true,
           "score": 1,
           "lines": 9,
@@ -6259,6 +6259,55 @@
           "raw_lines": 37,
           "decisions": 0,
           "assertions": 5,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "features/skip_scenarios_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 2.8,
+      "examples": 3,
+      "setup_lines": 0,
+      "average_score": 1.9,
+      "max_score": 2.6,
+      "recommendations": [],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestSkipScenariosRunsWhatScenariosLeaves",
+          "start_line": 21,
+          "end_line": 49,
+          "table": true,
+          "score": 2.6,
+          "lines": 23,
+          "raw_lines": 29,
+          "decisions": 0,
+          "assertions": 6,
+          "mocks": 0
+        },
+        {
+          "name": "TestSkipScenariosRefusesAnExpressionMatchingNoTag",
+          "start_line": 55,
+          "end_line": 78,
+          "table": true,
+          "score": 2.2,
+          "lines": 21,
+          "raw_lines": 24,
+          "decisions": 0,
+          "assertions": 6,
+          "mocks": 0
+        },
+        {
+          "name": "TestSkipScenariosAcceptsATagOfALeftOutFile",
+          "start_line": 82,
+          "end_line": 88,
+          "score": 1,
+          "lines": 7,
+          "raw_lines": 7,
+          "decisions": 0,
+          "assertions": 2,
           "mocks": 0
         }
       ]
@@ -8188,6 +8237,56 @@
       ]
     },
     {
+      "file": "internal/coverage/pieces_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 12.6,
+      "examples": 2,
+      "setup_lines": 0,
+      "average_score": 7.3,
+      "max_score": 12.2,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestPiecesKeepWhatAReportSaysOfItsFiles\" (lines 14-59) is 46 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestPiecesKeepWhatAReportSaysOfItsFiles\" (lines 14-59) takes 2 branches or loops: a test should not need logic; split the cases"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestPiecesKeepWhatAReportSaysOfItsFiles",
+          "start_line": 14,
+          "end_line": 59,
+          "table": true,
+          "score": 12.2,
+          "smells": [
+            "large",
+            "logic"
+          ],
+          "lines": 46,
+          "raw_lines": 46,
+          "decisions": 2,
+          "assertions": 9,
+          "mocks": 0
+        },
+        {
+          "name": "TestTestsGiveEachListedTestsCoverage",
+          "start_line": 63,
+          "end_line": 84,
+          "score": 2.4,
+          "lines": 22,
+          "raw_lines": 22,
+          "decisions": 0,
+          "assertions": 4,
+          "mocks": 0
+        }
+      ]
+    },
+    {
       "file": "internal/coverage/port/porttest/files_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
@@ -8338,9 +8437,9 @@
       "language": "go",
       "action": "AUTO_REFACTOR",
       "pressure": 67.5,
-      "examples": 12,
+      "examples": 13,
       "setup_lines": 0,
-      "average_score": 6.6,
+      "average_score": 6.2,
       "max_score": 12.6,
       "recommendations": [
         {
@@ -8549,6 +8648,18 @@
           "raw_lines": 29,
           "decisions": 0,
           "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "TestTheFakeSaysTheListedConversionsLimitAsTheRealMeasurerDoes",
+          "start_line": 365,
+          "end_line": 384,
+          "table": true,
+          "score": 1,
+          "lines": 13,
+          "raw_lines": 20,
+          "decisions": 0,
+          "assertions": 1,
           "mocks": 0
         }
       ]
@@ -8999,11 +9110,11 @@
       "file": "internal/covrun/env_starts_test.go",
       "language": "go",
       "action": "LEAVE_ALONE",
-      "pressure": 1.4,
+      "pressure": 1.6,
       "examples": 6,
       "setup_lines": 0,
-      "average_score": 1.2,
-      "max_score": 2.4,
+      "average_score": 1.3,
+      "max_score": 2.6,
       "recommendations": [],
       "clusters": null,
       "details": [
@@ -9053,19 +9164,19 @@
         },
         {
           "name": "TestTheListedTestsAndTheirConversionsHoldNoGOCOVERDIR",
-          "start_line": 120,
-          "end_line": 141,
-          "score": 2.4,
-          "lines": 22,
-          "raw_lines": 22,
+          "start_line": 122,
+          "end_line": 144,
+          "score": 2.6,
+          "lines": 23,
+          "raw_lines": 23,
           "decisions": 0,
           "assertions": 4,
           "mocks": 0
         },
         {
           "name": "TestACoverageCommandRuns",
-          "start_line": 143,
-          "end_line": 149,
+          "start_line": 146,
+          "end_line": 152,
           "score": 1,
           "lines": 7,
           "raw_lines": 7,
@@ -9146,6 +9257,31 @@
           "score": 1,
           "lines": 10,
           "raw_lines": 15,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/covrun/goscope_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 0,
+      "examples": 1,
+      "setup_lines": 0,
+      "average_score": 1,
+      "max_score": 1,
+      "recommendations": [],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestGoScopeReadsAPackageOfNoDependenciesListedLast",
+          "start_line": 14,
+          "end_line": 27,
+          "score": 1,
+          "lines": 14,
+          "raw_lines": 14,
           "decisions": 0,
           "assertions": 1,
           "mocks": 0
@@ -9357,26 +9493,198 @@
       ]
     },
     {
+      "file": "internal/covrun/listed_lines_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 2.4,
+      "examples": 4,
+      "setup_lines": 0,
+      "average_score": 1.1,
+      "max_score": 1.4,
+      "recommendations": [
+        {
+          "confidence": "MEDIUM",
+          "text": "2 examples repeat the same scaffolding (90% alike): extract a helper or fixture: \"TestTheListedTestsSayWhenTheirRunAndTheirConversionsEnd\" (120-133), \"TestOneListedTestOfAHarnessThatDoesNotSplitRunsAlone\" (135-149)"
+        }
+      ],
+      "clusters": [
+        {
+          "kind": "duplication",
+          "similarity": 0.9,
+          "examples": [
+            {
+              "name": "TestTheListedTestsSayWhenTheirRunAndTheirConversionsEnd",
+              "start_line": 120,
+              "end_line": 133
+            },
+            {
+              "name": "TestOneListedTestOfAHarnessThatDoesNotSplitRunsAlone",
+              "start_line": 135,
+              "end_line": 149
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "name": "TestTheSupervisedListedTestsSayWhenTheirRunAndTheirConversionsEnd",
+          "start_line": 80,
+          "end_line": 103,
+          "table": true,
+          "score": 1.4,
+          "lines": 17,
+          "raw_lines": 24,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestSupervisedListedTestsWithoutDataSayNothingOfAConversion",
+          "start_line": 105,
+          "end_line": 118,
+          "score": 1,
+          "lines": 14,
+          "raw_lines": 14,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestTheListedTestsSayWhenTheirRunAndTheirConversionsEnd",
+          "start_line": 120,
+          "end_line": 133,
+          "score": 1,
+          "lines": 14,
+          "raw_lines": 14,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestOneListedTestOfAHarnessThatDoesNotSplitRunsAlone",
+          "start_line": 135,
+          "end_line": 149,
+          "score": 1,
+          "lines": 15,
+          "raw_lines": 15,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/covrun/owncover_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 4.7,
+      "examples": 4,
+      "setup_lines": 0,
+      "average_score": 2.2,
+      "max_score": 5.7,
+      "recommendations": [
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestTheHashIsTheNameOfTheMetaDataFileWrittenToAScratchFolder\" (lines 64-89) takes 1 branch or loop: a test should not need logic; split the cases"
+        },
+        {
+          "confidence": "LOW",
+          "text": "2 examples share most of their structure (70% alike); a shared helper may read better: \"TestWithoutAHashOfItsOwnNothingIsRemoved\" (41-51), \"TestAFolderHoldingOnlyTheMeasuringBinarysDataCountsAsNotWritten\" (53-62)"
+        }
+      ],
+      "clusters": [
+        {
+          "kind": "duplication",
+          "similarity": 0.7,
+          "examples": [
+            {
+              "name": "TestWithoutAHashOfItsOwnNothingIsRemoved",
+              "start_line": 41,
+              "end_line": 51
+            },
+            {
+              "name": "TestAFolderHoldingOnlyTheMeasuringBinarysDataCountsAsNotWritten",
+              "start_line": 53,
+              "end_line": 62
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "name": "TestAListedFolderKeepsOnlyTheDataOfBinariesOtherThanTheMeasuringOne",
+          "start_line": 25,
+          "end_line": 39,
+          "score": 1,
+          "lines": 15,
+          "raw_lines": 15,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestWithoutAHashOfItsOwnNothingIsRemoved",
+          "start_line": 41,
+          "end_line": 51,
+          "score": 1,
+          "lines": 11,
+          "raw_lines": 11,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestAFolderHoldingOnlyTheMeasuringBinarysDataCountsAsNotWritten",
+          "start_line": 53,
+          "end_line": 62,
+          "score": 1,
+          "lines": 10,
+          "raw_lines": 10,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestTheHashIsTheNameOfTheMetaDataFileWrittenToAScratchFolder",
+          "start_line": 64,
+          "end_line": 89,
+          "score": 5.7,
+          "smells": [
+            "logic"
+          ],
+          "lines": 26,
+          "raw_lines": 26,
+          "decisions": 1,
+          "assertions": 5,
+          "mocks": 0
+        }
+      ]
+    },
+    {
       "file": "internal/covrun/run_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 65.5,
-      "examples": 21,
+      "pressure": 70.9,
+      "examples": 22,
       "setup_lines": 0,
-      "average_score": 4.1,
+      "average_score": 4.2,
       "max_score": 13.8,
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestAGoPackageThatTimedOutIsNamedInItsGap\" (lines 371-406) is 36 lines: split it into examples that each check one behavior"
+          "text": "\"TestGoScopeSaysWhyItMeasuresNothing\" (lines 291-335) is 42 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestPythonOwnCoverageIsPlannedPerSetOfReachingTests\" (lines 449-485) is 37 lines: split it into examples that each check one behavior"
+          "text": "\"TestAGoPackageThatTimedOutIsNamedInItsGap\" (lines 425-460) is 36 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses\" (lines 510-572) is 54 lines: split it into examples that each check one behavior"
+          "text": "\"TestPythonOwnCoverageIsPlannedPerSetOfReachingTests\" (lines 503-539) is 37 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses\" (lines 564-626) is 54 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
@@ -9388,23 +9696,19 @@
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestHelperCoverageCommand\" (lines 318-333) takes 3 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestHelperCoverageCommand\" (lines 372-387) takes 3 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage\" (lines 335-366) takes 2 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage\" (lines 389-420) takes 2 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestPythonOwnCoverageIsPlannedPerSetOfReachingTests\" (lines 449-485) takes 1 branch or loop: a test should not need logic; split the cases"
+          "text": "\"TestPythonOwnCoverageIsPlannedPerSetOfReachingTests\" (lines 503-539) takes 1 branch or loop: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses\" (lines 510-572) takes 2 branches or loops: a test should not need logic; split the cases"
-        },
-        {
-          "confidence": "MEDIUM",
-          "text": "\"TestARunThatFailsAfterWritingItsReportIsFailed\" (lines 604-631) takes 1 branch or loop: a test should not need logic; split the cases"
+          "text": "\"TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses\" (lines 564-626) takes 2 branches or loops: a test should not need logic; split the cases"
         }
       ],
       "clusters": [
@@ -9545,9 +9849,24 @@
           "mocks": 0
         },
         {
+          "name": "TestGoScopeSaysWhyItMeasuresNothing",
+          "start_line": 291,
+          "end_line": 335,
+          "table": true,
+          "score": 6.4,
+          "smells": [
+            "large"
+          ],
+          "lines": 42,
+          "raw_lines": 45,
+          "decisions": 0,
+          "assertions": 5,
+          "mocks": 0
+        },
+        {
           "name": "TestCoverageThatCouldNotBeMeasuredIsMissing",
-          "start_line": 283,
-          "end_line": 310,
+          "start_line": 337,
+          "end_line": 364,
           "score": 3.6,
           "lines": 28,
           "raw_lines": 28,
@@ -9557,8 +9876,8 @@
         },
         {
           "name": "TestHelperCoverageCommand",
-          "start_line": 318,
-          "end_line": 333,
+          "start_line": 372,
+          "end_line": 387,
           "score": 8.7,
           "smells": [
             "logic"
@@ -9571,8 +9890,8 @@
         },
         {
           "name": "TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage",
-          "start_line": 335,
-          "end_line": 366,
+          "start_line": 389,
+          "end_line": 420,
           "table": true,
           "score": 8,
           "smells": [
@@ -9586,8 +9905,8 @@
         },
         {
           "name": "TestAGoPackageThatTimedOutIsNamedInItsGap",
-          "start_line": 371,
-          "end_line": 406,
+          "start_line": 425,
+          "end_line": 460,
           "score": 5.2,
           "smells": [
             "large"
@@ -9600,8 +9919,8 @@
         },
         {
           "name": "TestTheTimeoutWatchReadsWholeLines",
-          "start_line": 410,
-          "end_line": 432,
+          "start_line": 464,
+          "end_line": 486,
           "table": true,
           "score": 2.6,
           "lines": 23,
@@ -9612,8 +9931,8 @@
         },
         {
           "name": "TestPythonOwnTestsAreTheTestFilesThatReachASource",
-          "start_line": 434,
-          "end_line": 447,
+          "start_line": 488,
+          "end_line": 501,
           "score": 1,
           "lines": 14,
           "raw_lines": 14,
@@ -9623,8 +9942,8 @@
         },
         {
           "name": "TestPythonOwnCoverageIsPlannedPerSetOfReachingTests",
-          "start_line": 449,
-          "end_line": 485,
+          "start_line": 503,
+          "end_line": 539,
           "score": 7.9,
           "smells": [
             "large",
@@ -9638,8 +9957,8 @@
         },
         {
           "name": "TestAPlanOfItsOwnSourcesLendsNoCoverageToOthers",
-          "start_line": 487,
-          "end_line": 508,
+          "start_line": 541,
+          "end_line": 562,
           "score": 2.4,
           "lines": 22,
           "raw_lines": 22,
@@ -9649,8 +9968,8 @@
         },
         {
           "name": "TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses",
-          "start_line": 510,
-          "end_line": 572,
+          "start_line": 564,
+          "end_line": 626,
           "table": true,
           "score": 13.8,
           "smells": [
@@ -9665,8 +9984,8 @@
         },
         {
           "name": "TestACommandWhoseCleanupFailedLeavesItsGap",
-          "start_line": 578,
-          "end_line": 597,
+          "start_line": 632,
+          "end_line": 651,
           "score": 2,
           "lines": 20,
           "raw_lines": 20,
@@ -9676,8 +9995,8 @@
         },
         {
           "name": "TestARunThatFailsAfterWritingItsReportIsFailed",
-          "start_line": 604,
-          "end_line": 631,
+          "start_line": 658,
+          "end_line": 685,
           "table": true,
           "score": 6.1,
           "smells": [
@@ -9686,6 +10005,139 @@
           "lines": 28,
           "raw_lines": 28,
           "decisions": 1,
+          "assertions": 3,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/covrun/scoped_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 22.6,
+      "examples": 7,
+      "setup_lines": 0,
+      "average_score": 4.2,
+      "max_score": 16.3,
+      "recommendations": [
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestASupervisedLookupOfCovdataThatFailsFailsTheConversion\" (lines 134-164) takes 1 branch or loop: a test should not need logic; split the cases"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestGoConversionsAreLimitedToTheMeasuredPackagesUnlessOneIsUnknown\" (lines 184-222) takes 5 branches or loops: a test should not need logic; split the cases"
+        },
+        {
+          "confidence": "LOW",
+          "text": "2 examples share most of their structure (80% alike); a shared helper may read better: \"TestTheListedTestsFindCovdataOnceAndConvertOnlyTheMeasuredPackages\" (113-132), \"TestALookupOfCovdataThatFailsIsLoggedForEachTestAndMadeOnce\" (166-182)"
+        }
+      ],
+      "clusters": [
+        {
+          "kind": "duplication",
+          "similarity": 0.8,
+          "examples": [
+            {
+              "name": "TestTheListedTestsFindCovdataOnceAndConvertOnlyTheMeasuredPackages",
+              "start_line": 113,
+              "end_line": 132
+            },
+            {
+              "name": "TestALookupOfCovdataThatFailsIsLoggedForEachTestAndMadeOnce",
+              "start_line": 166,
+              "end_line": 182
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "name": "TestTheSupervisedListedTestsFindCovdataOnceAndConvertOnlyTheMeasuredPackages",
+          "start_line": 88,
+          "end_line": 111,
+          "table": true,
+          "score": 2.8,
+          "lines": 24,
+          "raw_lines": 24,
+          "decisions": 0,
+          "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "TestTheListedTestsFindCovdataOnceAndConvertOnlyTheMeasuredPackages",
+          "start_line": 113,
+          "end_line": 132,
+          "table": true,
+          "score": 2,
+          "lines": 20,
+          "raw_lines": 20,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestASupervisedLookupOfCovdataThatFailsFailsTheConversion",
+          "start_line": 134,
+          "end_line": 164,
+          "table": true,
+          "score": 5.1,
+          "smells": [
+            "logic"
+          ],
+          "lines": 23,
+          "raw_lines": 31,
+          "decisions": 1,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestALookupOfCovdataThatFailsIsLoggedForEachTestAndMadeOnce",
+          "start_line": 166,
+          "end_line": 182,
+          "table": true,
+          "score": 1.4,
+          "lines": 17,
+          "raw_lines": 17,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestGoConversionsAreLimitedToTheMeasuredPackagesUnlessOneIsUnknown",
+          "start_line": 184,
+          "end_line": 222,
+          "table": true,
+          "score": 16.3,
+          "smells": [
+            "logic"
+          ],
+          "lines": 29,
+          "raw_lines": 39,
+          "decisions": 5,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestTheConversionsLineSaysTheLimitInEnglish",
+          "start_line": 224,
+          "end_line": 236,
+          "table": true,
+          "score": 1,
+          "lines": 9,
+          "raw_lines": 13,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestOnlyACollectorWithAToolLooksItUpAndOnlyGoIsLimited",
+          "start_line": 238,
+          "end_line": 247,
+          "score": 1,
+          "lines": 10,
+          "raw_lines": 10,
+          "decisions": 0,
           "assertions": 3,
           "mocks": 0
         }
@@ -10044,6 +10496,43 @@
           "score": 1,
           "lines": 7,
           "raw_lines": 7,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/lang/gopackages_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 1.6,
+      "examples": 2,
+      "setup_lines": 0,
+      "average_score": 1.8,
+      "max_score": 2.6,
+      "recommendations": [],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestGoPackagesNameEachGoFilesPackageByItsNearestModule",
+          "start_line": 14,
+          "end_line": 49,
+          "table": true,
+          "score": 2.6,
+          "lines": 23,
+          "raw_lines": 36,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestGoModulePackageIsUnknownWhereNoPathCanBeMadeAbsolute",
+          "start_line": 51,
+          "end_line": 56,
+          "score": 1,
+          "lines": 6,
+          "raw_lines": 6,
           "decisions": 0,
           "assertions": 1,
           "mocks": 0
@@ -13281,9 +13770,9 @@
       "language": "go",
       "action": "LEAVE_ALONE",
       "pressure": 15.2,
-      "examples": 17,
+      "examples": 18,
       "setup_lines": 0,
-      "average_score": 1.9,
+      "average_score": 1.8,
       "max_score": 4.8,
       "recommendations": [
         {
@@ -13292,11 +13781,11 @@
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestTheWritersKeepExtensionKeys\" (lines 299-330) is 32 lines: split it into examples that each check one behavior"
+          "text": "\"TestTheWritersKeepExtensionKeys\" (lines 313-344) is 32 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "LOW",
-          "text": "3 examples share most of their structure (80% alike); a shared helper may read better: \"TestExceptDocumentReplacesABlockScalarWhole\" (214-226), \"TestARewrittenEntryKeepsItsExtensionKeys\" (338-353), \"TestAFlowListRewrittenKeepsItsEntriesExtensionKeys\" (357-371)"
+          "text": "3 examples share most of their structure (80% alike); a shared helper may read better: \"TestExceptDocumentReplacesABlockScalarWhole\" (228-240), \"TestARewrittenEntryKeepsItsExtensionKeys\" (352-367), \"TestAFlowListRewrittenKeepsItsEntriesExtensionKeys\" (371-385)"
         }
       ],
       "clusters": [
@@ -13306,18 +13795,18 @@
           "examples": [
             {
               "name": "TestExceptDocumentReplacesABlockScalarWhole",
-              "start_line": 214,
-              "end_line": 226
+              "start_line": 228,
+              "end_line": 240
             },
             {
               "name": "TestARewrittenEntryKeepsItsExtensionKeys",
-              "start_line": 338,
-              "end_line": 353
+              "start_line": 352,
+              "end_line": 367
             },
             {
               "name": "TestAFlowListRewrittenKeepsItsEntriesExtensionKeys",
-              "start_line": 357,
-              "end_line": 371
+              "start_line": 371,
+              "end_line": 385
             }
           ]
         }
@@ -13375,9 +13864,21 @@
           "mocks": 0
         },
         {
+          "name": "TestExceptDocumentFillsAWrittenNullWithTheSpaceBeforeIt",
+          "start_line": 115,
+          "end_line": 125,
+          "table": true,
+          "score": 1,
+          "lines": 11,
+          "raw_lines": 11,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
           "name": "TestExceptDocumentAddsAnEntryToANullDocument",
-          "start_line": 116,
-          "end_line": 130,
+          "start_line": 130,
+          "end_line": 144,
           "table": true,
           "score": 1,
           "lines": 15,
@@ -13388,8 +13889,8 @@
         },
         {
           "name": "TestRenewDocumentRefusesADocumentWithNoTopLevelMapping",
-          "start_line": 136,
-          "end_line": 149,
+          "start_line": 150,
+          "end_line": 163,
           "table": true,
           "score": 1,
           "lines": 14,
@@ -13400,8 +13901,8 @@
         },
         {
           "name": "TestExceptDocumentRefusesAnInvalidDocument",
-          "start_line": 154,
-          "end_line": 172,
+          "start_line": 168,
+          "end_line": 186,
           "table": true,
           "score": 1,
           "lines": 12,
@@ -13412,8 +13913,8 @@
         },
         {
           "name": "TestExceptDocumentChangesOnlyTheLinesOfItsEntry",
-          "start_line": 176,
-          "end_line": 210,
+          "start_line": 190,
+          "end_line": 224,
           "table": true,
           "score": 1.8,
           "lines": 19,
@@ -13424,8 +13925,8 @@
         },
         {
           "name": "TestExceptDocumentReplacesABlockScalarWhole",
-          "start_line": 214,
-          "end_line": 226,
+          "start_line": 228,
+          "end_line": 240,
           "score": 1,
           "lines": 13,
           "raw_lines": 13,
@@ -13435,8 +13936,8 @@
         },
         {
           "name": "TestExceptDocumentReencodesAFlowMapping",
-          "start_line": 230,
-          "end_line": 238,
+          "start_line": 244,
+          "end_line": 252,
           "score": 1,
           "lines": 9,
           "raw_lines": 9,
@@ -13446,8 +13947,8 @@
         },
         {
           "name": "TestRenewDocumentChangesOnlyTheLinesOfItsEntries",
-          "start_line": 240,
-          "end_line": 260,
+          "start_line": 254,
+          "end_line": 274,
           "score": 2.2,
           "lines": 21,
           "raw_lines": 21,
@@ -13457,8 +13958,8 @@
         },
         {
           "name": "TestPruneDocumentRemovesOnlyItsEntriesAndTheCommentsAboveThem",
-          "start_line": 264,
-          "end_line": 293,
+          "start_line": 278,
+          "end_line": 307,
           "score": 4,
           "lines": 30,
           "raw_lines": 30,
@@ -13468,8 +13969,8 @@
         },
         {
           "name": "TestTheWritersKeepExtensionKeys",
-          "start_line": 299,
-          "end_line": 330,
+          "start_line": 313,
+          "end_line": 344,
           "score": 4.4,
           "smells": [
             "large"
@@ -13482,8 +13983,8 @@
         },
         {
           "name": "TestARewrittenEntryKeepsItsExtensionKeys",
-          "start_line": 338,
-          "end_line": 353,
+          "start_line": 352,
+          "end_line": 367,
           "score": 1.2,
           "lines": 16,
           "raw_lines": 16,
@@ -13493,8 +13994,8 @@
         },
         {
           "name": "TestAFlowListRewrittenKeepsItsEntriesExtensionKeys",
-          "start_line": 357,
-          "end_line": 371,
+          "start_line": 371,
+          "end_line": 385,
           "score": 1,
           "lines": 15,
           "raw_lines": 15,
@@ -13504,8 +14005,8 @@
         },
         {
           "name": "TestAFlowListPrunedKeepsTheRestsExtensionKeys",
-          "start_line": 375,
-          "end_line": 391,
+          "start_line": 389,
+          "end_line": 405,
           "score": 1.4,
           "lines": 17,
           "raw_lines": 17,
@@ -13515,13 +14016,100 @@
         },
         {
           "name": "TestAReencodedEntryKeepsItsExtensionKeys",
-          "start_line": 395,
-          "end_line": 404,
+          "start_line": 409,
+          "end_line": 418,
           "score": 1,
           "lines": 10,
           "raw_lines": 10,
           "decisions": 0,
           "assertions": 2,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/slices/mutation/adapters/exceptions/exception_quoting_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 1.2,
+      "examples": 3,
+      "setup_lines": 0,
+      "average_score": 1.4,
+      "max_score": 2.2,
+      "recommendations": [],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestAnAddedEntryTakesTheQuoteTheFileUses",
+          "start_line": 29,
+          "end_line": 47,
+          "table": true,
+          "score": 1,
+          "lines": 11,
+          "raw_lines": 19,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestARenewedEntryTakesTheFilesDoubleQuotes",
+          "start_line": 52,
+          "end_line": 72,
+          "score": 2.2,
+          "lines": 21,
+          "raw_lines": 21,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestAReencodedEntryTakesTheFilesDoubleQuotes",
+          "start_line": 76,
+          "end_line": 91,
+          "table": true,
+          "score": 1,
+          "lines": 13,
+          "raw_lines": 16,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/slices/mutation/adapters/exceptions/exception_rehash_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 2.4,
+      "examples": 2,
+      "setup_lines": 0,
+      "average_score": 2.2,
+      "max_score": 2.4,
+      "recommendations": [],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestRehashDocumentChangesOnlyTheHashText",
+          "start_line": 42,
+          "end_line": 69,
+          "table": true,
+          "score": 2.4,
+          "lines": 22,
+          "raw_lines": 28,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestRehashDocumentRewritesTheEntryOfAHashItCannotSplice",
+          "start_line": 75,
+          "end_line": 99,
+          "table": true,
+          "score": 2,
+          "lines": 20,
+          "raw_lines": 25,
+          "decisions": 0,
+          "assertions": 5,
           "mocks": 0
         }
       ]
@@ -13772,6 +14360,73 @@
           "raw_lines": 65,
           "decisions": 2,
           "assertions": 10,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/slices/mutation/adapters/freshenv/listed_reuse_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 29.6,
+      "examples": 3,
+      "setup_lines": 0,
+      "average_score": 10.9,
+      "max_score": 21.8,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestFreshPreparationServesTheListedReachTheCacheHolds\" (lines 44-89) is 46 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestFreshPreparationStopsBeforeOrAtTheListedCoverage\" (lines 126-169) is 44 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestFreshPreparationStopsBeforeOrAtTheListedCoverage\" (lines 126-169) takes 6 branches or loops: a test should not need logic; split the cases"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestFreshPreparationServesTheListedReachTheCacheHolds",
+          "start_line": 44,
+          "end_line": 89,
+          "score": 7.2,
+          "smells": [
+            "large"
+          ],
+          "lines": 46,
+          "raw_lines": 46,
+          "decisions": 0,
+          "assertions": 7,
+          "mocks": 0
+        },
+        {
+          "name": "TestFrozenListingRefusesWhatItCannotList",
+          "start_line": 94,
+          "end_line": 121,
+          "score": 3.6,
+          "lines": 28,
+          "raw_lines": 28,
+          "decisions": 0,
+          "assertions": 6,
+          "mocks": 0
+        },
+        {
+          "name": "TestFreshPreparationStopsBeforeOrAtTheListedCoverage",
+          "start_line": 126,
+          "end_line": 169,
+          "score": 21.8,
+          "smells": [
+            "large",
+            "logic"
+          ],
+          "lines": 44,
+          "raw_lines": 44,
+          "decisions": 6,
+          "assertions": 3,
           "mocks": 0
         }
       ]
@@ -14215,8 +14870,8 @@
         },
         {
           "name": "TestFreshPreparationPreservesCompleteDefaults",
-          "start_line": 488,
-          "end_line": 507,
+          "start_line": 493,
+          "end_line": 512,
           "score": 2,
           "lines": 20,
           "raw_lines": 20,
@@ -14738,6 +15393,40 @@
           "raw_lines": 17,
           "decisions": 0,
           "assertions": 3,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/slices/mutation/adapters/snapshots/coverage_cache_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 4,
+      "examples": 1,
+      "setup_lines": 0,
+      "average_score": 5,
+      "max_score": 5,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestTheListedCoverageEntryReadsBackAsItWasWritten\" (lines 18-52) is 35 lines: split it into examples that each check one behavior"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestTheListedCoverageEntryReadsBackAsItWasWritten",
+          "start_line": 18,
+          "end_line": 52,
+          "table": true,
+          "score": 5,
+          "smells": [
+            "large"
+          ],
+          "lines": 35,
+          "raw_lines": 35,
+          "decisions": 0,
+          "assertions": 5,
           "mocks": 0
         }
       ]
@@ -15916,27 +16605,31 @@
       "file": "internal/slices/mutation/adapters/worktrees/worker_scratch_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 6.1,
-      "examples": 1,
+      "pressure": 12.2,
+      "examples": 5,
       "setup_lines": 0,
-      "average_score": 7.1,
+      "average_score": 3.4,
       "max_score": 7.1,
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestWorkerDirectoriesAreAbandonedOnlyOnceTheirLockIsFree\" (lines 13-55) is 43 lines: split it into examples that each check one behavior"
+          "text": "\"TestWorkerDirectoriesAreAbandonedOnlyOnceTheirLockIsFree\" (lines 19-61) is 43 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestWorkerDirectoriesAreAbandonedOnlyOnceTheirLockIsFree\" (lines 13-55) makes 11 assertions: it checks several behaviors; split it"
+          "text": "\"TestWorkerDirectoriesAreAbandonedOnlyOnceTheirLockIsFree\" (lines 19-61) makes 11 assertions: it checks several behaviors; split it"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestAPoolNamingNoFolderUsesTheSystemTemporaryOne\" (lines 138-157) takes 1 branch or loop: a test should not need logic; split the cases"
         }
       ],
       "clusters": null,
       "details": [
         {
           "name": "TestWorkerDirectoriesAreAbandonedOnlyOnceTheirLockIsFree",
-          "start_line": 13,
-          "end_line": 55,
+          "start_line": 19,
+          "end_line": 61,
           "score": 7.1,
           "smells": [
             "large",
@@ -15947,6 +16640,108 @@
           "decisions": 0,
           "assertions": 11,
           "mocks": 0
+        },
+        {
+          "name": "TestUnmarkedWorkerDirectoriesAreAbandonedOnlyOnceUnchangedForTheirAge",
+          "start_line": 68,
+          "end_line": 92,
+          "score": 3,
+          "lines": 25,
+          "raw_lines": 25,
+          "decisions": 0,
+          "assertions": 5,
+          "mocks": 0
+        },
+        {
+          "name": "TestAPoolMakesItsWorkerDirectoryInItsOwnFolder",
+          "start_line": 116,
+          "end_line": 133,
+          "score": 1.6,
+          "lines": 18,
+          "raw_lines": 18,
+          "decisions": 0,
+          "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "TestAPoolNamingNoFolderUsesTheSystemTemporaryOne",
+          "start_line": 138,
+          "end_line": 157,
+          "score": 4.5,
+          "smells": [
+            "logic"
+          ],
+          "lines": 20,
+          "raw_lines": 20,
+          "decisions": 1,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestAPoolWhoseFolderCannotHoldItsDirectoryOpensNone",
+          "start_line": 161,
+          "end_line": 171,
+          "score": 1,
+          "lines": 11,
+          "raw_lines": 11,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/slices/mutation/adapters/worktrees/worker_temp_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 12.1,
+      "examples": 2,
+      "setup_lines": 0,
+      "average_score": 7.1,
+      "max_score": 13.1,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestWorkersGiveEachWorkerATemporaryFolder\" (lines 65-122) is 58 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestWorkersGiveEachWorkerATemporaryFolder\" (lines 65-122) takes 1 branch or loop: a test should not need logic; split the cases"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestWorkersGiveEachWorkerATemporaryFolder\" (lines 65-122) makes 12 assertions: it checks several behaviors; split it"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestWorkersGiveEachWorkerATemporaryFolder",
+          "start_line": 65,
+          "end_line": 122,
+          "table": true,
+          "score": 13.1,
+          "smells": [
+            "large",
+            "logic",
+            "assertion-heavy"
+          ],
+          "lines": 58,
+          "raw_lines": 58,
+          "decisions": 1,
+          "assertions": 12,
+          "mocks": 0
+        },
+        {
+          "name": "TestWorkerFailsWithoutItsTemporaryFolder",
+          "start_line": 126,
+          "end_line": 139,
+          "score": 1,
+          "lines": 14,
+          "raw_lines": 14,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
         }
       ]
     },
@@ -15954,11 +16749,11 @@
       "file": "internal/slices/mutation/adapters/worktrees/worker_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 46.4,
+      "pressure": 49.3,
       "examples": 2,
       "setup_lines": 0,
-      "average_score": 24.2,
-      "max_score": 30.9,
+      "average_score": 25.7,
+      "max_score": 33.8,
       "recommendations": [
         {
           "confidence": "HIGH",
@@ -15966,7 +16761,7 @@
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestCommandRunnerFixtureHelper\" (lines 83-134) is 52 lines: split it into examples that each check one behavior"
+          "text": "\"TestCommandRunnerFixtureHelper\" (lines 83-136) is 54 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
@@ -15974,7 +16769,7 @@
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestCommandRunnerFixtureHelper\" (lines 83-134) takes 9 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestCommandRunnerFixtureHelper\" (lines 83-136) takes 10 branches or loops: a test should not need logic; split the cases"
         }
       ],
       "clusters": null,
@@ -15998,15 +16793,15 @@
         {
           "name": "TestCommandRunnerFixtureHelper",
           "start_line": 83,
-          "end_line": 134,
-          "score": 30.9,
+          "end_line": 136,
+          "score": 33.8,
           "smells": [
             "large",
             "logic"
           ],
-          "lines": 52,
-          "raw_lines": 52,
-          "decisions": 9,
+          "lines": 54,
+          "raw_lines": 54,
+          "decisions": 10,
           "assertions": 9,
           "mocks": 0
         }
@@ -16060,10 +16855,10 @@
       "file": "internal/slices/mutation/adapters/worktrees/workers_lifecycle_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 48.1,
-      "examples": 3,
+      "pressure": 51.4,
+      "examples": 4,
       "setup_lines": 0,
-      "average_score": 17,
+      "average_score": 13.9,
       "max_score": 42.7,
       "recommendations": [
         {
@@ -16081,6 +16876,10 @@
         {
           "confidence": "MEDIUM",
           "text": "\"TestBoundWorkersShareAbortDeadline\" (lines 121-137) takes 2 branches or loops: a test should not need logic; split the cases"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestAPoolHoldsTheWorkersItWasOpenedFor\" (lines 264-282) takes 1 branch or loop: a test should not need logic; split the cases"
         }
       ],
       "clusters": null,
@@ -16125,6 +16924,21 @@
           "raw_lines": 22,
           "decisions": 0,
           "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "TestAPoolHoldsTheWorkersItWasOpenedFor",
+          "start_line": 264,
+          "end_line": 282,
+          "table": true,
+          "score": 4.3,
+          "smells": [
+            "logic"
+          ],
+          "lines": 19,
+          "raw_lines": 19,
+          "decisions": 1,
+          "assertions": 3,
           "mocks": 0
         }
       ]
@@ -16201,6 +17015,125 @@
           "raw_lines": 32,
           "decisions": 2,
           "assertions": 4,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/slices/mutation/counted_named_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 4,
+      "examples": 7,
+      "setup_lines": 0,
+      "average_score": 1.6,
+      "max_score": 3.8,
+      "recommendations": [],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestANamedPositionIsMadeAPathFromTheRepositorysTop",
+          "start_line": 19,
+          "end_line": 39,
+          "score": 2.2,
+          "lines": 21,
+          "raw_lines": 21,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestANamedPositionNeedsTheWorkingDirectory",
+          "start_line": 41,
+          "end_line": 47,
+          "score": 1,
+          "lines": 7,
+          "raw_lines": 7,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestANamedRunInterruptedWhilePlanningSaysWhatSiteBounds",
+          "start_line": 71,
+          "end_line": 83,
+          "score": 1,
+          "lines": 13,
+          "raw_lines": 13,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestANamedRunOnWindowsIsRefusedNamingSite",
+          "start_line": 88,
+          "end_line": 95,
+          "score": 1,
+          "lines": 8,
+          "raw_lines": 8,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestOwnTestsWithoutANamedJudgmentConflicts",
+          "start_line": 100,
+          "end_line": 115,
+          "table": true,
+          "score": 1,
+          "lines": 9,
+          "raw_lines": 16,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestOwnTestsReachThePlanAndTheReport",
+          "start_line": 131,
+          "end_line": 159,
+          "score": 3.8,
+          "lines": 29,
+          "raw_lines": 29,
+          "decisions": 0,
+          "assertions": 5,
+          "mocks": 0
+        },
+        {
+          "name": "TestANamedReportHeadsWithWhatItNamed",
+          "start_line": 163,
+          "end_line": 179,
+          "table": true,
+          "score": 1,
+          "lines": 9,
+          "raw_lines": 17,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/slices/mutation/counted_stop_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 0.4,
+      "examples": 1,
+      "setup_lines": 0,
+      "average_score": 1.4,
+      "max_score": 1.4,
+      "recommendations": [],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestAFailedPreparationStopsARunUnlessItWasNotApplicable",
+          "start_line": 32,
+          "end_line": 55,
+          "table": true,
+          "score": 1.4,
+          "lines": 17,
+          "raw_lines": 24,
+          "decisions": 0,
+          "assertions": 2,
           "mocks": 0
         }
       ]
@@ -16609,35 +17542,35 @@
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestDomainSampleUsesRecordedScopesDrawAndActualWorkerFacts\" (lines 42-107) is 66 lines: split it into examples that each check one behavior"
+          "text": "\"TestDomainSampleUsesRecordedScopesDrawAndActualWorkerFacts\" (lines 48-113) is 66 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestDomainSurvivorAndRenewUseActualParsedEvidenceAndDistinctStatusPolicies\" (lines 185-230) is 46 lines: split it into examples that each check one behavior"
+          "text": "\"TestDomainSurvivorAndRenewUseActualParsedEvidenceAndDistinctStatusPolicies\" (lines 191-236) is 46 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestDomainElsewhereUsesLexicalRootsAndLazyParse\" (lines 231-277) is 47 lines: split it into examples that each check one behavior"
+          "text": "\"TestDomainElsewhereUsesLexicalRootsAndLazyParse\" (lines 237-283) is 47 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestDomainSampleUsesRecordedScopesDrawAndActualWorkerFacts\" (lines 42-107) takes 6 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestDomainSampleUsesRecordedScopesDrawAndActualWorkerFacts\" (lines 48-113) takes 6 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestDomainSampleRunsADisagreeingMutantAgainToTellAFlakeFromAMismatch\" (lines 108-144) takes 4 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestDomainSampleRunsADisagreeingMutantAgainToTellAFlakeFromAMismatch\" (lines 114-150) takes 4 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestDomainSampleRetainsBaselineFailureAndUnusedWorkersBypass\" (lines 162-184) takes 1 branch or loop: a test should not need logic; split the cases"
+          "text": "\"TestDomainSampleRetainsBaselineFailureAndUnusedWorkersBypass\" (lines 168-190) takes 1 branch or loop: a test should not need logic; split the cases"
         }
       ],
       "clusters": null,
       "details": [
         {
           "name": "TestDomainSampleUsesRecordedScopesDrawAndActualWorkerFacts",
-          "start_line": 42,
-          "end_line": 107,
+          "start_line": 48,
+          "end_line": 113,
           "table": true,
           "score": 26.2,
           "smells": [
@@ -16652,8 +17585,8 @@
         },
         {
           "name": "TestDomainSampleRunsADisagreeingMutantAgainToTellAFlakeFromAMismatch",
-          "start_line": 108,
-          "end_line": 144,
+          "start_line": 114,
+          "end_line": 150,
           "table": true,
           "score": 13.6,
           "smells": [
@@ -16667,8 +17600,8 @@
         },
         {
           "name": "TestARecheckedMutantNoTestReachesIsUncoveredWithoutRunning",
-          "start_line": 145,
-          "end_line": 161,
+          "start_line": 151,
+          "end_line": 167,
           "score": 1.4,
           "lines": 17,
           "raw_lines": 17,
@@ -16678,8 +17611,8 @@
         },
         {
           "name": "TestDomainSampleRetainsBaselineFailureAndUnusedWorkersBypass",
-          "start_line": 162,
-          "end_line": 184,
+          "start_line": 168,
+          "end_line": 190,
           "score": 5.1,
           "smells": [
             "logic"
@@ -16692,8 +17625,8 @@
         },
         {
           "name": "TestDomainSurvivorAndRenewUseActualParsedEvidenceAndDistinctStatusPolicies",
-          "start_line": 185,
-          "end_line": 230,
+          "start_line": 191,
+          "end_line": 236,
           "score": 7.2,
           "smells": [
             "large"
@@ -16706,8 +17639,8 @@
         },
         {
           "name": "TestDomainElsewhereUsesLexicalRootsAndLazyParse",
-          "start_line": 231,
-          "end_line": 277,
+          "start_line": 237,
+          "end_line": 283,
           "score": 7.4,
           "smells": [
             "large"
@@ -16720,8 +17653,8 @@
         },
         {
           "name": "TestDomainRepointedIsTheOneStaleEntryOfTheSurvivorsChange",
-          "start_line": 282,
-          "end_line": 317,
+          "start_line": 288,
+          "end_line": 323,
           "table": true,
           "score": 3.2,
           "lines": 26,
@@ -16927,6 +17860,50 @@
       ]
     },
     {
+      "file": "internal/slices/mutation/domain/fresh_named_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 6,
+      "examples": 2,
+      "setup_lines": 0,
+      "average_score": 4,
+      "max_score": 7,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestMemoryFreshNamedContract\" (lines 16-18) asserts nothing: it passes whatever the code does; add an assertion"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestMemoryFreshNamedContract",
+          "start_line": 16,
+          "end_line": 18,
+          "score": 7,
+          "smells": [
+            "no-assertions"
+          ],
+          "lines": 3,
+          "raw_lines": 3,
+          "decisions": 0,
+          "assertions": 0,
+          "mocks": 0
+        },
+        {
+          "name": "TestANamedSiteInAFileTheTreeCannotReadIsAnError",
+          "start_line": 23,
+          "end_line": 32,
+          "score": 1,
+          "lines": 10,
+          "raw_lines": 10,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        }
+      ]
+    },
+    {
       "file": "internal/slices/mutation/domain/fresh_observations_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
@@ -17056,19 +18033,19 @@
       "file": "internal/slices/mutation/domain/fresh_trial_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 29.1,
-      "examples": 4,
+      "pressure": 31.5,
+      "examples": 5,
       "setup_lines": 0,
-      "average_score": 8.3,
+      "average_score": 7.3,
       "max_score": 23.7,
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestFreshTrialCloseRetainsCancellationAndPartialResults\" (lines 120-185) is 66 lines: split it into examples that each check one behavior"
+          "text": "\"TestFreshTrialCloseRetainsCancellationAndPartialResults\" (lines 151-216) is 66 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestFreshTrialCloseRetainsCancellationAndPartialResults\" (lines 120-185) takes 5 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestFreshTrialCloseRetainsCancellationAndPartialResults\" (lines 151-216) takes 5 branches or loops: a test should not need logic; split the cases"
         }
       ],
       "clusters": null,
@@ -17097,9 +18074,21 @@
           "mocks": 0
         },
         {
+          "name": "TestAFreshTrialKeepsItsListedTestsTime",
+          "start_line": 83,
+          "end_line": 109,
+          "table": true,
+          "score": 3.4,
+          "lines": 27,
+          "raw_lines": 27,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
           "name": "TestARepeatedFreshTrialListsEveryRunsOutcome",
-          "start_line": 80,
-          "end_line": 118,
+          "start_line": 111,
+          "end_line": 149,
           "table": true,
           "score": 3.8,
           "lines": 29,
@@ -17110,8 +18099,8 @@
         },
         {
           "name": "TestFreshTrialCloseRetainsCancellationAndPartialResults",
-          "start_line": 120,
-          "end_line": 185,
+          "start_line": 151,
+          "end_line": 216,
           "score": 23.7,
           "smells": [
             "large",
@@ -17519,6 +18508,79 @@
           "raw_lines": 21,
           "decisions": 0,
           "assertions": 4,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/slices/mutation/domain/listed_cache_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 14,
+      "examples": 4,
+      "setup_lines": 0,
+      "average_score": 4.5,
+      "max_score": 5.8,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestTheListedTestsCoverageIsKeptAndServedWhileItsInputsHold\" (lines 89-127) is 39 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestACacheThatDoesNotServeTheRunSaysWhy\" (lines 129-166) is 38 lines: split it into examples that each check one behavior"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestTheListedTestsCoverageIsKeptAndServedWhileItsInputsHold",
+          "start_line": 89,
+          "end_line": 127,
+          "score": 5.8,
+          "smells": [
+            "large"
+          ],
+          "lines": 39,
+          "raw_lines": 39,
+          "decisions": 0,
+          "assertions": 7,
+          "mocks": 0
+        },
+        {
+          "name": "TestACacheThatDoesNotServeTheRunSaysWhy",
+          "start_line": 129,
+          "end_line": 166,
+          "score": 5.6,
+          "smells": [
+            "large"
+          ],
+          "lines": 38,
+          "raw_lines": 38,
+          "decisions": 0,
+          "assertions": 8,
+          "mocks": 0
+        },
+        {
+          "name": "TestARunKeepsOnlyACompleteMeasurementAndAddsItsFiles",
+          "start_line": 168,
+          "end_line": 197,
+          "score": 4,
+          "lines": 30,
+          "raw_lines": 30,
+          "decisions": 0,
+          "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "TestNoKeyServesAFileStrictCoverageRefuses",
+          "start_line": 199,
+          "end_line": 221,
+          "score": 2.6,
+          "lines": 23,
+          "raw_lines": 23,
+          "decisions": 0,
+          "assertions": 5,
           "mocks": 0
         }
       ]
@@ -18358,6 +19420,111 @@
       ]
     },
     {
+      "file": "internal/slices/mutation/domain/rehash_internal_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 6.4,
+      "examples": 1,
+      "setup_lines": 0,
+      "average_score": 7.4,
+      "max_score": 7.4,
+      "recommendations": [
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestRehashableTakesOnlyTheFunctionsOwnSite\" (lines 7-28) takes 2 branches or loops: a test should not need logic; split the cases"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestRehashableTakesOnlyTheFunctionsOwnSite",
+          "start_line": 7,
+          "end_line": 28,
+          "table": true,
+          "score": 7.4,
+          "smells": [
+            "logic"
+          ],
+          "lines": 22,
+          "raw_lines": 22,
+          "decisions": 2,
+          "assertions": 2,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/slices/mutation/domain/rehash_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 15.9,
+      "examples": 4,
+      "setup_lines": 0,
+      "average_score": 5,
+      "max_score": 14.1,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestRehashCarriesOverOnlyWhatThePreviousHashMatches\" (lines 58-125) is 68 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestRehashCarriesOverOnlyWhatThePreviousHashMatches\" (lines 58-125) takes 1 branch or loop: a test should not need logic; split the cases"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestPreviousUnitHashKeepsComments",
+          "start_line": 40,
+          "end_line": 53,
+          "score": 1,
+          "lines": 14,
+          "raw_lines": 14,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestRehashCarriesOverOnlyWhatThePreviousHashMatches",
+          "start_line": 58,
+          "end_line": 125,
+          "score": 14.1,
+          "smells": [
+            "large",
+            "logic"
+          ],
+          "lines": 68,
+          "raw_lines": 68,
+          "decisions": 1,
+          "assertions": 8,
+          "mocks": 0
+        },
+        {
+          "name": "TestApplyExceptionsSaysWhichStaleEntryIsRehashable",
+          "start_line": 129,
+          "end_line": 140,
+          "score": 1,
+          "lines": 12,
+          "raw_lines": 12,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestRenewSaysWhichLeftEntryIsRehashable",
+          "start_line": 145,
+          "end_line": 173,
+          "score": 3.8,
+          "lines": 29,
+          "raw_lines": 29,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        }
+      ]
+    },
+    {
       "file": "internal/slices/mutation/domain/renew_test.go",
       "language": "go",
       "action": "LEAVE_ALONE",
@@ -18776,35 +19943,35 @@
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestRunRequiresActualBindingsAndForwardsCancellation\" (lines 77-116) is 40 lines: split it into examples that each check one behavior"
+          "text": "\"TestRunRequiresActualBindingsAndForwardsCancellation\" (lines 83-122) is 40 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestRunFollowsOnlyActuallyAbsentSourcesAndMovesAfterPublication\" (lines 190-221) is 32 lines: split it into examples that each check one behavior"
+          "text": "\"TestRunFollowsOnlyActuallyAbsentSourcesAndMovesAfterPublication\" (lines 196-227) is 32 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestRunRequiresActualBindingsAndForwardsCancellation\" (lines 77-116) takes 7 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestRunRequiresActualBindingsAndForwardsCancellation\" (lines 83-122) takes 7 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"baseline\" (lines 118-128) takes 1 branch or loop: a test should not need logic; split the cases"
+          "text": "\"baseline\" (lines 124-134) takes 1 branch or loop: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestRunFollowsOnlyActuallyAbsentSourcesAndMovesAfterPublication\" (lines 190-221) takes 3 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestRunFollowsOnlyActuallyAbsentSourcesAndMovesAfterPublication\" (lines 196-227) takes 3 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestARunOfReusedMutantsIsToldFromOneWithNone\" (lines 233-259) takes 1 branch or loop: a test should not need logic; split the cases"
+          "text": "\"TestARunOfReusedMutantsIsToldFromOneWithNone\" (lines 239-265) takes 1 branch or loop: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestARunReusingASingleSiteSaysItReusedIt\" (lines 263-283) takes 1 branch or loop: a test should not need logic; split the cases"
+          "text": "\"TestARunReusingASingleSiteSaysItReusedIt\" (lines 269-289) takes 1 branch or loop: a test should not need logic; split the cases"
         },
         {
           "confidence": "LOW",
-          "text": "2 examples share most of their structure (70% alike); a shared helper may read better: \"TestARunOfReusedMutantsIsToldFromOneWithNone\" (233-259), \"TestARunReusingASingleSiteSaysItReusedIt\" (263-283)"
+          "text": "2 examples share most of their structure (70% alike); a shared helper may read better: \"TestARunOfReusedMutantsIsToldFromOneWithNone\" (239-265), \"TestARunReusingASingleSiteSaysItReusedIt\" (269-289)"
         }
       ],
       "clusters": [
@@ -18814,13 +19981,13 @@
           "examples": [
             {
               "name": "TestARunOfReusedMutantsIsToldFromOneWithNone",
-              "start_line": 233,
-              "end_line": 259
+              "start_line": 239,
+              "end_line": 265
             },
             {
               "name": "TestARunReusingASingleSiteSaysItReusedIt",
-              "start_line": 263,
-              "end_line": 283
+              "start_line": 269,
+              "end_line": 289
             }
           ]
         }
@@ -18828,8 +19995,8 @@
       "details": [
         {
           "name": "TestRunUsesActualPortsAndRetainsFreshOutcomes",
-          "start_line": 60,
-          "end_line": 76,
+          "start_line": 66,
+          "end_line": 82,
           "score": 1.4,
           "lines": 17,
           "raw_lines": 17,
@@ -18839,8 +20006,8 @@
         },
         {
           "name": "TestRunRequiresActualBindingsAndForwardsCancellation",
-          "start_line": 77,
-          "end_line": 116,
+          "start_line": 83,
+          "end_line": 122,
           "table": true,
           "score": 23.5,
           "smells": [
@@ -18856,8 +20023,8 @@
         {
           "name": "baseline",
           "group": "TestRunPreservesBaselineAndPublicationFailureBoundaries",
-          "start_line": 118,
-          "end_line": 128,
+          "start_line": 124,
+          "end_line": 134,
           "score": 3.5,
           "smells": [
             "logic"
@@ -18871,8 +20038,8 @@
         {
           "name": "snapshot read",
           "group": "TestRunPreservesBaselineAndPublicationFailureBoundaries",
-          "start_line": 129,
-          "end_line": 139,
+          "start_line": 135,
+          "end_line": 145,
           "score": 1,
           "lines": 11,
           "raw_lines": 11,
@@ -18882,8 +20049,8 @@
         },
         {
           "name": "TestRunPublicationFailureDoesNotRemoveMovedSnapshotOrAnnotate",
-          "start_line": 141,
-          "end_line": 162,
+          "start_line": 147,
+          "end_line": 168,
           "score": 2.4,
           "lines": 22,
           "raw_lines": 22,
@@ -18893,8 +20060,8 @@
         },
         {
           "name": "TestSnapshotAdmissionPrecedesCurrentTypeScriptObservation",
-          "start_line": 164,
-          "end_line": 189,
+          "start_line": 170,
+          "end_line": 195,
           "score": 3.2,
           "lines": 26,
           "raw_lines": 26,
@@ -18904,8 +20071,8 @@
         },
         {
           "name": "TestRunFollowsOnlyActuallyAbsentSourcesAndMovesAfterPublication",
-          "start_line": 190,
-          "end_line": 221,
+          "start_line": 196,
+          "end_line": 227,
           "table": true,
           "score": 11.9,
           "smells": [
@@ -18920,8 +20087,8 @@
         },
         {
           "name": "TestParseListingKeepsOnlyFirstStdoutIdentity",
-          "start_line": 223,
-          "end_line": 229,
+          "start_line": 229,
+          "end_line": 235,
           "score": 1,
           "lines": 7,
           "raw_lines": 7,
@@ -18931,8 +20098,8 @@
         },
         {
           "name": "TestARunOfReusedMutantsIsToldFromOneWithNone",
-          "start_line": 233,
-          "end_line": 259,
+          "start_line": 239,
+          "end_line": 265,
           "score": 5.9,
           "smells": [
             "logic"
@@ -18945,8 +20112,8 @@
         },
         {
           "name": "TestARunReusingASingleSiteSaysItReusedIt",
-          "start_line": 263,
-          "end_line": 283,
+          "start_line": 269,
+          "end_line": 289,
           "score": 4.7,
           "smells": [
             "logic"
@@ -19608,18 +20775,23 @@
       "file": "internal/slices/mutation/except_test.go",
       "language": "go",
       "action": "LEAVE_ALONE",
-      "pressure": 2.6,
-      "examples": 5,
+      "pressure": 7.4,
+      "examples": 6,
       "setup_lines": 0,
-      "average_score": 1.5,
-      "max_score": 2.4,
-      "recommendations": [],
+      "average_score": 2.2,
+      "max_score": 5.8,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestRehashStopsAtWhatItCannotReadOrWrite\" (lines 131-169) is 39 lines: split it into examples that each check one behavior"
+        }
+      ],
       "clusters": null,
       "details": [
         {
           "name": "TestASiteIsFileLineAndColumn",
-          "start_line": 16,
-          "end_line": 36,
+          "start_line": 19,
+          "end_line": 39,
           "table": true,
           "score": 1,
           "lines": 9,
@@ -19630,8 +20802,8 @@
         },
         {
           "name": "TestAnExceptionUpdateKeepsItsCause",
-          "start_line": 41,
-          "end_line": 55,
+          "start_line": 44,
+          "end_line": 58,
           "score": 1,
           "lines": 15,
           "raw_lines": 15,
@@ -19641,8 +20813,8 @@
         },
         {
           "name": "TestAnIdentityIsToldFromASite",
-          "start_line": 59,
-          "end_line": 79,
+          "start_line": 62,
+          "end_line": 82,
           "table": true,
           "score": 2.2,
           "lines": 21,
@@ -19653,8 +20825,8 @@
         },
         {
           "name": "TestAnIdentityIsWordedWhereASiteWouldBe",
-          "start_line": 83,
-          "end_line": 104,
+          "start_line": 86,
+          "end_line": 107,
           "score": 2.4,
           "lines": 22,
           "raw_lines": 22,
@@ -19664,14 +20836,28 @@
         },
         {
           "name": "TestNeitherASiteNorAnIdentityIsRefusedBeforeAnythingIsObserved",
-          "start_line": 109,
-          "end_line": 123,
+          "start_line": 112,
+          "end_line": 126,
           "table": true,
           "score": 1,
           "lines": 15,
           "raw_lines": 15,
           "decisions": 0,
           "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestRehashStopsAtWhatItCannotReadOrWrite",
+          "start_line": 131,
+          "end_line": 169,
+          "score": 5.8,
+          "smells": [
+            "large"
+          ],
+          "lines": 39,
+          "raw_lines": 39,
+          "decisions": 0,
+          "assertions": 6,
           "mocks": 0
         }
       ]
@@ -19688,15 +20874,15 @@
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestNewHandlerIsBuiltOverItsPorts\" (lines 88-134) is 36 lines: split it into examples that each check one behavior"
+          "text": "\"TestNewHandlerIsBuiltOverItsPorts\" (lines 94-140) is 36 lines: split it into examples that each check one behavior"
         }
       ],
       "clusters": null,
       "details": [
         {
           "name": "TestNewHandlerIsBuiltOverItsPorts",
-          "start_line": 88,
-          "end_line": 134,
+          "start_line": 94,
+          "end_line": 140,
           "table": true,
           "score": 5.2,
           "smells": [
@@ -19710,8 +20896,8 @@
         },
         {
           "name": "TestNewHandlerKeepsANilBindingNil",
-          "start_line": 146,
-          "end_line": 163,
+          "start_line": 152,
+          "end_line": 169,
           "score": 1.6,
           "lines": 18,
           "raw_lines": 18,
@@ -19921,23 +21107,23 @@
       "file": "internal/slices/mutation/run_coverage_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 7.6,
-      "examples": 3,
+      "pressure": 7.8,
+      "examples": 4,
       "setup_lines": 0,
-      "average_score": 3.5,
+      "average_score": 2.9,
       "max_score": 8.2,
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestMutationCoverageConsumersUseActualBindings\" (lines 21-71) is 51 lines: split it into examples that each check one behavior"
+          "text": "\"TestMutationCoverageConsumersUseActualBindings\" (lines 22-72) is 51 lines: split it into examples that each check one behavior"
         }
       ],
       "clusters": null,
       "details": [
         {
           "name": "TestMutationCoverageConsumersUseActualBindings",
-          "start_line": 21,
-          "end_line": 71,
+          "start_line": 22,
+          "end_line": 72,
           "score": 8.2,
           "smells": [
             "large"
@@ -19950,8 +21136,8 @@
         },
         {
           "name": "TestAFailedListedCoverageRunKeepsItsCleanupFailureBesideIt",
-          "start_line": 76,
-          "end_line": 91,
+          "start_line": 77,
+          "end_line": 92,
           "score": 1.2,
           "lines": 16,
           "raw_lines": 16,
@@ -19961,8 +21147,19 @@
         },
         {
           "name": "TestAStrictRunTakesAFailedCoverageCommandForNoProof",
-          "start_line": 97,
-          "end_line": 112,
+          "start_line": 98,
+          "end_line": 113,
+          "score": 1.2,
+          "lines": 16,
+          "raw_lines": 16,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestStrictCoverageStopsAtAFailedListing",
+          "start_line": 118,
+          "end_line": 133,
           "score": 1.2,
           "lines": 16,
           "raw_lines": 16,
