@@ -7155,5 +7155,3 @@
     Between agents, the coordinator moves the pin from 8.25.0 to the newest patch so the next agents
     read its guides and hooks, as T-209 did; a patch of the 8.25 line the person approved on
     2026-10-26 (T-218).
-  done_when:
-    - run: itos version
