@@ -6083,14 +6083,15 @@ items:
       selected files>, keeping the fail-closed check. Caching the reach map (option 2) overlaps
       coverage-reuse (#67).
     refs: ["#73"]
-  - id: mutation-phase-progress
+  - id: slice-64
     title: mutation run says on stderr each phase it ends and how long it took
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutation-phase-progress.
       #74: between the listed-tests coverage commands and the result, a counted run prints nothing
       for ~88 s on a hosted runner, so a CI log cannot tell which phase took the time or whether it
       is stuck. Asked: one itos-cc:-prefixed stderr line per phase with its duration (listed
