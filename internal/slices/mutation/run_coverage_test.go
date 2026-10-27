@@ -131,3 +131,14 @@ func TestStrictCoverageStopsAtAFailedListing(t *testing.T) {
 		t.Fatalf("measured after a failed listing: %v", m.Entered)
 	}
 }
+
+// A complete run that fails before it finds any coverage gap reports its
+// failure, and no gap: the code proof found the gaps' branch taken for a
+// run with none survived the package's tests (slice-70's push).
+func TestARunThatFoundNoGapReportsItsFailureAlone(t *testing.T) {
+	var out, errOut strings.Builder
+	code := Run{Repeat: 1, JSON: true}.Run(t.Context(), &cli.UI{Stdout: &out, Stderr: &errOut}, Handler{Platform: "linux"}, cli.Written{})
+	if code == 0 || !strings.Contains(out.String(), `"problems"`) || strings.Contains(out.String(), `"coverage.`) {
+		t.Errorf("exit %d\n%s%s", code, out.String(), errOut.String())
+	}
+}
