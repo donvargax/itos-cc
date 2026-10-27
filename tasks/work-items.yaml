@@ -6170,8 +6170,8 @@ items:
   - id: slice-70
     title: A file's own tests' coverage is reused while nothing it was measured from changed
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-223]
     kind: slice
     why: >
