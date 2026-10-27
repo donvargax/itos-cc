@@ -5981,18 +5981,9 @@ items:
     title: GoScope drops a package with no dependencies when go list lists it last
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      Found by slice-61's agent (2026-10-26): GoScope (internal/covrun/run.go) trims the whole go
-      list -test listing before splitting it into lines, so the last line of a package that imports
-      nothing, 'path<TAB>dir<TAB>' with empty deps, loses its trailing tab, splits into two fields
-      and is skipped. A chosen file in that package is then measured by the whole module, and
-      slice-61's notice says go list lists no package in its folder, which is untrue.
-      goScopeSupervised splits without trimming the whole listing and is unaffected. slice-61's
-      fixture gave a/ a test to dodge it. Trim each line's carriage return instead, with a unit test
-      listing such a package last.
   - id: T-217
     title: Kill the unchangedFor mutant the CD sample found surviving
     phase: 1
