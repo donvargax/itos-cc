@@ -7148,3 +7148,12 @@
     the code says what it means and no equivalent mutant stands. Behaviour does not change: the
     listed packages and the tests chosen are the same, as GoScope's existing tests show. Done by
     bug-11's agent in the same push series.
+- id: T-221
+  type: chore
+  title: Upgrade the repository pin to itos 8.25.1
+  why: >
+    Between agents, the coordinator moves the pin from 8.25.0 to the newest patch so the next agents
+    read its guides and hooks, as T-209 did; a patch of the 8.25 line the person approved on
+    2026-10-26 (T-218).
+  done_when:
+    - run: itos version

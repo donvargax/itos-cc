@@ -6168,3 +6168,10 @@ items:
       command, or a --site/--count mode that stops after preparation, reporting the uncovered
       changed lines as the proof measures them (own tests plus listed scenarios), would let an agent
       see them before pushing.
+  - id: T-221
+    title: Upgrade the repository pin to itos 8.25.1
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
