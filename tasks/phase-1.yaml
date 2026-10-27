@@ -7113,8 +7113,6 @@
   why: >
     Between agents, the coordinator moves the pin from 8.23.0 to the newest 8.25 so the next agents
     read its guides and hooks, as T-214 did; the person approved it 2026-10-26.
-  done_when:
-    - run: itos version
 - id: T-219
   type: test
   title: The worktrees tests sweep and make worker copies in a temporary folder of their own
