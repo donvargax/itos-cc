@@ -18,6 +18,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/coverage/port"
 	aggregate "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 	"github.com/donvargax/itos-cc/internal/lang"
+	langtest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
 )
 
 // Measurement describes independently observed collector artifacts and results.
@@ -444,7 +445,7 @@ func (m *Measurer) listed(ctx context.Context, groups map[coverage.Unloaded][]st
 				missing = append(missing, test.ID)
 			}
 		}
-		m.ended(split, len(tests.Tests)-len(missing), len(listedErrors) == 0)
+		m.ended(split, len(tests.Tests)-len(missing), len(listedErrors) == 0, m.limited(ctx, groups))
 	}
 	if ctx.Err() != nil {
 		return nil, nil, context.Cause(ctx)
@@ -454,17 +455,37 @@ func (m *Measurer) listed(ctx context.Context, groups map[coverage.Unloaded][]st
 
 // ended says on Log, as the real measurer does, that the listed tests'
 // coverage run ended, the coverage of n of them, those with data,
-// converted next, and, when converted, that the conversions ended. Their
-// durations are zero: the memory takes no time.
-func (m *Measurer) ended(split bool, n int, converted bool) {
+// converted next, and, when converted, that the conversions ended, Go's
+// limited to packages when above 0. Their durations are zero: the memory
+// takes no time.
+func (m *Measurer) ended(split bool, n int, converted bool, packages int) {
 	ran := "ran"
 	if !split {
 		ran = "ran one at a time"
 	}
 	m.log("coverage: the listed tests %s in 0.0s; converting the coverage of %d of them\n", ran, n)
-	if converted {
-		m.log("coverage: converted the coverage of %d listed tests in 0.0s\n", n)
+	if !converted {
+		return
 	}
+	limit := ""
+	if packages == 1 {
+		limit = ", Go's limited to 1 package,"
+	} else if packages > 1 {
+		limit = fmt.Sprintf(", Go's limited to %d packages,", packages)
+	}
+	m.log("coverage: converted the coverage of %d listed tests%s in 0.0s\n", n, limit)
+}
+
+// limited is how many packages the real measurer limits the listed tests'
+// Go conversions to for the sources of groups, as the memory's go.mod
+// files name them: 0 when it does not limit them.
+func (m *Measurer) limited(ctx context.Context, groups map[coverage.Unloaded][]string) int {
+	var sources []string
+	for _, group := range orderedGroups(groups) {
+		sources = append(sources, groups[group]...)
+	}
+	packages, _ := lang.GoPackages(ctx, langtest.Surroundings{Files: m.Aggregate.Files, Dir: m.Aggregate.Dir}, sources)
+	return len(packages)
 }
 
 // CollectFresh reads the same tool formats/build populations as ordinary

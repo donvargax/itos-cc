@@ -269,6 +269,7 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 	}
 	listedRan(log, alone, time.Since(started), len(written))
 	started = time.Now()
+	found := tools{}
 	for i, id := range ids {
 		d := written[id]
 		var reports []*coverage.Report
@@ -280,10 +281,22 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 				return nil, executions, fmt.Errorf("prepare profile for listed test %s: %w", id, err)
 			}
 			args, profile := c.convert(d, filepath.Join(dir, ".profiles", strconv.Itoa(i)+"."+c.language))
+			if args == nil {
+				reports = append(reports, coverage.Build(ctx, Disk{}, sources, c.dir, nil))
+				continue
+			}
+			args, err := found.command(ctx, c, args, log, func(cmd *exec.Cmd) error {
+				err := execute(ctx, cmd)
+				executions = append(executions, CommandExecution{Args: append([]string{}, c.tool...), Dir: c.dir, Err: err})
+				return err
+			})
+			if err != nil {
+				return nil, executions, fmt.Errorf("convert listed test %s coverage: %w", id, err)
+			}
 			cmd := exec.CommandContext(ctx, args[0], args[1:]...) //nolint:gosec // the collector's conversion of a listed test's data, which this package names
 			cmd.Dir, cmd.Stdout, cmd.Stderr = c.dir, log, log
 			cmd.Env = unsetEnv(project.NoBytecodeEnv(nil), c.vars...)
-			err := execute(ctx, cmd)
+			err = execute(ctx, cmd)
 			executions = append(executions, CommandExecution{Args: args, Dir: c.dir, Err: err})
 			if err != nil {
 				return nil, executions, fmt.Errorf("convert listed test %s coverage: %w", id, err)
@@ -296,7 +309,7 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 		}
 		tc.Add(id, coverage.Merge(reports...))
 	}
-	listedConverted(log, len(written), time.Since(started))
+	listedConverted(log, len(written), limited(collectors), time.Since(started))
 	return tc, executions, nil
 }
 

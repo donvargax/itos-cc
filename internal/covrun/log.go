@@ -28,7 +28,14 @@ func listedRan(log io.Writer, alone bool, took time.Duration, n int) {
 }
 
 // listedConverted says the conversions of the coverage of n listed tests
-// ended, after took.
-func listedConverted(log io.Writer, n int, took time.Duration) {
-	logf(log, "itos-cc: coverage: converted the coverage of %d listed tests in %.1fs\n", n, took.Seconds())
+// ended, after took, and how many packages their Go conversions were
+// limited to, when they were (packages above 0).
+func listedConverted(log io.Writer, n, packages int, took time.Duration) {
+	limit := ""
+	if packages == 1 {
+		limit = ", Go's limited to 1 package,"
+	} else if packages > 1 {
+		limit = fmt.Sprintf(", Go's limited to %d packages,", packages)
+	}
+	logf(log, "itos-cc: coverage: converted the coverage of %d listed tests%s in %.1fs\n", n, limit, took.Seconds())
 }

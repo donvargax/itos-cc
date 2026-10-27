@@ -357,3 +357,28 @@ func TestAGoTimeoutIsFailedOrMissingAsTheRunnerHasIt(t *testing.T) {
 		t.Errorf("an unreadable report: missing %v, want it unreadable", missing)
 	}
 }
+
+// The fake says the listed conversions' line as covrun does, its Go
+// conversions limited to the packages of the measured Go files the
+// memory's go.mod files name (slice-65), and nothing of a limit where
+// there is none.
+func TestTheFakeSaysTheListedConversionsLimitAsTheRealMeasurerDoes(t *testing.T) {
+	m := &Measurer{Aggregate: aggregate.Measurer{Dir: "/m", Files: map[string]string{
+		"/m/go.mod": "module example.com/m\n", "/m/a/a.go": "package a\n", "/m/b/b.go": "package b\n", "/m/web/l.ts": "export {}\n",
+	}}}
+	for _, c := range []struct {
+		sources []string
+		want    string
+	}{
+		{[]string{"/m/web/l.ts"}, "itos-cc: coverage: converted the coverage of 2 listed tests in 0.0s\n"},
+		{[]string{"/m/a/a.go"}, "itos-cc: coverage: converted the coverage of 2 listed tests, Go's limited to 1 package, in 0.0s\n"},
+		{[]string{"/m/a/a.go", "/m/b/b.go"}, "itos-cc: coverage: converted the coverage of 2 listed tests, Go's limited to 2 packages, in 0.0s\n"},
+	} {
+		var log bytes.Buffer
+		m.Log = &log
+		m.ended(true, 2, true, m.limited(context.Background(), map[coverage.Unloaded][]string{{Language: "go", Dir: "/m"}: c.sources}))
+		if got := strings.SplitAfter(log.String(), "\n")[1]; got != c.want {
+			t.Errorf("sources %q: %q, want %q", c.sources, got, c.want)
+		}
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -65,9 +66,18 @@ type testCollector struct {
 	whole []string
 	each  func(d string) []string
 	// written says whether data was written to d, and convert is the
-	// command that turns it into a report, under out, and that report.
+	// command that turns it into a report, under out, and that report;
+	// no command when none of the run's sources is of its language, whose
+	// report is then empty.
 	written func(d string) bool
 	convert func(d, out string) ([]string, string)
+	// tool, when set, is the command that prints the path of the program
+	// convert's commands start, their first word: run once a measure,
+	// before its first conversion (tools), the program then run directly.
+	tool []string
+	// packages, when set, is what its conversions are limited to: the
+	// packages of the run's sources of its language.
+	packages []string
 	// missing, when set, says why the project lacks it: it is left out.
 	missing string
 }
@@ -76,15 +86,7 @@ type testCollector struct {
 // sources, with dir for their data: Go's always, and TypeScript's, Kotlin's
 // and Python's when sources hold files of theirs, from their build roots.
 func testCollectors(ctx context.Context, root, dir string, sources []string) []testCollector {
-	collectors := []testCollector{{
-		language: "go",
-		dir:      root,
-		each:     eachTestEnv,
-		written:  func(d string) bool { return hasCoverData(d, ownCoverHash()) },
-		convert: func(d, out string) ([]string, string) {
-			return []string{"go", "tool", "covdata", "textfmt", "-i=" + d, "-o=" + out + ".out"}, out + ".out"
-		},
-	}}
+	collectors := []testCollector{goTestCollector(ctx, root, sources)}
 	if roots := buildRoots(ctx, sources, "typescript"); len(roots) > 0 {
 		c := testCollector{
 			language: "typescript",
@@ -131,6 +133,83 @@ func testCollectors(ctx context.Context, root, dir string, sources []string) []t
 			return []string{py, "-c", pythonCombineScript, data(d), out + ".info"}, out + ".info"
 		},
 	})
+}
+
+// goCovdata prints the path of covdata, the program that converts Go's
+// coverage data. "go tool covdata" looks it up on every call, in the build
+// cache since Go 1.27, which took most of each conversion's time (#73), so
+// a measure finds it once and runs it directly.
+var goCovdata = []string{"go", "tool", "-n", "covdata"}
+
+// commandLineArguments is the package Go records for a binary built from a
+// list of files rather than a package.
+const commandLineArguments = "command-line-arguments"
+
+// goTestCollector is Go's collector of the listed tests of root measuring
+// sources. Its conversions are limited to the packages of the Go files
+// among sources (lang.GoPackages), and command-line-arguments, which a
+// binary built from a list of files records; with no Go file among
+// sources, it converts nothing. coverage.Build keeps only the lines of
+// sources, so the limit changes no report.
+func goTestCollector(ctx context.Context, root string, sources []string) testCollector {
+	packages, measured := lang.GoPackages(ctx, project.Surroundings{}, sources)
+	return testCollector{
+		language: "go",
+		dir:      root,
+		each:     eachTestEnv,
+		written:  func(d string) bool { return hasCoverData(d, ownCoverHash()) },
+		tool:     goCovdata,
+		packages: packages,
+		convert: func(d, out string) ([]string, string) {
+			if !measured {
+				return nil, ""
+			}
+			args := []string{"covdata", "textfmt", "-i=" + d, "-o=" + out + ".out"}
+			if len(packages) > 0 {
+				args = append(args, "-pkg="+strings.Join(append([]string{commandLineArguments}, packages...), ","))
+			}
+			return args, out + ".out"
+		},
+	}
+}
+
+// tools is what each collector's tool printed, by language, found once a
+// measure: the path of the program its conversions start, or why it could
+// not be found.
+type tools map[string]toolFound
+
+type toolFound struct {
+	path string
+	err  error
+}
+
+// command is args, a collector's conversion, run as c's tool found
+// through run, the measure's way of running a command, the first time
+// any conversion of c's needs it.
+func (t tools) command(ctx context.Context, c testCollector, args []string, log io.Writer, run func(*exec.Cmd) error) ([]string, error) {
+	if len(c.tool) == 0 {
+		return args, nil
+	}
+	found, ok := t[c.language]
+	if !ok {
+		var out bytes.Buffer
+		cmd := exec.CommandContext(ctx, c.tool[0], c.tool[1:]...) //nolint:gosec // the collector's own lookup of its converter, which this package names
+		cmd.Dir, cmd.Stdout, cmd.Stderr = c.dir, &out, log
+		cmd.Env = unsetEnv(project.NoBytecodeEnv(nil), c.vars...)
+		found.err = run(cmd)
+		found.path = strings.TrimSpace(out.String())
+		if found.err == nil && found.path == "" {
+			found.err = errors.New("it printed no path")
+		}
+		if found.err != nil {
+			found.err = fmt.Errorf("find %s: %s: %w", c.tool[len(c.tool)-1], displayArgs(c.tool), found.err)
+		}
+		t[c.language] = found
+	}
+	if found.err != nil {
+		return nil, found.err
+	}
+	return append([]string{found.path}, args[1:]...), nil
 }
 
 // buildRoots is the build roots of sources of language, sorted.
@@ -276,6 +355,7 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 	}
 	listedRan(log, alone, time.Since(started), len(written))
 	started = time.Now()
+	found := tools{}
 	for i, id := range ids {
 		d, ok := written[id]
 		if !ok {
@@ -293,6 +373,15 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 			// A folder it cannot make fails the conversion below, which is logged.
 			_ = os.MkdirAll(filepath.Join(dir, ".profiles"), 0o755) //nolint:gosec // the converted profiles' folder keeps its 0755; narrowing it would change what the run creates
 			args, profile := c.convert(d, filepath.Join(dir, ".profiles", strconv.Itoa(i)+"."+c.language))
+			if args == nil {
+				reports = append(reports, coverage.Build(ctx, Disk{}, sources, c.dir, nil))
+				continue
+			}
+			args, err := found.command(ctx, c, args, log, func(cmd *exec.Cmd) error { return runCommand(ctx, cmd, execute) })
+			if err != nil {
+				logf(log, "itos-cc: coverage: %s: %v\n", id, err)
+				continue
+			}
 			cmd := exec.Command(args[0], args[1:]...) //nolint:gosec // the collector's conversion of a listed test's data, which this package names
 			cmd.Dir, cmd.Env = c.dir, unsetEnv(project.NoBytecodeEnv(nil), c.vars...)
 			if out, err := cmd.CombinedOutput(); err != nil {
@@ -311,8 +400,19 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 		}
 		tc.Add(id, coverage.Merge(reports...))
 	}
-	listedConverted(log, len(written), time.Since(started))
+	listedConverted(log, len(written), limited(collectors), time.Since(started))
 	return tc, nil
+}
+
+// limited is how many packages the Go conversions of collectors are
+// limited to, 0 when they are not.
+func limited(collectors []testCollector) int {
+	for _, c := range collectors {
+		if c.language == "go" {
+			return len(c.packages)
+		}
+	}
+	return 0
 }
 
 // testsFailed is the failure of command, a run of listed tests that ended

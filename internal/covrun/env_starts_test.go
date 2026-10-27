@@ -103,10 +103,12 @@ func TestASupervisedPlansCommandsHoldNoGOCOVERDIR(t *testing.T) {
 }
 
 // listed is a listed-tests run of one test, a, at root, and a recorder
-// that writes Go coverage data where the whole run's environment says.
+// that writes Go coverage data where the whole run's environment says,
+// and prints a covdata that is not there where it is looked up.
 func listed(root string) (PerTest, *recorder) {
 	p := PerTest{Root: root, Tests: []Test{{ID: "a"}}, All: "every test", Select: func([]string) string { return "one test" }}
 	rec := &recorder{also: func(cmd *exec.Cmd) {
+		printsCovdata(cmd, missingCovdata)
 		for _, kv := range cmd.Env {
 			if dir, ok := strings.CutPrefix(kv, TestCoverDirEnv+"="); ok {
 				_ = os.MkdirAll(filepath.Join(dir, "a"), 0o750)
@@ -121,19 +123,20 @@ func TestTheListedTestsAndTheirConversionsHoldNoGOCOVERDIR(t *testing.T) {
 	inheritCoverDir(t)
 	root := t.TempDir()
 	p, rec := listed(root)
+	sources := goModule(t, root)
 	// The recorder writes no profile, which fails the run after the
 	// conversion.
-	_, _, _ = MeasureTestsSupervised(context.Background(), p, filepath.Join(root, "data"), nil, io.Discard, rec.execute)
+	_, _, _ = MeasureTestsSupervised(context.Background(), p, filepath.Join(root, "data"), sources, io.Discard, rec.execute)
 	noCoverDir(t, "the supervised listed tests", rec.commands)
-	if len(rec.commands) != 2 {
-		t.Errorf("started %d commands, want the run of every test and its conversion", len(rec.commands))
+	if len(rec.commands) != 3 {
+		t.Errorf("started %d commands, want the run of every test, its lookup of covdata and its conversion", len(rec.commands))
 	}
 
 	p, rec = listed(root)
 	var log bytes.Buffer
-	// The conversion of what the recorder wrote, a real go tool covdata,
-	// fails, which is logged.
-	_, _ = MeasureTests(context.Background(), p, filepath.Join(root, "data"), nil, &log, rec.execute)
+	// The conversion of what the recorder wrote, by a covdata that is not
+	// there, fails, which is logged.
+	_, _ = MeasureTests(context.Background(), p, filepath.Join(root, "data"), sources, &log, rec.execute)
 	noCoverDir(t, "the listed tests", rec.commands)
 	if !strings.Contains(log.String(), "covdata") {
 		t.Errorf("the conversion was not started: %s", log.String())

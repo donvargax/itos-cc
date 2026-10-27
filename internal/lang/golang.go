@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"path/filepath"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -84,19 +85,8 @@ func init() {
 // file's directory, falling back to the package clause without a go.mod.
 // around says what each directory up from the file's holds.
 func goImportPath(ctx context.Context, around port.Surroundings, path string, root *sitter.Node, src []byte) string {
-	if dir, ok := around.Abs(ctx, filepath.Dir(path)); ok {
-		for d := dir; ; d = filepath.Dir(d) {
-			if module := goModule(ctx, around, filepath.Join(d, "go.mod")); module != "" {
-				rel, _ := filepath.Rel(d, dir)
-				if rel == "." {
-					return module
-				}
-				return module + "/" + filepath.ToSlash(rel)
-			}
-			if filepath.Dir(d) == d {
-				break
-			}
-		}
+	if pkg := GoModulePackage(ctx, around, filepath.Dir(path)); pkg != "" {
+		return pkg
 	}
 	for i := uint(0); i < root.NamedChildCount(); i++ {
 		if c := root.NamedChild(i); c.Kind() == "package_clause" {
@@ -104,6 +94,53 @@ func goImportPath(ctx context.Context, around port.Surroundings, path string, ro
 		}
 	}
 	return ""
+}
+
+// GoModulePackage is the import path of the Go package in dir: the module
+// path of the nearest go.mod up from dir that names one, joined with dir's
+// folder below it; "" when no go.mod up from dir names a module. around
+// says what each directory up from dir holds.
+func GoModulePackage(ctx context.Context, around port.Surroundings, dir string) string {
+	abs, ok := around.Abs(ctx, dir)
+	if !ok {
+		return ""
+	}
+	for d := abs; ; d = filepath.Dir(d) {
+		if module := goModule(ctx, around, filepath.Join(d, "go.mod")); module != "" {
+			rel, _ := filepath.Rel(d, abs)
+			if rel == "." {
+				return module
+			}
+			return module + "/" + filepath.ToSlash(rel)
+		}
+		if filepath.Dir(d) == d {
+			return ""
+		}
+	}
+}
+
+// GoPackages is the import paths of the packages of the Go files among
+// sources, sorted, each its GoModulePackage, and whether there is any such
+// file. They are none when one of those files has no go.mod up from it
+// that names a module: its package's path is unknown.
+func GoPackages(ctx context.Context, around port.Surroundings, sources []string) ([]string, bool) {
+	var packages []string
+	measured := false
+	for _, s := range sources {
+		if spec := Detect(s); spec == nil || spec.Name != "go" {
+			continue
+		}
+		measured = true
+		pkg := GoModulePackage(ctx, around, filepath.Dir(s))
+		if pkg == "" {
+			return nil, true
+		}
+		if !slices.Contains(packages, pkg) {
+			packages = append(packages, pkg)
+		}
+	}
+	slices.Sort(packages)
+	return packages, measured
 }
 
 // goModule is the module a go.mod's module line names, or "" when gomod

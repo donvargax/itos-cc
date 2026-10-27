@@ -991,7 +991,7 @@ Feature: Mutation testing
       Given the module of <module>
       When I run "itos-cc mutation run"
       Then stderr has a line "itos-cc: coverage: the listed tests <ran> in <duration>; converting the coverage of 2 of them" after the listed tests' coverage command
-      And then a line "itos-cc: coverage: converted the coverage of 2 listed tests in <duration>"
+      And then a line "itos-cc: coverage: converted the coverage of 2 listed tests, Go's limited to 1 package, in <duration>"
       And both come before the first line about a mutant
 
       Examples:
@@ -1017,7 +1017,7 @@ Feature: Mutation testing
     Scenario Outline: A counted run accounts for its time between coverage and the result
       Given the counted listed fixture, whose selected mutant survives its own tests and is killed by ID-A-01
       When I run "itos-cc mutation run --count 1 <json>"
-      Then stderr has, in order, the listed tests' coverage command, "itos-cc: coverage: the listed tests ran in <duration>; converting the coverage of 2 of them", "itos-cc: coverage: converted the coverage of 2 listed tests in <duration>", the own baseline's command and "itos-cc: baseline <dir> passed in <duration>: a mutant running it times out after <duration>"
+      Then stderr has, in order, the listed tests' coverage command, "itos-cc: coverage: the listed tests ran in <duration>; converting the coverage of 2 of them", "itos-cc: coverage: converted the coverage of 2 listed tests, Go's limited to 1 package, in <duration>", the own baseline's command and "itos-cc: baseline <dir> passed in <duration>: a mutant running it times out after <duration>"
       And its mutant's line ends "survived its own tests, then killed with ID-A-01 ID-A-02 (<duration>, the listed tests <duration>)"
       And stdout is <stdout>, as a run before mutation-phase-progress gives it
 
@@ -1332,6 +1332,10 @@ Feature: Mutation testing
   #   "itos-cc: coverage: converted the coverage of <n> listed tests, Go's
   #   limited to <k> packages, in <d>".
   # - Both rows run over a range, as --fail-uncovered=lines needs --since (ID-MUT-226).
+  # - A line whose conversions are not limited says nothing of it: a
+  #   measured Go file with no go.mod above it, or no Go file measured.
+  # - ID-MUT-367 and 369, whose fixtures measure one Go package, read the
+  #   clause too.
   Rule: The listed tests' Go coverage is converted only for the packages the run measures
 
     # Binary-only for good: the per-test data and its conversion are the
@@ -1339,7 +1343,7 @@ Feature: Mutation testing
     # Before: the conversions' line has no "limited" clause; it fails at
     # that step. The result steps pass before; they are guardrails,
     # reported apart.
-    @slice-65 @ID-MUT-370 @binary-only @wip
+    @slice-65 @ID-MUT-370 @binary-only
     Scenario Outline: Limiting the conversion to the measured packages changes no result
       Given a Go module whose binary links packages a and b, with listed tests ID-A-01, which reaches a and b, and ID-A-02, which reaches only b
       And a committed change to a/a.go whose mutant survives its own tests and is killed by ID-A-01
@@ -1357,7 +1361,7 @@ Feature: Mutation testing
     # A guardrail for the command-line-arguments pattern: it passes before
     # the change, and it fails if the limit drops that pattern.
     # Binary-only for good, as ID-MUT-370.
-    @slice-65 @ID-MUT-371 @binary-only @wip
+    @slice-65 @ID-MUT-371 @binary-only
     Scenario: A binary built from a list of files keeps its listed reach
       Given the module of ID-MUT-122, whose harness builds its binary with "go build -cover" from main.go's path rather than its package
       When I run "itos-cc mutation run --json"
