@@ -287,8 +287,11 @@
     is in the coverage executor's change to the legacy path (coverage/run.go and its neighbours),
     not in the frozen-plan preparation. The next attempt finds the cause in the product, keeps that
     test unchanged and green, and may reuse the reverted commits' work.
+    bug-11 (2026-10-26) showed that test pinned a GoScope bug, its unloaded package listed last and
+    dropped: the package is now measured, its function an uncovered-statement failure as ID-MUT-157
+    says, and the test is ...AsUncovered.
   done_when:
-    - run: go test -timeout 20m -count=1 ./cmd/itos-cc -run "^TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing$"
+    - run: go test -timeout 20m -count=1 ./cmd/itos-cc -run "^TestStrictGoReportsExecutableFunctionInUnloadedPackageAsUncovered$"
       timeout: 1200
     - run: grep -q 'func TestFreshPreparationReportsEveryCommandFailure(' cmd/itos-cc/fresh_preparation_test.go
     - run: grep -q 'func TestFreshPreparationOwnsCommandsAndPreservesListedReach(' cmd/itos-cc/fresh_preparation_test.go
