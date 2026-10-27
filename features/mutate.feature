@@ -350,6 +350,46 @@ Feature: Mutation testing
       Then up to 4 mutants run at the same time
       And the default is half the CPUs, at least 1
 
+    # slice-62 (mutation-trial-tmpdir, the person's call 2026-10-26): workers
+    # run side by side in copies of their own, but every command they start
+    # shared the system's temporary folder, so tests that make, sweep or name
+    # things there could change a sibling worker's outcome; itos-cc's own
+    # nightly recorded a kill only such a race made (T-217, T-219). Decided
+    # by the coordinator on 2026-10-26:
+    # - Every command a worker starts in its copy (baselines, mutants,
+    #   counted trials, its own preparation) runs with TMPDIR, TMP and TEMP
+    #   all set to one folder of that worker's own, on every system, made
+    #   inside the run's scratch folder beside the worker's copy, never inside
+    #   the copy itself, and removed with it when the run ends; a run killed
+    #   before then leaves it to the sweep of abandoned worker folders.
+    # - One folder per worker, kept across that worker's trials, not emptied
+    #   between them: what a tool caches there (Jest's transform cache
+    #   lives in the temporary folder) stays warm, as slice-13 keeps build
+    #   output in the copies. What this removes is the race between workers.
+    # - Nothing else changes: the coverage run, which runs once and not in a
+    #   worker, keeps the system's folder; the mutants are judged as before.
+    # - No setting turns it off yet: a key in itos-cc.yaml needs a new format
+    #   version (docs/CONFIG.md), so one comes when a project needs the
+    #   shared folder.
+    # The fixture's tests each record what they saw to a file of their own
+    # in a folder outside the project, never by appending to one file
+    # (T-213). Before the slice every trial sees the system's folder, and
+    # both scenarios fail at their first Then.
+    @slice-62 @ID-MUT-353 @binary-only @wip
+    Scenario: Each worker's tests see a temporary folder of their own
+      Given a Go package whose test records the temporary folder it sees, and TMPDIR, TMP and TEMP, with several mutants
+      When I run "itos-cc mutation run --workers 2 --json" for its file
+      Then every trial saw TMPDIR, TMP and TEMP name one folder, and Go's temporary folder was it
+      And the trials of a worker saw the same folder, two workers never the same, and none the system's or inside a worker's copy
+      And the mutants are judged as a single worker judges them
+
+    @slice-62 @ID-MUT-354 @binary-only @wip
+    Scenario: What a worker's tests leave in their temporary folder is gone after the run
+      Given a Go package whose test writes a file with a name of its own to its temporary folder and leaves it, with several mutants
+      When I run "itos-cc mutation run --workers 2" for its file
+      Then no file of that name is in the system's temporary folder
+      And no worker's temporary folder is left
+
     # slice-13 decisions (coordinator, 2026-10-21: the spec drafter's
     # recommendations, taken as routine calls inside the issue's scope):
     # 1. Every Worker.Run starts from the copy as it was made. Before each command runs in an
