@@ -6203,3 +6203,15 @@ items:
       coordinator's scratch spec-draft-rehash-reuse.md, slice B. Cheap in Go, where it gains little;
       worth it for Python, Kotlin and Dart plans.
     refs: ["#67"]
+  - id: except-plain-slashed
+    title: mutation except --renew and --prune print their files in the system's form
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      bug-9 made every plain line name its file slash-separated on every system, but except_ui.go's
+      renewed, not renewed and pruned lines still print ui.Rel's path, so Windows shows
+      board\board.go there; slice-68's --rehash lines hit the same gap on cd.yml's Windows jobs (run
+      40462371522) and were fixed alone (936781b4). No scenario reads those lines' file on Windows.
