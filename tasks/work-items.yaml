@@ -6200,8 +6200,8 @@ items:
   - id: bug-12
     title: mutation except's plain lines name their file in the system's form on Windows
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: bug
     why: >
