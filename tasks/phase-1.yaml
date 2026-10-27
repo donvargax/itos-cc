@@ -7138,3 +7138,17 @@
     (mutation-trial-tmpdir).
   done_when:
     - run: go test ./internal/slices/mutation/adapters/worktrees/...
+- id: T-220
+  type: refactor
+  title: GoScope keeps the test packages it selects as a set
+  why: >
+    bug-11's push (ci 40427178251, head 42a3d6b7) drew internal/covrun/run.go:408:15, true to false
+    at tested[p] = true in GoScope, and it survived: tested's values are never read, only its keys
+    (for p := range tested collects them, and the binary loop only writes), so the mutant is
+    equivalent. Decided by the coordinator (2026-10-26): rather than an exception in itos-cc.yaml,
+    remove the site: tested becomes a set (map[string]struct{}), or testing is built directly, so
+    the code says what it means and no equivalent mutant stands. Behaviour does not change: the
+    listed packages and the tests chosen are the same, as GoScope's existing tests show. Done by
+    bug-11's agent in the same push series.
+  done_when:
+    - run: go test ./internal/covrun/...

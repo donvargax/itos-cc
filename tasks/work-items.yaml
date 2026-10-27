@@ -6037,3 +6037,10 @@ items:
       worktrees.Workers{}). Side by side with other runs, a sweep there can remove a live trial
       folder only once its lock is free, but they still meet other runs folders, the race T-217
       found. Giving each a TempDir of t.TempDir() would close it.
+  - id: T-220
+    title: GoScope keeps the test packages it selects as a set
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
