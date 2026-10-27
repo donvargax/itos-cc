@@ -6099,8 +6099,8 @@ items:
   - id: slice-68
     title: mutation except rehashes entries whose function changed only in what the hash now ignores
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [slice-66]
     kind: slice
     why: >
