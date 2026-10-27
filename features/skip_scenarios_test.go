@@ -26,11 +26,11 @@ func TestSkipScenariosRunsWhatScenariosLeaves(t *testing.T) {
 		t.Fatalf("every live scenario: %v; want %v", every, want)
 	}
 	for _, pattern := range []string{
-		"^@ID-[A-Z]+-[0-9]*[024789]$", // cd.yml's: ID numbers ending 0, 2, 4, 7, 8 or 9
-		"^@ID-UNIT-9[25]$",            // a scenario outline and a @wip scenario
-		"^@T-90$",                     // an Examples block's tag
-		"^@slow$",                     // a scenario's tag beside its ID
-		"^@shared$",                   // a feature's tag: every scenario
+		"^@ID-[A-Z]+-[0-9]*[02369]$", // cd.yml's: ID numbers ending 0, 2, 3, 6 or 9
+		"^@ID-UNIT-9[25]$",           // a scenario outline and a @wip scenario
+		"^@T-90$",                    // an Examples block's tag
+		"^@slow$",                    // a scenario's tag beside its ID
+		"^@shared$",                  // a feature's tag: every scenario
 	} {
 		t.Run(pattern, func(t *testing.T) {
 			selected := ranByParts(t, dir, pattern, "")
