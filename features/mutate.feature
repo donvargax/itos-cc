@@ -4387,7 +4387,12 @@ Feature: Mutation testing
   #   when this slice lands. The machinery's problems stay count.*
   #   (count.platform, count.no-git, ...), their messages naming --site.
   # Decided by the coordinator on 2026-10-26 from the drafter's
-  # recommendations (scratch spec-draft-site-range.md, Q1-Q10).
+  # recommendations (scratch spec-draft-site-range.md, Q1-Q10); the person
+  # chose the same day that --site judges the latest commit only, not
+  # uncommitted edits (write the test, commit it locally, then run --site),
+  # and that once it lands AGENTS.md lets a repair agent run --site on the
+  # one survivor it is killing in this repository, every other mutation
+  # run here staying CI's; itos.yaml's proof comment changes with it.
   # Before slice-63, --site is flags.unknown, exit 80 ("Did you
   # mean --since?"), so each scenario fails at its first Then that reads
   # the selected sites, the outcome line or the problem's rule; refusal
