@@ -115,7 +115,7 @@ func pristineProject(t *testing.T) (string, mutants.Command, string) {
 // pristineWorker is the one real worker of a pool it opens.
 func pristineWorker(t *testing.T) *boundWorker {
 	t.Helper()
-	opened, failure := (Workers{Platform: runtime.GOOS}).Open(t.Context(), mutants.MutationRun, 1)
+	opened, failure := (Workers{Platform: runtime.GOOS, TempDir: t.TempDir()}).Open(t.Context(), mutants.MutationRun, 1)
 	if failure != nil {
 		t.Fatal(failure)
 	}

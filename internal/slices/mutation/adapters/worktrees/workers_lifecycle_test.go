@@ -29,7 +29,7 @@ func TestPoolJoinsEnteredWaiterBeforeRemovingInputs(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv(runnerFixtureMode, "success")
-	opened, failure := (Workers{Platform: runtime.GOOS}).Open(t.Context(), mutants.MutationRun, 1)
+	opened, failure := (Workers{Platform: runtime.GOOS, TempDir: t.TempDir()}).Open(t.Context(), mutants.MutationRun, 1)
 	if failure != nil {
 		t.Fatal(failure)
 	}
@@ -142,7 +142,7 @@ func checkBoundWorkerBudgets(t *testing.T, purpose mutants.WorkPurpose, abort, s
 		t.Fatal(err)
 	}
 	outside := t.TempDir()
-	factory := Workers{Platform: runtime.GOOS}
+	factory := Workers{Platform: runtime.GOOS, TempDir: t.TempDir()}
 	if withOwner {
 		factory.Owner = &processes.OwnedExecutor{Platform: runtime.GOOS}
 	}

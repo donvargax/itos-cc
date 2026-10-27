@@ -29,6 +29,11 @@ type Workers struct {
 	// Settings, read when a pool opens, gives mutation.copy, the paths a
 	// copy brings back of what it leaves out; nil brings back none.
 	Settings mutants.SettingsReader
+	// TempDir is the directory a pool's worker directories are made in,
+	// swept first of those killed runs left there; "", the system's
+	// temporary directory. Tests give their own, so that no other run's
+	// directories there decide their outcome (T-219).
+	TempDir string
 }
 
 var _ mutants.Workers = Workers{}
@@ -49,7 +54,7 @@ func (f Workers) Open(ctx context.Context, purpose mutants.WorkPurpose, count in
 	if failure != nil {
 		return nil, failure
 	}
-	scratch, err := newWorkerScratch(prefix, processes.PlatformAtBoundary(f.Platform))
+	scratch, err := newWorkerScratch(f.TempDir, prefix, processes.PlatformAtBoundary(f.Platform))
 	if err != nil {
 		return nil, mutants.WorkerFailed{Cause: err}
 	}

@@ -139,7 +139,7 @@ func TestInProjectRunsInTheProjectsOwnFolder(t *testing.T) {
 		"packages/a/package.json": "{}\n",
 	})
 	t.Setenv(runnerFixtureMode, "setup")
-	opened, failure := (Workers{Platform: runtime.GOOS, Dir: tree}).Open(t.Context(), mutants.MutationRun, 1)
+	opened, failure := (Workers{Platform: runtime.GOOS, Dir: tree, TempDir: t.TempDir()}).Open(t.Context(), mutants.MutationRun, 1)
 	if failure != nil {
 		t.Fatal(failure)
 	}

@@ -49,13 +49,16 @@ type workerScratch struct {
 	lock *os.File
 }
 
-// newWorkerScratch removes the worker directories killed runs left in the
-// temporary directory, then makes this run's, named with prefix, and locks
-// its marker. A marker it cannot lock leaves the run going, its directory
-// judged by its age alone.
-func newWorkerScratch(prefix, platform string) (*workerScratch, error) {
-	removeAbandonedWorkers(os.TempDir(), platform)
-	dir, err := os.MkdirTemp("", prefix)
+// newWorkerScratch removes the worker directories killed runs left in tmp,
+// "" for the system's temporary directory, then makes this run's there,
+// named with prefix, and locks its marker. A marker it cannot lock leaves
+// the run going, its directory judged by its age alone.
+func newWorkerScratch(tmp, prefix, platform string) (*workerScratch, error) {
+	if tmp == "" {
+		tmp = os.TempDir()
+	}
+	removeAbandonedWorkers(tmp, platform)
+	dir, err := os.MkdirTemp(tmp, prefix)
 	if err != nil {
 		return nil, err
 	}

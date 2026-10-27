@@ -60,7 +60,7 @@ func writeTree(t *testing.T, root string, files map[string]string) {
 // test ends.
 func ignoredPool(t *testing.T, settings mutants.SettingsReader) *pool {
 	t.Helper()
-	opened, failure := (Workers{Platform: runtime.GOOS, Settings: settings}).Open(t.Context(), mutants.MutationRun, 1)
+	opened, failure := (Workers{Platform: runtime.GOOS, Settings: settings, TempDir: t.TempDir()}).Open(t.Context(), mutants.MutationRun, 1)
 	if failure != nil {
 		t.Fatal(failure)
 	}
@@ -234,10 +234,10 @@ func TestATreeGitCannotDescribeIsCopiedAsBefore(t *testing.T) {
 func TestAPoolWhoseSettingsFailOpensNone(t *testing.T) {
 	settings := copySettings{failure: mutants.InputFailed{Cause: errors.New("unreadable")}}
 	var failed mutants.WorkerFailed
-	if _, failure := (Workers{Platform: runtime.GOOS, Settings: settings}).Open(t.Context(), mutants.MutationRun, 1); !errors.As(failure, &failed) {
+	if _, failure := (Workers{Platform: runtime.GOOS, Settings: settings, TempDir: t.TempDir()}).Open(t.Context(), mutants.MutationRun, 1); !errors.As(failure, &failed) {
 		t.Errorf("a pool whose settings fail: %v, not WorkerFailed", failure)
 	}
-	opened, failure := (Workers{Platform: runtime.GOOS, Settings: settings}).Open(t.Context(), mutants.FrozenTrials, 1)
+	opened, failure := (Workers{Platform: runtime.GOOS, Settings: settings, TempDir: t.TempDir()}).Open(t.Context(), mutants.FrozenTrials, 1)
 	if failure != nil {
 		t.Fatalf("a counted run's pool: %v", failure)
 	}

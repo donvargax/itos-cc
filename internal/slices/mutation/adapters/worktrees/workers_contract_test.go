@@ -27,7 +27,7 @@ func TestWorkersContract(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		return Workers{Platform: runtime.GOOS, Prepare: ownCoverDir}, mutants.Command{Root: root, Dir: root, Args: []string{exe, "-test.run=^TestWorkersContractHelper$"}}
+		return Workers{Platform: runtime.GOOS, Prepare: ownCoverDir, TempDir: t.TempDir()}, mutants.Command{Root: root, Dir: root, Args: []string{exe, "-test.run=^TestWorkersContractHelper$"}}
 	})
 }
 
