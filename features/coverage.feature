@@ -599,3 +599,22 @@ Feature: Coverage
     Scenario: A Go file go list finds, and a run of the whole suite, say nothing of the whole module
       When I run "itos-cc crap a/a.go", and then "itos-cc crap --all-tests a/a.go"
       Then no line of stderr says "measuring the whole module"
+
+  # bug-11 (from the idea go-scope-last-package-dropped, found by slice-61's
+  # agent): GoScope trims go list -test's whole listing before splitting it
+  # into lines, so the last line loses its trailing tab when its package
+  # imports nothing, splits into two fields and is skipped. go list prints
+  # test binaries after the packages, so the last line is such a package
+  # only where no package has tests. A chosen file there is then measured
+  # by the whole module, and slice-61's line says go list lists no package
+  # in its folder, which is untrue. Decided by the coordinator on
+  # 2026-10-26: GoScope reads every listed line whole, its package measured
+  # as any other's; goScopeSupervised, which does not trim the listing, is
+  # unchanged. Before the fix, the run measures -coverpkg=./... ./... and
+  # the scenario fails at its Then.
+    @bug-11 @ID-COV-51 @binary-only @wip
+    Scenario: A Go file in a module with no tests, its package listed last, is measured as its own package
+      Given a/a.go and b/b.go, neither importing anything and no test in the module
+      When I run "itos-cc crap b/b.go"
+      Then coverage runs "go test ... -coverpkg=example.com/m/b ... example.com/m/b"
+      And no line of stderr says "measuring the whole module"
