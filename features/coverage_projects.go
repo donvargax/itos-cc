@@ -156,6 +156,20 @@ func (c *coverageState) unresolvableImport() error {
 	})
 }
 
+// untestedModule writes the module example.com/m with a/a.go and b/b.go,
+// neither importing anything and no test beside them, so go list -test
+// ./... prints no test binary and b, a package of no dependencies, last.
+func (c *coverageState) untestedModule() error {
+	if err := c.writeIn(".", map[string]string{
+		"go.mod": "module example.com/m\n\ngo 1.22\n",
+		"a/a.go": sampleA,
+		"b/b.go": "package b\n\nfunc B(x int) int {\n\tif x > 0 {\n\t\treturn 1\n\t}\n\treturn 0\n}\n",
+	}); err != nil {
+		return err
+	}
+	return c.declare(".", Coverage{Language: "go"})
+}
+
 // slowTest writes slow/slow_test.go, a test importing nothing of the
 // module.
 func (c *coverageState) slowTest() error {

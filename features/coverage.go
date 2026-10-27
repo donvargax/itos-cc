@@ -417,6 +417,7 @@ func coverageSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^stderr has a line beginning "([^"]*)" that gives the command's exit status$`, c.exitStatusLine)
 	sc.Step(`^a/a\.go, tested by its own package, and tools/gen\.go, which builds only under the ignore constraint$`, c.ignoredGenerator)
 	sc.Step(`^a/a\.go, tested by its own package, and b/b\.go, which imports example\.com/m/nope, a package of no module$`, c.unresolvableImport)
+	sc.Step(`^a/a\.go and b/b\.go, neither importing anything and no test in the module$`, c.untestedModule)
 	sc.Step(`^stderr has a line "([^"]*)"$`, func(text string) error { return c.saysLine(text, "", false) })
 	sc.Step(`^stderr has a line beginning "([^"]*)" that names "([^"]*)"$`, func(text, names string) error { return c.saysLine(text, names, true) })
 	sc.Step(`^I run "itos-cc ([^"]*)", and then "itos-cc ([^"]*)"$`, func(first, then string) error { return w.runEach(first, then) })
