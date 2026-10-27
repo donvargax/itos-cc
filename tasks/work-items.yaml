@@ -6258,8 +6258,8 @@ items:
   - id: slice-71
     title: Writing an exception leaves the coverage caches and strict evidence fresh
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
