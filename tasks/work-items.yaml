@@ -6160,20 +6160,13 @@ items:
     depends_on: []
     kind: slice
     refs: ["#68"]
-  - id: pid-file-read-race
+  - id: T-224
     title: Wait for the descendant PID file to hold a line before reading it in freshenv test
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      TestFreshPreparationOwnsCommandsAndPreservesListedReach (freshenv/preparation_test.go,
-      testOwnedPreparationCleanup) waits only for descendant.pid to exist, but the shell creates the
-      file at the redirect before echo writes the PID, so a fast read gets "" and strconv.Atoi
-      fails: ci.yml run 40456057099 (test (others)) failed so on the slice-67 push, which touched
-      nothing it runs. Wait until the file holds a newline-terminated PID, or write it to a
-      temporary name and rename.
+    kind: task
   - id: slice-70
     title: A file's own tests' coverage is reused while nothing it was measured from changed
     phase: 1

@@ -7197,3 +7197,19 @@
     and the 30-minute timeout stays a hang guard. A unit test of the features package holds that a
     tag the pattern matches runs in exactly one part. The release and other jobs that need the test
     parts keep needing every part.
+- id: T-224
+  type: test
+  title: Wait for the descendant PID file to hold a line before reading it in freshenv test
+  why: >
+    ci.yml 40456057099 failed test (others) on a push that touched nothing it runs:
+    TestFreshPreparationOwnsCommandsAndPreservesListedReach
+    (internal/slices/mutation/adapters/freshenv/preparation_test.go, testOwnedPreparationCleanup)
+    waits only for descendant.pid to exist, but the fixture's shell creates the file at its redirect
+    before echo writes the PID, so a fast read gets an empty string and strconv.Atoi fails. Decided
+    by the coordinator (2026-10-27): the fixture writes the PID to a temporary name and renames it
+    into place, so the file exists only once whole; the wait stays as it is. Apply the same to any
+    other PID or marker file the package's fixtures write and a test polls for. Show the race before
+    the fix by delaying between the redirect and the echo (a temporary sleep, never committed) and
+    the test failing, and after it passing with the same delay.
+  done_when:
+    - run: go test ./internal/slices/mutation/adapters/freshenv/ -run TestFreshPreparationOwnsCommandsAndPreservesListedReach -count=3
