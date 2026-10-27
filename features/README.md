@@ -1211,13 +1211,13 @@ holders stay, each asserting what no scenario does, with why beside it.
 | 229 | mutate_typescript_integration_test.go | TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered | T-130 kept: raw data under the run's directory, then gone; unsplit listed tests run alone |
 | 230 | mutate_kotlin_integration_test.go | TestLinesAKotlinTestReachesThroughAJVMItStartsAreCovered | T-130 kept: raw data under the run's directory, then gone; unsplit listed tests run alone |
 
-Additional retained guards include unloaded-package ordering and coverage-missing
-behavior, cached workspace rejection,
+Additional retained guards include an unloaded package's function, listed last, failing as
+uncovered statements (bug-11), cached workspace rejection,
 out-of-inventory replacements, supported scope controls, Maven strict lines,
 fail-fast changed lines, pre-7.13 coverage.py behavior, other fingerprint inputs,
 partial/misattributed inventories, unsplit integration fallback, and actual raw
 collector/run-directory cleanup. In particular, retain
-`TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing`,
+`TestStrictGoReportsExecutableFunctionInUnloadedPackageAsUncovered`,
 `TestStrictGoCheckRejectsCachedEvidenceWithActiveWorkspace`,
 `TestStrictGoRunAndCheckRejectOutOfInventoryLocalReplacements`,
 `TestStrictGoScopeGuardrailsRemainSupported`,

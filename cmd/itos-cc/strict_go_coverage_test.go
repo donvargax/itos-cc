@@ -12,7 +12,10 @@ import (
 // rule. ID-MUT-156 to 159, 162 and 163 hold their old tests whole, the raw
 // coverage flag refusals among them (T-101); each test left holds what no
 // scenario asserts, beside this guard of an unloaded package's function.
-func TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing(t *testing.T) {
+// unused, importing nothing, is the package go list lists last, which
+// coverage dropped until bug-11 and so reported coverage-missing; measured
+// as any other, at 0%, it is an uncovered-statement failure (ID-MUT-157).
+func TestStrictGoReportsExecutableFunctionInUnloadedPackageAsUncovered(t *testing.T) {
 	t.Parallel()
 	moduleRepo(t, map[string]string{
 		"go.mod":           "module example.com/strictunloaded\n\ngo 1.22\n",
@@ -23,15 +26,13 @@ func TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing(t *testing.
 	if o.code != 1 {
 		t.Fatalf("unloaded package strict run exit %d, want 1\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	var found bool
+	rules := map[any]bool{}
 	for _, problem := range o.json(t).Problems {
 		file, _ := problem["file"].(string)
-		if problem["rule"] == "mutation.coverage-missing" && filepath.ToSlash(file) == "unused/unused.go" && problem["function"] == "example.com/strictunloaded/unused#Dormant" {
-			found = true
-		}
+		rules[problem["rule"]] = rules[problem["rule"]] || filepath.ToSlash(file) == "unused/unused.go" && problem["function"] == "example.com/strictunloaded/unused#Dormant"
 	}
-	if !found {
-		t.Errorf("unloaded executable function was not reported as missing evidence:\n%s", o.stdout)
+	if !rules["mutation.uncovered-statement"] || !rules["mutation.uncovered"] || rules["mutation.coverage-missing"] {
+		t.Errorf("unloaded executable function was not reported as uncovered statements and mutants alone:\n%s", o.stdout)
 	}
 }
 

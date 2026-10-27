@@ -378,7 +378,7 @@ func GoScope(dir string, sources []string) (pkgs, testing []string, why string) 
 	var binaries []entry
 	selected := map[string]bool{}
 	first := "" // the folder of the first package listed
-	for _, line := range strings.Split(strings.TrimSpace(string(listing)), "\n") {
+	for _, line := range strings.Split(string(listing), "\n") {
 		fields := strings.SplitN(line, "\t", 3)
 		if len(fields) < 3 {
 			continue
@@ -446,12 +446,9 @@ func firstStderrLine(err error) string {
 // listing, or one that omits an admitted source directory, instead of
 // falling back to the whole module.
 //
-// It parses each line whole, so a package with no dependencies keeps its
-// empty third field wherever it falls in the listing. GoScope above stays
-// byte-for-byte the legacy parser for complete runs: it trims the listing's
-// trailing whitespace, which drops a dependency-free package that go list
-// prints last, and strict complete runs depend on what that selects (see
-// TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing).
+// It parses each line whole, as GoScope above does, so a package with no
+// dependencies keeps its empty third field wherever it falls in the
+// listing (bug-11).
 func goScopeSupervised(ctx context.Context, dir string, sources []string, execute CommandExecutor) (pkgs, testing []string, executions []CommandExecution, resultErr error) {
 	if len(sources) == 0 {
 		return nil, nil, nil, nil

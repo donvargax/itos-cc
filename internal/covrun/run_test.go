@@ -299,12 +299,9 @@ func TestGoScopeSaysWhyItMeasuresNothing(t *testing.T) {
 		t.Errorf("with no package listed: %q tested by %q, why %q", pkgs, tests, why)
 	}
 
-	// a/a.go has a test, as GoScope drops a package of no dependencies
-	// that go list prints last (goScopeSupervised says why).
-	writeFiles(t, dir, map[string]string{
-		"a/a.go":      "package a\n\nfunc A() int { return 1 }\n",
-		"a/a_test.go": "package a\n\nimport \"testing\"\n\nfunc TestA(t *testing.T) { A() }\n",
-	})
+	// a/a.go, untested and importing nothing, is the one package go list
+	// lists, its line the last (bug-11).
+	writeFiles(t, dir, map[string]string{"a/a.go": "package a\n\nfunc A() int { return 1 }\n"})
 	want := "measuring the whole module, as go list lists no package in " + filepath.Join(dir, "tools") +
 		"; the first it lists is in " + filepath.Join(dir, "a")
 	plan := goPlan(dir, "/out", sources, false)

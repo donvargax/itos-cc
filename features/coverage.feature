@@ -610,9 +610,14 @@ Feature: Coverage
   # in its folder, which is untrue. Decided by the coordinator on
   # 2026-10-26: GoScope reads every listed line whole, its package measured
   # as any other's; goScopeSupervised, which does not trim the listing, is
-  # unchanged. Before the fix, the run measures -coverpkg=./... ./... and
+  # unchanged. An executable function in such a package that no test
+  # loads is then an uncovered-statement failure, as ID-MUT-157 says and
+  # the supervised preparation already reports, not coverage-missing:
+  # TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing pinned
+  # the bug and becomes ...AsUncovered (idea go-scope-trailing-package,
+  # dropped). Before the fix, the run measures -coverpkg=./... ./... and
   # the scenario fails at its Then.
-    @bug-11 @ID-COV-51 @binary-only @wip
+    @bug-11 @ID-COV-51 @binary-only
     Scenario: A Go file in a module with no tests, its package listed last, is measured as its own package
       Given a/a.go and b/b.go, neither importing anything and no test in the module
       When I run "itos-cc crap b/b.go"
