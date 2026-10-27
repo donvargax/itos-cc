@@ -6015,14 +6015,15 @@ items:
     why: >
       Promoted from the idea go-scope-last-package-dropped (2026-10-26), its spec ID-COV-51 in
       features/coverage.feature.
-  - id: mutation-trial-tmpdir
-    title: mutation run gives every trial a temporary folder of its own
+  - id: slice-62
+    title: Each worker's tests see a temporary folder of their own
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutation-trial-tmpdir.
       Split from mutation-trials-own-tmpdir (T-219, 2026-10-26): workers run a project's trials side
       by side in their own copies, but every trial shares the system temporary folder, so a project
       whose tests make, sweep or name things there can see its outcomes change with what a sibling
