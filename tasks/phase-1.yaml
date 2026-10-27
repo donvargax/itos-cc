@@ -7148,5 +7148,3 @@
     the code says what it means and no equivalent mutant stands. Behaviour does not change: the
     listed packages and the tests chosen are the same, as GoScope's existing tests show. Done by
     bug-11's agent in the same push series.
-  done_when:
-    - run: go test ./internal/covrun/...

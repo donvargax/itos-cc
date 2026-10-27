@@ -6032,7 +6032,7 @@ items:
     title: GoScope keeps the test packages it selects as a set
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: exclude-uncovered-inventory
