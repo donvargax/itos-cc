@@ -6170,3 +6170,18 @@ items:
       the listed scenarios, the code proof (ci.yml 40441432498). A static check, matching every step
       text of the feature files, outlines expanded, against every step pattern, would name an
       ambiguous pair in seconds, as a hook or a static CI step.
+  - id: local-changed-lines-coverage
+    title: Show the code proof's uncovered changed lines locally, with no trial
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The code proof fails a push on a changed line no in-process test runs
+      (--fail-uncovered=lines), but an agent may run no mutation run or coverage run of this
+      repository locally, so slice-63 met them in CI only, after a hand-rolled coverprofile check
+      that missed new untracked files and counted cmd/itos-cc unit tests the proof does not. A
+      command, or a --site/--count mode that stops after preparation, reporting the uncovered
+      changed lines as the proof measures them (own tests plus listed scenarios), would let an agent
+      see them before pushing.
