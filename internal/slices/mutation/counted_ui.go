@@ -29,6 +29,11 @@ type countedResult struct {
 	// Named is, for a --site run, each argument in the order given with
 	// the identities of the mutants it named; left out otherwise.
 	Named []countedNamed `json:"named,omitempty"`
+	// OwnTests is whether a --site run judged the named mutants by their
+	// own tests alone (--own-tests): the tests mutation.tests lists did not
+	// run, so a mutant they would kill can show as survived; left out
+	// otherwise.
+	OwnTests bool `json:"own_tests,omitempty"`
 	// cleanups are the owned process groups of trials whose cleanup did
 	// not finish, which the run reports each as mutation.cleanup-failed.
 	cleanups []mutants.WorkerCleanupFailed
@@ -160,6 +165,10 @@ func (c Run) counted(ctx context.Context, ui *cli.UI, h Handler, written Written
 			return ui.Emit(c.JSON, nil, []*cli.Problem{flagConflict("--"+flag.name, flag.why)})
 		}
 	}
+	if c.OwnTests && c.AllTests {
+		return ui.Emit(c.JSON, nil, []*cli.Problem{flagConflict("--own-tests",
+			"--own-tests judges the named mutants by their own tests alone, and --all-tests by the whole suite: give one or the other")})
+	}
 	if named && len(c.Paths) > 0 {
 		return ui.Emit(c.JSON, nil, []*cli.Problem{cli.NewProblem(cli.CodeUsage, "args.unexpected",
 			fmt.Sprintf("mutation run --site takes no path, as each site names its file, but was given %q", c.Paths[0]),
@@ -207,7 +216,7 @@ func (c Run) counted(ctx context.Context, ui *cli.UI, h Handler, written Written
 			fmt.Sprintf("Run it on Linux or macOS, or run mutation run without %s; native Windows support is #29.", mode)).With("platform", h.Platform)})
 	}
 	progress := &countedProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, p: &Presentation{UI: ui, JSON: c.JSON, Tree: h.Tree}}
-	err := h.Counted(ctx, CountedQuery{Paths: c.Paths, Since: c.Since, Seed: c.Seed, Count: c.Count, Sites: sites, Repeat: c.Repeat, AllTests: c.AllTests,
+	err := h.Counted(ctx, CountedQuery{Paths: c.Paths, Since: c.Since, Seed: c.Seed, Count: c.Count, Sites: sites, OwnTestsOnly: c.OwnTests, Repeat: c.Repeat, AllTests: c.AllTests,
 		FailUncovered: c.FailUncovered != nil, LinesOnly: c.FailUncovered != nil && *c.FailUncovered == "lines",
 		Workers: c.Workers, TimeoutFactor: c.TimeoutFactor, OutputFactor: c.OutputFactor, MemoryFactor: c.MemoryFactor, Progress: progress})
 	if err != nil {
@@ -353,7 +362,11 @@ func (p *Presentation) printCounted(r *countedResult) {
 	if s.Stop != "" {
 		_, _ = fmt.Fprintf(out, "stopped: %s\n", s.Stop)
 	}
-	_, _ = fmt.Fprintln(out, "sampled assurance: only the judgments above are proven; this is not a complete mutation result, and no snapshot, annotation or coverage cache was written")
+	assurance := "sampled assurance: only the judgments above are proven; this is not a complete mutation result, and no snapshot, annotation or coverage cache was written"
+	if r.OwnTests {
+		assurance += "; own tests only: the tests mutation.tests lists did not run"
+	}
+	_, _ = fmt.Fprintln(out, assurance)
 	_, _ = fmt.Fprintln(out, s.Bounds)
 }
 

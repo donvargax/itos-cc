@@ -95,7 +95,13 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 		stage("admission", "failed", err)
 		return prep, fmt.Errorf("read frozen committed config: %w", err)
 	}
-	prep.Tests, prep.Exceptions = cfg.Tests, cfg.Exceptions
+	// A plan of its own tests alone lists no test and measures no listed
+	// reach, whatever the settings list.
+	listedTests := cfg.Tests
+	if plan.OwnTestsOnly {
+		listedTests = nil
+	}
+	prep.Tests, prep.Exceptions = listedTests, cfg.Exceptions
 	stage("admission", "complete", nil)
 	if err := ctx.Err(); err != nil {
 		stage("preparation", "aborted", err)
@@ -155,7 +161,7 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 	}
 	stage("baseline-plan", "complete", nil)
 
-	tools, err := resolvePreparationTools(e.Platform, plans, baselines, cfg.Tests != nil)
+	tools, err := resolvePreparationTools(e.Platform, plans, baselines, listedTests != nil)
 	prep.Tools = tools
 	if err != nil {
 		stage("tools", "failed", err)
@@ -164,12 +170,12 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 	stage("tools", "complete", nil)
 
 	var perTest *covrun.PerTest
-	if cfg.Tests != nil {
+	if listedTests != nil {
 		if err := ctx.Err(); err != nil {
 			stage("preparation", "aborted", err)
 			return prep, err
 		}
-		listed, executions, listErr := listFreshTests(ctx, e.Platform, root, cfg.Tests.List, log, execute)
+		listed, executions, listErr := listFreshTests(ctx, e.Platform, root, listedTests.List, log, execute)
 		prep.Commands = append(prep.Commands, executions...)
 		if listErr != nil {
 			stage("listed-tests", "failed", listErr)
@@ -180,7 +186,7 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 		for i := range listed {
 			ids[i] = listed[i].ID
 		}
-		perTest = &covrun.PerTest{Root: root, Tests: listed, Select: cfg.Tests.Select, All: cfg.Tests.All(ids)}
+		perTest = &covrun.PerTest{Root: root, Tests: listed, Select: listedTests.Select, All: listedTests.All(ids)}
 		stage("listed-tests", "complete", nil)
 	}
 	if err := ctx.Err(); err != nil {

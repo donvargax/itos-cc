@@ -18,7 +18,8 @@ import (
 // CountedQuery carries a counted run's domain values once: the paths, the
 // --since ref and the seed as written, "" when omitted, the budget, or the
 // sites named instead of a draw (--site), a position's file as written,
-// how many times each trial runs (--repeat), the scope its trials run, how
+// whether they are judged by their own tests alone (--own-tests), how many
+// times each trial runs (--repeat), the scope its trials run, how
 // uncovered sites judge and the run's limits. Progress is where its
 // observations go as they happen, its report among them.
 type CountedQuery struct {
@@ -26,6 +27,7 @@ type CountedQuery struct {
 	Since, Seed              string
 	Count                    int
 	Sites                    []mutants.FreshSite
+	OwnTestsOnly             bool
 	Repeat                   int
 	AllTests                 bool
 	FailUncovered, LinesOnly bool
@@ -82,7 +84,7 @@ type CountedFound struct {
 // inputs are released.
 func (h Handler) Counted(ctx context.Context, q CountedQuery) error {
 	result := &countedResult{Selected: []countedSite{}, Subjects: countedSubjects{Judged: []countedSubject{}, Omitted: []countedSubject{}},
-		Stages: []preparationStage{}}
+		Stages: []preparationStage{}, OwnTests: q.OwnTestsOnly}
 	if h.Repository == nil {
 		return errors.New("mutation repository binding is missing")
 	}
@@ -107,7 +109,7 @@ func (h Handler) Counted(ctx context.Context, q CountedQuery) error {
 	if fresh == nil {
 		return errors.New("mutation Fresh binding is missing")
 	}
-	plan, planFailure := fresh.Plan(ctx, mutants.FreshRequest{Root: root, Paths: paths, Since: q.Since, Count: q.Count, Seed: q.Seed, Sites: sites})
+	plan, planFailure := fresh.Plan(ctx, mutants.FreshRequest{Root: root, Paths: paths, Since: q.Since, Count: q.Count, Seed: q.Seed, Sites: sites, OwnTestsOnly: q.OwnTestsOnly})
 	if planFailure != nil {
 		if ctx.Err() != nil {
 			result.Sampling = countedSampling{Budget: q.Count, Assurance: "sampled", Completion: "interrupted",

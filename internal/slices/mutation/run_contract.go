@@ -261,6 +261,14 @@ and an uncovered named mutant fail, --fail-uncovered or not. It writes
 nothing, refuses what --count refuses, and --count, --seed, --since and
 paths, and runs on Linux and macOS.
 
+--own-tests, with --site only, judges the named mutants by their own
+tests alone: no test mutation.tests lists runs, nor is its reach
+measured, and their own coverage is measured as before. A mutant its own
+tests kill passes; one that survives them fails as without the flag, and
+the report says the listed tests did not run, so a mutant they would
+kill can show as survived. Without --site, or with --all-tests, it is
+flags.conflict.
+
 SIGINT or SIGTERM interrupts a run, complete or counted, as it does every
 command: no command starts after it, the judgment then running is
 cancelled with no outcome, and every process group the run owns is killed
@@ -508,7 +516,8 @@ judged and no snapshot is written. Listed tests are not run with
    "subjects": {"judged": [{"file", "function"}], "omitted": [...]},
    "stages": [{"name", "state": "complete"|"failed"|"skipped"|"aborted", "error"}],
    and with --site "named": [{"argument", "identities": ["<identity>"]}],
-   each argument in the order given with the mutants it named`,
+   each argument in the order given with the mutants it named, and with
+   --own-tests "own_tests": true`,
 		Rules: []string{
 			"mutation.survived         a mutant survived: file, line, column, function, original, replacement; with --count or --site identity, which the message names and the fix's mutation except takes",
 			"mutation.uncovered        with --fail-uncovered, or a mutant --site names, no test executes a mutant: file, line, column, function, original, replacement",
@@ -530,7 +539,7 @@ judged and no snapshot is written. Listed tests are not run with
 			"flags.conflict            --since with --changed: flag",
 			"flags.conflict            --fail-uncovered with --no-coverage, or strict Go, Python, TypeScript, Kotlin or Dart coverage with raw coverage flags: flag",
 			"flags.conflict            --fail-uncovered=lines without --since: flag",
-			"flags.conflict            --seed or --repeat without --count, or --count with a flag it refuses, --fail-fast included, or --site with one of those or --count, --seed or --since: flag",
+			"flags.conflict            --seed or --repeat without --count, or --count with a flag it refuses, --fail-fast included, or --site with one of those or --count, --seed or --since, or --own-tests without --site or with --all-tests: flag",
 			"args.unexpected           a path beside --site: argument",
 			"count.platform            --count or --site on a platform other than Linux and macOS, that is Windows (#29): platform",
 			"fail-fast.platform        --fail-fast on a platform other than Linux and macOS, that is Windows (#29), before any command runs: platform",

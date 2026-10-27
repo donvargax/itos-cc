@@ -695,6 +695,17 @@ the order given with the identities it named. There is no `--until` or
 range (issue #63): `--site` with the identity a CI log prints is the pinned
 check of one mutant.
 
+`mutation run --site SITE --own-tests` judges the named mutants by their
+own tests alone (slice-67, q-103): no test `mutation.tests` lists runs and
+no listed reach is measured, the named mutants' own coverage measured as
+before. A mutant its own tests kill is killed, exit 0; one that survives
+them is `mutation.survived`, exit 1, as without the flag, and the report
+says the listed tests did not run, so a mutant they would kill can show
+here as survived: the plain assurance line ends `own tests only: the tests
+mutation.tests lists did not run`, and `--json` adds `"own_tests": true`.
+`--own-tests` without `--site`, or with `--all-tests`, is `flags.conflict`,
+exit 80: it narrows a named judgment and nothing else.
+
 `mutation run --fail-fast` stops a complete run at the first actionable final
 judgment it observes, and reports it under the rule and exit code a run
 without it would. Its `--json` object stays one object and adds keys only:

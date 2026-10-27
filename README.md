@@ -919,6 +919,11 @@ fails, exit 1, and a site that names no mutant is `site.unmatched`, exit 80,
 before anything runs. It writes nothing, refuses `--count`, `--seed`,
 `--since` and paths, and runs on Linux and macOS.
 
+`--own-tests`, with `--site`, judges the named mutants by their own tests
+alone: no test `mutation.tests` lists runs, nor is its reach measured, so
+checking one kill takes the seconds its own tests take. The report says the
+listed tests did not run, as a mutant they would kill can show as survived.
+
 `--fail-fast` stops a complete run at the first actionable failure it
 observes, in the order judgments finish, for a quick fix-and-retry loop: an
 unexcepted survivor, once the listed tests that reach it failed to kill it

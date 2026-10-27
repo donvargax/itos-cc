@@ -134,6 +134,9 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 	if linesOnly && !written.given("since") {
 		return ui.Emit(c.JSON, nil, ui.Problems(failureError(LinesWithoutSince{}, ui.Rel)))
 	}
+	if written.given("own-tests") && !written.given("site") {
+		return ui.Emit(c.JSON, nil, []*cli.Problem{flagConflict("--own-tests", "--own-tests narrows the judgment of the mutants --site names, and is given without it")})
+	}
 	if written.given("count") || written.given("seed") || written.given("repeat") || written.given("site") {
 		return c.counted(ctx, ui, h, written)
 	}

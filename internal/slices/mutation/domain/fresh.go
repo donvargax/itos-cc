@@ -13,14 +13,16 @@ import (
 
 // FreshRequest bounds a cache-independent judgment of committed inputs:
 // Count sites drawn with Seed from Paths and Since's changed functions, or,
-// with Sites, the mutants they name alone (AdmitNamed).
+// with Sites, the mutants they name alone (AdmitNamed). OwnTestsOnly
+// judges them by their own tests alone (FreshPlan.OwnTestsOnly).
 type FreshRequest struct {
-	Root  string
-	Paths []string
-	Since string
-	Count int
-	Seed  string
-	Sites []FreshSite
+	Root         string
+	Paths        []string
+	Since        string
+	Count        int
+	Seed         string
+	Sites        []FreshSite
+	OwnTestsOnly bool
 }
 
 // FreshPlan is a cache-independent selection of committed mutation sites.
@@ -63,6 +65,11 @@ type FreshPlan struct {
 	// Named is, for a plan of named sites (AdmitNamed), each argument with
 	// the identities it named; nil for a drawn plan.
 	Named []FreshNamed
+	// OwnTestsOnly is whether the request judges the selected mutants by
+	// their own tests alone (mutation run --site --own-tests): preparation
+	// then lists no test and measures no listed reach, whatever the
+	// settings list, and leaves its Tests nil, so no trial runs one.
+	OwnTestsOnly bool
 }
 
 // FreshSettings is the settings file a counted run reads at its commit, at

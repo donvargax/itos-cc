@@ -62,7 +62,13 @@ func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport
 		stage("admission", "failed", *invalid)
 		return prep, *invalid
 	}
-	prep.Tests, prep.Exceptions = tests, exceptions
+	// A plan of its own tests alone lists no test and measures no listed
+	// reach, whatever the settings list.
+	listedTests := tests
+	if p.OwnTestsOnly {
+		listedTests = nil
+	}
+	prep.Tests, prep.Exceptions = listedTests, exceptions
 	stage("admission", "complete", nil)
 	sources := mutants.FreshMeasurementSources(p)
 	inputs := *f.Inputs
@@ -132,11 +138,11 @@ func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport
 	}
 	stage("tools", "complete", nil)
 	var perTest *coverage.PerTest
-	if tests != nil {
+	if listedTests != nil {
 		if f.Lister == nil {
 			return stop("listed-tests", errors.New("fresh test listing binding is missing"))
 		}
-		listing, failed := f.Lister.List(ctx, mutants.Command{Root: p.FrozenRoot, Dir: p.FrozenRoot, Shell: tests.List})
+		listing, failed := f.Lister.List(ctx, mutants.Command{Root: p.FrozenRoot, Dir: p.FrozenRoot, Shell: listedTests.List})
 		if failed != nil {
 			return stop("listed-tests", failed)
 		}
@@ -148,7 +154,7 @@ func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport
 		if listing.ExitCode != 0 {
 			listErr = errors.New(listing.Reason)
 		}
-		prep.Commands = append(prep.Commands, coverage.CommandExecution{Args: []string{name, flag, tests.List}, Dir: p.FrozenRoot, Err: listErr})
+		prep.Commands = append(prep.Commands, coverage.CommandExecution{Args: []string{name, flag, listedTests.List}, Dir: p.FrozenRoot, Err: listErr})
 		if listErr != nil {
 			return stop("listed-tests", listErr)
 		}
@@ -168,7 +174,7 @@ func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport
 		for _, test := range listed {
 			ids = append(ids, test.ID)
 		}
-		perTest = &coverage.PerTest{Root: p.FrozenRoot, Tests: listed, Select: tests.Select, All: tests.All(ids)}
+		perTest = &coverage.PerTest{Root: p.FrozenRoot, Tests: listed, Select: listedTests.Select, All: listedTests.All(ids)}
 		stage("listed-tests", "complete", nil)
 	}
 	req := covport.Request{Sources: sources, Scope: scope, AllTests: scope == covport.AllTests, Reach: func(path string) []string { return reach[path] }}

@@ -75,6 +75,7 @@ type Run struct {
 	Seed                string      `placeholder:"TEXT" help:"with --count, seed the draw with TEXT instead of the HEAD commit's id"`
 	Repeat              int         `placeholder:"N" default:"1" help:"with --count or --site, run each trial N times; outcomes not all alike are mutation.flaky"`
 	Site                []string    `placeholder:"SITE" sep:"none" help:"judge only the mutants SITE names, freshly: <file>:<line>:<column>, or an identity as a counted run reports it; Linux and macOS"`
+	OwnTests            bool        `name:"own-tests" help:"with --site, judge the named mutants by their own tests alone: no test mutation.tests lists runs, nor is its reach measured"`
 	JSON                bool        `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 }
 

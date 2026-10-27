@@ -161,7 +161,7 @@ func (f *Fresh) Plan(ctx context.Context, r mutants.FreshRequest) (*mutants.Fres
 		seed = head
 	}
 	plan := &mutants.FreshPlan{Root: root, FrozenRoot: frozen, Commit: head, SinceRef: r.Since, SinceBase: base, Seed: seed, Algorithm: mutants.FreshPlanVersion, Files: all,
-		Uncommitted: f.History.uncommitted(committed)}
+		Uncommitted: f.History.uncommitted(committed), OwnTestsOnly: r.OwnTestsOnly}
 	if changed != nil {
 		plan.Changed = map[string][]mutants.LineRange{}
 		for name, ranges := range changed {

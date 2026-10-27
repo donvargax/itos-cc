@@ -93,3 +93,67 @@ func TestANamedRunOnWindowsIsRefusedNamingSite(t *testing.T) {
 		t.Errorf("exit %d\n%s%s", code, out.String(), errOut.String())
 	}
 }
+
+// --own-tests narrows a named judgment and nothing else (slice-67): given
+// without --site, with --count or alone, or beside --all-tests, it is
+// flags.conflict before anything is observed.
+func TestOwnTestsWithoutANamedJudgmentConflicts(t *testing.T) {
+	for _, c := range []struct {
+		run     Run
+		written cli.Written
+	}{
+		{Run{OwnTests: true, Repeat: 1, JSON: true}, cli.Written{"own-tests": {"true"}}},
+		{Run{Count: 1, OwnTests: true, Repeat: 1, JSON: true}, cli.Written{"count": {"1"}, "own-tests": {"true"}}},
+		{Run{Site: []string{"a.go:3:9"}, OwnTests: true, AllTests: true, Repeat: 1, JSON: true}, cli.Written{"site": {"a.go:3:9"}, "own-tests": {"true"}, "all-tests": {"true"}}},
+	} {
+		var out, errOut strings.Builder
+		code := c.run.Run(t.Context(), &cli.UI{Stdout: &out, Stderr: &errOut}, Handler{Platform: "linux"}, c.written)
+		if code != cli.CodeUsage || !strings.Contains(out.String(), `"flags.conflict"`) || !strings.Contains(out.String(), `"flag": "--own-tests"`) {
+			t.Errorf("%v: exit %d\n%s%s", c.written, code, out.String(), errOut.String())
+		}
+	}
+}
+
+// planKept is a Fresh that keeps the request it is given, then stops as an
+// interrupt stops it.
+type planKept struct {
+	mutants.Fresh
+	request *mutants.FreshRequest
+}
+
+func (p planKept) Plan(ctx context.Context, r mutants.FreshRequest) (*mutants.FreshPlan, mutants.FreshFailure) {
+	*p.request = r
+	return nil, mutants.FreshCancelled{Cause: context.Cause(ctx)}
+}
+
+// --own-tests reaches the plan, whose preparation then lists no test, and
+// the report, which says the listed tests did not run.
+func TestOwnTestsReachThePlanAndTheReport(t *testing.T) {
+	ctx, cancel := context.WithCancelCause(t.Context())
+	cancel(context.Canceled)
+	var request mutants.FreshRequest
+	h := Handler{Repository: func(context.Context) (string, error) { return t.TempDir(), nil }, Fresh: planKept{request: &request}}
+	kept := &reportKept{}
+	identity := mutants.Identity{File: "a.go"}
+	q := CountedQuery{Sites: []mutants.FreshSite{{Argument: "a.go:…", File: "a.go", Identity: &identity}}, OwnTestsOnly: true, Progress: kept}
+	if err := h.Counted(ctx, q); err != nil {
+		t.Fatal(err)
+	}
+	if !request.OwnTestsOnly || kept.found == nil || !kept.found.Report.OwnTests {
+		t.Fatalf("request %+v, found %+v: --own-tests did not reach both", request, kept.found)
+	}
+	var out strings.Builder
+	(&Presentation{UI: &cli.UI{Stdout: &out}}).printCounted(kept.found.Report)
+	if !strings.Contains(out.String(), "no snapshot, annotation or coverage cache was written; own tests only: the tests mutation.tests lists did not run\n") {
+		t.Errorf("plain report:\n%s", out.String())
+	}
+	q.OwnTestsOnly = false
+	if err := h.Counted(ctx, q); err != nil {
+		t.Fatal(err)
+	}
+	out.Reset()
+	(&Presentation{UI: &cli.UI{Stdout: &out}}).printCounted(kept.found.Report)
+	if request.OwnTestsOnly || kept.found.Report.OwnTests || strings.Contains(out.String(), "own tests only") {
+		t.Errorf("without --own-tests: request %+v\n%s", request, out.String())
+	}
+}

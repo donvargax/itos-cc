@@ -69,4 +69,35 @@ func FreshPreparationContract(t *testing.T, open func(*testing.T) FreshPreparati
 			}
 		})
 	}
+	// mutation run --site --own-tests (slice-67): the settings list a test,
+	// and a plan of the mutants' own tests alone lists none and measures
+	// no listed reach, its own coverage measured as before.
+	t.Run("own tests alone list no test and measure no listed reach", func(t *testing.T) {
+		b := open(t)
+		p, failed := b.Fresh.Plan(t.Context(), mutants.FreshRequest{Root: b.Root, Count: 1, Seed: "shared-preparation", OwnTestsOnly: true})
+		if failed != nil {
+			t.Fatal(failed)
+		}
+		defer b.Fresh.Release(t.Context(), p)
+		if !p.OwnTestsOnly {
+			t.Fatal("the plan does not keep its own tests alone")
+		}
+		b.Collector(p, 0)
+		prep, failed := b.Fresh.Prepare(t.Context(), p, covport.OwnTests)
+		if failed != nil || prep == nil || prep.Tests != nil || len(prep.Listed) != 0 || len(prep.Baselines) != 1 || !prep.Report.Measures("go") {
+			t.Fatalf("own-tests preparation: %+v %v", prep, failed)
+		}
+		for _, stage := range prep.Stages {
+			if stage.Name == "listed-tests" || stage.Name == "listed-coverage" {
+				t.Fatalf("own-tests preparation ran stage %s: %+v", stage.Name, prep.Stages)
+			}
+		}
+		path := filepath.Join(p.FrozenRoot, "main.go")
+		if hit, ok := prep.Report.LineCovered(path, 2); !hit || !ok {
+			t.Fatalf("own coverage not measured: %+v", prep.Report)
+		}
+		if ids := prep.Report.LineTests(path, 2); len(ids) != 0 {
+			t.Fatalf("listed reach measured: %v", ids)
+		}
+	})
 }

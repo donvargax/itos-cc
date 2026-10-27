@@ -4736,7 +4736,7 @@ Feature: Mutation testing
     #   exit 80: it narrows a named judgment, nothing else.
     # Before the slice --own-tests is flags.unknown, each scenario failing
     # at its first Then.
-    @slice-67 @ID-MUT-374 @wip
+    @slice-67 @ID-MUT-374
     Scenario: --own-tests judges a named site by its own tests alone, and says the listed tests did not run
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And mutation.tests lists a test that reaches board/board.go line 5 and kills the mutant
@@ -4747,7 +4747,7 @@ Feature: Mutation testing
       And "own_tests" is true
       And the exit code is 1
 
-    @slice-67 @ID-MUT-375 @wip
+    @slice-67 @ID-MUT-375
     Scenario: A named mutant its own tests kill passes with --own-tests, running no listed test
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And mutation.tests lists a test that reaches board/board.go line 5 and kills the mutant
@@ -4758,7 +4758,7 @@ Feature: Mutation testing
       And no listed test or listed coverage command ran
       And the exit code is 0
 
-    @slice-67 @ID-MUT-376 @wip
+    @slice-67 @ID-MUT-376
     Scenario Outline: --own-tests narrows a named judgment and nothing else
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       When I run "itos-cc mutation run <args> --json"
