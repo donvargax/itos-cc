@@ -99,12 +99,7 @@ func coverageReuseSteps(sc *godog.ScenarioContext, l *listedMutation) {
 	sc.Step(`^"itos-cc mutation run --mutate-all" after it reuses the coverage it measured$`, r.reusesAfter)
 	sc.Step(`^the listed tests run once for coverage, and stderr says the cached coverage measured no file of b$`, r.lacksB)
 	sc.Step(`^"itos-cc (mutation run --mutate-all main\.go b)" after it does not run the listed tests for coverage$`, r.notMeasuredAfter)
-	sc.Step(`^no listed test ran for coverage, and stderr says the listed tests' coverage was reused$`, func() error {
-		if err := r.notMeasured(); err != nil {
-			return err
-		}
-		return r.says(reusedLine)
-	})
+	sc.Step(`^no listed test ran for coverage, and stderr says the listed tests' coverage was reused$`, r.reused)
 	sc.Step(`^\.metrics/coverage/cache is byte for byte as it was$`, r.cacheKept)
 	sc.Step(`^the listed tests run once for coverage, and \.metrics/coverage/cache is byte for byte as it was$`, func(ctx context.Context) error {
 		if err := l.splitCoverage(); err != nil {
@@ -120,6 +115,7 @@ func coverageReuseSteps(sc *godog.ScenarioContext, l *listedMutation) {
 	})
 	sc.Step(`^every judged function's coverage evidence is what "itos-cc ([^"]*)" would record, with no uncovered statement it did not have$`, r.sameEvidence)
 	sc.Step(`^once a/a\.go's test changed, the strict run measures again and records evidence of the new inputs$`, r.strictAgain)
+	exceptionCoverageSteps(sc, r)
 }
 
 // run runs args, a mutation run a Given makes, which must judge or fail as
