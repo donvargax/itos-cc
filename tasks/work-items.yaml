@@ -6008,18 +6008,9 @@ items:
     title: Each worker's tests see a temporary folder of their own
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-219]
     kind: slice
-    why: >
-      Was mutation-trial-tmpdir.
-      Split from mutation-trials-own-tmpdir (T-219, 2026-10-26): workers run a project's trials side
-      by side in their own copies, but every trial shares the system temporary folder, so a project
-      whose tests make, sweep or name things there can see its outcomes change with what a sibling
-      trial does, as itos-cc's own worktrees tests did (T-217). Setting TMPDIR, TMP and TEMP to a
-      folder per worker or per trial, removed after, would make those outcomes independent. It
-      changes what the user's tests see (a tool that caches under TMPDIR loses its cache, a path a
-      test prints differs), so it is the person's call, with a scenario.
   - id: worktrees-callers-own-tmpdir
     title: Tests outside worktrees that open its Workers make worker folders in a temporary folder of their own
     phase: 1
