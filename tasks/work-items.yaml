@@ -6017,3 +6017,10 @@ items:
       any mutant of removeAbandonedWorkers or abandoned killed or survived by chance. Setting
       TMPDIR, TMP and TEMP to a t.TempDir in the tests that build Workers, or giving every trial its
       own TMPDIR in mutation run, would make those outcomes deterministic; decide which, or both.
+  - id: T-218
+    title: Upgrade the repository pin to itos 8.25
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
