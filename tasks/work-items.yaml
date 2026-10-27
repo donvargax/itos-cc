@@ -6060,17 +6060,9 @@ items:
     title: Listed tests' Go coverage is converted once-resolved and only for the measured packages
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [slice-64]
     kind: slice
-    why: >
-      Was listed-coverage-scoped-conversion.
-      #73: a consumer's per-push proof (--count 1, ~1000 listed IDs with per-test coverage) takes
-      ~167 s for one judged site: 62 s measuring the listed tests whole, then ~88 s mostly one go
-      tool covdata textfmt per ID with no -pkg (covrun/supervised.go ~263-290, the converter in
-      pertest.go; split read from source, not timed). Cheapest cut: textfmt -pkg=<packages of the
-      selected files>, keeping the fail-closed check. Caching the reach map (option 2) overlaps
-      coverage-reuse (#67).
     refs: ["#73"]
   - id: slice-64
     title: mutation run says on stderr each phase it ends and how long it took
