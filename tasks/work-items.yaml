@@ -6232,3 +6232,19 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: windows-coverage-scenarios-contend
+    title: The coverage-building scenarios slow each other several-fold on Windows when they share a features part
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-225 (2026-10-27): in cd.yml 40494305933, with ID-MUT-119, 120, 122, 123, 126 and 269 in one
+      Windows features part, each took 195 to 578 seconds instead of 16 to 88 when spread across the
+      parts (40497759870); MUT-121 to 124 did the same together in 40475634739. The split now keeps
+      121 and 123 apart from 122 and 124 (pattern ending 0, 2, 4, 5, 7, 8), but a future scenario
+      added beside them can tip a part past 20 minutes again. Find what they contend for on Windows
+      (the shared Go build cache and its locks, covdata, Defender scanning the temp folders, the
+      binary driver's parallelism) and remove the contention, or mark them to run one at a time;
+      tools/bin/scenario-digits (T-225) sums a run's reports by ID digit.
