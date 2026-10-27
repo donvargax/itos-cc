@@ -7178,3 +7178,24 @@
     unknown rule. Behaviour for this repository is unchanged: the same rows, the same refusals. Then
     file a backport issue on the template the script came from if it carries the script (the
     coordinator does).
+- id: T-223
+  type: ci
+  title: cd.yml splits the features part in two, as cmd-a and cmd-b split cmd/itos-cc
+  why: >
+    slice-69's scenarios took the Windows features part to 23.4 minutes (cd.yml 40470585402) and,
+    once, past its 30-minute go test timeout (40465433031, in ID-MUT-388), which the workflow's
+    comment calls a guard against a hang, not a budget; ID-MUT-383 alone is about 590
+    scenario-seconds. Decided by the coordinator (2026-10-27): split the features part into
+    features-a and features-b on every system, as T-122 split cmd/itos-cc, each scenario in exactly
+    one, balanced by measured times (the parts' logs, or -scenario-report's cucumber JSON, which
+    carries durations), so Windows' longer half stays well under 20 minutes. The selection must be
+    complementary by construction, never two hand-kept lists: a -skip-scenarios flag beside
+    -scenarios in the features package (a regular expression over each tag, as -scenarios is, and as
+    go test's -skip mirrors -run), with features-a running -scenarios='<pattern>' and features-b
+    -skip-scenarios='<pattern>', or an equivalent the features package already offers.
+    features/README.md documents the flag, the workflow's comment the split and its measurements,
+    and the 30-minute timeout stays a hang guard. A unit test of the features package holds that a
+    tag the pattern matches runs in exactly one part. The release and other jobs that need the test
+    parts keep needing every part.
+  done_when:
+    - run: go tool actionlint .github/workflows/cd.yml
