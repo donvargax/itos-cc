@@ -6210,3 +6210,18 @@ items:
       data silently lost. Seen in slice-70 when a Go test named with a comma gave its TempDir one
       and the listed contract read no per-ID coverage. Refuse such a path with a clear problem, or
       convert from a comma-free folder of the run's own.
+  - id: stdout-says-hides-backslashes
+    title: The features' stdout step turns backslashes into slashes, hiding a plain line's Windows path
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      bug-12's agent (2026-10-27): the shared step stdoutSays (features) replaces backslashes with
+      slashes before comparing, so a scenario reading a plain line passes on Windows even when the
+      line names its file with backslashes, which bug-9's rule forbids; that is why no scenario
+      caught bug-12 or slice-68's --rehash lines. bug-12 added a strict step, namesFile, for its own
+      scenario. Decide whether stdoutSays keeps the normalisation (for paths the product prints in
+      the system's form on purpose, such as --json-adjacent messages) or compares plain lines
+      strictly, and which scenarios then change.
