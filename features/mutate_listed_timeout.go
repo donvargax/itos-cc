@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strconv"
@@ -157,6 +158,13 @@ func (l *listedMutation) failingSelection() error {
 		return err
 	}
 	l.m.w.variables = append(l.m.w.variables, "GREET_FAIL_ALONE=1")
+	// The harness now fails through a variable, which no input of the
+	// listed tests' cached coverage holds: the recording run's entry is
+	// removed, as deleting the cache always may be (slice-69), so the
+	// listed tests run for coverage again.
+	if err := l.m.w.d.Remove(filepath.Join(l.m.w.dir, ".metrics", "coverage", "cache")); err != nil {
+		return err
+	}
 	return l.declare()
 }
 
