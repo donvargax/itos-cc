@@ -951,6 +951,79 @@ Feature: Mutation testing
       Then the lines itos-cc writes to stderr about the baseline and each mutant begin "itos-cc: "
       And no line of stderr begins "mutate: "
 
+  # slice-64 (mutation-phase-progress, issue #74): between the listed tests' coverage
+  # run and the baseline, a counted run printed nothing for ~88 s on a
+  # consumer's hosted runner, so a CI log could not tell which phase took
+  # the time, or whether the run was stuck. Decided by the coordinator on 2026-10-26, from the drafter's recommendations (scratch spec-draft-progress-scoped.md, Q1-Q13):
+  # - Each long phase that ends without a line of its own says so on
+  #   stderr when it ends, with its duration in the existing "%.1fs" form
+  #   ("passed in 0.5s", "(3.2s)"). Every line begins "itos-cc:"
+  #   (mutation-progress-prefix); the listed coverage's begin
+  #   "itos-cc: coverage: " (coverage-prefix).
+  # - The listed tests' coverage, in mutation run, complete or counted:
+  #   when the run of every listed test ends (or the last per-test run of
+  #   the fallback), "itos-cc: coverage: the listed tests ran in <d>;
+  #   converting the coverage of <n> of them" ("ran one at a time in <d>"
+  #   in the fallback). That line is also the start line of the
+  #   conversions, the one long phase that announced nothing. When they
+  #   end: "itos-cc: coverage: converted the coverage of <n> listed tests
+  #   in <d>". <n> is the IDs with data.
+  # - A file's own-tests baseline, complete or counted: after its output,
+  #   "itos-cc: baseline <dir> passed in <d>: a mutant running it times
+  #   out after <t>", as a selection's baseline says it today.
+  # - A counted mutant whose listed tests ran says what they took, as a
+  #   complete run's line does: "(<total>, the listed tests <d>)".
+  # - No other start lines and no heartbeat: every other long phase starts
+  #   with its "<dir>$ <command>" line already.
+  # - The lines go to stderr with or without --json. stdout and the --json
+  #   object are unchanged; no key is added. Plain output can change in
+  #   any release (docs/CLI.md "The contract with scripts").
+  # - Not in this slice: --json durations, a line for the strict Go
+  #   inventory, a heartbeat; each an idea if a log shows the need.
+  # - Scenarios check a duration's shape (<duration>: digits, a point, a
+  #   digit, "s"), never its value. The in-process fakes print a declared
+  #   or zero duration.
+  Rule: A mutation run says on stderr when each long phase ends, and how long it took
+
+    # Before: neither line exists; it fails at the first Then.
+    @slice-64 @ID-MUT-367 @wip
+    Scenario Outline: The listed tests' coverage says when its run and its conversions end
+      Given the module of <module>
+      When I run "itos-cc mutation run"
+      Then stderr has a line "itos-cc: coverage: the listed tests <ran> in <duration>; converting the coverage of 2 of them" after the listed tests' coverage command
+      And then a line "itos-cc: coverage: converted the coverage of 2 listed tests in <duration>"
+      And both come before the first line about a mutant
+
+      Examples:
+        | module                                                           | ran              |
+        | ID-MUT-122, whose harness splits the run                         | ran              |
+        | ID-MUT-122, whose harness ignores ITOS_CC_TEST_COVERDIR          | ran one at a time |
+
+    # Before: the baseline's command line is the last line about it; it
+    # fails at the Then.
+    @slice-64 @ID-MUT-368 @wip
+    Scenario: A file's own-tests baseline says when it passed
+      Given a Go file whose tests pass, with a mutant they kill
+      When I run "itos-cc mutation run a/a.go"
+      Then stderr has, after the line "itos-cc: baseline <dir>$ go test …", a line "itos-cc: baseline <dir> passed in <duration>: a mutant running it times out after <duration>"
+
+    # Before: the counted run prints neither listed-coverage line nor the
+    # baseline's end, and its mutant line gives only "(<duration>)"; it
+    # fails at the first Then. The stdout step is a guardrail that passes
+    # before; it is reported apart.
+    @slice-64 @ID-MUT-369 @wip
+    Scenario Outline: A counted run accounts for its time between coverage and the result
+      Given the counted listed fixture, whose selected mutant survives its own tests and is killed by ID-A-01
+      When I run "itos-cc mutation run --count 1 <json>"
+      Then stderr has, in order, the listed tests' coverage command, "itos-cc: coverage: the listed tests ran in <duration>; converting the coverage of 2 of them", "itos-cc: coverage: converted the coverage of 2 listed tests in <duration>", the own baseline's command and "itos-cc: baseline <dir> passed in <duration>: a mutant running it times out after <duration>"
+      And its mutant's line ends "survived its own tests, then killed with ID-A-01 (<duration>, the listed tests <duration>)"
+      And stdout is <stdout>, as a run before mutation-phase-progress gives it
+
+      Examples:
+        | json   | stdout                       |
+        |        | the plain report             |
+        | --json | the one JSON object, its keys unchanged |
+
   # Issue #14: Go records coverage only for code that runs inside the test
   # process, so a project tested end to end, by tests that run its built
   # binary, had every line those tests reach uncovered, and --fail-uncovered
@@ -1224,6 +1297,68 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --json"
       Then the problem is "tests.coverage-failed", with the command that ran ID-A-02 alone and its exit code
       And no mutant runs, no snapshot is written, and the exit code is 1
+
+  # slice-65 (listed-coverage-scoped-conversion, issue #73): a counted run with ~1000
+  # listed IDs converted each one's Go coverage with its own
+  # "go tool covdata textfmt" of the whole binary, ~88 s of a ~167 s run on
+  # a consumer's runner. On a 1000-ID fixture the conversions were ~85% of
+  # the run, ~83% of each one the go command's own start (Go 1.27 builds
+  # covdata into the build cache and looks it up on every call). Decided by
+  # <coordinator, date>:
+  # - The listed tests' Go coverage is converted only for the packages of
+  #   the Go files the run measures: the counted run's measurement sources
+  #   (FreshMeasurementSources), the complete run's sources. Each package
+  #   is named by the module path of its nearest go.mod joined with its
+  #   folder, plus command-line-arguments, which a binary built from a list
+  #   of files records. If a measured Go file has no go.mod above it, the
+  #   conversions are not limited. coverage.Build keeps only the measured
+  #   files' lines already, so every result is the same.
+  # - A listed test that wrote data reaching none of those packages still
+  #   counts as measured: the fail-closed check of a counted run is on the
+  #   data written, not on what it reaches. A run that measures no Go file
+  #   converts no Go data.
+  # - covdata is found once per run ("go tool -n covdata") and run directly,
+  #   not through "go tool" for each test. That changes no result; a unit
+  #   test of internal/covrun holds it.
+  # - Plural as English has it: "1 package", "2 packages".
+  # - Not here: parallel conversions (measure first with slice-64's lines),
+  #   and the complete run's conversions bypassing the owned executor
+  #   (pertest.go's exec.Command), an idea of its own.
+  # - slice-64 lands first: this rule's red step is its conversions' line
+  #   gaining a clause.
+  # - The conversions' line of slice-64 says the limit:
+  #   "itos-cc: coverage: converted the coverage of <n> listed tests, Go's
+  #   limited to <k> packages, in <d>".
+  Rule: The listed tests' Go coverage is converted only for the packages the run measures
+
+    # Binary-only for good: the per-test data and its conversion are the
+    # real collector's and covdata's.
+    # Before: the conversions' line has no "limited" clause; it fails at
+    # that step. The result steps pass before; they are guardrails,
+    # reported apart.
+    @slice-65 @ID-MUT-370 @binary-only @wip
+    Scenario Outline: Limiting the conversion to the measured packages changes no result
+      Given a Go module whose binary links packages a and b, with listed tests ID-A-01, which reaches a and b, and ID-A-02, which reaches only b
+      And a committed change to a/a.go whose mutant survives its own tests and is killed by ID-A-01
+      When I run "itos-cc mutation run <flags> --fail-uncovered=lines --json"
+      Then stderr has a line "itos-cc: coverage: converted the coverage of 2 listed tests, Go's limited to 1 package, in <duration>"
+      And the mutant is killed with ID-A-01 alone
+      And no line of a/a.go that ID-A-01 reaches is uncovered
+      And ID-A-02, though it reaches nothing of a, is measured: the run judges, with no "count.preparation-failed"
+
+      Examples:
+        | flags                                  |
+        | --count 1 --since <base> --seed <base> |
+        | a/a.go                                 |
+
+    # A guardrail for the command-line-arguments pattern: it passes before
+    # the change, and it fails if the limit drops that pattern.
+    # Binary-only for good, as ID-MUT-370.
+    @slice-65 @ID-MUT-371 @binary-only @wip
+    Scenario: A binary built from a list of files keeps its listed reach
+      Given the module of ID-MUT-122, whose harness builds its binary with "go build -cover" from main.go's path rather than its package
+      When I run "itos-cc mutation run --json"
+      Then each line the binary ran is covered by the IDs of the tests that reached it, as in ID-MUT-122
 
   # A kill made by listed tests (listed-tests) depends on those tests, which
   # import nothing of the code, so the tests' hash of ID-MUT-65 never sees
