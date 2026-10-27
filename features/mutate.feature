@@ -6433,3 +6433,39 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --all-tests --mutate-all --json"
       Then no coverage command ran
       And each covered mutant's "coverage" is as the first run's, "integration" included
+
+  # slice-71 (exceptions-out-of-coverage-key, q-105, decision 64): slices
+  # 69 and 70 keyed their caches on the coverage inputs strict Go evidence
+  # records, itos-cc.yaml among them hashed whole, so mutation except made
+  # every cached entry and all strict evidence miss, defeating issue #67's
+  # own loop: confirm a survivor, except it, run again. Decided by the
+  # person on 2026-10-27: the itos-cc.yaml fingerprint among coverage
+  # inputs leaves out mutation.exceptions and every x- key, wherever it is
+  # used (both caches and strict evidence), since neither changes what
+  # coverage measures; every other key (version, exclude, mutation.tests,
+  # mutation.copy) still counts. Recorded strict evidence reads stale once
+  # after the upgrade, which the release's upgrade note says. Before the
+  # slice the second run measures again, failing at its Then; the exclude
+  # row holds already and is a guardrail.
+  Rule: What coverage measures is not changed by an exception
+    @slice-71 @ID-MUT-393 @wip
+    Scenario Outline: Writing <change> to itos-cc.yaml <outcome>
+      Given the module of ID-MUT-122, whose harness splits the run
+      And "itos-cc mutation run" has run
+      And <change> is written to itos-cc.yaml
+      When I run "itos-cc mutation run --mutate-all"
+      Then <then>
+
+      Examples:
+        | change                                                 | outcome                  | then                                                                                                    |
+        | an exception, with "itos-cc mutation except"            | reuses the coverage      | the listed tests do not run for coverage, and stderr says the listed tests' coverage was reused         |
+        | an "x-note" key at the top                              | reuses the coverage      | the listed tests do not run for coverage, and stderr says the listed tests' coverage was reused         |
+        | an exclude of a file the run does not measure           | measures again           | the listed tests run once for coverage, and stderr says the cached coverage does not serve, naming itos-cc.yaml |
+
+    @slice-71 @ID-MUT-394 @wip
+    Scenario: Strict Go evidence stays fresh when an exception is written
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And "itos-cc mutation run --fail-uncovered board/board.go" has recorded its coverage evidence
+      When I run "itos-cc mutation except" on Count's survivor with --reason 'x is never 5'
+      Then "itos-cc mutation check --fail-uncovered board/board.go --json" reports no stale coverage evidence
+      And the exit code is 0
