@@ -141,6 +141,9 @@ func (i *identityException) namedSiteSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the problem is "([^"]*)", with flag "(--site)" and value "([^"]*)"$`, n.flagValue)
 	sc.Step(`^stderr warns that the run judged HEAD's commit and that board/board_test\.go goes unjudged$`, n.unjudged)
 	sc.Step(`^the selected site's stages are "own" survived, "listed-baseline" complete and "listed" killed, its scope "listed" with that test$`, n.listedStages)
+	sc.Step(`^the selected site's stages are "own" alone, survived$`, n.ownStageAlone)
+	sc.Step(`^no listed test or listed coverage command ran$`, n.noListed)
+	sc.Step(`^"own_tests" is true$`, n.ownTests)
 }
 
 // counted skips the scenario where itos-cc makes no counted run: a --site
@@ -533,6 +536,50 @@ func (n *namedSite) listedStages() error {
 	}
 	if tests := fmt.Sprint(s["tests"]); s["scope"] != "listed" || tests != "[ID-A-01]" || s["outcome"] != "killed" {
 		return fmt.Errorf("the site is not killed in scope listed by ID-A-01\n%s", report)
+	}
+	return nil
+}
+
+// ownStageAlone is whether the one selected site was judged by its own
+// tests alone, which it survived.
+func (n *namedSite) ownStageAlone() error {
+	object, report, err := n.object()
+	if err != nil {
+		return err
+	}
+	selected := objectList(object, "selected")
+	if len(selected) != 1 {
+		return fmt.Errorf("not one selected site\n%s", report)
+	}
+	stages := objectList(selected[0], "stages")
+	if len(stages) != 1 || stages[0]["name"] != "own" || stages[0]["state"] != "complete" || stages[0]["outcome"] != "survived" || selected[0]["outcome"] != "survived" {
+		return fmt.Errorf("the site's stages are not \"own\" alone, survived\n%s", report)
+	}
+	return nil
+}
+
+// noListed is whether the last run's stderr names no run of the listed
+// tests' command, measuring their reach or judging a mutant with them.
+func (n *namedSite) noListed() error {
+	w := n.i.w
+	if err := n.counted(); err != nil {
+		return err
+	}
+	for _, line := range outputLines(w.stderr) {
+		if strings.Contains(line, "./e2e") || strings.Contains(line, "ID-A-01") {
+			return fmt.Errorf("a listed test or listed coverage command ran: %q\n%s", line, w.report())
+		}
+	}
+	return nil
+}
+
+func (n *namedSite) ownTests() error {
+	object, report, err := n.object()
+	if err != nil {
+		return err
+	}
+	if object["own_tests"] != true {
+		return fmt.Errorf("\"own_tests\" is not true\n%s", report)
 	}
 	return nil
 }
