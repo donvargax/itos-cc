@@ -6008,8 +6008,8 @@ items:
   - id: bug-11
     title: A Go file in a module with no tests, its package listed last, is measured by the whole module
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: bug
     why: >
