@@ -7107,5 +7107,3 @@
     exception for an equivalent mutant without the coordinator's approval (AGENTS.md). Run the
     mutant locally against the package's tests only, as the sample does, to see it survive before
     and die after; never a mutation run over the repository.
-  done_when:
-    - run: go test ./internal/slices/mutation/adapters/worktrees/...

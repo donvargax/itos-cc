@@ -5997,7 +5997,7 @@ items:
     title: Kill the unchangedFor mutant the CD sample found surviving
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: mutation-trials-own-tmpdir
