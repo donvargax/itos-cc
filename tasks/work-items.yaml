@@ -6244,8 +6244,8 @@ items:
   - id: bug-13
     title: Go coverage conversions lose all data under a project path holding a comma
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: bug
     why: >
