@@ -773,4 +773,8 @@ func Code(failure sealed.Failure) int {
 	// its tests, but what its row in docs/go.md allows, which
 	// architecture-check --toplevel holds over the same go list fields.
 	checkToplevel(t, check, dir, compile.Env, module)
+	// The rows that allow an import --outside or --toplevel refuses are
+	// tools/architecture-allow.txt's, beside the script (T-222): a copy of
+	// it with rows of its own proves how it reads them.
+	checkRows(t, check, dir, compile.Env, module)
 }
