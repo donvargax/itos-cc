@@ -3091,23 +3091,23 @@
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestMemoryMeasurementTracesFollowActualRequestsAndBytes\" (lines 300-427) is 128 lines: split it into examples that each check one behavior"
+          "text": "\"TestMemoryMeasurementTracesFollowActualRequestsAndBytes\" (lines 304-431) is 128 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestMemoryMeasurementTracesFollowActualRequestsAndBytes\" (lines 300-427) takes 3 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestMemoryMeasurementTracesFollowActualRequestsAndBytes\" (lines 304-431) takes 3 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestMemoryMeasurementTracesFollowActualRequestsAndBytes\" (lines 300-427) makes 26 assertions: it checks several behaviors; split it"
+          "text": "\"TestMemoryMeasurementTracesFollowActualRequestsAndBytes\" (lines 304-431) makes 26 assertions: it checks several behaviors; split it"
         }
       ],
       "clusters": null,
       "details": [
         {
           "name": "TestMemoryMeasurementTracesFollowActualRequestsAndBytes",
-          "start_line": 300,
-          "end_line": 427,
+          "start_line": 304,
+          "end_line": 431,
           "table": true,
           "score": 39.1,
           "smells": [
@@ -3899,11 +3899,11 @@
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs\" (lines 149-225) is 35 lines: split it into examples that each check one behavior"
+          "text": "\"TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs\" (lines 149-226) is 35 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestStrictGoCheckRejectsPartialOrMisattributedEvidence\" (lines 240-296) is 57 lines: split it into examples that each check one behavior"
+          "text": "\"TestStrictGoCheckRejectsPartialOrMisattributedEvidence\" (lines 241-297) is 57 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
@@ -3923,11 +3923,11 @@
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs\" (lines 149-225) takes 3 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs\" (lines 149-226) takes 3 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestStrictGoCheckRejectsPartialOrMisattributedEvidence\" (lines 240-296) takes 6 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestStrictGoCheckRejectsPartialOrMisattributedEvidence\" (lines 241-297) takes 6 branches or loops: a test should not need logic; split the cases"
         }
       ],
       "clusters": null,
@@ -3979,7 +3979,7 @@
         {
           "name": "TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs",
           "start_line": 149,
-          "end_line": 225,
+          "end_line": 226,
           "table": true,
           "score": 12.5,
           "smells": [
@@ -3987,15 +3987,15 @@
             "logic"
           ],
           "lines": 35,
-          "raw_lines": 77,
+          "raw_lines": 78,
           "decisions": 3,
           "assertions": 5,
           "mocks": 0
         },
         {
           "name": "TestStrictGoCheckRejectsPartialOrMisattributedEvidence",
-          "start_line": 240,
-          "end_line": 296,
+          "start_line": 241,
+          "end_line": 297,
           "table": true,
           "score": 24.4,
           "smells": [
@@ -8240,15 +8240,19 @@
       "file": "internal/coverage/pieces_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 12.6,
-      "examples": 2,
+      "pressure": 16.2,
+      "examples": 3,
       "setup_lines": 0,
-      "average_score": 7.3,
+      "average_score": 6.4,
       "max_score": 12.2,
       "recommendations": [
         {
           "confidence": "HIGH",
           "text": "\"TestPiecesKeepWhatAReportSaysOfItsFiles\" (lines 14-59) is 46 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestFromPlanKeepsWhatAPlanProved\" (lines 89-121) is 33 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
@@ -8282,6 +8286,20 @@
           "raw_lines": 22,
           "decisions": 0,
           "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "TestFromPlanKeepsWhatAPlanProved",
+          "start_line": 89,
+          "end_line": 121,
+          "score": 4.6,
+          "smells": [
+            "large"
+          ],
+          "lines": 33,
+          "raw_lines": 33,
+          "decisions": 0,
+          "assertions": 8,
           "mocks": 0
         }
       ]
@@ -8695,9 +8713,9 @@
       "language": "go",
       "action": "AUTO_REFACTOR",
       "pressure": 21.2,
-      "examples": 8,
+      "examples": 9,
       "setup_lines": 0,
-      "average_score": 3.4,
+      "average_score": 3.1,
       "max_score": 7,
       "recommendations": [
         {
@@ -8838,6 +8856,17 @@
           "raw_lines": 12,
           "decisions": 1,
           "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestPlansAreTheRunnersGroups",
+          "start_line": 164,
+          "end_line": 175,
+          "score": 1,
+          "lines": 12,
+          "raw_lines": 12,
+          "decisions": 0,
+          "assertions": 2,
           "mocks": 0
         }
       ]
@@ -9039,6 +9068,125 @@
           "raw_lines": 27,
           "decisions": 0,
           "assertions": 5,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/covrun/comma_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 41,
+      "examples": 7,
+      "setup_lines": 0,
+      "average_score": 6.9,
+      "max_score": 26.2,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestGoListedCoverageUnderAPathHoldingACommaIsConverted\" (lines 103-150) is 41 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestAListedTestWhoseFolderCannotBeMovedIsLoggedOrFailsTheSupervisedMeasure\" (lines 189-221) is 33 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestGoListedCoverageUnderAPathHoldingACommaIsConverted\" (lines 103-150) takes 8 branches or loops: a test should not need logic; split the cases"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestAListedTestWhoseFolderCannotBeMovedIsLoggedOrFailsTheSupervisedMeasure\" (lines 189-221) takes 4 branches or loops: a test should not need logic; split the cases"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestGoIntegrationCoverageUnderAPathHoldingACommaIsConverted",
+          "start_line": 72,
+          "end_line": 101,
+          "table": true,
+          "score": 2.2,
+          "lines": 21,
+          "raw_lines": 30,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestGoListedCoverageUnderAPathHoldingACommaIsConverted",
+          "start_line": 103,
+          "end_line": 150,
+          "table": true,
+          "score": 26.2,
+          "smells": [
+            "large",
+            "logic"
+          ],
+          "lines": 41,
+          "raw_lines": 48,
+          "decisions": 8,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestAListedTestsFolderWhoseNameHoldsACommaIsMovedToOneNamedByItsIndex",
+          "start_line": 152,
+          "end_line": 171,
+          "score": 2,
+          "lines": 20,
+          "raw_lines": 20,
+          "decisions": 0,
+          "assertions": 5,
+          "mocks": 0
+        },
+        {
+          "name": "TestAListedTestsFolderThatCannotBeMovedIsAnError",
+          "start_line": 173,
+          "end_line": 187,
+          "table": true,
+          "score": 1,
+          "lines": 11,
+          "raw_lines": 15,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestAListedTestWhoseFolderCannotBeMovedIsLoggedOrFailsTheSupervisedMeasure",
+          "start_line": 189,
+          "end_line": 221,
+          "score": 14.6,
+          "smells": [
+            "large",
+            "logic"
+          ],
+          "lines": 33,
+          "raw_lines": 33,
+          "decisions": 4,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestOnlyGoConvertsAListedTestsDataFromTheFoldersParent",
+          "start_line": 223,
+          "end_line": 232,
+          "score": 1,
+          "lines": 10,
+          "raw_lines": 10,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestAPlansConversionsRunInItsConvertDirElseItsDir",
+          "start_line": 234,
+          "end_line": 241,
+          "score": 1,
+          "lines": 8,
+          "raw_lines": 8,
+          "decisions": 0,
+          "assertions": 2,
           "mocks": 0
         }
       ]
@@ -9284,6 +9432,57 @@
           "raw_lines": 14,
           "decisions": 0,
           "assertions": 1,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/covrun/identities_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 7.5,
+      "examples": 2,
+      "setup_lines": 0,
+      "average_score": 4.8,
+      "max_score": 6.9,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestIdentitiesNamePlansGroups\" (lines 15-50) is 32 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestIdentitiesNamePlansGroups\" (lines 15-50) takes 1 branch or loop: a test should not need logic; split the cases"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestIdentitiesNamePlansGroups",
+          "start_line": 15,
+          "end_line": 50,
+          "table": true,
+          "score": 6.9,
+          "smells": [
+            "large",
+            "logic"
+          ],
+          "lines": 32,
+          "raw_lines": 36,
+          "decisions": 1,
+          "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "TestIdentitiesOfKotlinAndDartAndALooseFile",
+          "start_line": 55,
+          "end_line": 85,
+          "table": true,
+          "score": 2.6,
+          "lines": 23,
+          "raw_lines": 31,
+          "decisions": 0,
+          "assertions": 5,
           "mocks": 0
         }
       ]
@@ -14368,31 +14567,39 @@
       "file": "internal/slices/mutation/adapters/freshenv/listed_reuse_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 29.6,
-      "examples": 3,
+      "pressure": 38.1,
+      "examples": 4,
       "setup_lines": 0,
-      "average_score": 10.9,
+      "average_score": 10.5,
       "max_score": 21.8,
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestFreshPreparationServesTheListedReachTheCacheHolds\" (lines 44-89) is 46 lines: split it into examples that each check one behavior"
+          "text": "\"TestFreshPreparationServesTheListedReachTheCacheHolds\" (lines 62-107) is 46 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestFreshPreparationStopsBeforeOrAtTheListedCoverage\" (lines 126-169) is 44 lines: split it into examples that each check one behavior"
+          "text": "\"TestFreshPreparationStopsBeforeOrAtTheListedCoverage\" (lines 144-187) is 44 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestFreshPreparationServesTheOwnCoverageTheCacheHolds\" (lines 211-255) is 45 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestFreshPreparationStopsBeforeOrAtTheListedCoverage\" (lines 126-169) takes 6 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestFreshPreparationStopsBeforeOrAtTheListedCoverage\" (lines 144-187) takes 6 branches or loops: a test should not need logic; split the cases"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestFreshPreparationServesTheOwnCoverageTheCacheHolds\" (lines 211-255) takes 1 branch or loop: a test should not need logic; split the cases"
         }
       ],
       "clusters": null,
       "details": [
         {
           "name": "TestFreshPreparationServesTheListedReachTheCacheHolds",
-          "start_line": 44,
-          "end_line": 89,
+          "start_line": 62,
+          "end_line": 107,
           "score": 7.2,
           "smells": [
             "large"
@@ -14405,8 +14612,8 @@
         },
         {
           "name": "TestFrozenListingRefusesWhatItCannotList",
-          "start_line": 94,
-          "end_line": 121,
+          "start_line": 112,
+          "end_line": 139,
           "score": 3.6,
           "lines": 28,
           "raw_lines": 28,
@@ -14416,8 +14623,8 @@
         },
         {
           "name": "TestFreshPreparationStopsBeforeOrAtTheListedCoverage",
-          "start_line": 126,
-          "end_line": 169,
+          "start_line": 144,
+          "end_line": 187,
           "score": 21.8,
           "smells": [
             "large",
@@ -14427,6 +14634,21 @@
           "raw_lines": 44,
           "decisions": 6,
           "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestFreshPreparationServesTheOwnCoverageTheCacheHolds",
+          "start_line": 211,
+          "end_line": 255,
+          "score": 9.5,
+          "smells": [
+            "large",
+            "logic"
+          ],
+          "lines": 45,
+          "raw_lines": 45,
+          "decisions": 1,
+          "assertions": 6,
           "mocks": 0
         }
       ]
@@ -15286,6 +15508,56 @@
       ]
     },
     {
+      "file": "internal/slices/mutation/adapters/settings/measured_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 1.6,
+      "examples": 3,
+      "setup_lines": 0,
+      "average_score": 1.5,
+      "max_score": 2.6,
+      "recommendations": [],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestMeasuredLeavesOutExceptionsExtensionKeysAndLayout",
+          "start_line": 23,
+          "end_line": 49,
+          "table": true,
+          "score": 2.6,
+          "lines": 23,
+          "raw_lines": 27,
+          "decisions": 0,
+          "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "TestMeasuredRefusesWhatParseRefuses",
+          "start_line": 51,
+          "end_line": 58,
+          "table": true,
+          "score": 1,
+          "lines": 8,
+          "raw_lines": 8,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestDeclaredIsTheVersionAFileReadsAs",
+          "start_line": 60,
+          "end_line": 67,
+          "table": true,
+          "score": 1,
+          "lines": 8,
+          "raw_lines": 8,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        }
+      ]
+    },
+    {
       "file": "internal/slices/mutation/adapters/settings/reader_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
@@ -15401,18 +15673,43 @@
       "file": "internal/slices/mutation/adapters/snapshots/coverage_cache_test.go",
       "language": "go",
       "action": "LEAVE_ALONE",
-      "pressure": 4,
-      "examples": 1,
+      "pressure": 7.6,
+      "examples": 2,
       "setup_lines": 0,
-      "average_score": 5,
+      "average_score": 4.8,
       "max_score": 5,
       "recommendations": [
         {
           "confidence": "HIGH",
           "text": "\"TestTheListedCoverageEntryReadsBackAsItWasWritten\" (lines 18-52) is 35 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestAPlansOwnCoverageEntryReadsBackAsItWasWritten\" (lines 58-90) is 33 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "LOW",
+          "text": "2 examples share most of their structure (70% alike); a shared helper may read better: \"TestTheListedCoverageEntryReadsBackAsItWasWritten\" (18-52), \"TestAPlansOwnCoverageEntryReadsBackAsItWasWritten\" (58-90)"
         }
       ],
-      "clusters": null,
+      "clusters": [
+        {
+          "kind": "duplication",
+          "similarity": 0.7,
+          "examples": [
+            {
+              "name": "TestTheListedCoverageEntryReadsBackAsItWasWritten",
+              "start_line": 18,
+              "end_line": 52
+            },
+            {
+              "name": "TestAPlansOwnCoverageEntryReadsBackAsItWasWritten",
+              "start_line": 58,
+              "end_line": 90
+            }
+          ]
+        }
+      ],
       "details": [
         {
           "name": "TestTheListedCoverageEntryReadsBackAsItWasWritten",
@@ -15427,6 +15724,21 @@
           "raw_lines": 35,
           "decisions": 0,
           "assertions": 5,
+          "mocks": 0
+        },
+        {
+          "name": "TestAPlansOwnCoverageEntryReadsBackAsItWasWritten",
+          "start_line": 58,
+          "end_line": 90,
+          "table": true,
+          "score": 4.6,
+          "smells": [
+            "large"
+          ],
+          "lines": 33,
+          "raw_lines": 33,
+          "decisions": 0,
+          "assertions": 6,
           "mocks": 0
         }
       ]
@@ -15811,10 +16123,10 @@
       "file": "internal/slices/mutation/adapters/testinputs/inputs_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 10.3,
-      "examples": 2,
+      "pressure": 10.7,
+      "examples": 3,
       "setup_lines": 0,
-      "average_score": 6.2,
+      "average_score": 4.6,
       "max_score": 10.1,
       "recommendations": [
         {
@@ -15854,6 +16166,18 @@
           "raw_lines": 51,
           "decisions": 1,
           "assertions": 10,
+          "mocks": 0
+        },
+        {
+          "name": "TestCoverageInputsFailOnAnUnreadableItosCCYAML",
+          "start_line": 99,
+          "end_line": 118,
+          "table": true,
+          "score": 1.4,
+          "lines": 17,
+          "raw_lines": 20,
+          "decisions": 0,
+          "assertions": 3,
           "mocks": 0
         }
       ]
@@ -18524,19 +18848,19 @@
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestTheListedTestsCoverageIsKeptAndServedWhileItsInputsHold\" (lines 89-127) is 39 lines: split it into examples that each check one behavior"
+          "text": "\"TestTheListedTestsCoverageIsKeptAndServedWhileItsInputsHold\" (lines 112-150) is 39 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestACacheThatDoesNotServeTheRunSaysWhy\" (lines 129-166) is 38 lines: split it into examples that each check one behavior"
+          "text": "\"TestACacheThatDoesNotServeTheRunSaysWhy\" (lines 152-189) is 38 lines: split it into examples that each check one behavior"
         }
       ],
       "clusters": null,
       "details": [
         {
           "name": "TestTheListedTestsCoverageIsKeptAndServedWhileItsInputsHold",
-          "start_line": 89,
-          "end_line": 127,
+          "start_line": 112,
+          "end_line": 150,
           "score": 5.8,
           "smells": [
             "large"
@@ -18549,8 +18873,8 @@
         },
         {
           "name": "TestACacheThatDoesNotServeTheRunSaysWhy",
-          "start_line": 129,
-          "end_line": 166,
+          "start_line": 152,
+          "end_line": 189,
           "score": 5.6,
           "smells": [
             "large"
@@ -18563,8 +18887,8 @@
         },
         {
           "name": "TestARunKeepsOnlyACompleteMeasurementAndAddsItsFiles",
-          "start_line": 168,
-          "end_line": 197,
+          "start_line": 191,
+          "end_line": 220,
           "score": 4,
           "lines": 30,
           "raw_lines": 30,
@@ -18574,8 +18898,8 @@
         },
         {
           "name": "TestNoKeyServesAFileStrictCoverageRefuses",
-          "start_line": 199,
-          "end_line": 221,
+          "start_line": 222,
+          "end_line": 244,
           "score": 2.6,
           "lines": 23,
           "raw_lines": 23,
@@ -18741,6 +19065,126 @@
           "raw_lines": 29,
           "decisions": 0,
           "assertions": 3,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/slices/mutation/domain/own_cache_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 22.6,
+      "examples": 6,
+      "setup_lines": 0,
+      "average_score": 4.8,
+      "max_score": 8.9,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestAPlansCacheThatDoesNotServeTheRunSaysWhy\" (lines 89-119) is 31 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestARunKeepsOnlyACompletePlanMeasurement\" (lines 123-155) is 33 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestNoKeyServesAPlanTheCacheCannotServe\" (lines 161-202) is 42 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestABuildRootsPlansAreServedWhole\" (lines 209-241) is 33 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestARunKeepsOnlyACompletePlanMeasurement\" (lines 123-155) takes 1 branch or loop: a test should not need logic; split the cases"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestNoKeyServesAPlanTheCacheCannotServe\" (lines 161-202) takes 1 branch or loop: a test should not need logic; split the cases"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestAPlansOwnCoverageIsKeptAndServedWhileItsInputsHold",
+          "start_line": 60,
+          "end_line": 83,
+          "score": 2.8,
+          "lines": 24,
+          "raw_lines": 24,
+          "decisions": 0,
+          "assertions": 5,
+          "mocks": 0
+        },
+        {
+          "name": "TestAPlansCacheThatDoesNotServeTheRunSaysWhy",
+          "start_line": 89,
+          "end_line": 119,
+          "score": 4.2,
+          "smells": [
+            "large"
+          ],
+          "lines": 31,
+          "raw_lines": 31,
+          "decisions": 0,
+          "assertions": 7,
+          "mocks": 0
+        },
+        {
+          "name": "TestARunKeepsOnlyACompletePlanMeasurement",
+          "start_line": 123,
+          "end_line": 155,
+          "score": 7.1,
+          "smells": [
+            "large",
+            "logic"
+          ],
+          "lines": 33,
+          "raw_lines": 33,
+          "decisions": 1,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestNoKeyServesAPlanTheCacheCannotServe",
+          "start_line": 161,
+          "end_line": 202,
+          "table": true,
+          "score": 8.9,
+          "smells": [
+            "large",
+            "logic"
+          ],
+          "lines": 42,
+          "raw_lines": 42,
+          "decisions": 1,
+          "assertions": 7,
+          "mocks": 0
+        },
+        {
+          "name": "TestABuildRootsPlansAreServedWhole",
+          "start_line": 209,
+          "end_line": 241,
+          "score": 4.6,
+          "smells": [
+            "large"
+          ],
+          "lines": 33,
+          "raw_lines": 33,
+          "decisions": 0,
+          "assertions": 5,
+          "mocks": 0
+        },
+        {
+          "name": "TestARunTheCacheServesWholeMeasuresNothing",
+          "start_line": 245,
+          "end_line": 259,
+          "score": 1,
+          "lines": 15,
+          "raw_lines": 15,
+          "decisions": 0,
+          "assertions": 2,
           "mocks": 0
         }
       ]
@@ -20911,11 +21355,11 @@
       "file": "internal/slices/mutation/plain_slashed_test.go",
       "language": "go",
       "action": "LEAVE_ALONE",
-      "pressure": 10.4,
-      "examples": 7,
+      "pressure": 15,
+      "examples": 8,
       "setup_lines": 0,
-      "average_score": 2.5,
-      "max_score": 5,
+      "average_score": 2.9,
+      "max_score": 5.6,
       "recommendations": [
         {
           "confidence": "HIGH",
@@ -20924,6 +21368,10 @@
         {
           "confidence": "HIGH",
           "text": "\"TestACheckAndASamplesPlainLinesNameAWindowsFileWithSlashes\" (lines 140-174) is 35 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestExceptsPlainLinesNameAWindowsFileWithSlashes\" (lines 201-238) is 38 lines: split it into examples that each check one behavior"
         }
       ],
       "clusters": null,
@@ -21008,6 +21456,21 @@
           "score": 2.2,
           "lines": 21,
           "raw_lines": 21,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestExceptsPlainLinesNameAWindowsFileWithSlashes",
+          "start_line": 201,
+          "end_line": 238,
+          "table": true,
+          "score": 5.6,
+          "smells": [
+            "large"
+          ],
+          "lines": 38,
+          "raw_lines": 38,
           "decisions": 0,
           "assertions": 3,
           "mocks": 0
@@ -21108,9 +21571,9 @@
       "language": "go",
       "action": "AUTO_REFACTOR",
       "pressure": 7.8,
-      "examples": 4,
+      "examples": 5,
       "setup_lines": 0,
-      "average_score": 2.9,
+      "average_score": 2.6,
       "max_score": 8.2,
       "recommendations": [
         {
@@ -21165,6 +21628,17 @@
           "raw_lines": 16,
           "decisions": 0,
           "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestARunThatFoundNoGapReportsItsFailureAlone",
+          "start_line": 138,
+          "end_line": 144,
+          "score": 1,
+          "lines": 7,
+          "raw_lines": 7,
+          "decisions": 0,
+          "assertions": 1,
           "mocks": 0
         }
       ]

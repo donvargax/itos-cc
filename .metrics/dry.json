@@ -127,8 +127,8 @@
       "language": "go",
       "left": {
         "file": "internal/covrun/run.go",
-        "start_line": 673,
-        "end_line": 679,
+        "start_line": 651,
+        "end_line": 657,
         "namespace": "github.com/donvargax/itos-cc/internal/covrun",
         "name": "gradleTests",
         "nodes": 44
@@ -147,8 +147,8 @@
       "language": "go",
       "left": {
         "file": "internal/covrun/run.go",
-        "start_line": 686,
-        "end_line": 691,
+        "start_line": 664,
+        "end_line": 669,
         "namespace": "github.com/donvargax/itos-cc/internal/covrun",
         "name": "mavenTests",
         "nodes": 44
@@ -167,8 +167,8 @@
       "language": "go",
       "left": {
         "file": "internal/covrun/run.go",
-        "start_line": 797,
-        "end_line": 800,
+        "start_line": 775,
+        "end_line": 778,
         "namespace": "github.com/donvargax/itos-cc/internal/covrun",
         "name": "exists",
         "nodes": 29
@@ -187,8 +187,8 @@
       "language": "go",
       "left": {
         "file": "internal/covrun/run.go",
-        "start_line": 797,
-        "end_line": 800,
+        "start_line": 775,
+        "end_line": 778,
         "namespace": "github.com/donvargax/itos-cc/internal/covrun",
         "name": "exists",
         "nodes": 29
@@ -200,6 +200,26 @@
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/freshenv",
         "name": "fileExists",
         "nodes": 29
+      }
+    },
+    {
+      "score": 1,
+      "language": "go",
+      "left": {
+        "file": "internal/covrun/run.go",
+        "start_line": 780,
+        "end_line": 783,
+        "namespace": "github.com/donvargax/itos-cc/internal/covrun",
+        "name": "shortHash",
+        "nodes": 35
+      },
+      "right": {
+        "file": "internal/slices/mutation/domain/own_cache.go",
+        "start_line": 124,
+        "end_line": 127,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
+        "name": "shortHash",
+        "nodes": 35
       }
     },
     {
@@ -467,16 +487,16 @@
       "language": "go",
       "left": {
         "file": "internal/slices/mutation/adapters/freshenv/preparation.go",
-        "start_line": 556,
-        "end_line": 559,
+        "start_line": 591,
+        "end_line": 594,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/freshenv",
         "name": "hashPreparationPolicy",
         "nodes": 34
       },
       "right": {
         "file": "internal/slices/mutation/adapters/testinputs/go_coverage_inputs.go",
-        "start_line": 233,
-        "end_line": 236,
+        "start_line": 249,
+        "end_line": 252,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
         "name": "hashText",
         "nodes": 34
@@ -547,16 +567,16 @@
       "language": "go",
       "left": {
         "file": "internal/slices/mutation/adapters/testinputs/go_coverage_inputs.go",
-        "start_line": 238,
-        "end_line": 241,
+        "start_line": 254,
+        "end_line": 257,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
         "name": "goCoverageFileExists",
         "nodes": 38
       },
       "right": {
         "file": "internal/slices/mutation/adapters/testinputs/line_coverage_inputs.go",
-        "start_line": 581,
-        "end_line": 584,
+        "start_line": 580,
+        "end_line": 583,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
         "name": "coverageFileExists",
         "nodes": 38
@@ -780,6 +800,26 @@
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
         "name": "EvidenceVersion",
         "nodes": 26
+      }
+    },
+    {
+      "score": 0.914,
+      "language": "go",
+      "left": {
+        "file": "internal/slices/mutation/adapters/snapshots/coverage_cache.go",
+        "start_line": 91,
+        "end_line": 102,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots",
+        "name": "fromWire",
+        "nodes": 156
+      },
+      "right": {
+        "file": "internal/slices/mutation/adapters/snapshots/coverage_cache.go",
+        "start_line": 105,
+        "end_line": 116,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots",
+        "name": "toWire",
+        "nodes": 150
       }
     },
     {
@@ -1167,16 +1207,16 @@
       "language": "go",
       "left": {
         "file": "internal/covrun/run.go",
-        "start_line": 802,
-        "end_line": 805,
+        "start_line": 780,
+        "end_line": 783,
         "namespace": "github.com/donvargax/itos-cc/internal/covrun",
         "name": "shortHash",
         "nodes": 35
       },
       "right": {
         "file": "internal/slices/mutation/adapters/freshenv/preparation.go",
-        "start_line": 556,
-        "end_line": 559,
+        "start_line": 591,
+        "end_line": 594,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/freshenv",
         "name": "hashPreparationPolicy",
         "nodes": 34
@@ -1187,19 +1227,59 @@
       "language": "go",
       "left": {
         "file": "internal/covrun/run.go",
-        "start_line": 802,
-        "end_line": 805,
+        "start_line": 780,
+        "end_line": 783,
         "namespace": "github.com/donvargax/itos-cc/internal/covrun",
         "name": "shortHash",
         "nodes": 35
       },
       "right": {
         "file": "internal/slices/mutation/adapters/testinputs/go_coverage_inputs.go",
-        "start_line": 233,
-        "end_line": 236,
+        "start_line": 249,
+        "end_line": 252,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
         "name": "hashText",
         "nodes": 34
+      }
+    },
+    {
+      "score": 0.846,
+      "language": "go",
+      "left": {
+        "file": "internal/slices/mutation/adapters/freshenv/preparation.go",
+        "start_line": 591,
+        "end_line": 594,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/freshenv",
+        "name": "hashPreparationPolicy",
+        "nodes": 34
+      },
+      "right": {
+        "file": "internal/slices/mutation/domain/own_cache.go",
+        "start_line": 124,
+        "end_line": 127,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
+        "name": "shortHash",
+        "nodes": 35
+      }
+    },
+    {
+      "score": 0.846,
+      "language": "go",
+      "left": {
+        "file": "internal/slices/mutation/adapters/testinputs/go_coverage_inputs.go",
+        "start_line": 249,
+        "end_line": 252,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
+        "name": "hashText",
+        "nodes": 34
+      },
+      "right": {
+        "file": "internal/slices/mutation/domain/own_cache.go",
+        "start_line": 124,
+        "end_line": 127,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
+        "name": "shortHash",
+        "nodes": 35
       }
     },
     {
@@ -1435,8 +1515,8 @@
       },
       "right": {
         "file": "internal/slices/mutation/adapters/testinputs/go_coverage_inputs.go",
-        "start_line": 238,
-        "end_line": 241,
+        "start_line": 254,
+        "end_line": 257,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
         "name": "goCoverageFileExists",
         "nodes": 38
@@ -1455,8 +1535,8 @@
       },
       "right": {
         "file": "internal/slices/mutation/adapters/testinputs/line_coverage_inputs.go",
-        "start_line": 581,
-        "end_line": 584,
+        "start_line": 580,
+        "end_line": 583,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
         "name": "coverageFileExists",
         "nodes": 38
@@ -1556,7 +1636,7 @@
       "right": {
         "file": "internal/slices/mutation/run_contract.go",
         "start_line": 6,
-        "end_line": 590,
+        "end_line": 601,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Run",
         "name": "Contract",
         "nodes": 184
@@ -1672,7 +1752,7 @@
         {
           "file": "internal/slices/mutation/run_contract.go",
           "start_line": 6,
-          "end_line": 590,
+          "end_line": 601,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Run",
           "name": "Contract",
           "nodes": 184
@@ -1739,6 +1819,45 @@
           "namespace": "github.com/donvargax/itos-cc/internal/coverage.Report",
           "name": "Tests",
           "nodes": 33
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "min_score": 0.846,
+      "max_score": 1,
+      "members": [
+        {
+          "file": "internal/covrun/run.go",
+          "start_line": 780,
+          "end_line": 783,
+          "namespace": "github.com/donvargax/itos-cc/internal/covrun",
+          "name": "shortHash",
+          "nodes": 35
+        },
+        {
+          "file": "internal/slices/mutation/adapters/freshenv/preparation.go",
+          "start_line": 591,
+          "end_line": 594,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/freshenv",
+          "name": "hashPreparationPolicy",
+          "nodes": 34
+        },
+        {
+          "file": "internal/slices/mutation/adapters/testinputs/go_coverage_inputs.go",
+          "start_line": 249,
+          "end_line": 252,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
+          "name": "hashText",
+          "nodes": 34
+        },
+        {
+          "file": "internal/slices/mutation/domain/own_cache.go",
+          "start_line": 124,
+          "end_line": 127,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
+          "name": "shortHash",
+          "nodes": 35
         }
       ]
     },
@@ -1811,8 +1930,8 @@
       "members": [
         {
           "file": "internal/covrun/run.go",
-          "start_line": 797,
-          "end_line": 800,
+          "start_line": 775,
+          "end_line": 778,
           "namespace": "github.com/donvargax/itos-cc/internal/covrun",
           "name": "exists",
           "nodes": 29
@@ -1832,37 +1951,6 @@
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/freshenv",
           "name": "fileExists",
           "nodes": 29
-        }
-      ]
-    },
-    {
-      "language": "go",
-      "min_score": 0.846,
-      "max_score": 1,
-      "members": [
-        {
-          "file": "internal/covrun/run.go",
-          "start_line": 802,
-          "end_line": 805,
-          "namespace": "github.com/donvargax/itos-cc/internal/covrun",
-          "name": "shortHash",
-          "nodes": 35
-        },
-        {
-          "file": "internal/slices/mutation/adapters/freshenv/preparation.go",
-          "start_line": 556,
-          "end_line": 559,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/freshenv",
-          "name": "hashPreparationPolicy",
-          "nodes": 34
-        },
-        {
-          "file": "internal/slices/mutation/adapters/testinputs/go_coverage_inputs.go",
-          "start_line": 233,
-          "end_line": 236,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
-          "name": "hashText",
-          "nodes": 34
         }
       ]
     },
@@ -1912,16 +2000,16 @@
         },
         {
           "file": "internal/slices/mutation/adapters/testinputs/go_coverage_inputs.go",
-          "start_line": 238,
-          "end_line": 241,
+          "start_line": 254,
+          "end_line": 257,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
           "name": "goCoverageFileExists",
           "nodes": 38
         },
         {
           "file": "internal/slices/mutation/adapters/testinputs/line_coverage_inputs.go",
-          "start_line": 581,
-          "end_line": 584,
+          "start_line": 580,
+          "end_line": 583,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
           "name": "coverageFileExists",
           "nodes": 38
@@ -2051,8 +2139,8 @@
       "members": [
         {
           "file": "internal/covrun/run.go",
-          "start_line": 673,
-          "end_line": 679,
+          "start_line": 651,
+          "end_line": 657,
           "namespace": "github.com/donvargax/itos-cc/internal/covrun",
           "name": "gradleTests",
           "nodes": 44
@@ -2074,8 +2162,8 @@
       "members": [
         {
           "file": "internal/covrun/run.go",
-          "start_line": 686,
-          "end_line": 691,
+          "start_line": 664,
+          "end_line": 669,
           "namespace": "github.com/donvargax/itos-cc/internal/covrun",
           "name": "mavenTests",
           "nodes": 44
@@ -2425,6 +2513,29 @@
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
           "name": "RecordedScope",
           "nodes": 26
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "min_score": 0.914,
+      "max_score": 0.914,
+      "members": [
+        {
+          "file": "internal/slices/mutation/adapters/snapshots/coverage_cache.go",
+          "start_line": 91,
+          "end_line": 102,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots",
+          "name": "fromWire",
+          "nodes": 156
+        },
+        {
+          "file": "internal/slices/mutation/adapters/snapshots/coverage_cache.go",
+          "start_line": 105,
+          "end_line": 116,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots",
+          "name": "toWire",
+          "nodes": 150
         }
       ]
     },
