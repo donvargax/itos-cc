@@ -76,7 +76,7 @@
     "cmd/itos-cc/run_fakes_test.go": "cc976a7c661481fc7f7e90438f5adcc1b2db89487ed30158230db5ffcabd7c07",
     "cmd/itos-cc/scenarios_apart_test.go": "861ac10c0e556f43c1041e0ca955974ed75e98caa1632653043b64955c4fc4d9",
     "cmd/itos-cc/scenarios_counted_test.go": "276a80288993f6a59152002ffb351f3b37c48d51dfa08665f3ebf1902338abbb",
-    "cmd/itos-cc/scenarios_coverage_trace_test.go": "930337bbeeb7d30851fc50e13f8a0a36065c903618c05d51f2c61a504a1b4844",
+    "cmd/itos-cc/scenarios_coverage_trace_test.go": "49f2c05bd3ec391fbbd6f18f3840153191033fb49aff973dfe19efaa65e83489",
     "cmd/itos-cc/scenarios_exceptions_test.go": "8c7941582bcae4403b6e622c1913e93e1508f59c8de03d878bf4093f24bbcf5f",
     "cmd/itos-cc/scenarios_executable_test.go": "1986fd201e388a839e53f7fd27e8297662c33155f99da586acdad5952209d9c3",
     "cmd/itos-cc/scenarios_fakes_test.go": "4c21ac2d49bd5a01256859870fd8ae53b6322a451c67a19cbf5e64e8d3a7c61e",
@@ -95,7 +95,7 @@
     "cmd/itos-cc/snapshot_test.go": "3c42201e9776999effa78402ca5fe919ab356123b4fda3e80d02eba3f099f7da",
     "cmd/itos-cc/strict_changed_lines_counted_test.go": "4d54698197a8ac70e2689087fc1a6b02b29689bf0e542cb06d9e95181ad3adda",
     "cmd/itos-cc/strict_changed_lines_test.go": "106dca2ed4bd8155db1d51de5e08e3d435d076992d30ad50e386f01fb4cb1c06",
-    "cmd/itos-cc/strict_go_coverage_test.go": "ca0980c73a94210c3863c8003001aee81c3f1ffb84bd3645aac029d6b16a839f",
+    "cmd/itos-cc/strict_go_coverage_test.go": "44dd42eeab24f9e3e5a5539d8425ffe30d921ade8a32dc8d3fe9def414ff4f5e",
     "cmd/itos-cc/strict_go_scope_test.go": "e2760c2e1d7b9b0bb164dc17ee943eb168a4fa6a3f51e826e3bb8f51d78ceb7f",
     "cmd/itos-cc/strict_lines_kotlin_test.go": "0e5a6421cd8174fdb11823f7ebb9260be2f9a03d568374262d3f96a7cea695c6",
     "cmd/itos-cc/strict_lines_python_test.go": "7311f478aa7da3587f35aa558d535ae07f195babc4af5773567fccbdee48cb22",
@@ -107,7 +107,7 @@
     "cmd/itos-cc/whole_suite_freshness_all_test.go": "ace8c02c92f969d969ab9f90230088c1b718d546e724493b1436cff1b82839e9",
     "internal/slices/mutation/adapters/freshenv/fixtures_test.go": "5958c5f0abb19f5121bc0ff40c469d99475f91d50f0c15de1633bde4176b4659",
     "internal/slices/mutation/adapters/testinputs/broad_inventory_test.go": "9d33e23306627a2dcef96011e6ad547b1b7aa38918e640b70bb810eaee121de8",
-    "internal/slices/mutation/adapters/testinputs/inputs_test.go": "3b717e33123a7072658cb4e66745bd89b4344ce33afa7dffacd3e40adcf5fa80",
+    "internal/slices/mutation/adapters/testinputs/inputs_test.go": "d920f9afd17ead726ab0dfa80a3373056ebb07fd1141a0fbc1a8122d4295332f",
     "internal/slices/mutation/adapters/testinputs/line_coverage_scope_test.go": "84539758e2822e02b8814e51688b3fc3ca68f53c6db8c3eda5bdc8dc40e30ef6",
     "internal/slices/mutation/adapters/testinputs/line_coverage_test.go": "b670d477a2f8b2664e368812a7182e3df49248c5e09cdbe71130013aa09be57b"
   },
@@ -116,15 +116,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "rootCoverageInputs",
       "hash": "727db0864eb64eb9",
-      "start_line": 57,
-      "end_line": 107,
+      "start_line": 58,
+      "end_line": 108,
       "killed": 16,
       "survived": 1,
       "uncovered": 2,
       "sites": 19,
       "mutants": [
         {
-          "line": 59,
+          "line": 60,
           "column": 14,
           "offset": 159,
           "original": "!=",
@@ -132,7 +132,7 @@
           "outcome": "killed"
         },
         {
-          "line": 64,
+          "line": 65,
           "column": 10,
           "offset": 269,
           "original": "==",
@@ -140,7 +140,7 @@
           "outcome": "killed"
         },
         {
-          "line": 64,
+          "line": 65,
           "column": 16,
           "offset": 275,
           "original": "||",
@@ -148,7 +148,7 @@
           "outcome": "survived"
         },
         {
-          "line": 64,
+          "line": 65,
           "column": 19,
           "offset": 278,
           "original": "!",
@@ -156,7 +156,7 @@
           "outcome": "killed"
         },
         {
-          "line": 66,
+          "line": 67,
           "column": 10,
           "offset": 356,
           "original": "!=",
@@ -164,7 +164,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 69,
+          "line": 70,
           "column": 32,
           "offset": 423,
           "original": "!",
@@ -172,7 +172,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 75,
+          "line": 76,
           "column": 14,
           "offset": 618,
           "original": "!=",
@@ -180,7 +180,7 @@
           "outcome": "killed"
         },
         {
-          "line": 79,
+          "line": 80,
           "column": 29,
           "offset": 700,
           "original": "==",
@@ -188,7 +188,7 @@
           "outcome": "killed"
         },
         {
-          "line": 81,
+          "line": 82,
           "column": 12,
           "offset": 740,
           "original": "==",
@@ -196,7 +196,7 @@
           "outcome": "killed"
         },
         {
-          "line": 84,
+          "line": 85,
           "column": 36,
           "offset": 805,
           "original": "&&",
@@ -204,7 +204,7 @@
           "outcome": "killed"
         },
         {
-          "line": 84,
+          "line": 85,
           "column": 39,
           "offset": 808,
           "original": "!",
@@ -212,7 +212,7 @@
           "outcome": "killed"
         },
         {
-          "line": 84,
+          "line": 85,
           "column": 74,
           "offset": 843,
           "original": "||",
@@ -220,7 +220,7 @@
           "outcome": "killed"
         },
         {
-          "line": 84,
+          "line": 85,
           "column": 82,
           "offset": 851,
           "original": "==",
@@ -228,7 +228,7 @@
           "outcome": "killed"
         },
         {
-          "line": 84,
+          "line": 85,
           "column": 100,
           "offset": 869,
           "original": "||",
@@ -236,7 +236,7 @@
           "outcome": "killed"
         },
         {
-          "line": 85,
+          "line": 86,
           "column": 14,
           "offset": 885,
           "original": "!=",
@@ -244,7 +244,7 @@
           "outcome": "killed"
         },
         {
-          "line": 85,
+          "line": 86,
           "column": 21,
           "offset": 892,
           "original": "&&",
@@ -252,7 +252,7 @@
           "outcome": "killed"
         },
         {
-          "line": 88,
+          "line": 89,
           "column": 18,
           "offset": 973,
           "original": "!=",
@@ -260,7 +260,7 @@
           "outcome": "killed"
         },
         {
-          "line": 101,
+          "line": 102,
           "column": 23,
           "offset": 1240,
           "original": "||",
@@ -268,7 +268,7 @@
           "outcome": "killed"
         },
         {
-          "line": 101,
+          "line": 102,
           "column": 30,
           "offset": 1247,
           "original": "&&",
@@ -281,15 +281,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "envInput",
       "hash": "ef95c1ac5c6f3dfd",
-      "start_line": 110,
-      "end_line": 116,
+      "start_line": 111,
+      "end_line": 117,
       "killed": 2,
       "survived": 0,
       "uncovered": 0,
       "sites": 2,
       "mutants": [
         {
-          "line": 113,
+          "line": 114,
           "column": 24,
           "offset": 157,
           "original": "+",
@@ -297,7 +297,7 @@
           "outcome": "killed"
         },
         {
-          "line": 113,
+          "line": 114,
           "column": 28,
           "offset": 161,
           "original": "+",
@@ -310,15 +310,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "PythonCoverageInputs",
       "hash": "2a7d941cd47d719a",
-      "start_line": 128,
-      "end_line": 152,
+      "start_line": 129,
+      "end_line": 153,
       "killed": 4,
       "survived": 0,
       "uncovered": 0,
       "sites": 4,
       "mutants": [
         {
-          "line": 134,
+          "line": 135,
           "column": 16,
           "offset": 490,
           "original": "==",
@@ -326,7 +326,7 @@
           "outcome": "killed"
         },
         {
-          "line": 134,
+          "line": 135,
           "column": 33,
           "offset": 507,
           "original": "||",
@@ -334,7 +334,7 @@
           "outcome": "killed"
         },
         {
-          "line": 137,
+          "line": 138,
           "column": 9,
           "offset": 581,
           "original": "!=",
@@ -342,7 +342,7 @@
           "outcome": "killed"
         },
         {
-          "line": 148,
+          "line": 149,
           "column": 79,
           "offset": 1070,
           "original": "!=",
@@ -355,15 +355,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "typescriptConfig",
       "hash": "e50dd883d603ef6c",
-      "start_line": 162,
-      "end_line": 169,
+      "start_line": 163,
+      "end_line": 170,
       "killed": 1,
       "survived": 1,
       "uncovered": 0,
       "sites": 2,
       "mutants": [
         {
-          "line": 166,
+          "line": 167,
           "column": 10,
           "offset": 280,
           "original": "true",
@@ -371,7 +371,7 @@
           "outcome": "killed"
         },
         {
-          "line": 168,
+          "line": 169,
           "column": 45,
           "offset": 332,
           "original": "&&",
@@ -384,15 +384,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "TypeScriptCoverageInputs",
       "hash": "674c5f531281ef70",
-      "start_line": 187,
-      "end_line": 207,
+      "start_line": 188,
+      "end_line": 208,
       "killed": 11,
       "survived": 0,
       "uncovered": 0,
       "sites": 11,
       "mutants": [
         {
-          "line": 193,
+          "line": 194,
           "column": 15,
           "offset": 482,
           "original": "&&",
@@ -400,7 +400,7 @@
           "outcome": "killed"
         },
         {
-          "line": 193,
+          "line": 194,
           "column": 24,
           "offset": 491,
           "original": "==",
@@ -408,7 +408,7 @@
           "outcome": "killed"
         },
         {
-          "line": 193,
+          "line": 194,
           "column": 34,
           "offset": 501,
           "original": "||",
@@ -416,7 +416,7 @@
           "outcome": "killed"
         },
         {
-          "line": 193,
+          "line": 194,
           "column": 42,
           "offset": 509,
           "original": "==",
@@ -424,7 +424,7 @@
           "outcome": "killed"
         },
         {
-          "line": 193,
+          "line": 194,
           "column": 53,
           "offset": 520,
           "original": "||",
@@ -432,7 +432,7 @@
           "outcome": "killed"
         },
         {
-          "line": 193,
+          "line": 194,
           "column": 61,
           "offset": 528,
           "original": "==",
@@ -440,7 +440,7 @@
           "outcome": "killed"
         },
         {
-          "line": 193,
+          "line": 194,
           "column": 70,
           "offset": 537,
           "original": "||",
@@ -448,7 +448,7 @@
           "outcome": "killed"
         },
         {
-          "line": 193,
+          "line": 194,
           "column": 78,
           "offset": 545,
           "original": "==",
@@ -456,7 +456,7 @@
           "outcome": "killed"
         },
         {
-          "line": 196,
+          "line": 197,
           "column": 9,
           "offset": 577,
           "original": "!=",
@@ -464,7 +464,7 @@
           "outcome": "killed"
         },
         {
-          "line": 199,
+          "line": 200,
           "column": 63,
           "offset": 669,
           "original": "!=",
@@ -472,7 +472,7 @@
           "outcome": "killed"
         },
         {
-          "line": 203,
+          "line": 204,
           "column": 79,
           "offset": 879,
           "original": "!=",
@@ -485,15 +485,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "pnpmConfig",
       "hash": "2079d033cd4456a3",
-      "start_line": 211,
-      "end_line": 213,
+      "start_line": 212,
+      "end_line": 214,
       "killed": 4,
       "survived": 0,
       "uncovered": 0,
       "sites": 4,
       "mutants": [
         {
-          "line": 212,
+          "line": 213,
           "column": 32,
           "offset": 67,
           "original": "||",
@@ -501,7 +501,7 @@
           "outcome": "killed"
         },
         {
-          "line": 212,
+          "line": 213,
           "column": 40,
           "offset": 75,
           "original": "==",
@@ -509,7 +509,7 @@
           "outcome": "killed"
         },
         {
-          "line": 212,
+          "line": 213,
           "column": 52,
           "offset": 87,
           "original": "||",
@@ -517,7 +517,7 @@
           "outcome": "killed"
         },
         {
-          "line": 212,
+          "line": 213,
           "column": 60,
           "offset": 95,
           "original": "==",
@@ -530,15 +530,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "addPnpmCoverageInputs",
       "hash": "7e0b5994c4413a98",
-      "start_line": 219,
-      "end_line": 253,
+      "start_line": 220,
+      "end_line": 254,
       "killed": 6,
       "survived": 1,
       "uncovered": 0,
       "sites": 7,
       "mutants": [
         {
-          "line": 226,
+          "line": 227,
           "column": 24,
           "offset": 303,
           "original": "==",
@@ -546,7 +546,7 @@
           "outcome": "killed"
         },
         {
-          "line": 230,
+          "line": 231,
           "column": 15,
           "offset": 342,
           "original": "==",
@@ -554,7 +554,7 @@
           "outcome": "killed"
         },
         {
-          "line": 234,
+          "line": 235,
           "column": 9,
           "offset": 413,
           "original": "!=",
@@ -562,7 +562,7 @@
           "outcome": "killed"
         },
         {
-          "line": 238,
+          "line": 239,
           "column": 79,
           "offset": 549,
           "original": "&&",
@@ -570,7 +570,7 @@
           "outcome": "killed"
         },
         {
-          "line": 239,
+          "line": 240,
           "column": 63,
           "offset": 641,
           "original": "!=",
@@ -578,7 +578,7 @@
           "outcome": "killed"
         },
         {
-          "line": 246,
+          "line": 247,
           "column": 37,
           "offset": 823,
           "original": "&&",
@@ -586,7 +586,7 @@
           "outcome": "survived"
         },
         {
-          "line": 247,
+          "line": 248,
           "column": 63,
           "offset": 915,
           "original": "!=",
@@ -599,15 +599,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "pnpmPatches",
       "hash": "5c76c9fe28fa4f21",
-      "start_line": 258,
-      "end_line": 276,
+      "start_line": 259,
+      "end_line": 277,
       "killed": 3,
       "survived": 0,
       "uncovered": 0,
       "sites": 3,
       "mutants": [
         {
-          "line": 260,
+          "line": 261,
           "column": 78,
           "offset": 139,
           "original": "==",
@@ -615,7 +615,7 @@
           "outcome": "killed"
         },
         {
-          "line": 264,
+          "line": 265,
           "column": 71,
           "offset": 350,
           "original": "==",
@@ -623,7 +623,7 @@
           "outcome": "killed"
         },
         {
-          "line": 270,
+          "line": 271,
           "column": 38,
           "offset": 531,
           "original": "==",
@@ -636,15 +636,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "kotlinInput",
       "hash": "1b7ef4594402b743",
-      "start_line": 290,
-      "end_line": 300,
+      "start_line": 291,
+      "end_line": 301,
       "killed": 2,
       "survived": 0,
       "uncovered": 0,
       "sites": 2,
       "mutants": [
         {
-          "line": 293,
+          "line": 294,
           "column": 10,
           "offset": 116,
           "original": "true",
@@ -652,7 +652,7 @@
           "outcome": "killed"
         },
         {
-          "line": 297,
+          "line": 298,
           "column": 10,
           "offset": 263,
           "original": "true",
@@ -665,15 +665,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "KotlinBuildRoot",
       "hash": "eb51492108e0d68e",
-      "start_line": 307,
-      "end_line": 323,
+      "start_line": 308,
+      "end_line": 324,
       "killed": 4,
       "survived": 0,
       "uncovered": 0,
       "sites": 4,
       "mutants": [
         {
-          "line": 309,
+          "line": 310,
           "column": 12,
           "offset": 140,
           "original": "==",
@@ -681,7 +681,7 @@
           "outcome": "killed"
         },
         {
-          "line": 314,
+          "line": 315,
           "column": 40,
           "offset": 277,
           "original": "!=",
@@ -689,7 +689,7 @@
           "outcome": "killed"
         },
         {
-          "line": 314,
+          "line": 315,
           "column": 61,
           "offset": 298,
           "original": "&&",
@@ -697,7 +697,7 @@
           "outcome": "killed"
         },
         {
-          "line": 319,
+          "line": 320,
           "column": 66,
           "offset": 476,
           "original": "!=",
@@ -710,15 +710,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "KotlinCoverageInputs",
       "hash": "7531604fa50a15d3",
-      "start_line": 339,
-      "end_line": 397,
+      "start_line": 340,
+      "end_line": 398,
       "killed": 19,
       "survived": 4,
       "uncovered": 0,
       "sites": 23,
       "mutants": [
         {
-          "line": 341,
+          "line": 342,
           "column": 11,
           "offset": 221,
           "original": "!=",
@@ -726,7 +726,7 @@
           "outcome": "survived"
         },
         {
-          "line": 341,
+          "line": 342,
           "column": 17,
           "offset": 227,
           "original": "&&",
@@ -734,7 +734,7 @@
           "outcome": "survived"
         },
         {
-          "line": 341,
+          "line": 342,
           "column": 20,
           "offset": 230,
           "original": "!",
@@ -742,7 +742,7 @@
           "outcome": "survived"
         },
         {
-          "line": 346,
+          "line": 347,
           "column": 12,
           "offset": 361,
           "original": "==",
@@ -750,7 +750,7 @@
           "outcome": "killed"
         },
         {
-          "line": 349,
+          "line": 350,
           "column": 64,
           "offset": 445,
           "original": "==",
@@ -758,7 +758,7 @@
           "outcome": "killed"
         },
         {
-          "line": 356,
+          "line": 357,
           "column": 38,
           "offset": 673,
           "original": "false",
@@ -766,7 +766,7 @@
           "outcome": "killed"
         },
         {
-          "line": 358,
+          "line": 359,
           "column": 12,
           "offset": 740,
           "original": "!=",
@@ -774,7 +774,7 @@
           "outcome": "killed"
         },
         {
-          "line": 358,
+          "line": 359,
           "column": 23,
           "offset": 751,
           "original": "&&",
@@ -782,7 +782,7 @@
           "outcome": "killed"
         },
         {
-          "line": 358,
+          "line": 359,
           "column": 31,
           "offset": 759,
           "original": "!=",
@@ -790,7 +790,7 @@
           "outcome": "killed"
         },
         {
-          "line": 359,
+          "line": 360,
           "column": 12,
           "offset": 784,
           "original": "false",
@@ -798,7 +798,7 @@
           "outcome": "killed"
         },
         {
-          "line": 363,
+          "line": 364,
           "column": 13,
           "offset": 967,
           "original": "true",
@@ -806,7 +806,7 @@
           "outcome": "killed"
         },
         {
-          "line": 366,
+          "line": 367,
           "column": 11,
           "offset": 993,
           "original": "false",
@@ -814,7 +814,7 @@
           "outcome": "killed"
         },
         {
-          "line": 369,
+          "line": 370,
           "column": 27,
           "offset": 1065,
           "original": "==",
@@ -822,7 +822,7 @@
           "outcome": "killed"
         },
         {
-          "line": 370,
+          "line": 371,
           "column": 12,
           "offset": 1092,
           "original": "false",
@@ -830,7 +830,7 @@
           "outcome": "killed"
         },
         {
-          "line": 375,
+          "line": 376,
           "column": 17,
           "offset": 1262,
           "original": "!=",
@@ -838,7 +838,7 @@
           "outcome": "killed"
         },
         {
-          "line": 375,
+          "line": 376,
           "column": 24,
           "offset": 1269,
           "original": "||",
@@ -846,7 +846,7 @@
           "outcome": "killed"
         },
         {
-          "line": 375,
+          "line": 376,
           "column": 27,
           "offset": 1272,
           "original": "!",
@@ -854,7 +854,7 @@
           "outcome": "killed"
         },
         {
-          "line": 378,
+          "line": 379,
           "column": 11,
           "offset": 1344,
           "original": "false",
@@ -862,7 +862,7 @@
           "outcome": "killed"
         },
         {
-          "line": 382,
+          "line": 383,
           "column": 9,
           "offset": 1395,
           "original": "!=",
@@ -870,7 +870,7 @@
           "outcome": "killed"
         },
         {
-          "line": 386,
+          "line": 387,
           "column": 75,
           "offset": 1516,
           "original": "!=",
@@ -878,7 +878,7 @@
           "outcome": "killed"
         },
         {
-          "line": 386,
+          "line": 387,
           "column": 81,
           "offset": 1522,
           "original": "&&",
@@ -886,7 +886,7 @@
           "outcome": "survived"
         },
         {
-          "line": 386,
+          "line": 387,
           "column": 112,
           "offset": 1553,
           "original": "!=",
@@ -894,7 +894,7 @@
           "outcome": "killed"
         },
         {
-          "line": 393,
+          "line": 394,
           "column": 79,
           "offset": 1842,
           "original": "!=",
@@ -907,15 +907,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "readPubspec",
       "hash": "4b95f47c38eac407",
-      "start_line": 416,
-      "end_line": 423,
+      "start_line": 417,
+      "end_line": 424,
       "killed": 3,
       "survived": 0,
       "uncovered": 0,
       "sites": 3,
       "mutants": [
         {
-          "line": 419,
+          "line": 420,
           "column": 9,
           "offset": 128,
           "original": "==",
@@ -923,7 +923,7 @@
           "outcome": "killed"
         },
         {
-          "line": 419,
+          "line": 420,
           "column": 16,
           "offset": 135,
           "original": "&&",
@@ -931,7 +931,7 @@
           "outcome": "killed"
         },
         {
-          "line": 419,
+          "line": 420,
           "column": 44,
           "offset": 163,
           "original": "!=",
@@ -944,15 +944,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs.pubspecOf",
       "name": "lists",
       "hash": "79d16cf2245e37c5",
-      "start_line": 428,
-      "end_line": 441,
+      "start_line": 429,
+      "end_line": 442,
       "killed": 5,
       "survived": 0,
       "uncovered": 1,
       "sites": 6,
       "mutants": [
         {
-          "line": 430,
+          "line": 431,
           "column": 9,
           "offset": 95,
           "original": "!=",
@@ -960,7 +960,7 @@
           "outcome": "killed"
         },
         {
-          "line": 431,
+          "line": 432,
           "column": 10,
           "offset": 113,
           "original": "false",
@@ -968,7 +968,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 436,
+          "line": 437,
           "column": 43,
           "offset": 279,
           "original": "||",
@@ -976,7 +976,7 @@
           "outcome": "killed"
         },
         {
-          "line": 436,
+          "line": 437,
           "column": 53,
           "offset": 289,
           "original": "==",
@@ -984,7 +984,7 @@
           "outcome": "killed"
         },
         {
-          "line": 437,
+          "line": 438,
           "column": 11,
           "offset": 308,
           "original": "true",
@@ -992,7 +992,7 @@
           "outcome": "killed"
         },
         {
-          "line": 440,
+          "line": 441,
           "column": 9,
           "offset": 328,
           "original": "false",
@@ -1005,15 +1005,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "DartCoverageRoot",
       "hash": "44de3817edcac4ef",
-      "start_line": 449,
-      "end_line": 468,
+      "start_line": 450,
+      "end_line": 469,
       "killed": 2,
       "survived": 0,
       "uncovered": 1,
       "sites": 3,
       "mutants": [
         {
-          "line": 451,
+          "line": 452,
           "column": 9,
           "offset": 140,
           "original": "==",
@@ -1021,7 +1021,7 @@
           "outcome": "killed"
         },
         {
-          "line": 455,
+          "line": 456,
           "column": 20,
           "offset": 220,
           "original": "==",
@@ -1029,7 +1029,7 @@
           "outcome": "killed"
         },
         {
-          "line": 462,
+          "line": 463,
           "column": 25,
           "offset": 473,
           "original": "==",
@@ -1042,15 +1042,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "dartNested",
       "hash": "481f8c3674d02acc",
-      "start_line": 472,
-      "end_line": 474,
+      "start_line": 473,
+      "end_line": 475,
       "killed": 2,
       "survived": 0,
       "uncovered": 0,
       "sites": 2,
       "mutants": [
         {
-          "line": 473,
+          "line": 474,
           "column": 64,
           "offset": 132,
           "original": "&&",
@@ -1058,7 +1058,7 @@
           "outcome": "killed"
         },
         {
-          "line": 473,
+          "line": 474,
           "column": 67,
           "offset": 135,
           "original": "!",
@@ -1071,15 +1071,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "DartCoverageInputs",
       "hash": "d38bc6952316bc71",
-      "start_line": 491,
-      "end_line": 529,
+      "start_line": 492,
+      "end_line": 530,
       "killed": 11,
       "survived": 3,
       "uncovered": 1,
       "sites": 15,
       "mutants": [
         {
-          "line": 494,
+          "line": 495,
           "column": 10,
           "offset": 281,
           "original": "!=",
@@ -1087,7 +1087,7 @@
           "outcome": "survived"
         },
         {
-          "line": 494,
+          "line": 495,
           "column": 16,
           "offset": 287,
           "original": "&&",
@@ -1095,7 +1095,7 @@
           "outcome": "killed"
         },
         {
-          "line": 494,
+          "line": 495,
           "column": 19,
           "offset": 290,
           "original": "!",
@@ -1103,7 +1103,7 @@
           "outcome": "killed"
         },
         {
-          "line": 496,
+          "line": 497,
           "column": 6,
           "offset": 371,
           "original": "!",
@@ -1111,7 +1111,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 502,
+          "line": 503,
           "column": 62,
           "offset": 609,
           "original": "==",
@@ -1119,7 +1119,7 @@
           "outcome": "killed"
         },
         {
-          "line": 502,
+          "line": 503,
           "column": 73,
           "offset": 620,
           "original": "||",
@@ -1127,7 +1127,7 @@
           "outcome": "killed"
         },
         {
-          "line": 503,
+          "line": 504,
           "column": 48,
           "offset": 695,
           "original": "==",
@@ -1135,7 +1135,7 @@
           "outcome": "killed"
         },
         {
-          "line": 505,
+          "line": 506,
           "column": 25,
           "offset": 787,
           "original": "&&",
@@ -1143,7 +1143,7 @@
           "outcome": "killed"
         },
         {
-          "line": 506,
+          "line": 507,
           "column": 12,
           "offset": 873,
           "original": "true",
@@ -1151,7 +1151,7 @@
           "outcome": "killed"
         },
         {
-          "line": 512,
+          "line": 513,
           "column": 9,
           "offset": 1022,
           "original": "!=",
@@ -1159,7 +1159,7 @@
           "outcome": "killed"
         },
         {
-          "line": 515,
+          "line": 516,
           "column": 55,
           "offset": 1106,
           "original": "!=",
@@ -1167,7 +1167,7 @@
           "outcome": "killed"
         },
         {
-          "line": 515,
+          "line": 516,
           "column": 61,
           "offset": 1112,
           "original": "&&",
@@ -1175,7 +1175,7 @@
           "outcome": "survived"
         },
         {
-          "line": 516,
+          "line": 517,
           "column": 83,
           "offset": 1229,
           "original": "!=",
@@ -1183,7 +1183,7 @@
           "outcome": "killed"
         },
         {
-          "line": 521,
+          "line": 522,
           "column": 9,
           "offset": 1284,
           "original": "==",
@@ -1191,7 +1191,7 @@
           "outcome": "survived"
         },
         {
-          "line": 525,
+          "line": 526,
           "column": 79,
           "offset": 1501,
           "original": "!=",
@@ -1204,15 +1204,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "addCoverageInput",
       "hash": "cc23dc5d84e62c60",
-      "start_line": 535,
-      "end_line": 550,
+      "start_line": 536,
+      "end_line": 551,
       "killed": 3,
       "survived": 0,
       "uncovered": 0,
       "sites": 3,
       "mutants": [
         {
-          "line": 537,
+          "line": 538,
           "column": 9,
           "offset": 122,
           "original": "!=",
@@ -1220,7 +1220,7 @@
           "outcome": "killed"
         },
         {
-          "line": 540,
+          "line": 541,
           "column": 37,
           "offset": 183,
           "original": "!=",
@@ -1228,7 +1228,7 @@
           "outcome": "killed"
         },
         {
-          "line": 544,
+          "line": 545,
           "column": 9,
           "offset": 317,
           "original": "!=",
@@ -1240,26 +1240,26 @@
     {
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "addProjectCoverageInputs",
-      "hash": "4c40e9f261fc3935",
-      "start_line": 555,
-      "end_line": 568,
-      "killed": 1,
+      "hash": "f304453e2fd992a0",
+      "start_line": 556,
+      "end_line": 567,
+      "killed": 2,
       "survived": 0,
-      "uncovered": 1,
+      "uncovered": 0,
       "sites": 2,
       "mutants": [
         {
-          "line": 557,
-          "column": 64,
-          "offset": 271,
+          "line": 558,
+          "column": 9,
+          "offset": 174,
           "original": "!=",
           "replacement": "==",
-          "outcome": "uncovered"
+          "outcome": "killed"
         },
         {
-          "line": 564,
+          "line": 563,
           "column": 20,
-          "offset": 401,
+          "offset": 287,
           "original": "+",
           "replacement": "-",
           "outcome": "killed"
@@ -1270,15 +1270,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "beneathRoot",
       "hash": "ff4c1221e16758ec",
-      "start_line": 571,
-      "end_line": 579,
+      "start_line": 570,
+      "end_line": 578,
       "killed": 10,
       "survived": 1,
       "uncovered": 1,
       "sites": 12,
       "mutants": [
         {
-          "line": 574,
+          "line": 573,
           "column": 10,
           "offset": 120,
           "original": "!=",
@@ -1286,7 +1286,7 @@
           "outcome": "killed"
         },
         {
-          "line": 574,
+          "line": 573,
           "column": 17,
           "offset": 127,
           "original": "||",
@@ -1294,7 +1294,7 @@
           "outcome": "survived"
         },
         {
-          "line": 574,
+          "line": 573,
           "column": 25,
           "offset": 135,
           "original": "!=",
@@ -1302,7 +1302,7 @@
           "outcome": "killed"
         },
         {
-          "line": 575,
+          "line": 574,
           "column": 10,
           "offset": 153,
           "original": "false",
@@ -1310,7 +1310,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 578,
+          "line": 577,
           "column": 13,
           "offset": 212,
           "original": "==",
@@ -1318,7 +1318,7 @@
           "outcome": "killed"
         },
         {
-          "line": 578,
+          "line": 577,
           "column": 20,
           "offset": 219,
           "original": "&&",
@@ -1326,7 +1326,7 @@
           "outcome": "killed"
         },
         {
-          "line": 578,
+          "line": 577,
           "column": 27,
           "offset": 226,
           "original": "!=",
@@ -1334,7 +1334,7 @@
           "outcome": "killed"
         },
         {
-          "line": 578,
+          "line": 577,
           "column": 35,
           "offset": 234,
           "original": "&&",
@@ -1342,7 +1342,7 @@
           "outcome": "killed"
         },
         {
-          "line": 578,
+          "line": 577,
           "column": 38,
           "offset": 237,
           "original": "!",
@@ -1350,7 +1350,7 @@
           "outcome": "killed"
         },
         {
-          "line": 578,
+          "line": 577,
           "column": 66,
           "offset": 265,
           "original": "+",
@@ -1358,7 +1358,7 @@
           "outcome": "killed"
         },
         {
-          "line": 578,
+          "line": 577,
           "column": 95,
           "offset": 294,
           "original": "&&",
@@ -1366,7 +1366,7 @@
           "outcome": "killed"
         },
         {
-          "line": 578,
+          "line": 577,
           "column": 98,
           "offset": 297,
           "original": "!",
@@ -1379,15 +1379,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs",
       "name": "coverageFileExists",
       "hash": "d8cb9bce3a1ed3a6",
-      "start_line": 581,
-      "end_line": 584,
+      "start_line": 580,
+      "end_line": 583,
       "killed": 3,
       "survived": 0,
       "uncovered": 0,
       "sites": 3,
       "mutants": [
         {
-          "line": 583,
+          "line": 582,
           "column": 13,
           "offset": 84,
           "original": "==",
@@ -1395,7 +1395,7 @@
           "outcome": "killed"
         },
         {
-          "line": 583,
+          "line": 582,
           "column": 20,
           "offset": 91,
           "original": "&&",
@@ -1403,7 +1403,7 @@
           "outcome": "killed"
         },
         {
-          "line": 583,
+          "line": 582,
           "column": 23,
           "offset": 94,
           "original": "!",

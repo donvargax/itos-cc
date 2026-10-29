@@ -76,7 +76,7 @@
     "cmd/itos-cc/run_fakes_test.go": "cc976a7c661481fc7f7e90438f5adcc1b2db89487ed30158230db5ffcabd7c07",
     "cmd/itos-cc/scenarios_apart_test.go": "861ac10c0e556f43c1041e0ca955974ed75e98caa1632653043b64955c4fc4d9",
     "cmd/itos-cc/scenarios_counted_test.go": "276a80288993f6a59152002ffb351f3b37c48d51dfa08665f3ebf1902338abbb",
-    "cmd/itos-cc/scenarios_coverage_trace_test.go": "930337bbeeb7d30851fc50e13f8a0a36065c903618c05d51f2c61a504a1b4844",
+    "cmd/itos-cc/scenarios_coverage_trace_test.go": "49f2c05bd3ec391fbbd6f18f3840153191033fb49aff973dfe19efaa65e83489",
     "cmd/itos-cc/scenarios_exceptions_test.go": "8c7941582bcae4403b6e622c1913e93e1508f59c8de03d878bf4093f24bbcf5f",
     "cmd/itos-cc/scenarios_executable_test.go": "1986fd201e388a839e53f7fd27e8297662c33155f99da586acdad5952209d9c3",
     "cmd/itos-cc/scenarios_fakes_test.go": "4c21ac2d49bd5a01256859870fd8ae53b6322a451c67a19cbf5e64e8d3a7c61e",
@@ -95,7 +95,7 @@
     "cmd/itos-cc/snapshot_test.go": "3c42201e9776999effa78402ca5fe919ab356123b4fda3e80d02eba3f099f7da",
     "cmd/itos-cc/strict_changed_lines_counted_test.go": "4d54698197a8ac70e2689087fc1a6b02b29689bf0e542cb06d9e95181ad3adda",
     "cmd/itos-cc/strict_changed_lines_test.go": "106dca2ed4bd8155db1d51de5e08e3d435d076992d30ad50e386f01fb4cb1c06",
-    "cmd/itos-cc/strict_go_coverage_test.go": "ca0980c73a94210c3863c8003001aee81c3f1ffb84bd3645aac029d6b16a839f",
+    "cmd/itos-cc/strict_go_coverage_test.go": "44dd42eeab24f9e3e5a5539d8425ffe30d921ade8a32dc8d3fe9def414ff4f5e",
     "cmd/itos-cc/strict_go_scope_test.go": "e2760c2e1d7b9b0bb164dc17ee943eb168a4fa6a3f51e826e3bb8f51d78ceb7f",
     "cmd/itos-cc/strict_lines_kotlin_test.go": "0e5a6421cd8174fdb11823f7ebb9260be2f9a03d568374262d3f96a7cea695c6",
     "cmd/itos-cc/strict_lines_python_test.go": "7311f478aa7da3587f35aa558d535ae07f195babc4af5773567fccbdee48cb22",
@@ -105,7 +105,7 @@
     "cmd/itos-cc/subprocess_test.go": "c39ea18d96eb8c463d4e2b537ae6496684ffb66c58b8ec5bf8e600248411abac",
     "cmd/itos-cc/uncovered_fails_closed_test.go": "819bd5831a7fe6fbb3fddcf099906ec21e74cef658c8f2e912b6f700c2771b6c",
     "cmd/itos-cc/whole_suite_freshness_all_test.go": "ace8c02c92f969d969ab9f90230088c1b718d546e724493b1436cff1b82839e9",
-    "internal/slices/mutation/adapters/snapshots/coverage_cache_test.go": "895373376ec461e71bae8142eb6cb34d7df7ffca2a500bfc9e1dff15a3c032bd",
+    "internal/slices/mutation/adapters/snapshots/coverage_cache_test.go": "32ff113ccf0c197b6a35e217f665a8eb332d99b377279d3a4c088bebbec5d0aa",
     "internal/slices/mutation/adapters/snapshots/mutation_catalog_test.go": "b984fc8bf80630223b4bbb5bd7159cdd4d9a2401cc6bd78c9c61a2bdd80c2a46",
     "internal/slices/mutation/adapters/snapshots/mutation_codec_bytes_test.go": "6d2cd6b8ca448a3ad18f8b0a4f50947eeaa4fc971521462c229b742d43762ff0",
     "internal/slices/mutation/adapters/snapshots/mutation_codec_test.go": "98aa931d122050d7c2a8975abe2acd1f030a6364697b4b2769d432ef3ba695ff",
@@ -115,16 +115,16 @@
     {
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots.CoverageCache",
       "name": "Listed",
-      "hash": "1b06b62b668612a8",
-      "start_line": 66,
-      "end_line": 92,
+      "hash": "aed033143e134573",
+      "start_line": 71,
+      "end_line": 88,
       "killed": 4,
       "survived": 0,
       "uncovered": 0,
       "sites": 4,
       "mutants": [
         {
-          "line": 69,
+          "line": 74,
           "column": 13,
           "offset": 202,
           "original": "!=",
@@ -132,7 +132,7 @@
           "outcome": "killed"
         },
         {
-          "line": 69,
+          "line": 74,
           "column": 20,
           "offset": 209,
           "original": "||",
@@ -140,7 +140,7 @@
           "outcome": "killed"
         },
         {
-          "line": 69,
+          "line": 74,
           "column": 23,
           "offset": 212,
           "original": "!",
@@ -148,7 +148,7 @@
           "outcome": "killed"
         },
         {
-          "line": 72,
+          "line": 77,
           "column": 18,
           "offset": 263,
           "original": "!=",
@@ -158,11 +158,129 @@
       ]
     },
     {
+      "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots",
+      "name": "fromWire",
+      "hash": "60d913621fcb734b",
+      "start_line": 91,
+      "end_line": 102,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots",
+      "name": "toWire",
+      "hash": "a2875576921e5550",
+      "start_line": 105,
+      "end_line": 116,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots.CoverageCache",
       "name": "SaveListed",
-      "hash": "18bdfbc0b5779bb7",
-      "start_line": 95,
-      "end_line": 114,
+      "hash": "84fc51ff78e1e7c6",
+      "start_line": 119,
+      "end_line": 129,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots",
+      "name": "ownName",
+      "hash": "959725fb13e12b90",
+      "start_line": 146,
+      "end_line": 148,
+      "killed": 3,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 3,
+      "mutants": [
+        {
+          "line": 147,
+          "column": 27,
+          "offset": 61,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 147,
+          "column": 33,
+          "offset": 67,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 147,
+          "column": 40,
+          "offset": 74,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots.CoverageCache",
+      "name": "Own",
+      "hash": "1a1ec0dce66c7855",
+      "start_line": 152,
+      "end_line": 163,
+      "killed": 4,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 4,
+      "mutants": [
+        {
+          "line": 155,
+          "column": 13,
+          "offset": 201,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 155,
+          "column": 20,
+          "offset": 208,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 155,
+          "column": 23,
+          "offset": 211,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 158,
+          "column": 18,
+          "offset": 262,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots.CoverageCache",
+      "name": "SaveOwn",
+      "hash": "f5eac7f700f05e92",
+      "start_line": 167,
+      "end_line": 171,
       "killed": 0,
       "survived": 0,
       "uncovered": 0,
