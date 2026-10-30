@@ -402,11 +402,28 @@
       "hash": "86e0b23f25cb0635",
       "start_line": 122,
       "end_line": 122,
-      "killed": 0,
+      "killed": 2,
       "survived": 0,
       "uncovered": 0,
-      "sites": 0,
-      "mutants": []
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 122,
+          "column": 61,
+          "offset": 60,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 122,
+          "column": 70,
+          "offset": 69,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        }
+      ]
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.ReasonMissing",

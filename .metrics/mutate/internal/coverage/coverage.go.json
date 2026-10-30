@@ -1198,7 +1198,7 @@
       "start_line": 292,
       "end_line": 334,
       "killed": 11,
-      "survived": 4,
+      "survived": 3,
       "uncovered": 0,
       "sites": 15,
       "mutants": [
@@ -1463,23 +1463,11 @@
           "offset": 926,
           "original": "-",
           "replacement": "+",
-          "outcome": "survived",
-          "scope": "listed",
-          "tests": [
-            "ID-MUT-369",
-            "ID-MUT-304",
-            "ID-MUT-203",
-            "ID-MUT-225",
-            "ID-MUT-226",
-            "ID-MUT-355",
-            "ID-MUT-359",
-            "ID-MUT-158",
-            "ID-MUT-162",
-            "ID-MUT-175",
-            "ID-MUT-176",
-            "ID-MUT-180",
-            "ID-MUT-186",
-            "ID-MUT-195"
+          "outcome": "killed",
+          "flaky": true,
+          "outcomes": [
+            "killed",
+            "survived"
           ]
         },
         {
@@ -1518,7 +1506,7 @@
       "start_line": 344,
       "end_line": 374,
       "killed": 12,
-      "survived": 3,
+      "survived": 2,
       "uncovered": 0,
       "sites": 15,
       "mutants": [
@@ -1661,35 +1649,11 @@
           "offset": 737,
           "original": "-",
           "replacement": "+",
-          "outcome": "survived",
-          "scope": "listed",
-          "tests": [
-            "ID-MUT-369",
-            "ID-MUT-47",
-            "ID-MUT-50",
-            "ID-MUT-95",
-            "ID-MUT-221",
-            "ID-MUT-222",
-            "ID-MUT-223",
-            "ID-MUT-271",
-            "ID-MUT-272",
-            "ID-MUT-273",
-            "ID-MUT-224",
-            "ID-MUT-281",
-            "ID-MUT-282",
-            "ID-MUT-225",
-            "ID-MUT-366",
-            "ID-MUT-374",
-            "ID-MUT-375",
-            "ID-MUT-228",
-            "ID-MUT-229",
-            "ID-MUT-230",
-            "ID-MUT-232",
-            "ID-MUT-178",
-            "ID-MUT-179",
-            "ID-MUT-182",
-            "ID-MUT-385",
-            "ID-MUT-386"
+          "outcome": "killed",
+          "flaky": true,
+          "outcomes": [
+            "killed",
+            "survived"
           ]
         },
         {
