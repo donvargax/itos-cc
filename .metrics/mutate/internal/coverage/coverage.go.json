@@ -1649,11 +1649,40 @@
           "offset": 737,
           "original": "-",
           "replacement": "+",
-          "outcome": "killed",
+          "outcome": "survived",
+          "scope": "listed",
+          "tests": [
+            "ID-MUT-369",
+            "ID-MUT-47",
+            "ID-MUT-50",
+            "ID-MUT-95",
+            "ID-MUT-221",
+            "ID-MUT-222",
+            "ID-MUT-223",
+            "ID-MUT-271",
+            "ID-MUT-272",
+            "ID-MUT-273",
+            "ID-MUT-224",
+            "ID-MUT-281",
+            "ID-MUT-282",
+            "ID-MUT-225",
+            "ID-MUT-366",
+            "ID-MUT-374",
+            "ID-MUT-375",
+            "ID-MUT-228",
+            "ID-MUT-229",
+            "ID-MUT-230",
+            "ID-MUT-232",
+            "ID-MUT-178",
+            "ID-MUT-179",
+            "ID-MUT-182",
+            "ID-MUT-385",
+            "ID-MUT-386"
+          ],
           "flaky": true,
           "outcomes": [
-            "killed",
-            "survived"
+            "survived",
+            "killed"
           ]
         },
         {
