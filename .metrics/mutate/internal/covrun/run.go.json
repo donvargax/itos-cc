@@ -194,7 +194,7 @@
       "start_line": 169,
       "end_line": 236,
       "killed": 14,
-      "survived": 5,
+      "survived": 6,
       "uncovered": 5,
       "sites": 25,
       "mutants": [
@@ -396,12 +396,7 @@
           "offset": 2018,
           "original": "0",
           "replacement": "1",
-          "outcome": "killed",
-          "flaky": true,
-          "outcomes": [
-            "killed",
-            "survived"
-          ]
+          "outcome": "survived"
         }
       ]
     },
