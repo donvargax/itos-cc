@@ -309,7 +309,7 @@ jobs:
       - if: matrix.kotlin
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
-          gradle-version: "9.8.1"
+          gradle-version: "9.8.2"
           cache-provider: basic
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
