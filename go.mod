@@ -11,7 +11,7 @@ require (
 	github.com/cucumber/godog v0.16.0
 	github.com/cucumber/messages/go/v34 v34.2.1
 	github.com/donvargax/kong v1.16.2-itos.2
-	github.com/fwcd/tree-sitter-kotlin v0.0.0-20260801230305-1852ea17b7f6
+	github.com/fwcd/tree-sitter-kotlin v0.0.0-20261031170920-d6af96d2e23e
 	github.com/tree-sitter/go-tree-sitter v0.25.0
 	github.com/tree-sitter/tree-sitter-go v0.25.0
 	github.com/tree-sitter/tree-sitter-javascript v0.25.0
