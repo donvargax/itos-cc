@@ -3806,11 +3806,7 @@
           "offset": 168,
           "original": "true",
           "replacement": "false",
-          "outcome": "survived",
-          "scope": "listed",
-          "tests": [
-            "ID-MUT-192"
-          ]
+          "outcome": "survived"
         },
         {
           "line": 302,

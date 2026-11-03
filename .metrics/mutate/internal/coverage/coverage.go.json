@@ -1198,7 +1198,7 @@
       "start_line": 292,
       "end_line": 334,
       "killed": 11,
-      "survived": 2,
+      "survived": 3,
       "uncovered": 0,
       "sites": 15,
       "mutants": [
@@ -1502,11 +1502,17 @@
           "offset": 986,
           "original": "-",
           "replacement": "+",
-          "outcome": "killed",
-          "flaky": true,
-          "outcomes": [
-            "killed",
-            "survived"
+          "outcome": "survived",
+          "scope": "listed",
+          "tests": [
+            "ID-MUT-203",
+            "ID-MUT-156",
+            "ID-MUT-157",
+            "ID-MUT-158",
+            "ID-MUT-162",
+            "ID-MUT-180",
+            "ID-MUT-186",
+            "ID-MUT-195"
           ]
         }
       ]
