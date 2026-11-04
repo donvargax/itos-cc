@@ -15827,8 +15827,8 @@
       "start_line": 295,
       "end_line": 343,
       "complexity": 18,
-      "coverage": 75,
-      "crap": 23.1
+      "coverage": 77.8,
+      "crap": 21.6
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
