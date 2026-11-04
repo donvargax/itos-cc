@@ -1463,29 +1463,11 @@
           "offset": 926,
           "original": "-",
           "replacement": "+",
-          "outcome": "survived",
-          "scope": "listed",
-          "tests": [
-            "ID-MUT-369",
-            "ID-MUT-304",
-            "ID-MUT-203",
-            "ID-MUT-225",
-            "ID-MUT-226",
-            "ID-MUT-355",
-            "ID-MUT-359",
-            "ID-MUT-158",
-            "ID-MUT-162",
-            "ID-MUT-175",
-            "ID-MUT-176",
-            "ID-MUT-180",
-            "ID-MUT-186",
-            "ID-MUT-195"
-          ],
+          "outcome": "killed",
           "flaky": true,
           "outcomes": [
-            "survived",
-            "survived",
-            "killed"
+            "killed",
+            "survived"
           ]
         },
         {
