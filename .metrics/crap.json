@@ -6862,8 +6862,8 @@
       "start_line": 34,
       "end_line": 67,
       "complexity": 13,
-      "coverage": 78.3,
-      "crap": 14.7
+      "coverage": 73.9,
+      "crap": 16
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/processes",
@@ -7016,8 +7016,8 @@
       "start_line": 310,
       "end_line": 324,
       "complexity": 5,
-      "coverage": 77.8,
-      "crap": 5.3
+      "coverage": 55.6,
+      "crap": 7.2
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/processes.cleanupSignal",
