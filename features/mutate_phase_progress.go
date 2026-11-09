@@ -226,9 +226,12 @@ func (p *phaseProgress) plainUnchanged() error {
 }
 
 // countedJSONKeys are the keys, each by its path, of the --json object a
-// counted run gave for the counted listed fixture before slice-64.
+// counted run gave for the counted listed fixture before slice-64, with the
+// summary slice-72 added since: the progress lines change none of them.
 var countedJSONKeys = []string{
-	".ok", ".sampling", ".sampling.algorithm", ".sampling.assurance",
+	".itos_proof", ".itos_proof.excepted", ".itos_proof.files", ".itos_proof.judged",
+	".itos_proof.killed", ".itos_proof.survived", ".itos_proof.uncovered", ".itos_proof.unit",
+	".itos_proof.version", ".ok", ".sampling", ".sampling.algorithm", ".sampling.assurance",
 	".sampling.bounds", ".sampling.budget", ".sampling.commit", ".sampling.completion",
 	".sampling.eligible", ".sampling.executed", ".sampling.omitted", ".sampling.seed",
 	".sampling.selected", ".sampling.uncommitted", ".schema", ".selected",
