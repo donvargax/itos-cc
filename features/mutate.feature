@@ -4987,7 +4987,7 @@ Feature: Mutation testing
   # The exit codes hold today and are guardrails.
   Rule: A green run's --json says what it judged, in the summary itos's code proof reads
 
-    @wip @slice-72 @ID-MUT-400
+    @slice-72 @ID-MUT-400
     Scenario Outline: A kill is reported as one mutant judged (<args>)
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And a later commit's test also checks Count(5)
@@ -5003,7 +5003,7 @@ Feature: Mutation testing
         | --count 1                  |
         | --site board/board.go:5:11 |
 
-    @wip @slice-72 @ID-MUT-401
+    @slice-72 @ID-MUT-401
     Scenario: An excepted survivor is judged and excepted, not survived
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
@@ -5016,7 +5016,7 @@ Feature: Mutation testing
 
     # Counting only state "judged", or "executed", would say 0 here, and itos would refuse a
     # draw that merely landed on an uncovered line.
-    @wip @slice-72 @ID-MUT-402
+    @slice-72 @ID-MUT-402
     Scenario: A drawn mutant no test reaches is judged and uncovered, with no trial
       Given a committed Go module whose "example.com/fx/board#Count" no test calls
       When I run "itos-cc mutation run --count 1 --json"
@@ -5029,7 +5029,7 @@ Feature: Mutation testing
 
     # A true zero would fail the push: this range's only change is a test, and itos refuses
     # judged 0. Nothing judged reports nothing, which is the reader's "unavailable".
-    @wip @slice-72 @ID-MUT-403
+    @slice-72 @ID-MUT-403
     Scenario Outline: A range with nothing to judge reports every count null, never a zero (<command>)
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And that commit is tagged "base"
@@ -5049,7 +5049,7 @@ Feature: Mutation testing
         | mutation check --since base                                |
 
     # Counting only what ran would say 0 here, and itos would refuse an unchanged re-run.
-    @wip @slice-72 @ID-MUT-404
+    @slice-72 @ID-MUT-404
     Scenario: A complete run counts the results it reused
       Given a committed Go module whose test also checks Count(5), so `<` → `<=` is killed
       And "itos-cc mutation run board/board.go" recorded it killed
@@ -5062,7 +5062,7 @@ Feature: Mutation testing
       And the exit code is 0
 
     # itos's README names mutation check --since {base} --fail-uncovered --json as the proof.
-    @wip @slice-72 @ID-MUT-405
+    @slice-72 @ID-MUT-405
     Scenario: mutation check counts the functions it judged
       Given a committed Go module whose test also checks Count(5), so `<` → `<=` is killed
       And "itos-cc mutation run board/board.go" recorded it killed

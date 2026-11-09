@@ -227,6 +227,21 @@ before; a script that checked for `"passed"` should accept `"not-run"`, or
 check for `"failed"` instead. Snapshots record no baseline, so none reads
 stale for it.
 
+When `"ok"` is true, `mutation run --json` and `mutation check --json` also give
+`"itos_proof"`, a top-level member of the one object: the summary itos reads from a code
+proof's stdout and logs as `Code proof summary: judged=…`. A failed run's object has none.
+It holds `"version": 1`, `"judged"`, `"unit"`, `"files"`, `"killed"`, `"survived"`,
+`"excepted"` and `"uncovered"`. For a counted or `--site` run the unit is `"mutant"` and
+`"judged"` the selected sites with an outcome, their uncovered ones too, though no trial ran;
+`--count N`'s `"judged"` is what the sample judged, not the range. For a complete run the unit
+is `"mutant"` and `"judged"` the mutants of the functions each file judged, ran or reused, with
+`"files"` those holding any. For `mutation check` the unit is `"function"` and `"judged"` the
+functions judged, while the other counts are their mutants. A timeout or a mutant over a limit
+counts in `"killed"`, an excepted survivor in `"excepted"`, not `"survived"`. Nothing judged is
+every member but `"version"` null, never a zero: itos refuses an explicit `"judged": 0`, and a
+range with no site passes here, a push touching only tests above all, so itos logs `Code proof
+summary unavailable` and passes it. `mutation sample` gives no summary.
+
 A Python file's own tests, the scope `own`, are those of its `tests` that
 pytest collects by name (`test_*.py`, `*_test.py`): `mutation run` runs them
 as `python -m pytest -q -x -p no:cacheprovider <files>`, or `python -m

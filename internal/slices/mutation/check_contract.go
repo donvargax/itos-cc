@@ -131,7 +131,11 @@ mutants at sites gone, when it has any.`,
    gone or excluded, "snapshot" its path from the project root, "why"
    "gone"|"excluded"; and when there is any, "not_built": [{"file",
    "platform": "<goos>/<goarch>"}], each Go file only another system
-   builds`,
+   builds; and when "ok" is true, "itos_proof": {"version": 1, "judged",
+   "unit": "function", "files", "killed", "survived", "excepted",
+   "uncovered"}, the summary itos's code proof logs: judged counts the
+   functions judged and the others their mutants, and with nothing judged
+   every member but "version" is null, never a zero`,
 		Rules: []string{
 			"mutation.missing          a function with a mutation site has no results: file, line, function",
 			"mutation.stale            a function, or a test that imports its file, changed since its results, or they never recorded one of its sites: file, line, function",

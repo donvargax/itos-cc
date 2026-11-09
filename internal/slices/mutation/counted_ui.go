@@ -34,6 +34,8 @@ type countedResult struct {
 	// run, so a mutant they would kill can show as survived; left out
 	// otherwise.
 	OwnTests bool `json:"own_tests,omitempty"`
+	// Proof is the summary itos's code proof logs, on a green run alone.
+	Proof *proofSummary `json:"itos_proof,omitempty"`
 	// cleanups are the owned process groups of trials whose cleanup did
 	// not finish, which the run reports each as mutation.cleanup-failed.
 	cleanups []mutants.WorkerCleanupFailed
@@ -222,6 +224,7 @@ func (c Run) counted(ctx context.Context, ui *cli.UI, h Handler, written Written
 	if err != nil {
 		return ui.Emit(c.JSON, nil, ui.Problems(countedError(err, ui.Rel)))
 	}
+	progress.report.Proof = countedProof(progress.report.Selected, progress.p.Problems)
 	return ui.Emit(c.JSON, progress.report, progress.p.Problems)
 }
 

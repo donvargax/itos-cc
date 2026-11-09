@@ -548,7 +548,11 @@ Each line keeps its coverage's sources, "in-process" and "integration".`,
    "stages": [{"name", "state": "complete"|"failed"|"skipped"|"aborted", "error"}],
    and with --site "named": [{"argument", "identities": ["<identity>"]}],
    each argument in the order given with the mutants it named, and with
-   --own-tests "own_tests": true`,
+   --own-tests "own_tests": true; and when "ok" is true, "itos_proof":
+   {"version": 1, "judged", "unit": "mutant", "files", "killed", "survived",
+   "excepted", "uncovered"}, the summary itos's code proof logs: judged is
+   every mutant with an outcome, uncovered and reused included, and with
+   nothing judged every member but "version" is null, never a zero`,
 		Rules: []string{
 			"mutation.survived         a mutant survived: file, line, column, function, original, replacement; with --count or --site identity, which the message names and the fix's mutation except takes",
 			"mutation.uncovered        with --fail-uncovered, or a mutant --site names, no test executes a mutant: file, line, column, function, original, replacement",

@@ -118,6 +118,8 @@ type runResult struct {
 	// left out of Files and judged nowhere here; left out when there are
 	// none.
 	NotBuilt []notBuiltFile `json:"not_built,omitempty"`
+	// Proof is the summary itos's code proof logs, on a green run alone.
+	Proof *proofSummary `json:"itos_proof,omitempty"`
 }
 
 // given says whether the command line gave flag name.
@@ -213,6 +215,7 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 	}
 	p.Orphans(result.Orphans, "was an orphan, and is removed")
 	p.stopped(found.Stop, &result)
+	result.Proof = runProof(result.Files, p.Problems)
 	return ui.Emit(c.JSON, result, p.Problems)
 }
 

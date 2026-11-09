@@ -35,6 +35,8 @@ type checkResult struct {
 	// whose recorded outcomes are not judged here; left out when there are
 	// none.
 	NotBuilt []notBuiltFile `json:"not_built,omitempty"`
+	// Proof is the summary itos's code proof logs, on a green run alone.
+	Proof *proofSummary `json:"itos_proof,omitempty"`
 }
 
 // Run assembles the query once and presents only fully admitted checks.
@@ -54,6 +56,7 @@ func (c Check) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		ui.Line("no source files to check")
 		p.Elsewhere(ctx, found.Elsewhere)
 		p.Orphans(result.Orphans, "is an orphan, which mutation run removes")
+		result.Proof = checkProof(result.Files, p.Problems)
 		return ui.Emit(c.JSON, result, p.Problems)
 	}
 	if languages := found.Coverage; c.FailUncovered != nil && len(languages) > 0 {
@@ -109,6 +112,7 @@ func (c Check) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 	}
 	p.Elsewhere(ctx, found.Elsewhere)
 	p.Orphans(result.Orphans, "is an orphan, which mutation run removes")
+	result.Proof = checkProof(result.Files, p.Problems)
 	return ui.Emit(c.JSON, result, p.Problems)
 }
 

@@ -1556,8 +1556,9 @@ checks pass, hourly on Mondays and every four hours the rest of the week.
 
 A push whose range touches Go or the viewer's TypeScript runs `itos.yaml`'s code proof in both
 ci jobs, one fresh mutation site of its changed code judged by the itos-cc built from the pushed
-tree (T-187); `cd.yml`'s sample job re-runs ten recorded mutation results on every push that is
-not prose alone (T-188); and
+tree (T-187), which logs what it judged, as `Code proof summary: judged=1; unit=mutant; …`, or
+that it has no summary when the range holds no site; `cd.yml`'s sample job re-runs ten recorded
+mutation results on every push that is not prose alone (T-188); and
 [`nightly.yml`](.github/workflows/nightly.yml), the nightly mutation run, judges the whole
 repository and commits `.metrics/mutate/`, while its snapshots job runs `itos-cc crap`, `dry` and
 `scrap` over the whole repository and commits `.metrics/crap.json`, `.metrics/dry.json` and
