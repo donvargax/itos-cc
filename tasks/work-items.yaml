@@ -6389,3 +6389,15 @@ items:
       selected[].identity prints < for <. It is valid JSON, yet pasting the raw text into mutation
       except says it names no survivor. mutation show takes identities too.
     refs: ["#82"]
+  - id: converted-line-after-failure
+    title: A complete run says it converted the coverage of a listed test whose conversion failed
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found drafting slice-74, by a read and one observation of the drafter: after a failed
+      conversion a complete run still prints "converted the coverage of 1 listed tests", as
+      listedConverted counts what was written (internal/covrun/pertest.go). Going on is slice-15
+      choice; the line overstates it.
