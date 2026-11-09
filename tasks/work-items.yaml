@@ -6288,3 +6288,15 @@ items:
       stderr to the run log (internal/covrun/supervised.go), yet the message a proof reader sees
       holds none of it. Check where the log goes under --json before specifying.
     refs: ["#84"]
+  - id: progress-says-excepted
+    title: mutation run progress lines say excepted for an excepted mutant
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #81: a passing run prints survived for each excepted mutant, as progress.go has no
+      excepted case and domain/run.go marks exceptions after the run, so a reader sees survivors in
+      a green log.
+    refs: ["#81"]
