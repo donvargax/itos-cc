@@ -515,6 +515,7 @@ questions:
   - id: q-107
     question: "itos here is 8.25.2 and the newest is 8.49.0, the same major, and Renovate does not bump it. Upgrade? (a, recommended) yes, as a task between agents, as with 8.19 to 8.25. (b) not now."
     answer: "(a) Yes, upgrade to the newest as a task between agents."
+    decision: none
   - id: q-108
     question: "Nightly has passed in none of its last 29 runs. The run of 2026-11-07 ended with exit 1 straight after listing survivors, which appears to be why it is red, so real failures such as the 504 of 2026-11-08 look the same. Should survivors alone leave the nightly red? (a, recommended) no: results are already recorded, so red means the mutation run itself failed, a task keeping every other failure red. (b) yes, leave it, red meaning survivors remain."
     answer: "(a) No: survivors alone do not leave the nightly red, as the results are recorded; red means the mutation run itself or another step failed. A task, keeping every other failure red."
