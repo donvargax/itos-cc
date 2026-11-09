@@ -6376,3 +6376,16 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: json-identity-escaped
+    title: An identity copied from raw --json is refused, its < and > escaped
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found drafting slice-73 and seen once by the drafter, not checked since: Emit in
+      internal/cli/cli.go runs json.Marshal before its SetEscapeHTML(false) encoder, so
+      selected[].identity prints < for <. It is valid JSON, yet pasting the raw text into mutation
+      except says it names no survivor. mutation show takes identities too.
+    refs: ["#82"]
