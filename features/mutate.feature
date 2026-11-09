@@ -4677,7 +4677,9 @@ Feature: Mutation testing
     # - A problem of why "changed" gains "identity", additive, and its fix
     #   names "itos-cc mutation except '<identity>'" ahead of the sentences it
     #   has today, saying that this runs nothing and keeps the entry's reason
-    #   unless --reason gives another. That is on mutation run, counted runs,
+    #   unless another is given, not naming the flag, as ID-MUT-242's and
+    #   ID-MUT-379's fix names --renew before --reason, and an entry with no
+    #   line_text has an identity. That is on mutation run, counted runs,
     #   --fail-fast's stop, mutation check, and what --renew leaves as
     #   no-results and --rehash leaves as changed: their fixes also ask for a
     #   mutation run.
@@ -4708,7 +4710,7 @@ Feature: Mutation testing
     # ID-MUT-413, 414, 417 and 418 fail at the Then that reads "identity";
     # ID-MUT-416 at its plain line. ID-MUT-415 holds today in every row: it is
     # a guardrail against naming a mutant the rule cannot tell, reported apart.
-    @wip @slice-78 @ID-MUT-413
+    @slice-78 @ID-MUT-413
     Scenario Outline: A stale entry's problem names the identity that re-points it, from <command>
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
@@ -4728,7 +4730,7 @@ Feature: Mutation testing
         | mutation run --count 5                  |
         | mutation run board/board.go --fail-fast |
 
-    @wip @slice-78 @ID-MUT-414
+    @slice-78 @ID-MUT-414
     Scenario: A site that moved within its function on a line of the same text is named at its place now
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
@@ -4737,7 +4739,7 @@ Feature: Mutation testing
       Then the "mutation.exception-stale" problem's "identity" names that mutant at line_in_function 3, as the code is now
       And excepting that identity with no --reason records line_in_function 3 and the reason "x is never 5"
 
-    @wip @slice-78 @ID-MUT-415
+    @slice-78 @ID-MUT-415
     Scenario Outline: A stale entry whose mutant cannot be told names no identity (<case>)
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
@@ -4753,7 +4755,7 @@ Feature: Mutation testing
         | two could be it   | Count became "if x == 0 { return x < 5 }" over three lines, then "return x < 5"        | changed |
         | no such site left | Count's "x < 5" became "x == 5"                                                        | gone    |
 
-    @wip @slice-78 @ID-MUT-416
+    @slice-78 @ID-MUT-416
     Scenario: The plain line of a stale entry names its identity
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
@@ -4763,7 +4765,7 @@ Feature: Mutation testing
       And no line of it starts with a path or holds "board/board.go:5:11"
       And when the entry's line changed too, the line ends "(changed)"
 
-    @wip @slice-78 @ID-MUT-417
+    @slice-78 @ID-MUT-417
     Scenario Outline: What <flag> leaves for want of a mutation run names the identity
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
@@ -4780,7 +4782,7 @@ Feature: Mutation testing
         | --renew  | no-results |
         | --rehash | changed    |
 
-    @wip @slice-78 @ID-MUT-418
+    @slice-78 @ID-MUT-418
     Scenario: A stale entry's identity is from the project root, wherever the command ran
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
@@ -4794,7 +4796,7 @@ Feature: Mutation testing
     # identity's is not compared there (identifiedUnit), so the round trip is
     # checked in each. It needs no real tool: check and an identity's except
     # run nothing.
-    @wip @slice-78 @ID-MUT-421
+    @slice-78 @ID-MUT-421
     Scenario Outline: A stale entry's identity re-points it in <language>
       Given <language> source whose <function> has the `<` → `<=` site itos-cc.yaml excepts with reason "x is never 5"
       And <function> changed in a line after the site, leaving the site's line as it was

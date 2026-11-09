@@ -85,7 +85,7 @@ func Rehash(ctx context.Context, exceptions []Exception, opt CheckOptions, statu
 			rehashed = append(rehashed, Renewal{Old: e, New: renewed, Line: at})
 			continue
 		}
-		left = append(left, StaleException{Exception: e, Why: why, Line: line})
+		left = append(left, StaleException{Exception: e, Why: why, Line: line, Identity: changedIdentity(e, why, f.file, f.sites)})
 	}
 	return rehashed, left, stopped(ctx, nil)
 }

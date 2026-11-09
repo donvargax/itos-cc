@@ -41,13 +41,14 @@ function's hash, the site's line counted from the function's first line
 replacement, the reason, and the text of the site's line less the space
 around it (line_text), so a function that only moves keeps it.
 Excepting a site again replaces its entry. So does excepting the same
-change in the same function when one stale entry names them: the entry
-names its file, its function by namespace#name, its original and
-replacement, it no longer holds, and no other entry does, so a site that
-moved along its line, or whose function changed, is re-pointed. Such an
-entry keeps its reason unless --reason gives another, so --reason may be
-left out then; it is required otherwise. An entry that holds, one stale
-as killed and one whose file moved are never re-pointed.
+change in the same function when a stale entry names them: the entry names
+its file, its function by namespace#name, its original and replacement, and
+it no longer holds. One at the site's place is the one, ahead of any other,
+as is the only such entry otherwise, so a site that moved along its line, or
+whose function changed, is re-pointed. Such an entry keeps its reason unless
+--reason gives another, so --reason may be left out then; it is required
+otherwise. An entry that holds, one stale as killed and one whose file moved
+are never re-pointed.
 
 Only the lines of the entry written change: a new one is added in block
 style after the list's last entry, a replaced one is written in its
@@ -80,6 +81,8 @@ Each entry left stale is mutation.exception-stale with why: killed (its
 fresh results record its mutant killed), changed (no site of its change
 is on a line of its text), gone (its file, function or change is gone),
 ambiguous, no-results (its function has no fresh results) or uncovered.
+With no-results, when one site is its mutant, the problem names its identity,
+which mutation except takes with no run.
 
 --prune, run after mutation run, removes each entry that nothing can mend,
 judging every entry as mutation check of the whole project does: one
@@ -100,8 +103,9 @@ holds whose function, by namespace#name in its file, hashed as before
 takes the function's hash now. Only that hash changes: its other keys,
 x- keys and comments, and the file's quoting, stay, and no line_text is
 added. Each entry it cannot match is left as it was, as
-mutation.exception-stale: changed, for mutation run then --renew, or gone,
-for --prune; it looks in no other file. mutation run, mutation check and
+mutation.exception-stale: changed, for mutation run then --renew, naming the
+identity that re-points it when one site is its mutant, or gone, for
+--prune; it looks in no other file. mutation run, mutation check and
 --renew name --rehash first in the fix of an entry it would carry over.
 It takes no site, no --reason, and neither --renew nor --prune. After an
 upgrade past 0.18.0, run --rehash, then mutation run on what is still
@@ -134,7 +138,7 @@ and with --rehash a line per rehash and per entry left stale:
 			"exception.no-survivor     the site is no survivor a fresh snapshot records: file, line, column",
 			"exception.excluded        the site is in a source itos-cc.yaml excludes: file",
 			"exception.identity-stale  the identity names no site of the code as it is now: file, function, identity, why: changed (with hash, the function's now)|gone",
-			"mutation.exception-stale  with --renew, an entry that no longer holds was not renewed: file, function, line (when its site is found), column, original, replacement, why: killed|changed|gone|ambiguous|no-results|uncovered; with --rehash, not rehashed, why: changed|gone",
+			"mutation.exception-stale  with --renew, an entry that no longer holds was not renewed: file, function, line (when its site is found), column, original, replacement, why: killed|changed|gone|ambiguous|no-results|uncovered; with --rehash, not rehashed, why: changed|gone; with no-results, or --rehash's changed, identity when one site is its mutant",
 			"flags.conflict            --renew with --reason, --prune with --reason or --renew, or --rehash with --reason, --renew or --prune: flag",
 			"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
 			"flags.value-missing       no --reason, and the site re-points no stale entry: flag",

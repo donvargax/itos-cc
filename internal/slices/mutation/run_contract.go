@@ -400,8 +400,12 @@ is, while its function and the tests that import its file are unchanged.
 An exception no longer holds, and fails as mutation.exception-stale, when
 its function changed (its mutant is then judged as if it had none), when
 its function or its site is gone, or when the mutant, run again after its
-tests changed, is killed. An exception never excuses an uncovered mutant.
-With --since, only the judged functions' exceptions count. --mutate-all
+tests changed, is killed. When its function changed and one site is its
+mutant, as mutation except --renew tells it, the problem names its identity,
+which mutation except takes with no run, keeping the entry's reason: read the
+function first, as an identity does not say the mutant survived. An exception
+never excuses an uncovered mutant. With --since, only the judged functions'
+exceptions count. --mutate-all
 runs excepted mutants too.
 
 An entry for a file the run does not select is judged too by a run of the
@@ -563,7 +567,7 @@ Each line keeps its coverage's sources, "in-process" and "integration".`,
 			"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm or yarn workspace, a pnpm workspace root package or a member depending on another, or a local dependency, pnpm override, includeBuild, Maven module or pub path dependency or override outside it: file, function, line",
 			"coverage.tool-missing     with --fail-uncovered, a language's coverage tool, or its collector of the processes tests start (a coverage.py that does not start in them, no c8, no jacococli for the .exec files a JVM wrote), is missing where it has mutants to judge: language, dir",
 			"coverage.measured-nothing with --fail-uncovered, a language's coverage command failed or wrote no report where it has mutants to judge: language, dir",
-			"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone, or its file excluded), column, original, replacement, why: killed|changed|gone|moved|excluded, and with moved new_file",
+			"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone, or its file excluded), column, original, replacement, why: killed|changed|gone|moved|excluded, with moved new_file, and with changed identity when one site is its mutant",
 			"mutation.baseline-failed  the tests fail before any mutant: file, output, the head and tail of what they printed",
 			"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
 			"tests.list-failed         the list command of mutation.tests failed: command, exit_code",

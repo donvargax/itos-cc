@@ -221,7 +221,7 @@ func (c Except) renewed(p *Presentation, found RenewFound) (renewResult, []*cli.
 		if !c.JSON {
 			_, _ = fmt.Fprintf(ui.Stdout, "  not renewed %s %s (%s)\n", p.plain(at), change, u.Why)
 		}
-		because, fix := notRenewedBecause(u.Why), notRenewedFix(u.Why)
+		because, fix := notRenewedBecause(u.Why), repointFirst(u.Identity, notRenewedFix(u.Why))
 		if u.Rehashable {
 			because, fix = because+"; "+previousHash, rehashFix+" Otherwise: "+fix
 		}
@@ -231,6 +231,9 @@ func (c Except) renewed(p *Presentation, found RenewFound) (renewResult, []*cli.
 			With("original", u.Original).With("replacement", u.Replacement).With("why", u.Why)
 		if u.Line != 0 {
 			problem = problem.With("line", u.Line)
+		}
+		if u.Identity != "" {
+			problem = problem.With("identity", u.Identity)
 		}
 		problem.Shown = true
 		problems = append(problems, problem)
@@ -338,7 +341,7 @@ func (c Except) rehashed(p *Presentation, found RehashFound) (rehashResult, []*c
 		if !c.JSON {
 			_, _ = fmt.Fprintf(ui.Stdout, "  not rehashed %s %s (%s)\n", p.plain(at), change, s.Why)
 		}
-		because, fix := "its function changed in more than what the hash now leaves out", notRehashedChangedFix
+		because, fix := "its function changed in more than what the hash now leaves out", repointFirst(s.Identity, notRehashedChangedFix)
 		if s.Why == mutants.ExceptionGone {
 			because, fix = "its file, its function, or any site of its change in it is gone", pruneFix
 		}
@@ -348,6 +351,9 @@ func (c Except) rehashed(p *Presentation, found RehashFound) (rehashResult, []*c
 			With("original", s.Original).With("replacement", s.Replacement).With("why", s.Why)
 		if s.Line != 0 {
 			problem = problem.With("line", s.Line)
+		}
+		if s.Identity != "" {
+			problem = problem.With("identity", s.Identity)
 		}
 		// Not Shown: stderr gives its fix, which the line above does not.
 		problems = append(problems, problem)

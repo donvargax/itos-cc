@@ -30,6 +30,9 @@ type StaleException struct {
 	// the hash now leaves out (Rehashable), which mutation except --rehash
 	// carries over with no run.
 	Rehashable bool
+	// Identity is, with ExceptionChanged, the identity that re-points the
+	// entry (changedIdentity), "" when there is none.
+	Identity string
 }
 
 // exceptionsOf is the entries of exceptions for the file rel.
@@ -94,12 +97,22 @@ func ApplyExceptions(exceptions []Exception, rel string, f *lang.File, sites []S
 		i, why, line := Locate(e, f, sites)
 		if why != "" {
 			_, _, rehashable := Rehashable(e, f, sites)
-			out.Stale = append(out.Stale, StaleException{Exception: e, Why: why, Line: line, Rehashable: rehashable})
+			out.Stale = append(out.Stale, StaleException{Exception: e, Why: why, Line: line, Rehashable: rehashable, Identity: changedIdentity(e, why, f, sites)})
 			continue
 		}
 		out.Held[i] = e
 	}
 	return out
+}
+
+// changedIdentity is the identity that re-points e, whose why says how it no
+// longer holds for f, with sites: only an entry whose function changed has one
+// (repointingIdentity).
+func changedIdentity(e Exception, why string, f *lang.File, sites []Site) string {
+	if why != ExceptionChanged {
+		return ""
+	}
+	return repointingIdentity(e, f, sites)
 }
 
 // exceptedKey names the mutant at the site whose Key is site in the

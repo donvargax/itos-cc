@@ -82,6 +82,35 @@ func (id Identity) String() string {
 // Function is the identity's function, namespace#name.
 func (id Identity) Function() string { return UnitID(id.Namespace, id.Name) }
 
+// repointingIdentity is the identity of e's mutant in f as it is now, whose
+// sites are sites, mutation except re-pointing e from it with no run. The site
+// is the one the rule of mutation except --renew says is its mutant
+// (matchSite), of the function e names by namespace#name, the first of that
+// name as --renew takes it. "" when there is no such function, or the rule
+// names no site: a changed line is a new mutant, the reason written for
+// another one. Its file is e's, from the project root, wherever the command
+// ran. It does not say the mutant survived.
+func repointingIdentity(e Exception, f *lang.File, sites []Site) string {
+	for unit, u := range f.Units {
+		if UnitID(u.Namespace, u.Name) != e.Function {
+			continue
+		}
+		var own []Site
+		for _, s := range sites {
+			if s.Unit == unit {
+				own = append(own, s)
+			}
+		}
+		at, _, why := matchSite(e, u.StartLine, own, f.Src)
+		if why != "" {
+			return ""
+		}
+		return Identity{File: e.File, Namespace: u.Namespace, Name: u.Name, StartLine: u.StartLine, EndLine: u.EndLine,
+			Hash: UnitHash(f, u), Key: own[at].Key()}.String()
+	}
+	return ""
+}
+
 // IdentityStaleError is an identity that names no site of the source as it
 // is now: Why is ExceptionChanged when a function of its name is there
 // with another hash, Hash, and ExceptionGone when its file, every function

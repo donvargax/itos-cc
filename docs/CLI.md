@@ -171,7 +171,7 @@ output of the commands it runs passes as it is.
 | `mutation.coverage-missing`  | 1    | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `function`, `line` |
 | `mutation.coverage-stale`    | 1    | mutation check --fail-uncovered | `file`, `function`, `line` |
 | `mutation.coverage-unsupported` | 1 | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `function`, `line` |
-| `mutation.exception-stale`   | 1    | mutation run, mutation check, mutation except --renew and --rehash | `file`, `function`, `line` (none when the function or its file is gone, or with `--renew` when its site is not found), `column`, `original`, `replacement`, `why` (`killed`, `changed`, `gone`, `moved`, `excluded`; with `--renew` also `ambiguous`, `no-results`, `uncovered`), with `moved` `new_file` |
+| `mutation.exception-stale`   | 1    | mutation run, mutation check, mutation except --renew and --rehash | `file`, `function`, `line` (none when the function or its file is gone, or with `--renew` when its site is not found), `column`, `original`, `replacement`, `why` (`killed`, `changed`, `gone`, `moved`, `excluded`; with `--renew` also `ambiguous`, `no-results`, `uncovered`), with `moved` `new_file`; with `changed`, or `--renew`'s `no-results`, `identity` when one site is its mutant, as `--renew` tells it, from the project root, which `mutation except` takes with no run |
 | `mutation.missing`           | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.stale`             | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome`, `scope` |
@@ -535,6 +535,13 @@ is `args.unexpected`, and with `--reason` `flags.conflict`, exit 80.
 `mutation run` and `mutation check` call an entry `changed` when its
 function, by `namespace#name`, still has a site of its change, and `gone`
 when the function or every such site is gone, as `--renew` does.
+A problem of why `changed`, and `--renew`'s `no-results`, names `identity` when
+one site is the entry's mutant by `--renew`'s rule, and its fix starts with
+`itos-cc mutation except '<identity>'`, which runs nothing and keeps the entry's
+reason unless `--reason` gives another; the identity does not say the mutant
+survived, so the fix asks for a read of the function first. A changed line, or
+more than one site it could be, names none. The plain line ends
+`, identity <identity>`, and `--fail-fast`'s stop subject gains the key.
 
 `mutation except <file>:<line>:<column>` and `mutation except <identity>`
 re-point the one stale entry that names the site's file, its function by

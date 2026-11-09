@@ -166,7 +166,11 @@ func (p *Presentation) StaleExceptions(ctx context.Context, rel string, stale []
 			if newFile != "" {
 				why += " to " + p.plain(newFile)
 			}
-			_, _ = fmt.Fprintf(p.UI.Stdout, "  exception-stale %s, %s (%s)\n", change, shown, why)
+			var identity string
+			if e.Identity != "" {
+				identity = ", identity " + e.Identity
+			}
+			_, _ = fmt.Fprintf(p.UI.Stdout, "  exception-stale %s, %s (%s)%s\n", change, shown, why, identity)
 		}
 		var message, fix string
 		switch e.Why {
@@ -178,6 +182,7 @@ func (p *Presentation) StaleExceptions(ctx context.Context, rel string, stale []
 			fix = "Run 'itos-cc mutation except --renew' after mutation run: it carries the entry over, keeping its reason, when its mutant is unchanged. " +
 				"If it is not renewed and the mutant still survives and changes no behaviour, except it at its site now with 'itos-cc mutation except " + rel + ":<line>:<column>', " +
 				"which replaces this entry and keeps its reason unless --reason gives another; otherwise remove its entry from " + "itos-cc.yaml" + "."
+			fix = repointFirst(e.Identity, fix)
 			if e.Rehashable {
 				message = fmt.Sprintf("%s: the entry in %s for %s was written under itos-cc's previous hash, and the function changed only in what the hash now leaves out", at, "itos-cc.yaml", change)
 				fix = rehashFix + " Otherwise " + strings.ToLower(fix[:1]) + fix[1:]
@@ -221,7 +226,23 @@ func (p *Presentation) StaleSubject(rel string, e mutants.StaleException) map[st
 	if e.Why == mutants.ExceptionMoved {
 		subject["new_file"] = p.UI.Rel(sourcePath(p.Root, e.NewFile))
 	}
+	if e.Identity != "" {
+		subject["identity"] = e.Identity
+	}
 	return subject
+}
+
+// repointFirst is fix, the fix of a stale entry, after the sentence that names
+// identity, the command that re-points the entry with no mutation run; fix
+// alone with no identity. An identity does not say the mutant survived, and the
+// entry's reason was written for another version of the function, so the
+// sentence asks for a read of it first.
+func repointFirst(identity, fix string) string {
+	if identity == "" {
+		return fix
+	}
+	return "Read the function first, as the entry's reason was written for another version of it. If that reason still holds, run itos-cc mutation except '" + identity +
+		"', which runs nothing and keeps the entry's reason unless you give another. " + fix
 }
 
 // FailedSelections reports each selection of listed tests in failed that

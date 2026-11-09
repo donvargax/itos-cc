@@ -61,6 +61,9 @@ type Unrenewed struct {
 	// file and its function changed only in what the hash now leaves out
 	// (Rehashable), which mutation except --rehash carries over with no run.
 	Rehashable bool
+	// Identity is, with RenewNoResults, the identity that re-points the
+	// entry (repointingIdentity), "" when there is none.
+	Identity string
 }
 
 // Renew renews each exception of exceptions that no longer holds when its
@@ -169,7 +172,12 @@ func Renew(ctx context.Context, exceptions []Exception, sources []string, opt Ch
 		rehashable = rehashable && snapshot.Key(opt.Root, f.file.Path) == e.File
 		fn, ok := f.function(unit)
 		if !ok {
-			left = append(left, Unrenewed{Exception: e, Why: RenewNoResults, Rehashable: rehashable})
+			unrenewed := Unrenewed{Exception: e, Why: RenewNoResults, Rehashable: rehashable}
+			// Only in its own file: an identity elsewhere re-points no entry.
+			if snapshot.Key(opt.Root, f.file.Path) == e.File {
+				unrenewed.Identity = repointingIdentity(e, f.file, f.sites)
+			}
+			left = append(left, unrenewed)
 			continue
 		}
 		m, match, why := matchMutant(e, u.StartLine, fn.Mutants, f.file.Src)
@@ -257,48 +265,65 @@ func (f *renewFile) recorded(unit, line, column int, original, replacement strin
 }
 
 // matchMutant finds e's mutant among mutants, the fresh results of its
-// function, which starts at start now, in a file of src: the one result of
-// e's original and replacement that Match describes. Otherwise why says why
-// none is: ExceptionGone when the function has no result of that change,
-// ExceptionChanged when an entry with line text finds none on a line with
-// that text, RenewAmbiguous when more than one could be it.
+// function, which starts at start now, in a file of src, by the rule of
+// matchSite over their places.
 func matchMutant(e Exception, start int, mutants []Mutant, src []byte) (m Mutant, match, why string) {
-	var change []Mutant
-	for _, m := range mutants {
-		if m.Original == e.Original && m.Replacement == e.Replacement {
-			change = append(change, m)
+	sites := make([]Site, len(mutants))
+	for i, m := range mutants {
+		sites[i] = Site{Line: m.Line, Column: m.Column, Original: m.Original, Replacement: m.Replacement}
+	}
+	at, match, why := matchSite(e, start, sites, src)
+	if why != "" {
+		return Mutant{}, "", why
+	}
+	return mutants[at], match, ""
+}
+
+// matchSite is the rule of which site is e's mutant, the one rule mutation
+// except --renew and a stale entry's identity share, so they never name
+// different mutants. Among sites, those of its function, which starts at start
+// now, in a file of src, it is the index of the one of e's original and
+// replacement that Match describes. Otherwise why says why none is:
+// ExceptionGone when the function has no site of that change, ExceptionChanged
+// when an entry with line text finds none on a line with that text,
+// RenewAmbiguous when more than one could be it.
+func matchSite(e Exception, start int, sites []Site, src []byte) (at int, match, why string) {
+	var change []int
+	for i, s := range sites {
+		if s.Original == e.Original && s.Replacement == e.Replacement {
+			change = append(change, i)
 		}
 	}
 	if len(change) == 0 {
-		return Mutant{}, "", ExceptionGone
+		return -1, "", ExceptionGone
 	}
-	atPlace := func(ms []Mutant) []Mutant {
-		var out []Mutant
-		for _, m := range ms {
-			if m.Line-start+1 == e.LineInFunction && m.Column == e.Column {
-				out = append(out, m)
+	atPlace := func(of []int) []int {
+		var out []int
+		for _, i := range of {
+			if sites[i].Line-start+1 == e.LineInFunction && sites[i].Column == e.Column {
+				out = append(out, i)
 			}
 		}
 		return out
 	}
 	if e.LineText != "" {
 		want := withoutSpace(e.LineText)
-		var onLine []Mutant
-		for _, m := range change {
-			if withoutSpace(LineText(src, m.Line)) == want {
-				onLine = append(onLine, m)
+		var onLine []int
+		for _, i := range change {
+			if withoutSpace(LineText(src, sites[i].Line)) == want {
+				onLine = append(onLine, i)
 			}
 		}
 		switch {
 		case len(onLine) == 0:
-			return Mutant{}, "", ExceptionChanged
+			return -1, "", ExceptionChanged
 		case len(onLine) == 1:
 			return onLine[0], MatchLine, ""
 		}
 		if placed := atPlace(onLine); len(placed) == 1 {
 			return placed[0], MatchLine, ""
 		}
-		return Mutant{}, "", RenewAmbiguous
+		return -1, "", RenewAmbiguous
 	}
 	if placed := atPlace(change); len(placed) == 1 {
 		return placed[0], MatchPlace, ""
@@ -306,7 +331,7 @@ func matchMutant(e Exception, start int, mutants []Mutant, src []byte) (m Mutant
 	if len(change) == 1 {
 		return change[0], MatchOnly, ""
 	}
-	return Mutant{}, "", RenewAmbiguous
+	return -1, "", RenewAmbiguous
 }
 
 // survivedWhy is "" for a mutant recorded survived, the one outcome that
