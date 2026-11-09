@@ -1019,12 +1019,12 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --count 1 <json>"
       Then stderr has, in order, the listed tests' coverage command, "itos-cc: coverage: the listed tests ran in <duration>; converting the coverage of 2 of them", "itos-cc: coverage: converted the coverage of 2 listed tests, Go's limited to 1 package, in <duration>", the own baseline's command and "itos-cc: baseline <dir> passed in <duration>: a mutant running it times out after <duration>"
       And its mutant's line ends "survived its own tests, then killed with ID-A-01 ID-A-02 (<duration>, the listed tests <duration>)"
-      And stdout is <stdout>, as a run before mutation-phase-progress gives it
+      And stdout is <stdout>
 
       Examples:
-        | json   | stdout                       |
-        |        | the plain report             |
-        | --json | the one JSON object, its keys unchanged |
+        | json   | stdout                                                 |
+        |        | the plain report, holding no progress line             |
+        | --json | the one JSON object, holding only a counted run's keys |
 
   # Issue #14: Go records coverage only for code that runs inside the test
   # process, so a project tested end to end, by tests that run its built

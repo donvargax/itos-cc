@@ -37,8 +37,8 @@ func phaseProgressSteps(sc *godog.ScenarioContext, m *mutateState) {
 	sc.Step(`^stderr has, after the line "itos-cc: baseline <dir>\$ go test …", a line "([^"]*)"$`, p.afterOwnBaseline)
 	sc.Step(`^stderr has, in order, the listed tests' coverage command, "([^"]*)", "([^"]*)", the own baseline's command and "([^"]*)"$`, p.countedOrder)
 	sc.Step(`^its mutant's line ends "([^"]*)"$`, p.mutantLineEnds)
-	sc.Step(`^stdout is the plain report, as a run before mutation-phase-progress gives it$`, p.plainUnchanged)
-	sc.Step(`^stdout is the one JSON object, its keys unchanged, as a run before mutation-phase-progress gives it$`, p.jsonUnchanged)
+	sc.Step(`^stdout is the plain report, holding no progress line$`, p.plainUnchanged)
+	sc.Step(`^stdout is the one JSON object, holding only a counted run's keys$`, p.jsonUnchanged)
 }
 
 // durationShape is what <duration> stands for: digits, a point, a digit
