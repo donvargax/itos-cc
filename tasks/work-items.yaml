@@ -6279,6 +6279,10 @@ items:
       supplies per-ID data from its harness, so it never meets it. Each run is the person own shell
       command, so itos-cc likely cannot build once for them; the design choice is asked as a
       question.
+
+      q-106: nothing built for now. The reporting project ignored ITOS_CC_TEST_COVERDIR, so it fell
+      back; its harness is being fixed there. Close #85 once its proof log says "ran" rather than
+      "ran one at a time". A later idea might say in that log line why the fallback ran.
     refs: ["#85"]
   - id: covdata-stderr-in-error
     title: A failed covdata conversion says what covdata said
