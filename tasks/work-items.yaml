@@ -6300,3 +6300,16 @@ items:
       excepted case and domain/run.go marks exceptions after the run, so a reader sees survivors in
       a green log.
     refs: ["#81"]
+  - id: itos-proof-summary
+    title: mutation run --json reports the itos_proof summary
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #75 and its correcting comment: itos prints a provider summary in the CI log, and every
+      itos-cc proof reads "Code proof summary unavailable". One JSON object, itos_proof a top-level
+      member, unit the name of what is counted, each count null when not reported, judged 0 alone
+      refused by itos.
+    refs: ["#75"]
