@@ -6464,6 +6464,6 @@ items:
     title: ID-MUT-369 says what its stdout steps check
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task

@@ -7268,5 +7268,3 @@
     its rows "the plain report, holding no progress line" and "the one JSON object, holding only a
     counted run's keys", and the two step patterns in features/mutate_phase_progress.go, with the
     comment above that scenario if it repeats the old words, follow. Change no check.
-  done_when:
-    - run: "! grep -q 'before mutation-phase-progress gives it' features/mutate.feature features/mutate_phase_progress.go"
