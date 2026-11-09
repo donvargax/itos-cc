@@ -67,5 +67,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0063: itos-cc.yaml stays format version 1 until itos-cc 1.0](0063-itos-cc-yaml-stays-format-version-1-until-itos-cc-1-0.md)
 - [ADR-0064: Exceptions and extension keys are not coverage inputs](0064-exceptions-and-extension-keys-are-not-coverage-inputs.md)
 - [ADR-0065: itos-cc takes elkjs under GPL-3.0-or-later](0065-itos-cc-takes-elkjs-under-gpl-3-0-or-later.md)
+- [ADR-0066: A mutant both ways on one tree is mutation.flaky, and no exception takes it](0066-a-mutant-both-ways-on-one-tree-is-mutation-flaky-and-no-exception-takes-it.md)
 
 <!-- itos:decisions:end -->
