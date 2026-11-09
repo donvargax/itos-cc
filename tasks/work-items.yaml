@@ -6314,15 +6314,9 @@ items:
     title: mutation run --json reports the itos_proof summary
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was itos-proof-summary.
-      Issue #75 and its correcting comment: itos prints a provider summary in the CI log, and every
-      itos-cc proof reads "Code proof summary unavailable". One JSON object, itos_proof a top-level
-      member, unit the name of what is counted, each count null when not reported, judged 0 alone
-      refused by itos.
     refs: ["#75"]
   - id: slice-73
     title: A read-only mutation show resolves an identity to its file, line and change
