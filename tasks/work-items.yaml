@@ -6325,3 +6325,16 @@ items:
       prints where it is. Reading the offset as bytes landed on the wrong line for 2 of 23 sites. A
       person should judge a survivor before anything runs.
     refs: ["#82"]
+  - id: architecture-rules-import-arrows
+    title: Hold role rules on go list import arrows, which no comment can suppress
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #83: nolint spellings, a generated header and a build-tagged file each evade depguard
+      and architecture-check. The issue calls it low urgency: no agent is known to have done it on
+      purpose. Unqueued; it matters as projects copy these rules. Check against go-template-itos
+      when specified.
+    refs: ["#83"]
