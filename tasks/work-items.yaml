@@ -13,7 +13,7 @@ phases:
 queue:
   - covdata-stderr-in-error
   - progress-says-excepted
-  - itos-proof-summary
+  - slice-72
   - mutation-show
   - listed-support-per-test
   - listed-suites
@@ -6308,14 +6308,15 @@ items:
       excepted case and domain/run.go marks exceptions after the run, so a reader sees survivors in
       a green log.
     refs: ["#81"]
-  - id: itos-proof-summary
+  - id: slice-72
     title: mutation run --json reports the itos_proof summary
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was itos-proof-summary.
       Issue #75 and its correcting comment: itos prints a provider summary in the CI log, and every
       itos-cc proof reads "Code proof summary unavailable". One JSON object, itos_proof a top-level
       member, unit the name of what is counted, each count null when not reported, judged 0 alone
