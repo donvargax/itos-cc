@@ -6338,3 +6338,15 @@ items:
       purpose. Unqueued; it matters as projects copy these rules. Check against go-template-itos
       when specified.
     refs: ["#83"]
+  - id: node-test-narrowing
+    title: mutation run narrows tests for TypeScript projects run by node --test
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #80: such a project runs the whole suite per mutant; one with 2,800 tests chose Stryker.
+      Two features, narrowing by c8 per-file coverage and mapping src to compiled tsc output, so
+      split when specified. Unqueued; a project able to switch to Vitest narrows today.
+    refs: ["#80"]
