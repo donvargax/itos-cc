@@ -511,6 +511,7 @@ questions:
     item: "listed-coverage-per-id-cost"
     question: "Issue #85, the listed-tests coverage pass running one go test per scenario ID when the whole run gives no per-ID data (about 4 hours a push in another project). Each run is the person own shell command, so itos-cc likely cannot build the test binary once for them. Which first? (a, recommended) run the per-ID passes in parallel, across the workers, say in the log why the fallback ran, and document how a harness supplies per-ID data from its one whole run. (b) only the log line and the document, leaving the runs sequential, as listed tests sharing state may not bear parallel runs. (c) add a settings key letting a project name a built test binary to run per ID, which needs its own design."
     answer: "Build nothing in itos-cc now, the person on 2026-11-08: the cost is the reporting project harness not splitting coverage, which the README documented route fixes there, and an issue is filed on that project. Reconsider parallel per-ID runs only if a project still cannot use the split."
+    decision: none
   - id: q-107
     question: "itos here is 8.25.2 and the newest is 8.49.0, the same major, and Renovate does not bump it. Upgrade? (a, recommended) yes, as a task between agents, as with 8.19 to 8.25. (b) not now."
     answer: "(a) Yes, upgrade to the newest as a task between agents."
