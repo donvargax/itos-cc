@@ -6470,7 +6470,7 @@ items:
   - id: T-230
     title: ID-MUT-369 says what its stdout steps check
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
