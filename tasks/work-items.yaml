@@ -6300,14 +6300,9 @@ items:
     title: mutation run progress lines say excepted for an excepted mutant
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was progress-says-excepted.
-      Issue #81: a passing run prints survived for each excepted mutant, as progress.go has no
-      excepted case and domain/run.go marks exceptions after the run, so a reader sees survivors in
-      a green log.
     refs: ["#81"]
   - id: slice-72
     title: mutation run --json reports the itos_proof summary
