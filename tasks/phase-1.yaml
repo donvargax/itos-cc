@@ -7274,23 +7274,33 @@
   why: >
     The person's call 2026-11-09, "if they fail we fix them". Windows' cucumber reports from cd
     42593766018 show ID-MUT-410, 411 and 413 to 418 skipped at the Given "itos-cc.yaml excepts
-    Count's `<` → `<=` with reason ...": namedSite.excepted (features/mutate_named_site.go) calls
-    counted() though excepting by identity runs nothing, so green Windows jobs hold none of them,
-    ID-MUT-418 included, whose point is the path from the project root. ID-MUT-412 and 421 already
-    pass there, with excepting steps of their own. excepted stops calling counted(). The four
-    scenarios using that Given whose When is a --site or --count run, ID-MUT-357, 397, 399 and 401,
-    gain the line "And itos-cc makes counted runs on this system" right after their first Given, a
-    new step that is the driver's Counted, and so skip on Windows as they do today, every row of
-    them; widening them is not this task. Those twelve uses of the sentence are all there are. A
-    scenario that then fails on Windows is this task's to fix, in the step if the fixture assumes
-    Linux, in the product if the product is wrong, under the same task, and not by skipping it or by
-    changing what its Then checks; a failure that needs a decision about what Windows should do
-    stops and is reported. The check is a Go test in cmd/itos-cc, run in process on any system: it
-    runs the scenarios tagged @slice-76 and @slice-78 by the memory driver with Counted skipping as
-    on Windows, reads godog's cucumber report, and fails unless at least one scenario ran and every
-    step passed. So a later Counted on these paths fails a push on Linux, not silently on Windows.
-    What only Windows shows is checked once by hand from the push's cd.yml, in the
-    features-a-windows-latest and features-b-windows-latest artifacts: ID-MUT-410, 411 and 413 to
-    418 with no skipped step; ID-MUT-357, 397, 399 and 401 still skipped.
+    Count's `<` → `<=` with reason ...": namedSite.excepted (features/mutate_named_site.go)
+    calls counted() though excepting by identity runs nothing, so green Windows jobs hold none
+    of them, ID-MUT-418 included, whose point is the path from the project root. ID-MUT-412 and
+    421 already pass there, with excepting steps of their own. excepted stops calling counted().
+    The four scenarios using that Given whose When is a --site or --count run, ID-MUT-357, 397,
+    399 and 401, gain the line "And itos-cc makes counted runs on this system" right after their
+    first Given, a new step that is the driver's Counted, and so skip on Windows as they do
+    today, every row of them; widening them is not this task. Those twelve uses of the sentence
+    are all there are. A scenario that then fails on Windows is this task's to fix, in the step
+    if the fixture assumes Linux, in the product if the product is wrong, under the same task,
+    and not by skipping it or by changing what its Then checks; a failure that needs a decision
+    about what Windows should do stops and is reported. The check is a Go test in cmd/itos-cc,
+    run in process on any system: it runs the scenarios tagged @slice-76 and @slice-78 by the
+    memory driver with Counted skipping as on Windows, reads godog's cucumber report, and fails
+    unless at least one scenario ran and every step passed. So a later Counted on these paths
+    fails a push on Linux, not silently on Windows. Two rows of ID-MUT-413 cannot run on
+    Windows, mutation run --count 5 and mutation run board/board.go --fail-fast: ID-MUT-248
+    specifies their refusal, count.platform and fail-fast.platform, exit 82, so the product is
+    right and only excepted's skip hid them. They move to a new outline, ID-MUT-422, tagged
+    @slice-78 as they were, with ID-MUT-413's lines and Thens unchanged and the counted-runs
+    line right after its first Given, so what they check does not change and ID-MUT-413 keeps
+    its other two rows. The test leaves ID-MUT-422 out by its ID, as the one scenario of those
+    tags that makes such a run, and cannot itself catch a refusal only Windows gives, since the
+    memory driver's platform stays Linux. What only Windows shows is checked once by hand from
+    the push's cd.yml, in the features-a-windows-latest and features-b-windows-latest artifacts:
+    ID-MUT-410, 411 and 413 to 418 with no skipped step; ID-MUT-357, 397, 399, 401 and 422 still
+    skipped. Until the test exists, this task's check passes with no tests to run, so red first
+    is the test's own failure, not the check's.
   done_when:
     - run: go test ./cmd/itos-cc -count=1 -run '^TestStaleEntryScenariosNeedNoCountedRun$'
