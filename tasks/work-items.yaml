@@ -13,7 +13,6 @@ phases:
 queue:
   - slice-74
   - slice-75
-  - slice-72
   - slice-73
   - listed-support-per-test
   - listed-suites
