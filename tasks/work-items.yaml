@@ -6440,3 +6440,14 @@ items:
       site.Line. Fall back to the statement start only where the site own line is unmeasured,
       untested reasoning. Behaviour only, no code copied.
     refs: [unclebob/mutator@a5a0cb8]
+  - id: slice-76
+    title: mutation except re-points an entry stale only by its function's hash, keeping its reason
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: slice
+    why: >
+      Issue #87. SameSite ignores the hash, so an entry whose function changed only in its hash
+      skips Repointed: no --reason is refused and a given one overwrites the reviewed text.
+    refs: ["#87"]
