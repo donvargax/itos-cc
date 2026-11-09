@@ -6478,3 +6478,21 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: nightly-cutoff-exit-137
+    title: A nightly cut off at its deadline ended 137, its report lost, not 124
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Nightly 42591944460, the first under tools/bin/nightly-survivors (T-229): at the 330m deadline
+      the step's status came back 137 within about 0.3 seconds of the interrupt, while mutation run
+      went on another 4 seconds printing its cancelled lines, and no --json report reached the log.
+      Earlier cut-off nights ended 124 and printed their report. 137 from timeout means the program
+      it ran was SIGKILLed, and nothing in the workflow sends that before --kill-after's 10 minutes.
+      The commit step still ran after mutation run ended and recorded the partial results, so
+      nothing was lost but the report and the right status. Not reproduced: timeout, the wrapper and
+      the real program on a small fixture end 124 with the report. Not ruled out:
+      internal/processes' orphaned test processes (processes-mutant-orphans), 4 of them that night,
+      which the interrupt also reaches if they are in the group.
