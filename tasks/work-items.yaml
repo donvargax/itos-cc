@@ -6496,3 +6496,19 @@ items:
       the real program on a small fixture end 124 with the report. Not ruled out:
       internal/processes' orphaned test processes (processes-mutant-orphans), 4 of them that night,
       which the interrupt also reaches if they are in the group.
+  - id: nightly-full-rejudge-cause
+    title: Find what made a night judge all 8593 mutants, past its deadline
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Nightly 42591944460 had 8593 mutants to judge where 2026-11-07's had 1933, and at 330 minutes
+      reached 6450, so it was cut off for its size, not for a fault. Reused results fell from 10639
+      to 9444 recorded in .metrics/mutate/, as files it never reached kept only what needs no trial,
+      those results being stale already. The snapshots' tests maps had changed hashes, such as
+      cmd/itos-cc/mutation_parser_test.go, but what staled every file is not established. The nights
+      of 2026-10-22 to 10-29 were cut off the same way, seven of them. Read 2026-11-10's night
+      first: if it finishes, this is one large change's cost; if a change to one test file can stale
+      the whole repository every day, the nightly can never finish.
