@@ -72,7 +72,6 @@ func (i *identityException) byHashSteps(sc *godog.ScenarioContext) {
 		_, err := i.entry(byHashCurrent)
 		return err
 	})
-	sc.Step(`^"itos-cc mutation check board/board\.go --json" reports no "mutation\.exception-stale"$`, i.rehashChecked)
 	sc.Step(`^run again with no --reason, the entry holding now, the command is "flags\.value-missing", exit 80, leaving itos-cc\.yaml byte for byte as it was$`, b.holdingNeedsReason)
 	sc.Step(`^given "--reason 'reworded'" while the entry is stale, it is re-pointed the same way, its reason "reworded"$`, b.reworded)
 	sc.Step("^a committed Go module whose \"example\\.com/fx/board#Count\" holds two `<` → `<=` sites on two lines, each surviving its test$", b.twoSites)
@@ -88,6 +87,7 @@ func (i *identityException) byHashSteps(sc *godog.ScenarioContext) {
 		return b.twoEntry(1, map[string]any{"hash": byHashTwoHash, "line_in_function": 5, "column": 11, "reason": "second reviewed", "line_text": "return x < 5"})
 	})
 	sc.Step(`^itos-cc\.yaml has two entries under mutation\.exceptions$`, b.twoEntries)
+	b.staleIdentitySteps(sc)
 }
 
 // signature changes Count's signature in board/board.go as it is, keeping

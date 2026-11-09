@@ -92,7 +92,7 @@ func exceptionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceM
 	sc.Step(`^the problem is "mutation\.exception-stale", with file, function, line, column, original, replacement and why "killed"$`, e.killedEntry)
 	sc.Step(`^itos-cc\.yaml excepts (?:a|the) survivor of "Board#count"(?: in src/board\.ts)?$`, func() error { return e.review(e.reason) })
 	sc.Step(`^"Board#count" changed since the entry was written(?:, and the mutant at its site still survives)?$`, e.changeCount)
-	sc.Step(`^the problem is "mutation\.exception-stale", with why "(changed|gone)"$`, func(why string) error { _, err := e.stale(map[string]any{"why": why}); return err })
+	sc.Step(`^the problem is "mutation\.exception-stale", with why "(changed|gone|no-results)"$`, func(why string) error { _, err := e.stale(map[string]any{"why": why}); return err })
 	sc.Step(`^the mutant at its site, if it survives, is a "mutation\.survived" problem too$`, e.survivingProblem)
 	sc.Step(`^itos-cc\.yaml excepts a survivor in "Board#count"$`, func() error { return e.review(e.reason) })
 	sc.Step(`^"Board#count" was deleted, or no longer has that site$`, e.deleteCount)

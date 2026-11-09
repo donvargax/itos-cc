@@ -129,6 +129,7 @@ func (i *identityException) namedSiteSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^neither \.metrics/mutate nor board/board\.go was written$`, n.nothingWritten)
 	sc.Step(`^stdout says that only the judgments above are proven and nothing was written$`, n.provesOnly)
 	sc.Step(`^no stdout line starts with a path or holds "([^"]*)"$`, n.noPathLine)
+	sc.Step(`^no line of it starts with a path or holds "([^"]*)"$`, n.noPathLine)
 	sc.Step(`^the problem is "(mutation\.survived)", its message naming the identity, its fix "(.*)"$`, n.survived)
 	sc.Step(`^the selected site is "([^"]*)", "excepted" "([^"]*)", and there is no problem$`, n.exceptedSite)
 	sc.Step(`^the problem is "([^"]*)", with file "([^"]*)", line (\d+) and column (\d+)$`, n.problemAt)
