@@ -6262,3 +6262,17 @@ items:
     status: done
     depends_on: []
     kind: slice
+  - id: listed-coverage-per-id-cost
+    title: The listed-tests coverage pass costs one build per scenario ID when the whole run gives no per-ID data
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #85: another project paid about 4 hours a push, 320 sequential go test runs, each
+      rebuilding its test binary (internal/covrun/supervised.go, the alone path). This repository
+      supplies per-ID data from its harness, so it never meets it. Each run is the person own shell
+      command, so itos-cc likely cannot build once for them; the design choice is asked as a
+      question.
+    refs: ["#85"]
