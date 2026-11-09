@@ -66,5 +66,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0062: Every Did-you-mean follows kong's rule from the fork, which the settings adapter may import](0062-every-did-you-mean-follows-kong-s-rule-from-the-fork-which-the-settings-adapter-may-import.md)
 - [ADR-0063: itos-cc.yaml stays format version 1 until itos-cc 1.0](0063-itos-cc-yaml-stays-format-version-1-until-itos-cc-1-0.md)
 - [ADR-0064: Exceptions and extension keys are not coverage inputs](0064-exceptions-and-extension-keys-are-not-coverage-inputs.md)
+- [ADR-0065: itos-cc takes elkjs under GPL-3.0-or-later](0065-itos-cc-takes-elkjs-under-gpl-3-0-or-later.md)
 
 <!-- itos:decisions:end -->
