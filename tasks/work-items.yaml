@@ -6475,3 +6475,15 @@ items:
       place, so excepting that identity with no --reason is flags.value-missing, though the fix said
       it keeps the entry's reason. Either name no identity then, or let the identity choose the
       entry. Seen reading slice-78's code, not in the field.
+  - id: except-given-skips-windows
+    title: Scenarios of a stale entry skip on Windows through their Given, which needs no counted run
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The step 'itos-cc.yaml excepts Count's...' (namedSite.excepted) calls counted() because
+      slice-63's --site scenarios use it, though excepting by identity runs nothing. So ID-MUT-410
+      to 414 and 416 to 418 skip on Windows, ID-MUT-418 included, whose point is the path from the
+      project root. Move the skip to the steps that make a counted run.
