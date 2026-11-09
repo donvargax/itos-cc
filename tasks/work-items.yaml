@@ -6309,14 +6309,9 @@ items:
     title: A read-only mutation show resolves an identity to its file, line and change
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was mutation-show.
-      Issue #82: an identity names a function and an offset; only mutation except, which writes,
-      prints where it is. Reading the offset as bytes landed on the wrong line for 2 of 23 sites. A
-      person should judge a survivor before anything runs.
     refs: ["#82"]
   - id: architecture-rules-import-arrows
     title: Hold role rules on go list import arrows, which no comment can suppress
