@@ -2421,27 +2421,27 @@
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestMutationHelpPreservesOriginalBytes\" (lines 327-411) is 85 lines: split it into examples that each check one behavior"
+          "text": "\"TestMutationHelpPreservesOriginalBytes\" (lines 329-413) is 85 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestMutationHelpPreservesOriginalBytes\" (lines 327-411) takes 6 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestMutationHelpPreservesOriginalBytes\" (lines 329-413) takes 6 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestMutationHelpPreservesOriginalBytes\" (lines 327-411) makes 14 assertions: it checks several behaviors; split it"
+          "text": "\"TestMutationHelpPreservesOriginalBytes\" (lines 329-413) makes 14 assertions: it checks several behaviors; split it"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestMutationSampleModelKeepsExplicitEmptySeedAndSince\" (lines 416-447) takes 2 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestMutationSampleModelKeepsExplicitEmptySeedAndSince\" (lines 418-449) takes 2 branches or loops: a test should not need logic; split the cases"
         }
       ],
       "clusters": null,
       "details": [
         {
           "name": "TestMutationParserKeepsProvidedValuesAndSpellings",
-          "start_line": 90,
-          "end_line": 120,
+          "start_line": 92,
+          "end_line": 122,
           "table": true,
           "score": 1,
           "lines": 14,
@@ -2452,8 +2452,8 @@
         },
         {
           "name": "TestMutationParserRefusesFlagsWithoutReadingAdapters",
-          "start_line": 122,
-          "end_line": 163,
+          "start_line": 124,
+          "end_line": 165,
           "table": true,
           "score": 2.8,
           "lines": 24,
@@ -2464,8 +2464,8 @@
         },
         {
           "name": "TestMutationGroupHelpRoutingAndErrorPrecedence",
-          "start_line": 167,
-          "end_line": 195,
+          "start_line": 169,
+          "end_line": 197,
           "table": true,
           "score": 1,
           "lines": 11,
@@ -2476,8 +2476,8 @@
         },
         {
           "name": "TestMutationGroupJSONPlacementRetainsLegacyDispatch",
-          "start_line": 197,
-          "end_line": 224,
+          "start_line": 199,
+          "end_line": 226,
           "table": true,
           "score": 2,
           "lines": 20,
@@ -2488,8 +2488,8 @@
         },
         {
           "name": "TestMutationHelpPreservesOriginalBytes",
-          "start_line": 327,
-          "end_line": 411,
+          "start_line": 329,
+          "end_line": 413,
           "table": true,
           "score": 32,
           "smells": [
@@ -2505,8 +2505,8 @@
         },
         {
           "name": "TestMutationSampleModelKeepsExplicitEmptySeedAndSince",
-          "start_line": 416,
-          "end_line": 447,
+          "start_line": 418,
+          "end_line": 449,
           "table": true,
           "score": 7.6,
           "smells": [
@@ -2520,8 +2520,8 @@
         },
         {
           "name": "TestMutationTypedModelUsesTheValidatedFlags",
-          "start_line": 449,
-          "end_line": 472,
+          "start_line": 451,
+          "end_line": 474,
           "score": 2.8,
           "lines": 24,
           "raw_lines": 24,
@@ -2531,8 +2531,8 @@
         },
         {
           "name": "TestMutationParsedAdmissionKeepsEmptyAndZeroRefusals",
-          "start_line": 474,
-          "end_line": 509,
+          "start_line": 476,
+          "end_line": 511,
           "table": true,
           "score": 3,
           "lines": 25,
@@ -6853,9 +6853,9 @@
       "language": "go",
       "action": "LEAVE_ALONE",
       "pressure": 7.9,
-      "examples": 13,
+      "examples": 15,
       "setup_lines": 0,
-      "average_score": 1.6,
+      "average_score": 1.5,
       "max_score": 3.9,
       "recommendations": [
         {
@@ -6979,9 +6979,31 @@
           "mocks": 0
         },
         {
+          "name": "TestAProblemMarshalsItsTextAsWritten",
+          "start_line": 208,
+          "end_line": 215,
+          "score": 1,
+          "lines": 8,
+          "raw_lines": 8,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestAProblemWhoseSubjectJSONCannotSayFails",
+          "start_line": 218,
+          "end_line": 223,
+          "score": 1,
+          "lines": 6,
+          "raw_lines": 6,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
           "name": "TestASubjectKeyIsNeverReserved",
-          "start_line": 207,
-          "end_line": 222,
+          "start_line": 227,
+          "end_line": 242,
           "table": true,
           "score": 1.2,
           "lines": 16,
@@ -6992,8 +7014,8 @@
         },
         {
           "name": "TestUsageNamesTheCommandAndTheWayOut",
-          "start_line": 226,
-          "end_line": 244,
+          "start_line": 246,
+          "end_line": 264,
           "score": 1.8,
           "lines": 19,
           "raw_lines": 19,
@@ -7003,8 +7025,8 @@
         },
         {
           "name": "TestUsageOfALineNamingNoCommandSaysOnlyWhatWasWrong",
-          "start_line": 248,
-          "end_line": 256,
+          "start_line": 268,
+          "end_line": 276,
           "score": 1,
           "lines": 9,
           "raw_lines": 9,
@@ -7014,8 +7036,8 @@
         },
         {
           "name": "TestAnInterruptIsItsOwnProblem",
-          "start_line": 259,
-          "end_line": 264,
+          "start_line": 279,
+          "end_line": 284,
           "score": 1,
           "lines": 6,
           "raw_lines": 6,
@@ -7025,8 +7047,8 @@
         },
         {
           "name": "TestAFailureToWriteJSONIsALineOnStderr",
-          "start_line": 268,
-          "end_line": 277,
+          "start_line": 288,
+          "end_line": 297,
           "score": 1,
           "lines": 10,
           "raw_lines": 10,
@@ -9187,6 +9209,95 @@
           "raw_lines": 8,
           "decisions": 0,
           "assertions": 2,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/covrun/conversion_words_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 3.1,
+      "examples": 6,
+      "setup_lines": 0,
+      "average_score": 1.5,
+      "max_score": 4.1,
+      "recommendations": [
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestAFailedListedConversionSaysWhatItPrinted\" (lines 87-104) takes 1 branch or loop: a test should not need logic; split the cases"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestAFailedConversionThatPrintedNothingKeepsItsError",
+          "start_line": 36,
+          "end_line": 46,
+          "table": true,
+          "score": 1,
+          "lines": 11,
+          "raw_lines": 11,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestAFailedConversionEndsItsErrorWithWhatBothItsStreamsPrinted",
+          "start_line": 48,
+          "end_line": 58,
+          "score": 1,
+          "lines": 11,
+          "raw_lines": 11,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestAConversionThatSucceedsOnlyLogsWhatItPrinted",
+          "start_line": 60,
+          "end_line": 69,
+          "score": 1,
+          "lines": 10,
+          "raw_lines": 10,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestAConversionsStdoutAndStderrAreOneWriter",
+          "start_line": 71,
+          "end_line": 79,
+          "score": 1,
+          "lines": 9,
+          "raw_lines": 9,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestAFailedListedConversionSaysWhatItPrinted",
+          "start_line": 87,
+          "end_line": 104,
+          "score": 4.1,
+          "smells": [
+            "logic"
+          ],
+          "lines": 18,
+          "raw_lines": 18,
+          "decisions": 1,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestAFailedIntegrationConversionSaysWhatItPrinted",
+          "start_line": 106,
+          "end_line": 120,
+          "score": 1,
+          "lines": 15,
+          "raw_lines": 15,
+          "decisions": 0,
+          "assertions": 3,
           "mocks": 0
         }
       ]
@@ -17780,31 +17891,39 @@
       "file": "internal/slices/mutation/domain/exception_identity_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 33.7,
-      "examples": 4,
+      "pressure": 50.9,
+      "examples": 5,
       "setup_lines": 0,
-      "average_score": 9.4,
+      "average_score": 11.2,
       "max_score": 29.3,
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestDomainIdentifiedSurvivorIsTheSiteOfTheSourceAsItIsNow\" (lines 78-166) is 89 lines: split it into examples that each check one behavior"
+          "text": "\"TestDomainIdentifiedSurvivorIsTheSiteOfTheSourceAsItIsNow\" (lines 79-167) is 89 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestDomainIdentifiedMutantIsTheSiteAndItsLinesWithNothingRun\" (lines 252-342) is 91 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestDomainIdentifiedSurvivorIsTheSiteOfTheSourceAsItIsNow\" (lines 78-166) takes 5 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestDomainIdentifiedSurvivorIsTheSiteOfTheSourceAsItIsNow\" (lines 79-167) takes 5 branches or loops: a test should not need logic; split the cases"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestDomainIdentifiedSurvivorIsTheSiteOfTheSourceAsItIsNow\" (lines 78-166) makes 12 assertions: it checks several behaviors; split it"
+          "text": "\"TestDomainIdentifiedSurvivorIsTheSiteOfTheSourceAsItIsNow\" (lines 79-167) makes 12 assertions: it checks several behaviors; split it"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestDomainIdentifiedMutantIsTheSiteAndItsLinesWithNothingRun\" (lines 252-342) makes 14 assertions: it checks several behaviors; split it"
         }
       ],
       "clusters": null,
       "details": [
         {
           "name": "TestAnIdentityKeepsItsSiteKeyWhole",
-          "start_line": 19,
-          "end_line": 55,
+          "start_line": 20,
+          "end_line": 56,
           "table": true,
           "score": 1.8,
           "lines": 19,
@@ -17815,8 +17934,8 @@
         },
         {
           "name": "TestDomainIdentifiedSurvivorIsTheSiteOfTheSourceAsItIsNow",
-          "start_line": 78,
-          "end_line": 166,
+          "start_line": 79,
+          "end_line": 167,
           "table": true,
           "score": 29.3,
           "smells": [
@@ -17832,8 +17951,8 @@
         },
         {
           "name": "TestDomainIdentifiedSurvivorComparesTheNameAloneWhereTheNamespaceIsTheTrees",
-          "start_line": 171,
-          "end_line": 194,
+          "start_line": 172,
+          "end_line": 195,
           "score": 2.8,
           "lines": 24,
           "raw_lines": 24,
@@ -17843,13 +17962,29 @@
         },
         {
           "name": "TestDomainIdentifiedSurvivorKeepsItsFailures",
-          "start_line": 216,
-          "end_line": 244,
+          "start_line": 217,
+          "end_line": 245,
           "score": 3.8,
           "lines": 29,
           "raw_lines": 29,
           "decisions": 0,
           "assertions": 6,
+          "mocks": 0
+        },
+        {
+          "name": "TestDomainIdentifiedMutantIsTheSiteAndItsLinesWithNothingRun",
+          "start_line": 252,
+          "end_line": 342,
+          "table": true,
+          "score": 18.2,
+          "smells": [
+            "large",
+            "assertion-heavy"
+          ],
+          "lines": 91,
+          "raw_lines": 91,
+          "decisions": 0,
+          "assertions": 14,
           "mocks": 0
         }
       ]
@@ -17858,10 +17993,10 @@
       "file": "internal/slices/mutation/domain/exception_orchestration_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 57.1,
+      "pressure": 58.5,
       "examples": 7,
       "setup_lines": 0,
-      "average_score": 9.2,
+      "average_score": 9.4,
       "max_score": 26.2,
       "recommendations": [
         {
@@ -17875,6 +18010,10 @@
         {
           "confidence": "HIGH",
           "text": "\"TestDomainElsewhereUsesLexicalRootsAndLazyParse\" (lines 237-283) is 47 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestDomainRepointedIsTheOneStaleEntryOfTheSurvivorsChange\" (lines 290-337) is 33 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
@@ -17977,14 +18116,17 @@
         },
         {
           "name": "TestDomainRepointedIsTheOneStaleEntryOfTheSurvivorsChange",
-          "start_line": 288,
-          "end_line": 323,
+          "start_line": 290,
+          "end_line": 337,
           "table": true,
-          "score": 3.2,
-          "lines": 26,
-          "raw_lines": 36,
+          "score": 4.6,
+          "smells": [
+            "large"
+          ],
+          "lines": 33,
+          "raw_lines": 48,
           "decisions": 0,
-          "assertions": 3,
+          "assertions": 4,
           "mocks": 0
         }
       ]
@@ -20032,19 +20174,15 @@
       "file": "internal/slices/mutation/domain/run_flaky_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 25.6,
-      "examples": 8,
+      "pressure": 34.3,
+      "examples": 9,
       "setup_lines": 0,
-      "average_score": 4.2,
-      "max_score": 10.7,
+      "average_score": 4.8,
+      "max_score": 11.1,
       "recommendations": [
         {
           "confidence": "HIGH",
           "text": "\"TestARetriedSurvivorItsTestsDecideDifferentlyIsRecordedFlakyUntilThreeRunsAgree\" (lines 56-101) is 46 lines: split it into examples that each check one behavior"
-        },
-        {
-          "confidence": "HIGH",
-          "text": "\"TestNoExceptionTakesAFlakyMutantNorGoesStaleByIt\" (lines 184-215) is 32 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
@@ -20052,7 +20190,11 @@
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestAMutantWithNoRecordedOutcomeRunsOnceBesideARecheckedOne\" (lines 238-263) takes 3 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestOnlyTheRunEndingASurvivorsJudgmentIsExcepted\" (lines 201-240) takes 3 branches or loops: a test should not need logic; split the cases"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestAMutantWithNoRecordedOutcomeRunsOnceBesideARecheckedOne\" (lines 289-314) takes 3 branches or loops: a test should not need logic; split the cases"
         }
       ],
       "clusters": null,
@@ -20118,24 +20260,36 @@
           "mocks": 0
         },
         {
-          "name": "TestNoExceptionTakesAFlakyMutantNorGoesStaleByIt",
-          "start_line": 184,
-          "end_line": 215,
+          "name": "TestOnlyTheRunEndingASurvivorsJudgmentIsExcepted",
+          "start_line": 201,
+          "end_line": 240,
           "table": true,
-          "score": 4.4,
+          "score": 11.1,
           "smells": [
-            "large"
+            "logic"
           ],
-          "lines": 32,
-          "raw_lines": 32,
+          "lines": 28,
+          "raw_lines": 40,
+          "decisions": 3,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestNoExceptionTakesAFlakyMutantNorGoesStaleByIt",
+          "start_line": 242,
+          "end_line": 266,
+          "table": true,
+          "score": 3,
+          "lines": 25,
+          "raw_lines": 25,
           "decisions": 0,
-          "assertions": 6,
+          "assertions": 5,
           "mocks": 0
         },
         {
           "name": "TestAFailFastRunWaitsForAFlakyMutantsRunsBeforeItStops",
-          "start_line": 224,
-          "end_line": 236,
+          "start_line": 275,
+          "end_line": 287,
           "score": 1,
           "lines": 13,
           "raw_lines": 13,
@@ -20145,8 +20299,8 @@
         },
         {
           "name": "TestAMutantWithNoRecordedOutcomeRunsOnceBesideARecheckedOne",
-          "start_line": 238,
-          "end_line": 263,
+          "start_line": 289,
+          "end_line": 314,
           "score": 10.7,
           "smells": [
             "logic"
@@ -21219,10 +21373,10 @@
       "file": "internal/slices/mutation/except_test.go",
       "language": "go",
       "action": "LEAVE_ALONE",
-      "pressure": 7.4,
-      "examples": 6,
+      "pressure": 10,
+      "examples": 7,
       "setup_lines": 0,
-      "average_score": 2.2,
+      "average_score": 2.4,
       "max_score": 5.8,
       "recommendations": [
         {
@@ -21302,6 +21456,17 @@
           "raw_lines": 39,
           "decisions": 0,
           "assertions": 6,
+          "mocks": 0
+        },
+        {
+          "name": "TestExceptStopsWhenTheEntryItWouldRepointCannotBeJudged",
+          "start_line": 193,
+          "end_line": 220,
+          "score": 3.6,
+          "lines": 28,
+          "raw_lines": 28,
+          "decisions": 0,
+          "assertions": 3,
           "mocks": 0
         }
       ]
@@ -21567,6 +21732,56 @@
       ]
     },
     {
+      "file": "internal/slices/mutation/proof_summary_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 0,
+      "examples": 3,
+      "setup_lines": 0,
+      "average_score": 1,
+      "max_score": 1,
+      "recommendations": [],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestAProofSummaryAddsUpEveryFileOfARun",
+          "start_line": 24,
+          "end_line": 55,
+          "table": true,
+          "score": 1,
+          "lines": 8,
+          "raw_lines": 32,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestAProofSummaryOfNothingJudgedIsAllNull",
+          "start_line": 59,
+          "end_line": 71,
+          "table": true,
+          "score": 1,
+          "lines": 9,
+          "raw_lines": 13,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestAFailedRunHasNoProofSummary",
+          "start_line": 74,
+          "end_line": 86,
+          "table": true,
+          "score": 1,
+          "lines": 9,
+          "raw_lines": 13,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        }
+      ]
+    },
+    {
       "file": "internal/slices/mutation/run_coverage_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
@@ -21731,6 +21946,58 @@
           "raw_lines": 14,
           "decisions": 0,
           "assertions": 1,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/slices/mutation/show_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 9.3,
+      "examples": 2,
+      "setup_lines": 0,
+      "average_score": 5.7,
+      "max_score": 6.5,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestShowKeepsWhatIsNoRefusal\" (lines 57-90) is 34 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestShowWordsItsRefusalsItself\" (lines 20-53) takes 1 branch or loop: a test should not need logic; split the cases"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestShowWordsItsRefusalsItself",
+          "start_line": 20,
+          "end_line": 53,
+          "table": true,
+          "score": 6.5,
+          "smells": [
+            "logic"
+          ],
+          "lines": 30,
+          "raw_lines": 34,
+          "decisions": 1,
+          "assertions": 5,
+          "mocks": 0
+        },
+        {
+          "name": "TestShowKeepsWhatIsNoRefusal",
+          "start_line": 57,
+          "end_line": 90,
+          "score": 4.8,
+          "smells": [
+            "large"
+          ],
+          "lines": 34,
+          "raw_lines": 34,
+          "decisions": 0,
+          "assertions": 4,
           "mocks": 0
         }
       ]
@@ -23447,6 +23714,223 @@
           "raw_lines": 8,
           "decisions": 0,
           "assertions": 1,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "tools/bin/nightly-survivors/main_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 8.2,
+      "examples": 14,
+      "setup_lines": 38,
+      "average_score": 1.6,
+      "max_score": 3.5,
+      "recommendations": [
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestAKilledCommandFails\" (lines 217-227) takes 1 branch or loop: a test should not need logic; split the cases"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"not a program\" (lines 247-258) takes 1 branch or loop: a test should not need logic; split the cases"
+        },
+        {
+          "confidence": "LOW",
+          "text": "3 examples share most of their structure (70% alike); a shared helper may read better: \"TestACompleteRunsSurvivorsPass\" (136-148), \"TestAnAnnotationIsEscaped\" (151-160), \"TestASurvivorWithNoMessage\" (163-168)"
+        }
+      ],
+      "clusters": [
+        {
+          "kind": "duplication",
+          "similarity": 0.7,
+          "examples": [
+            {
+              "name": "TestACompleteRunsSurvivorsPass",
+              "start_line": 136,
+              "end_line": 148
+            },
+            {
+              "name": "TestAnAnnotationIsEscaped",
+              "start_line": 151,
+              "end_line": 160
+            },
+            {
+              "name": "TestASurvivorWithNoMessage",
+              "start_line": 163,
+              "end_line": 168
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "name": "TestSurvivorsAlonePass",
+          "start_line": 113,
+          "end_line": 133,
+          "table": true,
+          "score": 1.6,
+          "lines": 18,
+          "raw_lines": 21,
+          "decisions": 0,
+          "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "TestACompleteRunsSurvivorsPass",
+          "start_line": 136,
+          "end_line": 148,
+          "score": 1,
+          "lines": 13,
+          "raw_lines": 13,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestAnAnnotationIsEscaped",
+          "start_line": 151,
+          "end_line": 160,
+          "score": 1,
+          "lines": 10,
+          "raw_lines": 10,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestASurvivorWithNoMessage",
+          "start_line": 163,
+          "end_line": 168,
+          "score": 1,
+          "lines": 6,
+          "raw_lines": 6,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestAnythingElseKeepsItsExit",
+          "start_line": 171,
+          "end_line": 215,
+          "table": true,
+          "score": 1.2,
+          "lines": 16,
+          "raw_lines": 45,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestAKilledCommandFails",
+          "start_line": 217,
+          "end_line": 227,
+          "score": 3.5,
+          "smells": [
+            "logic"
+          ],
+          "lines": 11,
+          "raw_lines": 11,
+          "decisions": 1,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "not there",
+          "group": "TestACommandThatCannotStart",
+          "start_line": 230,
+          "end_line": 239,
+          "score": 1,
+          "lines": 10,
+          "raw_lines": 10,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "not on the PATH",
+          "group": "TestACommandThatCannotStart",
+          "start_line": 240,
+          "end_line": 246,
+          "score": 1,
+          "lines": 7,
+          "raw_lines": 7,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "not a program",
+          "group": "TestACommandThatCannotStart",
+          "start_line": 247,
+          "end_line": 258,
+          "score": 3.5,
+          "smells": [
+            "logic"
+          ],
+          "lines": 12,
+          "raw_lines": 12,
+          "decisions": 1,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestAUsageError",
+          "start_line": 261,
+          "end_line": 272,
+          "table": true,
+          "score": 1,
+          "lines": 12,
+          "raw_lines": 12,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestStdoutThatCannotBeWritten",
+          "start_line": 280,
+          "end_line": 292,
+          "table": true,
+          "score": 1,
+          "lines": 13,
+          "raw_lines": 13,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestTheCommandGetsItsArgv",
+          "start_line": 304,
+          "end_line": 326,
+          "score": 2.6,
+          "lines": 23,
+          "raw_lines": 23,
+          "decisions": 0,
+          "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "TestASignalWaitsForTheCommand",
+          "start_line": 362,
+          "end_line": 380,
+          "table": true,
+          "score": 1.8,
+          "lines": 19,
+          "raw_lines": 19,
+          "decisions": 0,
+          "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "TestACommandKeepsItsSignals",
+          "start_line": 384,
+          "end_line": 398,
+          "score": 1,
+          "lines": 15,
+          "raw_lines": 15,
+          "decisions": 0,
+          "assertions": 4,
           "mocks": 0
         }
       ]

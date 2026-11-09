@@ -15,8 +15,8 @@
       },
       "right": {
         "file": "internal/slices/mutation/run_ui.go",
-        "start_line": 426,
-        "end_line": 431,
+        "start_line": 429,
+        "end_line": 434,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "CleanupProblem",
         "nodes": 60
@@ -708,7 +708,7 @@
       "left": {
         "file": "internal/slices/mutation/check_contract.go",
         "start_line": 6,
-        "end_line": 164,
+        "end_line": 168,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Check",
         "name": "Contract",
         "nodes": 168
@@ -1203,6 +1203,26 @@
       }
     },
     {
+      "score": 0.855,
+      "language": "go",
+      "left": {
+        "file": "internal/slices/mutation/list_contract.go",
+        "start_line": 6,
+        "end_line": 28,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.List",
+        "name": "Contract",
+        "nodes": 108
+      },
+      "right": {
+        "file": "internal/slices/mutation/show_contract.go",
+        "start_line": 6,
+        "end_line": 47,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Show",
+        "name": "Contract",
+        "nodes": 102
+      }
+    },
+    {
       "score": 0.846,
       "language": "go",
       "left": {
@@ -1547,16 +1567,16 @@
       "language": "go",
       "left": {
         "file": "internal/slices/mutation/errors.go",
-        "start_line": 345,
-        "end_line": 358,
+        "start_line": 367,
+        "end_line": 380,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "sampleError",
         "nodes": 96
       },
       "right": {
         "file": "internal/slices/mutation/errors.go",
-        "start_line": 391,
-        "end_line": 408,
+        "start_line": 413,
+        "end_line": 430,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "exceptError",
         "nodes": 127
@@ -1636,7 +1656,7 @@
       "right": {
         "file": "internal/slices/mutation/run_contract.go",
         "start_line": 6,
-        "end_line": 601,
+        "end_line": 605,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Run",
         "name": "Contract",
         "nodes": 184
@@ -1752,10 +1772,18 @@
         {
           "file": "internal/slices/mutation/run_contract.go",
           "start_line": 6,
-          "end_line": 601,
+          "end_line": 605,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Run",
           "name": "Contract",
           "nodes": 184
+        },
+        {
+          "file": "internal/slices/mutation/show_contract.go",
+          "start_line": 6,
+          "end_line": 47,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Show",
+          "name": "Contract",
+          "nodes": 102
         },
         {
           "file": "internal/slices/scrap/scrap.go",
@@ -2124,8 +2152,8 @@
         },
         {
           "file": "internal/slices/mutation/run_ui.go",
-          "start_line": 426,
-          "end_line": 431,
+          "start_line": 429,
+          "end_line": 434,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "CleanupProblem",
           "nodes": 60
@@ -2439,7 +2467,7 @@
         {
           "file": "internal/slices/mutation/check_contract.go",
           "start_line": 6,
-          "end_line": 164,
+          "end_line": 168,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Check",
           "name": "Contract",
           "nodes": 168
@@ -2815,16 +2843,16 @@
       "members": [
         {
           "file": "internal/slices/mutation/errors.go",
-          "start_line": 345,
-          "end_line": 358,
+          "start_line": 367,
+          "end_line": 380,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "sampleError",
           "nodes": 96
         },
         {
           "file": "internal/slices/mutation/errors.go",
-          "start_line": 391,
-          "end_line": 408,
+          "start_line": 413,
+          "end_line": 430,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "exceptError",
           "nodes": 127
