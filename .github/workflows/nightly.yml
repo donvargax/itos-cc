@@ -7,10 +7,14 @@ name: Nightly
 # cached in .metrics/mutate/, which is committed back to main so
 # the next night, and everyone's local runs, reuse the kills of unchanged
 # functions instead of starting over. itos-cc mutation run exits 1 when any
-# mutant survives, which is most nights: the job then ends red, and the
-# results are committed anyway. A run cut off before it finishes keeps what
-# it judged and commits that too, under a subject that says it is partial
-# (T-46), so the job's colour never has to say how far the run got.
+# mutant survives, which is most nights, and when it fails in other ways, so
+# tools/bin/nightly-survivors reads its report: a night whose only problems
+# are survivors is green, each one a warning, and red means the run itself or
+# another step failed (T-229). The results are committed either way, and a
+# push's code proof still fails on a survivor. A run cut off before it
+# finishes keeps what it judged and commits that too, under a subject that
+# says it is partial (T-46), so the job's colour never has to say how far the
+# run got.
 #
 # Beside it, on a runner of its own, the snapshots job runs itos-cc crap, dry
 # and scrap over the whole repository and commits .metrics/crap.json,
@@ -79,9 +83,18 @@ jobs:
       # that reach its line, every scenario having run once first for its
       # coverage. --no-annotate: no committed source carries the summary
       # comment, and the job must not rewrite the sources.
+      # --json, for nightly-survivors, built here and outside the work tree
+      # as itos-cc is: exit 1 whose only problems are mutation.survived
+      # becomes 0 with a ::warning for each, and every other exit passes
+      # through, as tests.list-failed, mutation.baseline-failed and
+      # mutation.flaky are exit 1 too. --json takes the per-file text off
+      # stdout, so the log holds the report, stderr's progress and, after
+      # them, those warnings, which also reach the run's page.
       # timeout interrupts the run with SIGINT after 330 minutes, well before
       # the job's 360, and mutation run keeps what it finished when
       # interrupted, writing each file it judged (README, mutation run);
+      # timeout signals its whole process group, so the SIGINT reaches
+      # mutation run under nightly-survivors, which waits for it to end;
       # --kill-after ends it should it not stop within 10 minutes. The exit
       # status goes to the commit step, which words its subject by it: 0 or 1
       # is a run that finished over the whole repository, anything else
@@ -91,19 +104,21 @@ jobs:
         id: mutate
         timeout-minutes: 345
         run: |
+          go build -o "$RUNNER_TEMP/nightly-survivors" ./tools/bin/nightly-survivors
           set +e
           timeout --signal=INT --kill-after=10m 330m \
-            "$RUNNER_TEMP/itos-cc" mutation run --no-annotate
+            "$RUNNER_TEMP/nightly-survivors" -- \
+            "$RUNNER_TEMP/itos-cc" mutation run --no-annotate --json
           status=$?
           echo "status=$status" >> "$GITHUB_OUTPUT"
-          echo "mutation run ended with exit status $status."
+          echo "mutation run, its survivors aside, ended with exit status $status."
           exit "$status"
 
       # Runs whether Mutate passed, failed or was cut off, even in a
-      # cancelled run, so a night with survivors still stores its kills and
-      # one cut short stores what it judged. Its own success never turns the
-      # job green. The subject says how far the run got (T-46): the whole
-      # repository only when mutation run itself exited 0 or 1.
+      # cancelled run, so a night that failed still stores its kills and one
+      # cut short stores what it judged. Its own success never turns the job
+      # green. The subject says how far the run got (T-46): the whole
+      # repository only when Mutate's status is 0 or 1.
       - name: Commit .metrics/mutate/
         if: ${{ always() }}
         env:

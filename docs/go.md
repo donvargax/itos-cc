@@ -1339,7 +1339,10 @@ Mutation testing runs in three places, never on an agent's machine (AGENTS.md, q
 - The nightly mutation workflow, `nightly.yml`, over the whole repository, committing
   `.metrics/mutate/` back: a run interrupted at 330 minutes commits what it judged as "chore:
   record partial nightly mutation results", one that finished "chore: record the nightly mutation
-  results" (T-46's run 39930716718 judged all 8378 mutants in 4 h 22 min).
+  results" (T-46's run 39930716718 judged all 8378 mutants in 4 h 22 min). The run goes through
+  `tools/bin/nightly-survivors`, so a night whose only problems are survivors is green, each one
+  a warning, and red means the run or another step failed (T-229); a push's proof still fails on
+  a survivor.
 
 `nightly.yml` also records the other snapshots (T-190). Its snapshots job, on a runner of its own
 so the mutation run's 330 minutes are untouched, runs `itos-cc crap`, `dry` and `scrap` over the

@@ -1,0 +1,45 @@
+{
+  "files": [
+    {
+      "baseline": "passed",
+      "excepted": 0,
+      "file": "calc.go",
+      "killed": 0,
+      "mutants": [
+        {
+          "column": 11,
+          "coverage": [
+            "in-process"
+          ],
+          "function": "example.com/fixture#Bigger",
+          "line": 5,
+          "original": ">",
+          "outcome": "survived",
+          "replacement": ">=",
+          "reused": false,
+          "scope": "own"
+        }
+      ],
+      "ran": 1,
+      "reused": 0,
+      "survived": 1,
+      "uncovered": 0
+    }
+  ],
+  "ok": false,
+  "problems": [
+    {
+      "column": 11,
+      "exit": 1,
+      "file": "calc.go",
+      "fix": "Add a test that fails with this change. If no test can, as the change changes no behaviour, except it with 'itos-cc mutation except calc.go:5:11 --reason …'.",
+      "function": "example.com/fixture#Bigger",
+      "line": 5,
+      "message": "calc.go:5:11: `\u003e` → `\u003e=` in example.com/fixture#Bigger survived",
+      "original": "\u003e",
+      "replacement": "\u003e=",
+      "rule": "mutation.survived"
+    }
+  ],
+  "schema": 1
+}

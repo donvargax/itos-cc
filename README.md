@@ -1265,9 +1265,11 @@ in the set, so changing it leaves the results as they were. Commit that
 directory, and have the nightly job commit it back: CI starts from a fresh
 checkout, and without it every night is a first run. This repository's own
 nightly job, [`.github/workflows/nightly.yml`](.github/workflows/nightly.yml),
-is written to run `itos-cc mutation run --no-annotate` at 09:00 UTC
-and commit `.metrics/mutate/` back even on nights when a mutant survives and
-the job fails; copy it as a starting point. It interrupts the run before the
+is written to run `itos-cc mutation run --no-annotate --json` at 09:00 UTC
+through its `tools/bin/nightly-survivors`, which turns a night whose only
+problems are survivors green, each one a warning, and to commit
+`.metrics/mutate/` back whether or not the job passes; copy them as a starting
+point. It interrupts the run before the
 job's time limit, and mutation run keeps what it finished, so a night cut off
 commits that, under a subject that says it is partial. No whole run of this
 repository finishes within a job's time limit yet (T-46). This repository's

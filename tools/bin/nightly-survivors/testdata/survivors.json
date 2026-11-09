@@ -1,0 +1,165 @@
+{
+  "not_built": [
+    {
+      "file": "internal/cli/extension_other.go",
+      "platform": "linux/amd64"
+    }
+  ],
+  "ok": false,
+  "problems": [
+    {
+      "column": 42,
+      "exit": 1,
+      "file": "internal/shell/shell.go",
+      "fix": "Add a test that fails with this change. If no test can, as the change changes no behaviour, except it with itos-cc mutation except 'internal/shell/shell.go:github.com/donvargax/itos/v8/internal/shell.Result#Status@58:68:4b44cf7807f42dbf:134:!=\u003e==' --reason '…', which runs nothing.",
+      "function": "github.com/donvargax/itos/v8/internal/shell.Result#Status",
+      "identity": "internal/shell/shell.go:github.com/donvargax/itos/v8/internal/shell.Result#Status@58:68:4b44cf7807f42dbf:134:!=\u003e==",
+      "line": 62,
+      "message": "internal/shell/shell.go:62:42: `!=` → `==` in github.com/donvargax/itos/v8/internal/shell.Result#Status survived, as internal/shell/shell.go:github.com/donvargax/itos/v8/internal/shell.Result#Status@58:68:4b44cf7807f42dbf:134:!=\u003e==",
+      "original": "!=",
+      "replacement": "==",
+      "rule": "mutation.survived"
+    },
+    {
+      "column": 70,
+      "exit": 1,
+      "file": "internal/config/defaults.go",
+      "fix": "Add a test that fails with this change. If no test can, as the change changes no behaviour, except it with itos-cc mutation except 'internal/config/defaults.go:github.com/donvargax/itos/v8/internal/config#DefaultsFor@118:132:d9369b4f91007d67:151:\u0026\u0026\u003e||' --reason '…', which runs nothing.",
+      "function": "github.com/donvargax/itos/v8/internal/config#DefaultsFor",
+      "identity": "internal/config/defaults.go:github.com/donvargax/itos/v8/internal/config#DefaultsFor@118:132:d9369b4f91007d67:151:\u0026\u0026\u003e||",
+      "line": 120,
+      "message": "internal/config/defaults.go:120:70: `\u0026\u0026` → `||` in github.com/donvargax/itos/v8/internal/config#DefaultsFor survived, as internal/config/defaults.go:github.com/donvargax/itos/v8/internal/config#DefaultsFor@118:132:d9369b4f91007d67:151:\u0026\u0026\u003e||",
+      "original": "\u0026\u0026",
+      "replacement": "||",
+      "rule": "mutation.survived"
+    }
+  ],
+  "sampling": {
+    "algorithm": "fresh-plan-v2",
+    "assurance": "sampled",
+    "bounds": "--count bounds mutant trials, not discovery, coverage, listing, baseline commands or total latency",
+    "budget": 20,
+    "commit": "772cef549d90b9cca7170a2252ad85fc09bd880a",
+    "completion": "completed",
+    "eligible": 13581,
+    "executed": 20,
+    "omitted": 13561,
+    "seed": "41823501278",
+    "selected": 20,
+    "uncommitted": []
+  },
+  "schema": 1,
+  "selected": [
+    {
+      "column": 18,
+      "file": "internal/slices/gitshim/parse.go",
+      "function": "github.com/donvargax/itos/v8/internal/slices/gitshim#typed",
+      "identity": "internal/slices/gitshim/parse.go:github.com/donvargax/itos/v8/internal/slices/gitshim#typed@55:60:b9e95835ec4d45ef:55:||\u003e\u0026\u0026",
+      "line": 56,
+      "original": "||",
+      "outcome": "killed",
+      "replacement": "\u0026\u0026",
+      "scope": "own",
+      "stages": [
+        {
+          "name": "own",
+          "outcome": "killed",
+          "state": "complete"
+        }
+      ],
+      "state": "judged"
+    },
+    {
+      "column": 47,
+      "file": "internal/proptest/linearize.go",
+      "function": "github.com/donvargax/itos/v8/internal/proptest#first",
+      "identity": "internal/proptest/linearize.go:github.com/donvargax/itos/v8/internal/proptest#first@84:91:e42b6af4dadd5d70:139:\u003c\u003e\u003c=",
+      "line": 86,
+      "original": "\u003c",
+      "outcome": "killed",
+      "replacement": "\u003c=",
+      "scope": "own",
+      "stages": [
+        {
+          "name": "own",
+          "outcome": "killed",
+          "state": "complete"
+        }
+      ],
+      "state": "judged"
+    },
+    {
+      "column": 42,
+      "file": "internal/shell/shell.go",
+      "function": "github.com/donvargax/itos/v8/internal/shell.Result#Status",
+      "identity": "internal/shell/shell.go:github.com/donvargax/itos/v8/internal/shell.Result#Status@58:68:4b44cf7807f42dbf:134:!=\u003e==",
+      "line": 62,
+      "original": "!=",
+      "outcome": "survived",
+      "replacement": "==",
+      "scope": "own",
+      "stages": [
+        {
+          "name": "own",
+          "outcome": "survived",
+          "state": "complete"
+        }
+      ],
+      "state": "judged"
+    }
+  ],
+  "stages": [
+    {
+      "name": "runtime-git",
+      "state": "complete"
+    },
+    {
+      "name": "admission",
+      "state": "complete"
+    },
+    {
+      "name": "coverage-plan",
+      "state": "complete"
+    },
+    {
+      "name": "baseline-plan",
+      "state": "complete"
+    },
+    {
+      "name": "tools",
+      "state": "complete"
+    },
+    {
+      "name": "listed-tests",
+      "state": "complete"
+    },
+    {
+      "name": "coverage",
+      "state": "complete"
+    },
+    {
+      "name": "listed-coverage",
+      "state": "complete"
+    },
+    {
+      "name": "strict-go-inventory",
+      "state": "complete"
+    },
+    {
+      "name": "baseline",
+      "state": "complete"
+    },
+    {
+      "name": "preparation",
+      "state": "complete"
+    },
+    {
+      "name": "listed-baseline",
+      "state": "complete"
+    },
+    {
+      "name": "trials",
+      "state": "complete"
+    }
+  ]
+}
