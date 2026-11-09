@@ -6372,8 +6372,8 @@ items:
   - id: T-229
     title: A nightly whose only problems are survivors is green
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: json-identity-escaped
