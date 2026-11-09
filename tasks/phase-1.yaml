@@ -7233,3 +7233,12 @@
     Between agents, the coordinator moves the pin from 8.25.1 to the newest patch so the next agents
     read its guides and hooks, as T-221 did; a patch of the 8.25 line the person approved on
     2026-10-26 (T-218).
+- id: T-228
+  type: chore
+  title: Upgrade the repository pin to itos 8.49.0
+  why: >
+    Between agents, the coordinator moves the pin from 8.25.2 to the newest release of the same
+    major, so the next agents read its guides and hooks; the person answered q-107 (a) on
+    2026-11-08. What the crossed releases ask by hand is done here or recorded as its own item.
+  done_when:
+    - run: "grep -q 'version: \"8.49.0\"' itos.yaml"

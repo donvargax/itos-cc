@@ -6355,3 +6355,10 @@ items:
       Two features, narrowing by c8 per-file coverage and mapping src to compiled tsc output, so
       split when specified. Unqueued; a project able to switch to Vitest narrows today.
     refs: ["#80"]
+  - id: T-228
+    title: Upgrade the repository pin to itos 8.49.0
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
