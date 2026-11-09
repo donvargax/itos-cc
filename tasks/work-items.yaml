@@ -6300,8 +6300,8 @@ items:
   - id: slice-75
     title: mutation run progress lines say excepted for an excepted mutant
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
