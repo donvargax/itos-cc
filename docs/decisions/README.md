@@ -69,5 +69,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0065: itos-cc takes elkjs under GPL-3.0-or-later](0065-itos-cc-takes-elkjs-under-gpl-3-0-or-later.md)
 - [ADR-0066: A mutant both ways on one tree is mutation.flaky, and no exception takes it](0066-a-mutant-both-ways-on-one-tree-is-mutation-flaky-and-no-exception-takes-it.md)
 - [ADR-0067: The graph snapshot is one project per file, its repository named by its git remote](0067-the-graph-snapshot-is-one-project-per-file-its-repository-named-by-its-git-remote.md)
+- [ADR-0068: itos-cc.yaml refuses unknown keys, reads a missing version as 1 and accepts x- keys](0068-itos-cc-yaml-refuses-unknown-keys-reads-a-missing-version-as-1-and-accepts-x-keys.md)
 
 <!-- itos:decisions:end -->
