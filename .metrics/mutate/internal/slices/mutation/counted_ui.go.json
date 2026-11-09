@@ -61,7 +61,7 @@
     "cmd/itos-cc/mutation_inputs_binding_test.go": "543c1eba0ee84a7849089575c359be16e1a2c8f30e6afa077f809fd56466e15b",
     "cmd/itos-cc/mutation_orphan_catalog_retained_test.go": "c9eec73135fbfa6343267dd358503e67d00ddfdf1ef51a05e3060a318af32f01",
     "cmd/itos-cc/mutation_orphans_test.go": "aa188cd1ddae22ad06d063dbc619d6364f9dbcc4012769678b7a6fa7d39e040f",
-    "cmd/itos-cc/mutation_parser_test.go": "42b70057d1d2cef84b7f0e14ac223e83903fca37efdb6c99092e9d5356f30765",
+    "cmd/itos-cc/mutation_parser_test.go": "8da46c61251cc69500b4e967dab08364d353cc0b38614e8557de0d7dc293cc95",
     "cmd/itos-cc/mutation_platform_test.go": "311feaef0fb79d49fb3942147175eb24441bfa9d034602aadbc8bfaac19fb65c",
     "cmd/itos-cc/mutation_read_binding_test.go": "85ebd07d3c69bc0490d628c7a6d4393c8d44fd46d82469a580459d680d9d27ee",
     "cmd/itos-cc/mutation_removed_sites_test.go": "873d2e56bfe47a22f994fc64e3fe30cd776418129a41cdb7b56bcace4c32d847",
@@ -111,28 +111,30 @@
     "internal/slices/mutation/counted_stop_test.go": "2f917721202d9815ab25421d80bfcccf9e40599f5ce4c638a54eb69ec654868d",
     "internal/slices/mutation/counted_trials_test.go": "005c0b0a1df46edad562b985a022a51de4fdc84b05b76564f9601b856c49296a",
     "internal/slices/mutation/errors_test.go": "a4e1b8b37da85e496439d249681383d2fb2cfc5e02659ef9a9dc1988c8e15784",
-    "internal/slices/mutation/except_test.go": "57fe3056e97be3f780f9e6a6f8190145f4ddc8797a3f4056a6ae6899082f3a09",
+    "internal/slices/mutation/except_test.go": "3ffed01559e939e2a7cfa75c11bda123565ec3badee12812c14fbd5a666e88c1",
     "internal/slices/mutation/handler_test.go": "773561f09a1e9e74fc5ab673affcfcfd406a838f056347bb5ddb7a04fe57e0a2",
     "internal/slices/mutation/plain_slashed_test.go": "485d82de9e605b9bafae98652b035ae7d2dc22db4b010728c6a5e8644a0b6a6b",
     "internal/slices/mutation/plain_test.go": "87ecb42413c36aa452fd8f18bd741260ad034b5a30b519f399970ea444c0a2e1",
+    "internal/slices/mutation/proof_summary_test.go": "6b99ad52aa2267771734552879c23ed72ee004368d95d41da1d6712c2a93bc77",
     "internal/slices/mutation/run_coverage_test.go": "7d73663c7c8a6653a915287f1a177dc5cc10521b9a8f2c1f95cef5f8df39dfe6",
     "internal/slices/mutation/run_history_test.go": "9d6bdaecb49f9be2984dc553143b8893e1b17963a1d68c38ca0e279be0611579",
-    "internal/slices/mutation/sample_test.go": "6bd60b519e3e7b76ec81c9146057acfc6ccab10ab3356ce5f904be0645de9c4a"
+    "internal/slices/mutation/sample_test.go": "6bd60b519e3e7b76ec81c9146057acfc6ccab10ab3356ce5f904be0645de9c4a",
+    "internal/slices/mutation/show_test.go": "edf7459a87bb96357a3984b7a1c76f1ea6e54bf5d665c6db343b54df67ffed8e"
   },
   "units": [
     {
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Run",
       "name": "counted",
-      "hash": "2669189b56a4fd6e",
-      "start_line": 146,
-      "end_line": 226,
+      "hash": "4bf0818ceeae087c",
+      "start_line": 148,
+      "end_line": 229,
       "killed": 30,
       "survived": 0,
       "uncovered": 0,
       "sites": 30,
       "mutants": [
         {
-          "line": 164,
+          "line": 166,
           "column": 13,
           "offset": 835,
           "original": "||",
@@ -144,11 +146,15 @@
             "ID-MUT-369",
             "ID-MUT-307",
             "ID-MUT-351",
+            "ID-MUT-397",
+            "ID-MUT-398",
+            "ID-MUT-399",
             "ID-MUT-213",
             "ID-MUT-226",
             "ID-MUT-372",
             "ID-MUT-318",
             "ID-MUT-324",
+            "ID-MUT-420",
             "ID-MUT-355",
             "ID-MUT-356",
             "ID-MUT-357",
@@ -164,6 +170,10 @@
             "ID-MUT-374",
             "ID-MUT-375",
             "ID-MUT-376",
+            "ID-MUT-400",
+            "ID-MUT-401",
+            "ID-MUT-402",
+            "ID-MUT-403",
             "ID-MUT-232",
             "ID-MUT-173",
             "ID-MUT-174",
@@ -185,7 +195,7 @@
           ]
         },
         {
-          "line": 164,
+          "line": 166,
           "column": 16,
           "offset": 838,
           "original": "!",
@@ -197,11 +207,15 @@
             "ID-MUT-369",
             "ID-MUT-307",
             "ID-MUT-351",
+            "ID-MUT-397",
+            "ID-MUT-398",
+            "ID-MUT-399",
             "ID-MUT-213",
             "ID-MUT-226",
             "ID-MUT-372",
             "ID-MUT-318",
             "ID-MUT-324",
+            "ID-MUT-420",
             "ID-MUT-355",
             "ID-MUT-356",
             "ID-MUT-357",
@@ -217,6 +231,10 @@
             "ID-MUT-374",
             "ID-MUT-375",
             "ID-MUT-376",
+            "ID-MUT-400",
+            "ID-MUT-401",
+            "ID-MUT-402",
+            "ID-MUT-403",
             "ID-MUT-232",
             "ID-MUT-173",
             "ID-MUT-174",
@@ -238,7 +256,7 @@
           ]
         },
         {
-          "line": 164,
+          "line": 166,
           "column": 41,
           "offset": 863,
           "original": "&&",
@@ -246,7 +264,7 @@
           "outcome": "killed"
         },
         {
-          "line": 165,
+          "line": 167,
           "column": 64,
           "offset": 956,
           "original": "+",
@@ -254,7 +272,7 @@
           "outcome": "killed"
         },
         {
-          "line": 168,
+          "line": 170,
           "column": 16,
           "offset": 1002,
           "original": "&&",
@@ -266,11 +284,15 @@
             "ID-MUT-369",
             "ID-MUT-307",
             "ID-MUT-351",
+            "ID-MUT-397",
+            "ID-MUT-398",
+            "ID-MUT-399",
             "ID-MUT-213",
             "ID-MUT-226",
             "ID-MUT-372",
             "ID-MUT-318",
             "ID-MUT-324",
+            "ID-MUT-420",
             "ID-MUT-355",
             "ID-MUT-356",
             "ID-MUT-357",
@@ -286,74 +308,10 @@
             "ID-MUT-374",
             "ID-MUT-375",
             "ID-MUT-376",
-            "ID-MUT-232",
-            "ID-MUT-173",
-            "ID-MUT-174",
-            "ID-MUT-275",
-            "ID-MUT-175",
-            "ID-MUT-176",
-            "ID-MUT-177",
-            "ID-MUT-178",
-            "ID-MUT-179",
-            "ID-MUT-180",
-            "ID-MUT-182",
-            "ID-MUT-185",
-            "ID-MUT-186",
-            "ID-MUT-199",
-            "ID-MUT-246",
-            "ID-MUT-333",
-            "ID-MUT-385",
-            "ID-MUT-386"
-          ]
-        },
-        {
-          "line": 172,
-          "column": 11,
-          "offset": 1233,
-          "original": "&&",
-          "replacement": "||",
-          "outcome": "killed"
-        },
-        {
-          "line": 172,
-          "column": 27,
-          "offset": 1249,
-          "original": ">",
-          "replacement": ">=",
-          "outcome": "killed"
-        },
-        {
-          "line": 172,
-          "column": 29,
-          "offset": 1251,
-          "original": "0",
-          "replacement": "1",
-          "outcome": "killed",
-          "scope": "listed",
-          "tests": [
-            "ID-CLI-21",
-            "ID-MUT-369",
-            "ID-MUT-307",
-            "ID-MUT-351",
-            "ID-MUT-213",
-            "ID-MUT-226",
-            "ID-MUT-372",
-            "ID-MUT-318",
-            "ID-MUT-324",
-            "ID-MUT-355",
-            "ID-MUT-356",
-            "ID-MUT-357",
-            "ID-MUT-358",
-            "ID-MUT-359",
-            "ID-MUT-360",
-            "ID-MUT-361",
-            "ID-MUT-362",
-            "ID-MUT-363",
-            "ID-MUT-364",
-            "ID-MUT-365",
-            "ID-MUT-366",
-            "ID-MUT-374",
-            "ID-MUT-375",
+            "ID-MUT-400",
+            "ID-MUT-401",
+            "ID-MUT-402",
+            "ID-MUT-403",
             "ID-MUT-232",
             "ID-MUT-173",
             "ID-MUT-174",
@@ -376,61 +334,42 @@
         },
         {
           "line": 174,
-          "column": 108,
-          "offset": 1456,
-          "original": "0",
-          "replacement": "1",
-          "outcome": "killed",
-          "scope": "listed",
-          "tests": [
-            "ID-MUT-363"
-          ]
-        },
-        {
-          "line": 175,
-          "column": 77,
-          "offset": 1537,
-          "original": "0",
-          "replacement": "1",
-          "outcome": "killed",
-          "scope": "listed",
-          "tests": [
-            "ID-MUT-363"
-          ]
-        },
-        {
-          "line": 177,
-          "column": 50,
-          "offset": 1595,
-          "original": "!=",
-          "replacement": "==",
-          "outcome": "killed"
-        },
-        {
-          "line": 180,
-          "column": 27,
-          "offset": 1688,
+          "column": 11,
+          "offset": 1233,
           "original": "&&",
           "replacement": "||",
           "outcome": "killed"
         },
         {
-          "line": 180,
-          "column": 37,
-          "offset": 1698,
-          "original": "==",
-          "replacement": "!=",
+          "line": 174,
+          "column": 27,
+          "offset": 1249,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "killed"
+        },
+        {
+          "line": 174,
+          "column": 29,
+          "offset": 1251,
+          "original": "0",
+          "replacement": "1",
           "outcome": "killed",
           "scope": "listed",
           "tests": [
+            "ID-CLI-21",
             "ID-MUT-369",
             "ID-MUT-307",
             "ID-MUT-351",
+            "ID-MUT-397",
+            "ID-MUT-398",
+            "ID-MUT-399",
             "ID-MUT-213",
             "ID-MUT-226",
             "ID-MUT-372",
             "ID-MUT-318",
             "ID-MUT-324",
+            "ID-MUT-420",
             "ID-MUT-355",
             "ID-MUT-356",
             "ID-MUT-357",
@@ -445,6 +384,10 @@
             "ID-MUT-366",
             "ID-MUT-374",
             "ID-MUT-375",
+            "ID-MUT-400",
+            "ID-MUT-401",
+            "ID-MUT-402",
+            "ID-MUT-403",
             "ID-MUT-232",
             "ID-MUT-173",
             "ID-MUT-174",
@@ -466,7 +409,106 @@
           ]
         },
         {
-          "line": 187,
+          "line": 176,
+          "column": 108,
+          "offset": 1456,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed",
+          "scope": "listed",
+          "tests": [
+            "ID-MUT-363"
+          ]
+        },
+        {
+          "line": 177,
+          "column": 77,
+          "offset": 1537,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed",
+          "scope": "listed",
+          "tests": [
+            "ID-MUT-363"
+          ]
+        },
+        {
+          "line": 179,
+          "column": 50,
+          "offset": 1595,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 182,
+          "column": 27,
+          "offset": 1688,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 182,
+          "column": 37,
+          "offset": 1698,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed",
+          "scope": "listed",
+          "tests": [
+            "ID-MUT-369",
+            "ID-MUT-307",
+            "ID-MUT-351",
+            "ID-MUT-397",
+            "ID-MUT-398",
+            "ID-MUT-399",
+            "ID-MUT-213",
+            "ID-MUT-226",
+            "ID-MUT-372",
+            "ID-MUT-318",
+            "ID-MUT-324",
+            "ID-MUT-420",
+            "ID-MUT-355",
+            "ID-MUT-356",
+            "ID-MUT-357",
+            "ID-MUT-358",
+            "ID-MUT-359",
+            "ID-MUT-360",
+            "ID-MUT-361",
+            "ID-MUT-362",
+            "ID-MUT-363",
+            "ID-MUT-364",
+            "ID-MUT-365",
+            "ID-MUT-366",
+            "ID-MUT-374",
+            "ID-MUT-375",
+            "ID-MUT-400",
+            "ID-MUT-401",
+            "ID-MUT-402",
+            "ID-MUT-403",
+            "ID-MUT-232",
+            "ID-MUT-173",
+            "ID-MUT-174",
+            "ID-MUT-275",
+            "ID-MUT-175",
+            "ID-MUT-176",
+            "ID-MUT-177",
+            "ID-MUT-178",
+            "ID-MUT-179",
+            "ID-MUT-180",
+            "ID-MUT-182",
+            "ID-MUT-185",
+            "ID-MUT-186",
+            "ID-MUT-199",
+            "ID-MUT-246",
+            "ID-MUT-333",
+            "ID-MUT-385",
+            "ID-MUT-386"
+          ]
+        },
+        {
+          "line": 189,
           "column": 6,
           "offset": 2036,
           "original": "!",
@@ -474,7 +516,7 @@
           "outcome": "killed"
         },
         {
-          "line": 201,
+          "line": 203,
           "column": 24,
           "offset": 2830,
           "original": "+",
@@ -482,7 +524,7 @@
           "outcome": "killed"
         },
         {
-          "line": 202,
+          "line": 204,
           "column": 34,
           "offset": 2952,
           "original": "+",
@@ -490,7 +532,7 @@
           "outcome": "killed"
         },
         {
-          "line": 203,
+          "line": 205,
           "column": 29,
           "offset": 3039,
           "original": "+",
@@ -498,7 +540,7 @@
           "outcome": "killed"
         },
         {
-          "line": 204,
+          "line": 206,
           "column": 28,
           "offset": 3126,
           "original": "+",
@@ -506,7 +548,7 @@
           "outcome": "killed"
         },
         {
-          "line": 205,
+          "line": 207,
           "column": 25,
           "offset": 3209,
           "original": "+",
@@ -514,7 +556,7 @@
           "outcome": "killed"
         },
         {
-          "line": 206,
+          "line": 208,
           "column": 23,
           "offset": 3293,
           "original": "+",
@@ -522,7 +564,7 @@
           "outcome": "killed"
         },
         {
-          "line": 207,
+          "line": 209,
           "column": 22,
           "offset": 3360,
           "original": "+",
@@ -530,7 +572,7 @@
           "outcome": "killed"
         },
         {
-          "line": 210,
+          "line": 212,
           "column": 64,
           "offset": 3547,
           "original": "+",
@@ -538,7 +580,7 @@
           "outcome": "killed"
         },
         {
-          "line": 213,
+          "line": 215,
           "column": 16,
           "offset": 3593,
           "original": "!=",
@@ -546,7 +588,7 @@
           "outcome": "killed"
         },
         {
-          "line": 213,
+          "line": 215,
           "column": 27,
           "offset": 3604,
           "original": "&&",
@@ -554,7 +596,7 @@
           "outcome": "killed"
         },
         {
-          "line": 213,
+          "line": 215,
           "column": 41,
           "offset": 3618,
           "original": "!=",
@@ -562,7 +604,7 @@
           "outcome": "killed"
         },
         {
-          "line": 220,
+          "line": 222,
           "column": 34,
           "offset": 4394,
           "original": "!=",
@@ -573,11 +615,15 @@
             "ID-MUT-369",
             "ID-MUT-307",
             "ID-MUT-351",
+            "ID-MUT-397",
+            "ID-MUT-398",
+            "ID-MUT-399",
             "ID-MUT-213",
             "ID-MUT-226",
             "ID-MUT-372",
             "ID-MUT-318",
             "ID-MUT-324",
+            "ID-MUT-420",
             "ID-MUT-355",
             "ID-MUT-356",
             "ID-MUT-357",
@@ -591,153 +637,10 @@
             "ID-MUT-366",
             "ID-MUT-374",
             "ID-MUT-375",
-            "ID-MUT-232",
-            "ID-MUT-173",
-            "ID-MUT-174",
-            "ID-MUT-275",
-            "ID-MUT-175",
-            "ID-MUT-176",
-            "ID-MUT-177",
-            "ID-MUT-178",
-            "ID-MUT-179",
-            "ID-MUT-180",
-            "ID-MUT-182",
-            "ID-MUT-185",
-            "ID-MUT-186",
-            "ID-MUT-246",
-            "ID-MUT-333",
-            "ID-MUT-385",
-            "ID-MUT-386"
-          ]
-        },
-        {
-          "line": 220,
-          "column": 69,
-          "offset": 4429,
-          "original": "!=",
-          "replacement": "==",
-          "outcome": "killed",
-          "scope": "listed",
-          "tests": [
-            "ID-MUT-369",
-            "ID-MUT-307",
-            "ID-MUT-351",
-            "ID-MUT-213",
-            "ID-MUT-226",
-            "ID-MUT-372",
-            "ID-MUT-318",
-            "ID-MUT-324",
-            "ID-MUT-355",
-            "ID-MUT-356",
-            "ID-MUT-357",
-            "ID-MUT-358",
-            "ID-MUT-359",
-            "ID-MUT-360",
-            "ID-MUT-361",
-            "ID-MUT-362",
-            "ID-MUT-364",
-            "ID-MUT-365",
-            "ID-MUT-366",
-            "ID-MUT-374",
-            "ID-MUT-375",
-            "ID-MUT-232",
-            "ID-MUT-173",
-            "ID-MUT-174",
-            "ID-MUT-275",
-            "ID-MUT-175",
-            "ID-MUT-176",
-            "ID-MUT-177",
-            "ID-MUT-178",
-            "ID-MUT-179",
-            "ID-MUT-180",
-            "ID-MUT-182",
-            "ID-MUT-185",
-            "ID-MUT-186",
-            "ID-MUT-246",
-            "ID-MUT-333",
-            "ID-MUT-385",
-            "ID-MUT-386"
-          ]
-        },
-        {
-          "line": 220,
-          "column": 76,
-          "offset": 4436,
-          "original": "&&",
-          "replacement": "||",
-          "outcome": "killed",
-          "scope": "listed",
-          "tests": [
-            "ID-MUT-369",
-            "ID-MUT-307",
-            "ID-MUT-351",
-            "ID-MUT-213",
-            "ID-MUT-226",
-            "ID-MUT-372",
-            "ID-MUT-318",
-            "ID-MUT-324",
-            "ID-MUT-355",
-            "ID-MUT-356",
-            "ID-MUT-357",
-            "ID-MUT-358",
-            "ID-MUT-359",
-            "ID-MUT-360",
-            "ID-MUT-361",
-            "ID-MUT-362",
-            "ID-MUT-364",
-            "ID-MUT-365",
-            "ID-MUT-366",
-            "ID-MUT-374",
-            "ID-MUT-375",
-            "ID-MUT-232",
-            "ID-MUT-173",
-            "ID-MUT-174",
-            "ID-MUT-275",
-            "ID-MUT-175",
-            "ID-MUT-176",
-            "ID-MUT-177",
-            "ID-MUT-178",
-            "ID-MUT-179",
-            "ID-MUT-180",
-            "ID-MUT-182",
-            "ID-MUT-185",
-            "ID-MUT-186",
-            "ID-MUT-246",
-            "ID-MUT-333",
-            "ID-MUT-385",
-            "ID-MUT-386"
-          ]
-        },
-        {
-          "line": 220,
-          "column": 96,
-          "offset": 4456,
-          "original": "==",
-          "replacement": "!=",
-          "outcome": "killed",
-          "scope": "listed",
-          "tests": [
-            "ID-MUT-369",
-            "ID-MUT-307",
-            "ID-MUT-351",
-            "ID-MUT-213",
-            "ID-MUT-226",
-            "ID-MUT-372",
-            "ID-MUT-318",
-            "ID-MUT-324",
-            "ID-MUT-355",
-            "ID-MUT-356",
-            "ID-MUT-357",
-            "ID-MUT-358",
-            "ID-MUT-359",
-            "ID-MUT-360",
-            "ID-MUT-361",
-            "ID-MUT-362",
-            "ID-MUT-364",
-            "ID-MUT-365",
-            "ID-MUT-366",
-            "ID-MUT-374",
-            "ID-MUT-375",
+            "ID-MUT-400",
+            "ID-MUT-401",
+            "ID-MUT-402",
+            "ID-MUT-403",
             "ID-MUT-232",
             "ID-MUT-173",
             "ID-MUT-174",
@@ -759,8 +662,8 @@
         },
         {
           "line": 222,
-          "column": 9,
-          "offset": 4611,
+          "column": 69,
+          "offset": 4429,
           "original": "!=",
           "replacement": "==",
           "outcome": "killed",
@@ -769,11 +672,15 @@
             "ID-MUT-369",
             "ID-MUT-307",
             "ID-MUT-351",
+            "ID-MUT-397",
+            "ID-MUT-398",
+            "ID-MUT-399",
             "ID-MUT-213",
             "ID-MUT-226",
             "ID-MUT-372",
             "ID-MUT-318",
             "ID-MUT-324",
+            "ID-MUT-420",
             "ID-MUT-355",
             "ID-MUT-356",
             "ID-MUT-357",
@@ -787,6 +694,181 @@
             "ID-MUT-366",
             "ID-MUT-374",
             "ID-MUT-375",
+            "ID-MUT-400",
+            "ID-MUT-401",
+            "ID-MUT-402",
+            "ID-MUT-403",
+            "ID-MUT-232",
+            "ID-MUT-173",
+            "ID-MUT-174",
+            "ID-MUT-275",
+            "ID-MUT-175",
+            "ID-MUT-176",
+            "ID-MUT-177",
+            "ID-MUT-178",
+            "ID-MUT-179",
+            "ID-MUT-180",
+            "ID-MUT-182",
+            "ID-MUT-185",
+            "ID-MUT-186",
+            "ID-MUT-246",
+            "ID-MUT-333",
+            "ID-MUT-385",
+            "ID-MUT-386"
+          ]
+        },
+        {
+          "line": 222,
+          "column": 76,
+          "offset": 4436,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed",
+          "scope": "listed",
+          "tests": [
+            "ID-MUT-369",
+            "ID-MUT-307",
+            "ID-MUT-351",
+            "ID-MUT-397",
+            "ID-MUT-398",
+            "ID-MUT-399",
+            "ID-MUT-213",
+            "ID-MUT-226",
+            "ID-MUT-372",
+            "ID-MUT-318",
+            "ID-MUT-324",
+            "ID-MUT-420",
+            "ID-MUT-355",
+            "ID-MUT-356",
+            "ID-MUT-357",
+            "ID-MUT-358",
+            "ID-MUT-359",
+            "ID-MUT-360",
+            "ID-MUT-361",
+            "ID-MUT-362",
+            "ID-MUT-364",
+            "ID-MUT-365",
+            "ID-MUT-366",
+            "ID-MUT-374",
+            "ID-MUT-375",
+            "ID-MUT-400",
+            "ID-MUT-401",
+            "ID-MUT-402",
+            "ID-MUT-403",
+            "ID-MUT-232",
+            "ID-MUT-173",
+            "ID-MUT-174",
+            "ID-MUT-275",
+            "ID-MUT-175",
+            "ID-MUT-176",
+            "ID-MUT-177",
+            "ID-MUT-178",
+            "ID-MUT-179",
+            "ID-MUT-180",
+            "ID-MUT-182",
+            "ID-MUT-185",
+            "ID-MUT-186",
+            "ID-MUT-246",
+            "ID-MUT-333",
+            "ID-MUT-385",
+            "ID-MUT-386"
+          ]
+        },
+        {
+          "line": 222,
+          "column": 96,
+          "offset": 4456,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed",
+          "scope": "listed",
+          "tests": [
+            "ID-MUT-369",
+            "ID-MUT-307",
+            "ID-MUT-351",
+            "ID-MUT-397",
+            "ID-MUT-398",
+            "ID-MUT-399",
+            "ID-MUT-213",
+            "ID-MUT-226",
+            "ID-MUT-372",
+            "ID-MUT-318",
+            "ID-MUT-324",
+            "ID-MUT-420",
+            "ID-MUT-355",
+            "ID-MUT-356",
+            "ID-MUT-357",
+            "ID-MUT-358",
+            "ID-MUT-359",
+            "ID-MUT-360",
+            "ID-MUT-361",
+            "ID-MUT-362",
+            "ID-MUT-364",
+            "ID-MUT-365",
+            "ID-MUT-366",
+            "ID-MUT-374",
+            "ID-MUT-375",
+            "ID-MUT-400",
+            "ID-MUT-401",
+            "ID-MUT-402",
+            "ID-MUT-403",
+            "ID-MUT-232",
+            "ID-MUT-173",
+            "ID-MUT-174",
+            "ID-MUT-275",
+            "ID-MUT-175",
+            "ID-MUT-176",
+            "ID-MUT-177",
+            "ID-MUT-178",
+            "ID-MUT-179",
+            "ID-MUT-180",
+            "ID-MUT-182",
+            "ID-MUT-185",
+            "ID-MUT-186",
+            "ID-MUT-246",
+            "ID-MUT-333",
+            "ID-MUT-385",
+            "ID-MUT-386"
+          ]
+        },
+        {
+          "line": 224,
+          "column": 9,
+          "offset": 4611,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed",
+          "scope": "listed",
+          "tests": [
+            "ID-MUT-369",
+            "ID-MUT-307",
+            "ID-MUT-351",
+            "ID-MUT-397",
+            "ID-MUT-398",
+            "ID-MUT-399",
+            "ID-MUT-213",
+            "ID-MUT-226",
+            "ID-MUT-372",
+            "ID-MUT-318",
+            "ID-MUT-324",
+            "ID-MUT-420",
+            "ID-MUT-355",
+            "ID-MUT-356",
+            "ID-MUT-357",
+            "ID-MUT-358",
+            "ID-MUT-359",
+            "ID-MUT-360",
+            "ID-MUT-361",
+            "ID-MUT-362",
+            "ID-MUT-364",
+            "ID-MUT-365",
+            "ID-MUT-366",
+            "ID-MUT-374",
+            "ID-MUT-375",
+            "ID-MUT-400",
+            "ID-MUT-401",
+            "ID-MUT-402",
+            "ID-MUT-403",
             "ID-MUT-232",
             "ID-MUT-173",
             "ID-MUT-174",
@@ -812,8 +894,8 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
       "name": "namedSite",
       "hash": "3d6f192f478ee8b6",
-      "start_line": 231,
-      "end_line": 238,
+      "start_line": 234,
+      "end_line": 241,
       "killed": 0,
       "survived": 0,
       "uncovered": 0,
@@ -824,15 +906,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.countedProgress",
       "name": "Unjudged",
       "hash": "dc8187c35b132437",
-      "start_line": 243,
-      "end_line": 251,
+      "start_line": 246,
+      "end_line": 254,
       "killed": 1,
       "survived": 0,
       "uncovered": 0,
       "sites": 1,
       "mutants": [
         {
-          "line": 244,
+          "line": 247,
           "column": 11,
           "offset": 78,
           "original": "==",
@@ -854,15 +936,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.countedProgress",
       "name": "NotBuilt",
       "hash": "4ee0b4a977e2bda8",
-      "start_line": 255,
-      "end_line": 262,
+      "start_line": 258,
+      "end_line": 265,
       "killed": 1,
       "survived": 0,
       "uncovered": 0,
       "sites": 1,
       "mutants": [
         {
-          "line": 256,
+          "line": 259,
           "column": 11,
           "offset": 73,
           "original": "==",
@@ -875,15 +957,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.countedProgress",
       "name": "Counted",
       "hash": "e882cef5baa9e88d",
-      "start_line": 267,
-      "end_line": 308,
+      "start_line": 270,
+      "end_line": 311,
       "killed": 7,
       "survived": 5,
       "uncovered": 0,
       "sites": 12,
       "mutants": [
         {
-          "line": 270,
+          "line": 273,
           "column": 16,
           "offset": 127,
           "original": "!=",
@@ -894,11 +976,15 @@
             "ID-MUT-369",
             "ID-MUT-307",
             "ID-MUT-351",
+            "ID-MUT-397",
+            "ID-MUT-398",
+            "ID-MUT-399",
             "ID-MUT-213",
             "ID-MUT-226",
             "ID-MUT-372",
             "ID-MUT-318",
             "ID-MUT-324",
+            "ID-MUT-420",
             "ID-MUT-355",
             "ID-MUT-356",
             "ID-MUT-357",
@@ -910,6 +996,10 @@
             "ID-MUT-366",
             "ID-MUT-374",
             "ID-MUT-375",
+            "ID-MUT-400",
+            "ID-MUT-401",
+            "ID-MUT-402",
+            "ID-MUT-403",
             "ID-MUT-232",
             "ID-MUT-173",
             "ID-MUT-174",
@@ -929,7 +1019,7 @@
           ]
         },
         {
-          "line": 281,
+          "line": 284,
           "column": 23,
           "offset": 331,
           "original": "||",
@@ -939,6 +1029,7 @@
           "tests": [
             "ID-MUT-226",
             "ID-MUT-358",
+            "ID-MUT-402",
             "ID-MUT-173",
             "ID-MUT-175",
             "ID-MUT-176",
@@ -949,7 +1040,7 @@
           ]
         },
         {
-          "line": 281,
+          "line": 284,
           "column": 39,
           "offset": 347,
           "original": "&&",
@@ -959,6 +1050,7 @@
           "tests": [
             "ID-MUT-226",
             "ID-MUT-358",
+            "ID-MUT-402",
             "ID-MUT-173",
             "ID-MUT-175",
             "ID-MUT-176",
@@ -969,7 +1061,7 @@
           ]
         },
         {
-          "line": 281,
+          "line": 284,
           "column": 43,
           "offset": 351,
           "original": "!",
@@ -979,6 +1071,7 @@
           "tests": [
             "ID-MUT-226",
             "ID-MUT-358",
+            "ID-MUT-402",
             "ID-MUT-173",
             "ID-MUT-175",
             "ID-MUT-176",
@@ -989,7 +1082,7 @@
           ]
         },
         {
-          "line": 281,
+          "line": 284,
           "column": 60,
           "offset": 368,
           "original": "||",
@@ -999,6 +1092,7 @@
           "tests": [
             "ID-MUT-226",
             "ID-MUT-358",
+            "ID-MUT-402",
             "ID-MUT-173",
             "ID-MUT-175",
             "ID-MUT-176",
@@ -1009,7 +1103,7 @@
           ]
         },
         {
-          "line": 282,
+          "line": 285,
           "column": 24,
           "offset": 446,
           "original": "!=",
@@ -1019,6 +1113,7 @@
           "tests": [
             "ID-MUT-226",
             "ID-MUT-358",
+            "ID-MUT-402",
             "ID-MUT-173",
             "ID-MUT-175",
             "ID-MUT-176",
@@ -1029,7 +1124,7 @@
           ]
         },
         {
-          "line": 283,
+          "line": 286,
           "column": 24,
           "offset": 477,
           "original": "!=",
@@ -1040,11 +1135,15 @@
             "ID-MUT-369",
             "ID-MUT-307",
             "ID-MUT-351",
+            "ID-MUT-397",
+            "ID-MUT-398",
+            "ID-MUT-399",
             "ID-MUT-213",
             "ID-MUT-226",
             "ID-MUT-372",
             "ID-MUT-318",
             "ID-MUT-324",
+            "ID-MUT-420",
             "ID-MUT-355",
             "ID-MUT-356",
             "ID-MUT-357",
@@ -1056,6 +1155,9 @@
             "ID-MUT-366",
             "ID-MUT-374",
             "ID-MUT-375",
+            "ID-MUT-400",
+            "ID-MUT-401",
+            "ID-MUT-402",
             "ID-MUT-232",
             "ID-MUT-173",
             "ID-MUT-174",
@@ -1074,7 +1176,7 @@
           ]
         },
         {
-          "line": 295,
+          "line": 298,
           "column": 25,
           "offset": 827,
           "original": "!=",
@@ -1082,7 +1184,7 @@
           "outcome": "survived"
         },
         {
-          "line": 297,
+          "line": 300,
           "column": 32,
           "offset": 916,
           "original": "!=",
@@ -1090,7 +1192,7 @@
           "outcome": "survived"
         },
         {
-          "line": 300,
+          "line": 303,
           "column": 13,
           "offset": 989,
           "original": "==",
@@ -1105,7 +1207,7 @@
           ]
         },
         {
-          "line": 305,
+          "line": 308,
           "column": 30,
           "offset": 1351,
           "original": ">",
@@ -1113,7 +1215,7 @@
           "outcome": "survived"
         },
         {
-          "line": 305,
+          "line": 308,
           "column": 32,
           "offset": 1353,
           "original": "0",
@@ -1126,8 +1228,8 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
       "name": "countedInterrupted",
       "hash": "42e264f0420d1011",
-      "start_line": 314,
-      "end_line": 319,
+      "start_line": 317,
+      "end_line": 322,
       "killed": 0,
       "survived": 0,
       "uncovered": 0,
@@ -1138,15 +1240,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Presentation",
       "name": "printCounted",
       "hash": "8aa7abd0c6daf894",
-      "start_line": 323,
-      "end_line": 371,
-      "killed": 9,
+      "start_line": 326,
+      "end_line": 374,
+      "killed": 11,
       "survived": 0,
-      "uncovered": 3,
+      "uncovered": 1,
       "sites": 12,
       "mutants": [
         {
-          "line": 330,
+          "line": 333,
           "column": 19,
           "offset": 146,
           "original": "==",
@@ -1154,7 +1256,7 @@
           "outcome": "killed"
         },
         {
-          "line": 332,
+          "line": 335,
           "column": 20,
           "offset": 329,
           "original": "==",
@@ -1162,7 +1264,7 @@
           "outcome": "killed"
         },
         {
-          "line": 341,
+          "line": 344,
           "column": 19,
           "offset": 970,
           "original": "!=",
@@ -1170,7 +1272,7 @@
           "outcome": "killed"
         },
         {
-          "line": 349,
+          "line": 352,
           "column": 17,
           "offset": 1249,
           "original": "+",
@@ -1178,7 +1280,7 @@
           "outcome": "killed"
         },
         {
-          "line": 351,
+          "line": 354,
           "column": 17,
           "offset": 1305,
           "original": "==",
@@ -1186,7 +1288,7 @@
           "outcome": "killed"
         },
         {
-          "line": 352,
+          "line": 355,
           "column": 32,
           "offset": 1361,
           "original": "+",
@@ -1194,7 +1296,7 @@
           "outcome": "killed"
         },
         {
-          "line": 354,
+          "line": 357,
           "column": 20,
           "offset": 1416,
           "original": "!=",
@@ -1202,23 +1304,23 @@
           "outcome": "killed"
         },
         {
-          "line": 355,
+          "line": 358,
           "column": 27,
           "offset": 1450,
           "original": "+",
           "replacement": "-",
-          "outcome": "uncovered"
+          "outcome": "killed"
         },
         {
-          "line": 355,
+          "line": 358,
           "column": 43,
           "offset": 1466,
           "original": "+",
           "replacement": "-",
-          "outcome": "uncovered"
+          "outcome": "killed"
         },
         {
-          "line": 357,
+          "line": 360,
           "column": 18,
           "offset": 1493,
           "original": "!=",
@@ -1226,7 +1328,7 @@
           "outcome": "killed"
         },
         {
-          "line": 358,
+          "line": 361,
           "column": 17,
           "offset": 1517,
           "original": "+",
@@ -1234,7 +1336,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 362,
+          "line": 365,
           "column": 12,
           "offset": 1582,
           "original": "!=",
@@ -1243,6 +1345,9 @@
           "scope": "listed",
           "tests": [
             "ID-MUT-369",
+            "ID-MUT-397",
+            "ID-MUT-398",
+            "ID-MUT-399",
             "ID-MUT-324",
             "ID-MUT-356",
             "ID-MUT-360",
@@ -1258,15 +1363,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Presentation",
       "name": "reportCounted",
       "hash": "a2b243bae6752fc4",
-      "start_line": 379,
-      "end_line": 412,
+      "start_line": 382,
+      "end_line": 415,
       "killed": 3,
       "survived": 15,
       "uncovered": 6,
       "sites": 24,
       "mutants": [
         {
-          "line": 384,
+          "line": 387,
           "column": 19,
           "offset": 326,
           "original": "==",
@@ -1274,7 +1379,7 @@
           "outcome": "survived"
         },
         {
-          "line": 384,
+          "line": 387,
           "column": 31,
           "offset": 338,
           "original": "&&",
@@ -1282,7 +1387,7 @@
           "outcome": "survived"
         },
         {
-          "line": 390,
+          "line": 393,
           "column": 19,
           "offset": 660,
           "original": "==",
@@ -1290,7 +1395,7 @@
           "outcome": "survived"
         },
         {
-          "line": 390,
+          "line": 393,
           "column": 31,
           "offset": 672,
           "original": "&&",
@@ -1298,7 +1403,7 @@
           "outcome": "survived"
         },
         {
-          "line": 390,
+          "line": 393,
           "column": 47,
           "offset": 688,
           "original": "==",
@@ -1306,7 +1411,7 @@
           "outcome": "survived"
         },
         {
-          "line": 390,
+          "line": 393,
           "column": 67,
           "offset": 708,
           "original": "&&",
@@ -1314,7 +1419,7 @@
           "outcome": "survived"
         },
         {
-          "line": 390,
+          "line": 393,
           "column": 84,
           "offset": 725,
           "original": "==",
@@ -1322,7 +1427,7 @@
           "outcome": "survived"
         },
         {
-          "line": 393,
+          "line": 396,
           "column": 79,
           "offset": 810,
           "original": "+",
@@ -1330,7 +1435,7 @@
           "outcome": "killed"
         },
         {
-          "line": 395,
+          "line": 398,
           "column": 19,
           "offset": 1052,
           "original": "==",
@@ -1338,7 +1443,7 @@
           "outcome": "survived"
         },
         {
-          "line": 395,
+          "line": 398,
           "column": 34,
           "offset": 1067,
           "original": "&&",
@@ -1346,7 +1451,7 @@
           "outcome": "survived"
         },
         {
-          "line": 398,
+          "line": 401,
           "column": 19,
           "offset": 1287,
           "original": "==",
@@ -1354,7 +1459,7 @@
           "outcome": "survived"
         },
         {
-          "line": 398,
+          "line": 401,
           "column": 32,
           "offset": 1300,
           "original": "&&",
@@ -1362,7 +1467,7 @@
           "outcome": "survived"
         },
         {
-          "line": 398,
+          "line": 401,
           "column": 50,
           "offset": 1318,
           "original": "!=",
@@ -1370,7 +1475,7 @@
           "outcome": "survived"
         },
         {
-          "line": 400,
+          "line": 403,
           "column": 19,
           "offset": 1446,
           "original": "==",
@@ -1378,7 +1483,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 400,
+          "line": 403,
           "column": 34,
           "offset": 1461,
           "original": "||",
@@ -1386,7 +1491,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 400,
+          "line": 403,
           "column": 49,
           "offset": 1476,
           "original": "==",
@@ -1394,7 +1499,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 400,
+          "line": 403,
           "column": 66,
           "offset": 1493,
           "original": "&&",
@@ -1402,7 +1507,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 403,
+          "line": 406,
           "column": 19,
           "offset": 1528,
           "original": "==",
@@ -1410,7 +1515,7 @@
           "outcome": "survived"
         },
         {
-          "line": 403,
+          "line": 406,
           "column": 31,
           "offset": 1540,
           "original": "||",
@@ -1418,7 +1523,7 @@
           "outcome": "killed"
         },
         {
-          "line": 403,
+          "line": 406,
           "column": 45,
           "offset": 1554,
           "original": "==",
@@ -1426,7 +1531,7 @@
           "outcome": "survived"
         },
         {
-          "line": 403,
+          "line": 406,
           "column": 62,
           "offset": 1571,
           "original": "||",
@@ -1434,7 +1539,7 @@
           "outcome": "killed"
         },
         {
-          "line": 403,
+          "line": 406,
           "column": 76,
           "offset": 1585,
           "original": "==",
@@ -1442,7 +1547,7 @@
           "outcome": "survived"
         },
         {
-          "line": 405,
+          "line": 408,
           "column": 14,
           "offset": 1637,
           "original": "==",
@@ -1450,7 +1555,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 408,
+          "line": 411,
           "column": 83,
           "offset": 1768,
           "original": "+",
@@ -1463,8 +1568,8 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
       "name": "countedMutantProblem",
       "hash": "83951d9891d8b3e1",
-      "start_line": 414,
-      "end_line": 419,
+      "start_line": 417,
+      "end_line": 422,
       "killed": 0,
       "survived": 0,
       "uncovered": 0,
@@ -1475,15 +1580,15 @@
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Presentation",
       "name": "countedStrictGo",
       "hash": "50316d6edbf57a4c",
-      "start_line": 426,
-      "end_line": 443,
+      "start_line": 429,
+      "end_line": 446,
       "killed": 9,
       "survived": 2,
       "uncovered": 0,
       "sites": 11,
       "mutants": [
         {
-          "line": 428,
+          "line": 431,
           "column": 6,
           "offset": 154,
           "original": "!",
@@ -1498,7 +1603,7 @@
           ]
         },
         {
-          "line": 428,
+          "line": 431,
           "column": 43,
           "offset": 191,
           "original": "||",
@@ -1513,7 +1618,7 @@
           ]
         },
         {
-          "line": 428,
+          "line": 431,
           "column": 56,
           "offset": 204,
           "original": "&&",
@@ -1528,7 +1633,7 @@
           ]
         },
         {
-          "line": 428,
+          "line": 431,
           "column": 59,
           "offset": 207,
           "original": "!",
@@ -1543,7 +1648,7 @@
           ]
         },
         {
-          "line": 432,
+          "line": 435,
           "column": 15,
           "offset": 344,
           "original": "==",
@@ -1558,7 +1663,7 @@
           ]
         },
         {
-          "line": 432,
+          "line": 435,
           "column": 22,
           "offset": 351,
           "original": "||",
@@ -1573,7 +1678,7 @@
           ]
         },
         {
-          "line": 432,
+          "line": 435,
           "column": 25,
           "offset": 354,
           "original": "!",
@@ -1588,7 +1693,7 @@
           ]
         },
         {
-          "line": 438,
+          "line": 441,
           "column": 7,
           "offset": 618,
           "original": "!",
@@ -1603,7 +1708,7 @@
           ]
         },
         {
-          "line": 438,
+          "line": 441,
           "column": 22,
           "offset": 633,
           "original": "&&",
@@ -1618,7 +1723,7 @@
           ]
         },
         {
-          "line": 438,
+          "line": 441,
           "column": 26,
           "offset": 637,
           "original": "!",
@@ -1633,7 +1738,7 @@
           ]
         },
         {
-          "line": 438,
+          "line": 441,
           "column": 37,
           "offset": 648,
           "original": "||",
@@ -1692,11 +1797,19 @@
     "ID-MUT-375": "features/mutate.feature",
     "ID-MUT-376": "features/mutate.feature",
     "ID-MUT-385": "features/mutate.feature",
-    "ID-MUT-386": "features/mutate.feature"
+    "ID-MUT-386": "features/mutate.feature",
+    "ID-MUT-397": "features/mutate.feature",
+    "ID-MUT-398": "features/mutate.feature",
+    "ID-MUT-399": "features/mutate.feature",
+    "ID-MUT-400": "features/mutate.feature",
+    "ID-MUT-401": "features/mutate.feature",
+    "ID-MUT-402": "features/mutate.feature",
+    "ID-MUT-403": "features/mutate.feature",
+    "ID-MUT-420": "features/mutate.feature"
   },
   "listed_files": {
-    "features/cli.feature": "108b3a37496a395970c7cbce49a948954e838a23cfa49fa9a9bb78347733b658",
-    "features/mutate.feature": "e973ddba1277016db02bb94c993e77f66b0c74c543fa339f2a17215923cdb228"
+    "features/cli.feature": "1b1db5bfdd56842d8f086f90e2e3070a65d1ff9c1a364ff0ec0638b50eb77166",
+    "features/mutate.feature": "f7cf1add18cb7f496df80edb90d2d29d165a097f3c7dd07be4dc7b0df2ab7975"
   },
   "support": {
     "cmd/itos-cc/run_fakes_test.go": "cc976a7c661481fc7f7e90438f5adcc1b2db89487ed30158230db5ffcabd7c07",
@@ -1762,7 +1875,7 @@
     "features/metrics_snapshot_overlap.go": "a34efcb301943bbfda5bcd7d8f85ef0506b4f1edf6a5b67fae676085de0fdd4a",
     "features/metrics_snapshots.go": "d8e6daee220290f144804d8026fd5009de00363c0627d255e349e347d1f32467",
     "features/metrics_snapshots_test.go": "a0b24f7307110692f299c18343197d8d8ee9530873517b62f0a451d8ed049e58",
-    "features/mutate.go": "34d92fc99f6278b496a3c622dc23816c2958208f868c604ea66f3d1bbd175ee1",
+    "features/mutate.go": "07f431f6753c22cbbc225ba5c9395142ad6c45731c7047e1a45c84ae36d79126",
     "features/mutate_baseline.go": "bf1d597e9a4bda6a2d8ec5df605254762a606f36435e48ff331063de3e299149",
     "features/mutate_baseline_test.go": "572f2f1e30489e9f452f7ebdc5018c10751fc2e57eed42d53c815d9ef1921d0c",
     "features/mutate_binary_coverage.go": "b999e9ec161defbf36041a6b7ea95cb2f7a5be940475cbf41cafe4ae630c7af6",
@@ -1782,8 +1895,8 @@
     "features/mutate_counted_interrupt.go": "7f2decd59948f54da238b33afd8903cd616e0acb244379c18ec788050fa67306",
     "features/mutate_counted_listed.go": "aff301039b6fe3976150b64731c546295d6d6e5bb1051c9ba74eef3c0fc0568a",
     "features/mutate_counted_listed_fixture.go": "55f30fe712549d5301d428d8fbc96c47e8e3dc74cb5eb8db07b2eea81af79aaf",
-    "features/mutate_counted_outcomes.go": "84e94e79b4d6669c9e256ea7df225da31a85bc2d29b47d1814d081dd54895d10",
-    "features/mutate_counted_preparation.go": "e1580ab12735d6c9ec2e16daecce098f42da45c2189c314b118c60db6c98f8b4",
+    "features/mutate_counted_outcomes.go": "89da59c5c9a212a486d08762582e949496dee3c9954489c6deb512da2d8dfffa",
+    "features/mutate_counted_preparation.go": "eabd265386f3c8001495c375d4be3719e9a1de5b0c0f0b1c87dc68faec020851",
     "features/mutate_counted_selection.go": "9c1da9b5a204e9d331d83ca9ae32102b0472c60ba04028d813b4d6c46957c49d",
     "features/mutate_counted_uncommitted.go": "59ecbf44f6a8574c124544271ea84230b930105334ab451102071dc8269f79a2",
     "features/mutate_counted_worktree.go": "e4a9e5429fd11c30a34981ac94d4d5818b7b4ddb68336625eb19e78d6bde4838",
@@ -1793,10 +1906,11 @@
     "features/mutate_dart_fresh.go": "84a8105322dcbbcc1641ef9de95f46c52177a82412cac640d5e11747013fac68",
     "features/mutate_empty_case.go": "89448f8e9ddaabd06ea96416d37004812c0ff41b8617c97026848fe9bc80066e",
     "features/mutate_except.go": "dbdb6c5a5c636cccb9777af686bd7779d41ad399d08bc9449611be79353f8691",
+    "features/mutate_except_by_hash.go": "c33077dfb949911e66d8453b339d2d1b0db05d43b1912c1394eada7cb8e9f9c8",
     "features/mutate_except_coverage.go": "271315c52f0e101f0f9d6365f32c5f5102b0d1f0444c54f7ddf4a697056b2e36",
     "features/mutate_except_extension.go": "5153f35d90f8c6a55414c8749f4f6f28998ccd6e120d284409f8031a201b4170",
     "features/mutate_except_fixture.go": "9c7676fc689ebbb661fcf94cac7e2325700e64ae744e274f5748da335d1ff41d",
-    "features/mutate_except_identity.go": "9578c26aaf5847539358c479a9e88e76c41b78a3997817b8a51951aaca334188",
+    "features/mutate_except_identity.go": "a6fa24df3cbbdbf8a0b3533d06989fb716cae32b507ff52d5910733e95b2efc4",
     "features/mutate_except_layout.go": "007307654a3531da0aab3f1fed388006c602ccd7595943974b7b25c09938ddee",
     "features/mutate_except_prune.go": "caff160d60808772503587206f677eaff387dd3427c1a05853c6ee223a7aae14",
     "features/mutate_except_quoting.go": "d30fa02bf942a53f9c078e3b576520501380da0f68d5f2f3f73a4ac736649892",
@@ -1841,15 +1955,17 @@
     "features/mutate_listed_importers.go": "dbeebf368482a2e2ccce0f03507312d1c62164bae4da07de5b4cc34d9ffbf948",
     "features/mutate_listed_reuse.go": "8873bbc86fe1c8e29237e4cbd2c0a51ac4b2d807486b78c0e6ba492d25bf1f31",
     "features/mutate_listed_timeout.go": "ab21b8adc4813d0fb90ad51739820d0d7926930c27dc0c1fe51b0cdebefa51b2",
-    "features/mutate_named_site.go": "0968e3bb31dbe4dbca204244faa77a3fccfbef1467bfe4623b576560e751a042",
+    "features/mutate_named_site.go": "5b7fc307fb6d5d2ba26c7d5f848a25fe03a295cd30b5f121970e3c0e2d8ee2b4",
     "features/mutate_not_built.go": "a347e2a751c385adefa79b5846b71958732704d3f761952d0af57c1144b08fef",
     "features/mutate_own_coverage_reuse.go": "c104d05b521188c859cb60b566c22f714a4ecc2d4a514f7012bea6db1d6d8f37",
     "features/mutate_ownership.go": "cf725f0560623d71ca9784aee00842fe567353bcc114f9a02529c533940db9b8",
     "features/mutate_ownership_counted.go": "f08c4747c9c64a5748d5cf77636ea3b0ff4ba0b80f1eb16b1d500582ef6e11e1",
     "features/mutate_ownership_fixture.go": "5a457d988de5077cd18824341225945d4590785a319ffadb1526a1c77912b80e",
-    "features/mutate_phase_progress.go": "3d427a141d75662d3eeb932f0216b1f1496c2fb90e6e8478ad3ac13628755c00",
+    "features/mutate_phase_progress.go": "16191e2b36fd14d4e7a970a4f4d7dbeb29b3d076ed36a90b200cac86d128e897",
     "features/mutate_plain_matcher.go": "1efae99d2edf323bb57ae20e4c61ab4933e78599e1cd103b3205627cc07f5413",
     "features/mutate_pristine.go": "2df752c7cb7a2aa5eb0ad235a1e7e361ac45a675574a385fd0345ea657a6db90",
+    "features/mutate_proof_summary.go": "baa4f37a4159a4c240d2594b5c83248fc8c2bd0869d4736f42074b1d585b1ba4",
+    "features/mutate_raw_json.go": "f785499f801f7e3bbdccead4b8e10d5d74d031e7ff08a8dd510917b1ed50c67f",
     "features/mutate_result.go": "8b7f1fb72706a12bb8fcdeab413037d764089533a58df029f61cecdeb4b6f2cb",
     "features/mutate_result_fixture.go": "d7bf2beeda3d8c0749055e285406d91a0ff80c8b5c72a638bce079ff1c6cb5ac",
     "features/mutate_result_late.go": "eb706171cf7ac084ba7795549fc57a2913e732232672adbcedb48aa7c8a8c767",
@@ -1863,6 +1979,7 @@
     "features/mutate_sample_scopes.go": "a37f76a1114f42221fe1ab0af9c2540085e73fad1c74e46e53aaa43935e409d0",
     "features/mutate_sample_seed.go": "d3b181ef3c7533168b5456f9c3f131a5c822597212dace8c241b43fdd737cd74",
     "features/mutate_scoped_conversion.go": "8be23d8dfaf491a27eb0cccb4d46134db80b380527baa02dc286012aabe2cc05",
+    "features/mutate_show.go": "514325e7e130f76232c904b3507612a6e9da9ed56784cbe682c2dbaefeed5e35",
     "features/mutate_since.go": "d482705c6a02eee3f03386a543de961b6f857183c0fb343c34aceaa5aaaeb47c",
     "features/mutate_since_judged.go": "ddce3e645beab6c3e57cc13b73e59b0be8f304f76e7d88fd3fbef1edd0fd000c",
     "features/mutate_sites.go": "3c3f28c54a7c24ff18e03f08d2c53b98a1ab654e2ff8398daefa125845c603c3",
