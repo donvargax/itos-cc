@@ -1,6 +1,7 @@
 package covrun
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/donvargax/itos-cc/internal/coverage"
@@ -299,9 +301,9 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 				return nil, executions, fmt.Errorf("convert listed test %s coverage: %w", id, err)
 			}
 			cmd := exec.CommandContext(ctx, args[0], args[1:]...) //nolint:gosec // the collector's conversion of a listed test's data, which this package names
-			cmd.Dir, cmd.Stdout, cmd.Stderr = c.convertDir(d), log, log
+			cmd.Dir = c.convertDir(d)
 			cmd.Env = unsetEnv(project.NoBytecodeEnv(nil), c.vars...)
-			err = execute(ctx, cmd)
+			err = runConversion(ctx, cmd, log, execute)
 			executions = append(executions, CommandExecution{Args: args, Dir: c.convertDir(d), Err: err})
 			if err != nil {
 				return nil, executions, fmt.Errorf("convert listed test %s coverage: %w", id, err)
@@ -345,8 +347,8 @@ func (p Plan) integrateSupervised(ctx context.Context, log io.Writer, execute Co
 	for _, args := range p.conversions() {
 		logf(log, "itos-cc: coverage %s$ %s\n", p.convertDir(), displayArgs(args))
 		cmd := exec.CommandContext(ctx, args[0], args[1:]...) //nolint:gosec // the plan's conversion of its coverage data, which this package names
-		cmd.Dir, cmd.Env, cmd.Stdout, cmd.Stderr = p.convertDir(), p.convertEnv(), log, log
-		err := execute(ctx, cmd)
+		cmd.Dir, cmd.Env = p.convertDir(), p.convertEnv()
+		err := runConversion(ctx, cmd, log, execute)
 		calls = append(calls, CommandExecution{Args: append([]string{}, args...), Dir: p.convertDir(), Err: err})
 		if err != nil {
 			return "", "", calls, fmt.Errorf("convert %s integration coverage: %w", p.Language, err)
@@ -356,4 +358,23 @@ func (p Plan) integrateSupervised(ctx context.Context, log io.Writer, execute Co
 		return "", "", calls, fmt.Errorf("%s integration conversion produced no readable report: %w", p.Language, err)
 	}
 	return p.Integration, "", calls, nil
+}
+
+// runConversion runs a conversion, its stdout and stderr one writer that
+// reaches log, and ends a failure's error with what it printed, trimmed, so
+// the problem's message and the stage's error say what the converter said. A
+// failure that printed nothing keeps its error as it is.
+func runConversion(ctx context.Context, cmd *exec.Cmd, log io.Writer, execute CommandExecutor) error {
+	var said bytes.Buffer
+	printed := io.MultiWriter(log, &said)
+	cmd.Stdout, cmd.Stderr = printed, printed
+	err := execute(ctx, cmd)
+	if err == nil {
+		return nil
+	}
+	text := strings.TrimSpace(said.String())
+	if text == "" {
+		return err
+	}
+	return fmt.Errorf("%w: %s", err, text)
 }
