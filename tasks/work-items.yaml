@@ -6286,14 +6286,9 @@ items:
     title: A failed covdata conversion says what covdata said
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was covdata-stderr-in-error.
-      Issue #84: count.preparation-failed ends "execute .../covdata exited 1". The conversion sends
-      stderr to the run log (internal/covrun/supervised.go), yet the message a proof reader sees
-      holds none of it. Check where the log goes under --json before specifying.
     refs: ["#84"]
   - id: slice-75
     title: mutation run progress lines say excepted for an excepted mutant
