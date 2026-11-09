@@ -6401,3 +6401,19 @@ items:
       1900 survivors shows ten of them on the run page with no total; the log holds every ::warning
       line, after a --json report of 10639 mutants. A count or the list in the step summary would
       say what the page leaves out.
+  - id: fixture-buildvcs
+    title: A fixture go build failed with error obtaining VCS status, cause unknown
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Seen by the slice-75 agent locally at a load average near 31, on the unchanged product too,
+      never in CI: the binary driver fixture go build in features/mutate_counted_listed_fixture.go
+      failed with error obtaining VCS status: exit status 128, blocking ID-MUT-366, 369 and 398 as
+      tests.selection-failed. The slice-74 agent saw the same error with an empty /tmp/.git it did
+      not make, which go build in /tmp reads; it was gone when the coordinator looked afterwards, so
+      whether it caused this is unconfirmed. Find what creates it first: a fixture or tool running
+      git init in the wrong folder would be the real defect. Passing -buildvcs=false would likely
+      hide it, untried.
