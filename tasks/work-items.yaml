@@ -6395,3 +6395,15 @@ items:
       inherit stderr and print as they went. A conversion is short, so this is small, but a hung one
       now shows nothing until it is killed. Keeping it live means a change in internal/processes, a
       shared engine, or a pipe of its own in internal/covrun.
+  - id: nightly-survivors-page-count
+    title: Say on the nightly page how many survivors there were
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      GitHub shows at most 10 warning annotations for a step and 50 for a job, so a night with about
+      1900 survivors shows ten of them on the run page with no total; the log holds every ::warning
+      line, after a --json report of 10639 mutants. A count or the list in the step summary would
+      say what the page leaves out.
