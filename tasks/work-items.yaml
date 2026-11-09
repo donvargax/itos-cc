@@ -14,7 +14,7 @@ queue:
   - covdata-stderr-in-error
   - progress-says-excepted
   - slice-72
-  - mutation-show
+  - slice-73
   - listed-support-per-test
   - listed-suites
   - T-112
@@ -6322,14 +6322,15 @@ items:
       member, unit the name of what is counted, each count null when not reported, judged 0 alone
       refused by itos.
     refs: ["#75"]
-  - id: mutation-show
+  - id: slice-73
     title: A read-only mutation show resolves an identity to its file, line and change
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutation-show.
       Issue #82: an identity names a function and an offset; only mutation except, which writes,
       prints where it is. Reading the offset as bytes landed on the wrong line for 2 of 23 sites. A
       person should judge a survivor before anything runs.
