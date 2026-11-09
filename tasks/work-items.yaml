@@ -6313,8 +6313,8 @@ items:
   - id: slice-72
     title: mutation run --json reports the itos_proof summary
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
