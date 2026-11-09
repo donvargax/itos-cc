@@ -116,6 +116,7 @@ func identityExceptionSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^with --json, the "mutation\.survived" problem's fix names "(.*)"$`, i.survivedFix)
 	i.namedSiteSteps(sc)
 	i.rehashSteps(sc)
+	i.showSteps(sc)
 }
 
 // module writes and commits the module, board_test.go holding test, and
