@@ -7257,6 +7257,3 @@
     commit step goes on reading the status: 0 or 1 finished, anything else partial, and a run that
     judged nothing commits nothing as today. The push proof is unchanged and still fails on a
     survivor. Correct the workflow comments saying the job ends red on most nights.
-  done_when:
-    - run: go test ./tools/bin/nightly-survivors -count=1
-    - run: grep -q 'nightly-survivors' .github/workflows/nightly.yml

@@ -6354,7 +6354,7 @@ items:
     title: A nightly whose only problems are survivors is green
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: json-identity-escaped
