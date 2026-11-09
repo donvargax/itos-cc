@@ -6448,8 +6448,8 @@ items:
   - id: slice-76
     title: mutation except re-points an entry stale only by its function's hash, keeping its reason
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
