@@ -11,6 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
+  - listed-coverage-per-id-cost
   - covdata-stderr-in-error
   - progress-says-excepted
   - itos-proof-summary
