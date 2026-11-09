@@ -4416,6 +4416,60 @@ Feature: Mutation testing
       And "itos-cc mutation run src/board.ts --json" and "itos-cc mutation except --renew --json" name it "changed" too
       But once "Board#count" has no `<` left and mutation run has judged it, all three name it "gone"
 
+    # slice-76, issue #87: re-pointing kept the reason only when the site had
+    # moved. Exception.SameSite compares no hash, so an entry whose function
+    # changed only in its hash, its place in the function the same, counted
+    # as the same site, Except skipped Repointed, and with no --reason the
+    # command said flags.value-missing; given a placeholder to get past that,
+    # it overwrote the reviewed reason. Reproduced 2026-11-08 by identity; the
+    # site form shares the path. Coordinator's calls:
+    # - A same-site entry that holds is the one case of no re-pointing: with
+    #   no --reason it stays flags.value-missing (ID-MUT-322), and with one,
+    #   "excepted again" as today (ID-MUT-318).
+    # - A same-site entry that no longer holds is the one re-pointed, ahead of
+    #   any other stale entry of its change, as it is plainly that entry; the
+    #   other entries are left as they are. The rule of several in ID-MUT-297's
+    #   comment, a new entry, still holds where no entry is at the site's place.
+    # - A given --reason still replaces the reason, on purpose.
+    # A signature change moves the hash and the site's offset, and leaves its
+    # line_in_function, column and line text. Before: ID-MUT-410, 411 and 412
+    # are flags.value-missing, failing at their first Then.
+    @wip @slice-76 @ID-MUT-410
+    Scenario: An identity re-points an entry stale only by its function's hash, keeping its reason
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
+      And Count's signature became "func Count(x int) (ok bool)"
+      When I run "itos-cc mutation except" with the identity of that mutant as the code is now, --json and no --reason
+      Then itos-cc.yaml has one entry under mutation.exceptions
+      And it names Count's current hash, line_in_function 2, column 11, and keeps the reason "x is never 5"
+      And the JSON says "replaced": true
+      And the exit code is 0
+      And "itos-cc mutation check board/board.go --json" reports no "mutation.exception-stale"
+      And run again with no --reason, the entry holding now, the command is "flags.value-missing", exit 80, leaving itos-cc.yaml byte for byte as it was
+      But given "--reason 'reworded'" while the entry is stale, it is re-pointed the same way, its reason "reworded"
+
+    @wip @slice-76 @ID-MUT-411
+    Scenario: A site re-points an entry stale only by its function's hash, keeping its reason
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
+      And Count's signature became "func Count(x int) (ok bool)", and "itos-cc mutation run board/board.go" recorded its `<` → `<=` at board/board.go:5:11 surviving
+      When I run "itos-cc mutation except board/board.go:5:11 --json"
+      Then itos-cc.yaml has one entry under mutation.exceptions
+      And it names Count's current hash and keeps the reason "x is never 5"
+      And the JSON says "replaced": true
+      And the exit code is 0
+
+    @wip @slice-76 @ID-MUT-412
+    Scenario: The entry at the site's place is the one re-pointed, beside another stale entry of its change
+      Given a committed Go module whose "example.com/fx/board#Count" holds two `<` → `<=` sites on two lines, each surviving its test
+      And itos-cc.yaml excepts both, the first with reason "first reviewed", the second with reason "second reviewed"
+      And Count's signature changed, leaving both sites at their places in the function
+      When I run "itos-cc mutation except" with the identity of the first site as the code is now, --json and no --reason
+      Then the first site's entry names Count's current hash and keeps the reason "first reviewed"
+      And the second site's entry is as it was
+      And itos-cc.yaml has two entries under mutation.exceptions
+      And the exit code is 0
+
   # slice-21, issue #51: an entry of itos-cc.yaml that is stale as gone,
   # killed or excluded fails every mutation run and check, and its fix said
   # to delete it by hand: mutation except can only add or replace an entry,
@@ -4611,6 +4665,156 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --count 5"
       Then its standard error names the survivor `<` → `<=` at board/board.go:5:11 with its identity "board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><="
       And with --json, the "mutation.survived" problem's fix names "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason"
+
+    # slice-78, issue #86: a stale entry's fix named --renew after a mutation
+    # run, and a <line>:<column> a mutation run records, so a repository whose
+    # mutation runs are CI's had no step it could take: an agent probed
+    # mutation except with the old hash for the function's new one and guessed
+    # the offset, and one entry took two CI cycles and a coordinator's call.
+    # Coordinator's calls, 2026-11-08:
+    # - A problem of why "changed" gains "identity", additive, and its fix
+    #   names "itos-cc mutation except '<identity>'" ahead of the sentences it
+    #   has today, saying that this runs nothing and keeps the entry's reason
+    #   unless --reason gives another. That is on mutation run, counted runs,
+    #   --fail-fast's stop, mutation check, and what --renew leaves as
+    #   no-results and --rehash leaves as changed: their fixes also ask for a
+    #   mutation run.
+    # - Which site: the rule --renew finds its mutant by (matchMutant), the one
+    #   code for both, so they never name different mutants. The one site of
+    #   the entry's change on a line whose text, less its space, is the entry's
+    #   line_text, or of several the one at its place; with no line_text, the
+    #   one at its place, else the only one. Anything else names no identity,
+    #   its fix as today: a changed line is a new mutant, the reason written
+    #   for another one (the guard the person kept on 2026-10-18), and the next
+    #   report names its survivor.
+    # - An identity does not say the mutant survived (slice-41), so the fix
+    #   asks for a read of the function first: the review stays the gate, and
+    #   the reason was written for another version of it. No outcome is
+    #   claimed, and a fresh snapshot recording it killed still refuses it
+    #   (ID-MUT-323).
+    # - --renew does not work from a listing instead, as the issue's other
+    #   suggestion had it: its fresh results are what it renews on.
+    # - Its file is from the project root, as an identity is, wherever the
+    #   command ran, while the problem's "file" stays from the working
+    #   directory.
+    # - The plain line ends ", identity <identity>", as a local or nightly log
+    #   is read too; it stays clear of the matchers' shape (slice-51).
+    # - why "gone", "killed", "moved", "excluded" gain nothing.
+    # - --fail-fast's stop subject gains it too, as it is the same subject.
+    # A signature change moves the hash, keeping the site's place and line
+    # text. slice-76 is what makes the command keep the reason. Before:
+    # ID-MUT-413, 414, 417 and 418 fail at the Then that reads "identity";
+    # ID-MUT-416 at its plain line. ID-MUT-415 holds today in every row: it is
+    # a guardrail against naming a mutant the rule cannot tell, reported apart.
+    @wip @slice-78 @ID-MUT-413
+    Scenario Outline: A stale entry's problem names the identity that re-points it, from <command>
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
+      And a commit made Count's signature "func Count(x int) (ok bool)"
+      When I run "itos-cc <command> --json"
+      Then the problem is "mutation.exception-stale", with why "changed"
+      And its "identity" is that mutant's as the code is now, with Count's current hash
+      And its fix names "itos-cc mutation except '<its identity>'", saying that this runs nothing and keeps the entry's reason, and to read the function first
+      And its fix still names "itos-cc mutation except --renew" after that
+      And running the named command, with no --reason and no Go toolchain on the PATH, exits 0 with the entry at Count's current hash and the reason "x is never 5"
+      And "itos-cc mutation check board/board.go --json" then reports no "mutation.exception-stale"
+
+      Examples:
+        | command                                 |
+        | mutation check board/board.go           |
+        | mutation run board/board.go             |
+        | mutation run --count 5                  |
+        | mutation run board/board.go --fail-fast |
+
+    @wip @slice-78 @ID-MUT-414
+    Scenario: A site that moved within its function on a line of the same text is named at its place now
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
+      And the line "_ = x" was added above Count's "return x < 5"
+      When I run "itos-cc mutation check board/board.go --json"
+      Then the "mutation.exception-stale" problem's "identity" names that mutant at line_in_function 3, as the code is now
+      And excepting that identity with no --reason records line_in_function 3 and the reason "x is never 5"
+
+    @wip @slice-78 @ID-MUT-415
+    Scenario Outline: A stale entry whose mutant cannot be told names no identity (<case>)
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
+      And <change>
+      When I run "itos-cc mutation check board/board.go --json"
+      Then the problem is "mutation.exception-stale", with why "<why>"
+      And it has no "identity" key
+      And its fix does not name an identity
+
+      Examples:
+        | case              | change                                                                                 | why     |
+        | its line changed  | Count's "x < 5" became "x < 6"                                                         | changed |
+        | two could be it   | Count became "if x == 0 { return x < 5 }" over three lines, then "return x < 5"        | changed |
+        | no such site left | Count's "x < 5" became "x == 5"                                                        | gone    |
+
+    @wip @slice-78 @ID-MUT-416
+    Scenario: The plain line of a stale entry names its identity
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
+      And Count's signature became "func Count(x int) (ok bool)"
+      When I run "itos-cc mutation check board/board.go"
+      Then its standard output has the line "  exception-stale `<` → `<=` in example.com/fx/board#Count, board/board.go line 5 column 11 (changed), identity <that mutant's identity>"
+      And no line of it starts with a path or holds "board/board.go:5:11"
+      And when the entry's line changed too, the line ends "(changed)"
+
+    @wip @slice-78 @ID-MUT-417
+    Scenario Outline: What <flag> leaves for want of a mutation run names the identity
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
+      And Count's signature became "func Count(x int) (ok bool)"
+      And .metrics/mutate holds no snapshot of board/board.go
+      When I run "itos-cc mutation except <flag> --json"
+      Then the problem is "mutation.exception-stale", with why "<why>"
+      And its "identity" is that mutant's as the code is now
+      And its fix names "itos-cc mutation except '<its identity>'" ahead of what it says today
+      And the exit code is 1
+
+      Examples:
+        | flag     | why        |
+        | --renew  | no-results |
+        | --rehash | changed    |
+
+    @wip @slice-78 @ID-MUT-418
+    Scenario: A stale entry's identity is from the project root, wherever the command ran
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
+      And Count's signature became "func Count(x int) (ok bool)"
+      When I run "itos-cc mutation check board.go --json" in the folder board
+      Then the "mutation.exception-stale" problem's "file" is "board.go"
+      And its "identity" starts "board/board.go:example.com/fx/board#Count@"
+      And excepting that identity from the folder board exits 0, keeping the reason "x is never 5"
+
+    # slice-77, idea json-identity-escaped: a problem's --json text wrote <, >
+    # and & as \u003c, \u003e and \u0026, so an identity read from the raw text,
+    # or the command in a fix, was refused as naming no survivor. Checked
+    # 2026-11-08 with mutation show, except and an identity-stale refusal: the
+    # data keys print < already, as Emit's round trip decodes them for its
+    # SetEscapeHTML(false) encoder, so the idea's first reading of Emit was not
+    # the cause. Only problems stay escaped: Problem.MarshalJSON
+    # (internal/cli/problem.go) uses json.Marshal, whose text the encoder keeps.
+    # Coordinator's calls: a problem marshals without HTML escaping, as the rest
+    # of --json prints; the decoded values do not change, so only a reader of
+    # the raw text can tell, and it is no contract change. Before: \u003c in
+    # stdout, failing at the Then that reads the raw text.
+    @wip @slice-77 @ID-MUT-419
+    Scenario: A problem's identity and fix read in --json's raw text as they are written
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      When I run "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:0000000000000000:35:<><=' --reason 'x' --json"
+      Then the problem is "exception.identity-stale"
+      And stdout's raw text holds "board#Count@4:6:0000000000000000:35:<><=" and "<file>:<line>:<column>"
+      And stdout's raw text holds none of "\u003c", "\u003e" and "\u0026"
+
+    @wip @slice-77 @ID-MUT-420
+    Scenario: A survivor's identity read from --json's raw text is excepted as it is
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      When I run "itos-cc mutation run --count 5 --json"
+      And I except the identity read from the raw text of the "mutation.survived" problem's fix, with no JSON decoding, with --reason 'x is never 5'
+      Then itos-cc.yaml has one entry under mutation.exceptions
+      And the exit code is 0
 
   # slice-73 (issue #82): an identity names a function and an offset taken with comments
   # left out, so reading it as bytes from the function's start lands on the wrong line, and only
