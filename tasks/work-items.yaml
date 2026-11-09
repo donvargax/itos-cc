@@ -6388,3 +6388,16 @@ items:
       conversion a complete run still prints "converted the coverage of 1 listed tests", as
       listedConverted counts what was written (internal/covrun/pertest.go). Going on is slice-15
       choice; the line overstates it.
+  - id: conversion-output-when-joined
+    title: A supervised conversion prints to stderr only once it ends
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-74 gave conversions a writer that is no file, so on Linux and macOS internal/processes
+      holds their output until the process group is joined, stdout before stderr, where they used to
+      inherit stderr and print as they went. A conversion is short, so this is small, but a hung one
+      now shows nothing until it is killed. Keeping it live means a change in internal/processes, a
+      shared engine, or a pipe of its own in internal/covrun.
