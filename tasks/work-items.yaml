@@ -6327,8 +6327,8 @@ items:
   - id: slice-73
     title: A read-only mutation show resolves an identity to its file, line and change
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
