@@ -6463,3 +6463,10 @@ items:
       Issue #86. The stale problem's fix needs a local mutation run, in repositories whose mutation
       runs are CI's; its identity would make the renewal one command.
     refs: ["#86"]
+  - id: T-230
+    title: ID-MUT-369 says what its stdout steps check
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

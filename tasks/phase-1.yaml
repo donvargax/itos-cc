@@ -7257,3 +7257,13 @@
     commit step goes on reading the status: 0 or 1 finished, anything else partial, and a run that
     judged nothing commits nothing as today. The push proof is unchanged and still fails on a
     survivor. Correct the workflow comments saying the job ends red on most nights.
+- id: T-230
+  type: test
+  title: ID-MUT-369 says what its stdout steps check
+  why: >
+    Coordinator's call 2026-11-09, from q on slice-72: repair 5efd89ae added the .itos_proof keys to
+    countedJSONKeys, so 'as a run before mutation-phase-progress gives it' is no longer true of the
+    JSON row. The steps check the plain report's lines and the counted run's documented keys, so
+    they say that, nothing they check changing.
+  done_when:
+    - run: "! grep -q 'before mutation-phase-progress gives it' features/mutate.feature features/mutate_phase_progress.go"
