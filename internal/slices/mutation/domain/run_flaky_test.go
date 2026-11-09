@@ -181,18 +181,69 @@ func TestAFunctionNotJudgedKeepsItsFlakyMutant(t *testing.T) {
 	}
 }
 
-func TestNoExceptionTakesAFlakyMutantNorGoesStaleByIt(t *testing.T) {
-	f, site := survivingFixture(t)
-	flip(f, site, mutants.Killed, mutants.Survived)
-	f.run(t)
+// exceptionAt is the entry of board.go that holds for site's mutant, with
+// reason.
+func exceptionAt(t *testing.T, f *runFixture, site mutants.Site, reason string) []mutants.Exception {
+	t.Helper()
 	parsed, err := selected.Parse(t.Context(), f.options.Tree, f.inputs, f.path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer parsed.Close()
 	u := parsed.Units[site.Unit]
-	f.options.Exceptions = []mutants.Exception{{File: "board.go", Function: mutants.UnitID(u.Namespace, u.Name), Hash: mutants.UnitHash(parsed, u),
-		LineInFunction: site.Line - u.StartLine + 1, Column: site.Column, Original: site.Original, Replacement: site.Replacement, Reason: "equivalent"}}
+	return []mutants.Exception{{File: "board.go", Function: mutants.UnitID(u.Namespace, u.Name), Hash: mutants.UnitHash(parsed, u),
+		LineInFunction: site.Line - u.StartLine + 1, Column: site.Column, Original: site.Original, Replacement: site.Replacement, Reason: reason}}
+}
+
+// No scenario reaches a complete run's rechecks here: the fixture whose test
+// kills a mutant on one run and misses it on the next rewrites that test, so
+// its snapshot no longer holds and nothing is rechecked.
+func TestOnlyTheRunEndingASurvivorsJudgmentIsExcepted(t *testing.T) {
+	for _, c := range []struct {
+		name     string
+		recorded string
+		reason   string
+		runs     []string
+		excepted []bool
+	}{
+		{"a survivor stays one", mutants.Survived, "equivalent", []string{mutants.Survived}, []bool{true}},
+		{"a survivor's runs disagree", mutants.Survived, "equivalent", []string{mutants.Killed, mutants.Survived}, []bool{false, false}},
+		{"a kill survives every run", mutants.Killed, "equivalent", []string{mutants.Survived, mutants.Survived, mutants.Survived}, []bool{false, false, true}},
+		{"a survivor is killed now", mutants.Survived, "equivalent", []string{mutants.Killed, mutants.Killed, mutants.Killed}, []bool{false, false, false}},
+		{"an entry with no reason", mutants.Survived, "", []string{mutants.Survived}, []bool{false}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			f, site := survivingFixture(t)
+			flip(f, site, c.recorded)
+			f.run(t)
+			anew(f)
+			events := &runEvents{}
+			f.options.Progress, f.options.MutateAll = events, true
+			f.options.Exceptions = exceptionAt(t, f, site, c.reason)
+			flip(f, site, c.runs...)
+			f.run(t)
+			var excepted []bool
+			var outcomes []string
+			for _, e := range events.values {
+				if e.Kind == "judged" && e.Site.Key() == site.Key() {
+					excepted, outcomes = append(excepted, e.Excepted), append(outcomes, e.Outcome)
+				}
+			}
+			if !reflect.DeepEqual(excepted, c.excepted) {
+				t.Errorf("the events say excepted %v, want %v", excepted, c.excepted)
+			}
+			if !reflect.DeepEqual(outcomes, c.runs[:len(c.excepted)]) {
+				t.Errorf("the events say outcomes %q, want each run's own %q", outcomes, c.runs)
+			}
+		})
+	}
+}
+
+func TestNoExceptionTakesAFlakyMutantNorGoesStaleByIt(t *testing.T) {
+	f, site := survivingFixture(t)
+	flip(f, site, mutants.Killed, mutants.Survived)
+	f.run(t)
+	f.options.Exceptions = exceptionAt(t, f, site, "equivalent")
 	// Its first run kills it again, which would stale its exception.
 	r := f.run(t)[0]
 	if m := decidedAt(t, r, site); m.Excepted != "" || len(m.Outcomes) != 2 || len(r.StaleExceptions) != 0 {

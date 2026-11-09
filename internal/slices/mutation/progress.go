@@ -27,7 +27,8 @@ func (p Progress) Report(e mutants.RunEvent) {
 		_, _ = fmt.Fprintln(log, "itos-cc: no memory cap holds on this system, as itos-cc cannot measure a test run's memory here")
 	case "fresh-trial":
 		r := e.FreshTrial
-		said := overLimit(r.Outcome, r.Limit, r.Limits)
+		outcome := lineOutcome(r.Excepted, r.Outcome, r.Limit, r.Limits)
+		said := outcome
 		own := "no own test reaches its file"
 		if r.RanOwn() {
 			own = "survived its own tests"
@@ -40,7 +41,7 @@ func (p Progress) Report(e mutants.RunEvent) {
 		case r.Flaky():
 			said = "flaky: " + strings.Join(r.Outcomes, ", ")
 		case r.Scope == mutants.ScopeListed:
-			said = fmt.Sprintf("%s, then %s with %s", own, overLimit(r.Outcome, r.Limit, r.Limits), strings.Join(r.Tests, " "))
+			said = fmt.Sprintf("%s, then %s with %s", own, outcome, strings.Join(r.Tests, " "))
 		}
 		took := fmt.Sprintf("%.1fs", r.Elapsed.Seconds())
 		if r.Scope == mutants.ScopeListed {
@@ -88,15 +89,25 @@ func (p Progress) Report(e mutants.RunEvent) {
 	case "cancelled":
 		_, _ = fmt.Fprintf(log, "itos-cc: %s:%d %s → %s cancelled: %v (%.1fs)\n", e.File, e.Site.Line, mutants.Show(e.Site.Original), mutants.Show(e.Site.Replacement), e.Failure, e.Elapsed.Seconds())
 	case "judged", "selection-blocked":
-		said, took := overLimit(e.Outcome, e.Limit, e.Limits), fmt.Sprintf("%.1fs", e.Elapsed.Seconds())
+		outcome := lineOutcome(e.Excepted, e.Outcome, e.Limit, e.Limits)
+		said, took := outcome, fmt.Sprintf("%.1fs", e.Elapsed.Seconds())
 		if e.Kind == "selection-blocked" {
 			said = fmt.Sprintf("survived its own tests, then not judged: %s fail without any mutant", strings.Join(e.IDs, " "))
 		} else if e.IDs != nil {
-			said = fmt.Sprintf("survived its own tests, then %s with %s", overLimit(e.Outcome, e.Limit, e.Limits), strings.Join(e.IDs, " "))
+			said = fmt.Sprintf("survived its own tests, then %s with %s", outcome, strings.Join(e.IDs, " "))
 			took += fmt.Sprintf(", the listed tests %.1fs", e.Listed.Seconds())
 		}
 		_, _ = fmt.Fprintf(log, "itos-cc: [%d/%d] %s:%d %s → %s %s (%s)\n", e.Done, e.Total, e.File, e.Site.Line, mutants.Show(e.Site.Original), mutants.Show(e.Site.Replacement), said, took)
 	}
+}
+
+// lineOutcome is what a progress line says of a mutant's outcome: excepted
+// when an exception takes it, and otherwise the outcome (overLimit).
+func lineOutcome(excepted bool, outcome, limit string, limits mutants.Limits) string {
+	if excepted {
+		return "excepted"
+	}
+	return overLimit(outcome, limit, limits)
 }
 
 // overLimit is outcome as a progress line says it: an OverLimit one names

@@ -51,6 +51,11 @@ type FreshTrialResult struct {
 	// Outcomes is, for a trial run more than once (Repeat), every outcome
 	// its runs gave, in run order, Outcome their first; nil otherwise.
 	Outcomes []string
+	// Excepted says an exception takes Outcome as a survivor, which only a
+	// progress line says: Outcome stays Survived. A trial whose first run
+	// survived may carry it while Flaky, yet no exception takes a flaky
+	// mutant: wherever a result is read, Flaky comes first.
+	Excepted bool
 }
 
 // FreshStage is one stage of a fresh trial: "own", the mutant under its own
@@ -86,6 +91,8 @@ type FreshTrialOptions struct {
 	Progress  Progress
 	// Repeat is how many times each trial runs, --repeat; below 2, once.
 	Repeat int
+	// Exceptions says which results are Excepted; nil when none is.
+	Exceptions *FreshExceptions
 }
 
 // RunFreshTrials applies each selected mutant to a private worker copy of
@@ -150,6 +157,8 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 			defer wg.Done()
 			for i := range queue {
 				r := repeatedTrial(ctx, w, plan, trials[i], opt, sels)
+				reason, _ := opt.Exceptions.Judge(trials[i].Candidate, r.Outcome)
+				r.Excepted = reason != ""
 				mu.Lock()
 				results[i] = r
 				done++

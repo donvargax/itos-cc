@@ -214,7 +214,7 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 					kind = "selection-blocked"
 				}
 				report(opt.Progress, RunEvent{Kind: kind, Done: done, Total: total, File: j.state.rel, Site: site, Outcome: r.outcome, Limit: r.limit, Limits: r.limits,
-					IDs: r.ids, Elapsed: r.elapsed, Listed: r.listed})
+					Excepted: j.state.endsExcepted(j.site, more, r.outcome), IDs: r.ids, Elapsed: r.elapsed, Listed: r.listed})
 				// A mutant that runs again is not judged yet.
 				if st != nil && err == nil && !more {
 					if r.failed != nil {

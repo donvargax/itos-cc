@@ -23,8 +23,12 @@ type RunEvent struct {
 	// Limit names the cap an OverLimit outcome went over, and Limits are
 	// the limits of the run it went over; for "selection-passed", Limits
 	// are those of the selection's mutant runs.
-	Limit                    string
-	Limits                   Limits
+	Limit  string
+	Limits Limits
+	// Excepted says, for "judged", that this run ends the mutant's judgment
+	// with an exception taking it (endsExcepted). Outcome stays what the run
+	// gave: only a progress line says the word.
+	Excepted                 bool
 	Elapsed, Listed, Timeout time.Duration
 	Done, Total              int
 	Failure                  error
@@ -117,6 +121,17 @@ func (s *Execution) flaky(site int) []string {
 		return nil
 	}
 	return s.flakes[site]
+}
+
+// endsExcepted says whether the run of site's mutant that gave outcome ends
+// its judgment with an exception taking it, as decided reads it: not while
+// more says it runs again, and never once its runs say it is flaky.
+func (s *Execution) endsExcepted(site int, more bool, outcome string) bool {
+	if more || s.flaky(site) != nil {
+		return false
+	}
+	reason, _ := s.excepted.Judge(site, s.sites[site], outcome)
+	return reason != ""
 }
 
 // again says whether site's mutant ran before in this run: a run again

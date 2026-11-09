@@ -302,7 +302,7 @@ func (h Handler) trials(ctx context.Context, q CountedQuery, plan *mutants.Fresh
 		WorkerFactory: factory,
 		Workers:       q.Workers, TimeoutFactor: q.TimeoutFactor, OutputFactor: q.OutputFactor, MemoryFactor: q.MemoryFactor,
 		Scope:  mutants.RunScope("", q.AllTests),
-		Listed: listed, Tree: h.Tree, Toolchain: h.Toolchain, Progress: progress, Repeat: q.Repeat})
+		Listed: listed, Tree: h.Tree, Toolchain: h.Toolchain, Progress: progress, Repeat: q.Repeat, Exceptions: exceptions})
 	if err != nil {
 		return err
 	}

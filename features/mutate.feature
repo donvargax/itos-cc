@@ -3037,7 +3037,7 @@ Feature: Mutation testing
     # Before: ID-MUT-397 and 398 fail at their Then, the line saying
     # "survived". ID-MUT-399 holds today: it is a guardrail against "excepted"
     # for every held entry, and is reported apart.
-    @wip @slice-75 @ID-MUT-397
+    @slice-75 @ID-MUT-397
     Scenario Outline: The progress line of an excepted survivor says excepted (<args>)
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
@@ -3053,7 +3053,7 @@ Feature: Mutation testing
         | board/board.go                    |
         | --json board/board.go             |
 
-    @wip @slice-75 @ID-MUT-398
+    @slice-75 @ID-MUT-398
     Scenario Outline: The line of a survivor the listed tests also miss says excepted after its own tests (<args>)
       Given the counted listed fixture, whose selected mutant survives its own tests and the listed tests, and itos-cc.yaml excepts it
       When I run "itos-cc mutation run <args>"
@@ -3065,7 +3065,7 @@ Feature: Mutation testing
         | --count 1 --seed slice-64-2 --workers 1 subject.go |
         | --mutate-all --no-annotate --workers 1 subject.go  |
 
-    @wip @slice-75 @ID-MUT-399
+    @slice-75 @ID-MUT-399
     Scenario Outline: A line keeps its outcome when the exception takes no survivor (<case>)
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
