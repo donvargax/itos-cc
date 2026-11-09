@@ -4788,6 +4788,24 @@ Feature: Mutation testing
       And its "identity" starts "board/board.go:example.com/fx/board#Count@"
       And excepting that identity from the folder board exits 0, keeping the reason "x is never 5"
 
+    # Python and TypeScript name a unit's namespace otherwise than Go, and an
+    # identity's is not compared there (identifiedUnit), so the round trip is
+    # checked in each. It needs no real tool: check and an identity's except
+    # run nothing.
+    @wip @slice-78 @ID-MUT-421
+    Scenario Outline: A stale entry's identity re-points it in <language>
+      Given <language> source whose <function> has the `<` → `<=` site itos-cc.yaml excepts with reason "x is never 5"
+      And <function> changed in a line after the site, leaving the site's line as it was
+      When I run "itos-cc mutation check <file> --json"
+      Then the "mutation.exception-stale" problem, with why "changed", has an "identity"
+      And excepting that identity with no --reason exits 0, the entry at <function>'s current hash with the reason "x is never 5"
+      And "itos-cc mutation check <file> --json" then reports no "mutation.exception-stale"
+
+      Examples:
+        | language   | function    | file         |
+        | TypeScript | Board#count | src/board.ts |
+        | Python     | Board#count | src/board.py |
+
     # slice-77, idea json-identity-escaped: a problem's --json text wrote <, >
     # and & as \u003c, \u003e and \u0026, so an identity read from the raw text,
     # or the command in a fix, was refused as naming no survivor. Checked
