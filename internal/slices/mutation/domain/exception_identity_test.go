@@ -270,7 +270,7 @@ func TestDomainIdentifiedMutantIsTheSiteAndItsLinesWithNothingRun(t *testing.T) 
 			t.Fatalf("%s has no site", rel)
 		}
 		u := parsed.Units[sites[0].Unit]
-		text := fmt.Sprintf("%s:%s@%d:%d:%s:%s", filepath.ToSlash(rel), mutants.UnitID(u.Namespace, u.Name), u.StartLine, u.EndLine, mutants.UnitHash(parsed, u), sites[0].Key())
+		text := fmt.Sprintf("%s:%s@%d:%d:%s:%s", rel, mutants.UnitID(u.Namespace, u.Name), u.StartLine, u.EndLine, mutants.UnitHash(parsed, u), sites[0].Key())
 		id, ok := mutants.ParseIdentity(text)
 		if !ok {
 			t.Fatalf("%q is no identity", text)
@@ -308,8 +308,8 @@ func TestDomainIdentifiedMutantIsTheSiteAndItsLinesWithNothingRun(t *testing.T) 
 	if _, err := mutants.IdentifiedMutant(t.Context(), identity(t, "a.py", o), o, status); err != nil {
 		t.Fatalf("a folder named test above the root: %v", err)
 	}
-	o, status = opt(filepath.Join("test", "a.py"), python)
-	if _, err := mutants.IdentifiedMutant(t.Context(), identity(t, filepath.Join("test", "a.py"), o), o, status); !errors.As(err, &stale) {
+	o, status = opt("test/a.py", python)
+	if _, err := mutants.IdentifiedMutant(t.Context(), identity(t, "test/a.py", o), o, status); !errors.As(err, &stale) {
 		t.Fatalf("a folder named test within the root: %v", err)
 	}
 
