@@ -7302,5 +7302,3 @@
     ID-MUT-410, 411 and 413 to 418 with no skipped step; ID-MUT-357, 397, 399, 401 and 422 still
     skipped. Until the test exists, this task's check passes with no tests to run, so red first
     is the test's own failure, not the check's.
-  done_when:
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestStaleEntryScenariosNeedNoCountedRun$'

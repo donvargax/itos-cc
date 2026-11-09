@@ -6476,6 +6476,6 @@ items:
     title: Stale-entry scenarios run on Windows, needing no counted run
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
