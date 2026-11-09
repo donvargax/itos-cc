@@ -6417,3 +6417,26 @@ items:
       whether it caused this is unconfirmed. Find what creates it first: a fixture or tool running
       git init in the wrong folder would be the real defect. Passing -buildvcs=false would likely
       hide it, untried.
+  - id: mutation-continuation-line-reach
+    title: A site on a later line of a multi-line statement takes its statement coverage
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      From the survey of Uncle Bob tools (2026-11-08): unclebob/mutator a5a0cb8 counts a site as
+      covered when the line its statement starts on is, as a line report marks only that line.
+      itos-cc 0.47.0 fails the other way for Python, reproduced on scratch fixtures: coverage.py
+      LCOV for return (a newline + b) has a DA for the first line only, so markUncovered and
+      LineTests see the second line as unmeasured. So a listed scenario that kills * on a return
+      second line is never run and the mutant reports survived, while + on a one-line return reports
+      killed by it; and + on the second line of a function nothing calls runs and reports survived,
+      not uncovered, though crap gives that function 0%. By reading only, not run: under
+      --fail-uncovered=lines --since, a change only to such a line looks unjudged too. Probed on
+      Python only; TypeScript and Kotlin unchecked. Go statements are spans and unaffected; its one
+      hole of this family is case-line-reach, whose cause and fix differ. Code: domain/run_plan.go
+      markUncovered, counted.go countedUncovered, internal/coverage LineCovered, all keyed on
+      site.Line. Fall back to the statement start only where the site own line is unmeasured,
+      untested reasoning. Behaviour only, no code copied.
+    refs: [unclebob/mutator@a5a0cb8]
