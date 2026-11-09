@@ -6475,7 +6475,7 @@ items:
   - id: T-231
     title: Stale-entry scenarios run on Windows, needing no counted run
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
