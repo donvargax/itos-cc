@@ -64,6 +64,8 @@ func parsedMutationOf(parsed *kong.Context) parsedMutation {
 		p.args = c.Paths
 	case *mutationslice.Except:
 		p.args = c.Site
+	case *mutationslice.Show:
+		p.args = c.Identity
 	}
 	return p
 }
@@ -177,7 +179,7 @@ func TestMutationGroupHelpRoutingAndErrorPrecedence(t *testing.T) {
 		{[]string{"mutation", "run", "--bad", "--help"}, 0, "usage: itos-cc mutation run"},
 		{[]string{"mutation", "run", "--help", "--json"}, 0, "usage: itos-cc mutation run"},
 		{[]string{"--json", "mutation", "rn"}, 81, "Did you mean 'mutation run'?"},
-		{[]string{"mutation", "rn", "--help", "--json"}, 81, "The subcommands of mutation are run, list, check, sample, and except."},
+		{[]string{"mutation", "rn", "--help", "--json"}, 81, "The subcommands of mutation are run, list, check, sample, except, and show."},
 		{[]string{"mutation", "--changed", "run", "--json"}, 80, "before a subcommand"},
 		{[]string{"mutation", "--json"}, 80, "command.missing"},
 		{[]string{"--json", "help", "mutation", "run", "extra"}, 80, "help takes one command"},
@@ -240,8 +242,8 @@ const mutationHelpGolden = "testdata/mutation-help.json"
 var updateHelp = flag.Bool("update-help", false, "rewrite "+mutationHelpGolden+" from the mutation help as it renders now")
 
 // mutationHelpOrder is the golden's key order, which -update-help keeps: the
-// five children by name, the group page last.
-var mutationHelpOrder = []string{"mutation check", "mutation except", "mutation list", "mutation run", "mutation sample", "mutation"}
+// six children by name, the group page last.
+var mutationHelpOrder = []string{"mutation check", "mutation except", "mutation list", "mutation run", "mutation sample", "mutation show", "mutation"}
 
 // mutationHelpRendered renders the group page and every mutation leaf's
 // page, the --workers help's "(default N)" written as @WORKERS@.
@@ -341,9 +343,9 @@ func TestMutationHelpPreservesOriginalBytes(t *testing.T) {
 	if err := json.Unmarshal(golden, &expected); err != nil {
 		t.Fatal(err)
 	}
-	expectedNames := []string{"mutation run", "mutation list", "mutation check", "mutation sample", "mutation except"}
+	expectedNames := []string{"mutation run", "mutation list", "mutation check", "mutation sample", "mutation except", "mutation show"}
 	if len(expected) != len(expectedNames)+1 {
-		t.Fatalf("golden must hold the group and all five children, got %d pages", len(expected))
+		t.Fatalf("golden must hold the group and all six children, got %d pages", len(expected))
 	}
 	var actualNames []string
 	for _, node := range commandNodes(parser)["mutation"].Children {
@@ -394,7 +396,7 @@ func TestMutationHelpPreservesOriginalBytes(t *testing.T) {
 	// The group stays flattened in the top-level page, in original child order.
 	top := cli.Usage(parser.Model)
 	prior := -1
-	for _, name := range []string{"run", "list", "check", "sample", "except"} {
+	for _, name := range []string{"run", "list", "check", "sample", "except", "show"} {
 		node := commandNodes(parser)["mutation"]
 		for _, child := range node.Children {
 			if child.Name != name {

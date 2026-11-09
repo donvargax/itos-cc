@@ -606,6 +606,7 @@ itos-cc mutation sample                                      # in CI: do 20 cach
 itos-cc mutation run --count 20 --since origin/main          # bounded and fresh: 20 committed sites, no cache (Linux and macOS)
 itos-cc mutation run --site src/board.ts:3:13                # one mutant a report named, judged alone and fresh (Linux and macOS)
 itos-cc mutation except src/board.ts:3:13 --reason '…'       # an equivalent mutant: no test can kill it
+itos-cc mutation show '<identity>'                           # where a mutant a report named is and what it changes, running nothing
 ```
 
 A suite that runs the built program, such as end-to-end scenarios that one
@@ -1133,7 +1134,10 @@ the identity copied whole from the survivor's `mutation.survived` problem,
 whose message names it and whose fix spells out that command. Its file is
 read from the project root, its function found by name and hash, so one that
 only moved is still found, and its site by the key the identity ends with;
-the entry is the one the site's except writes. A function that changed since,
+the entry is the one the site's except writes. To judge the survivor first,
+`mutation show '<identity>'` says where it is and what it changes, with its line
+before and after, writing nothing and needing no git, toolchain or snapshot.
+A function that changed since,
 or a file, function or site that is gone, is `exception.identity-stale`, exit
 80, naming why; a fresh snapshot that records the mutant killed or uncovered
 still refuses it:

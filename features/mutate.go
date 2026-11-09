@@ -1,4 +1,4 @@
-// The steps of mutate.feature: mutation list, run, check, sample and except
+// The steps of mutate.feature: mutation list, run, check, sample, except and show
 // over projects the Givens write. Like every step here, they read the
 // binary's output and the files it leaves alone, never its code. Its
 // scenarios gain steps a piece at a time (Unstepped, steps.go); those of

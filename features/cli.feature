@@ -138,6 +138,7 @@ Feature: Command line
         | mutation check --help  | 0, 1, 80, 82, 100 and 130         |
         | mutation sample --help | 0, 1, 80, 82, 100 and 130         |
         | mutation except --help | 0, 1, 80, 100 and 130             |
+        | mutation show --help   | 0, 80, 100 and 130                |
       # serve ends only when stopped, so 0 is not among its codes
 
   Rule: Flags are read by one spec in every command

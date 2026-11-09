@@ -113,51 +113,114 @@ func (e *IdentityStaleError) Error() string {
 // records the mutant killed, timed out, over the limit or uncovered is a
 // *NoSurvivorError, as Survivor's, at the site.
 func IdentifiedSurvivor(ctx context.Context, id Identity, opt CheckOptions, status SourceStatus) (Exception, int, error) {
-	if ctx.Err() != nil {
-		return Exception{}, 0, context.Cause(ctx)
-	}
-	gone := &IdentityStaleError{Why: ExceptionGone}
-	file, err := filepath.Localize(path.Clean(id.File))
+	source, err := identifiedSource(ctx, id, opt, status)
 	if err != nil {
-		return Exception{}, 0, gone
-	}
-	source := filepath.Join(opt.Root, file)
-	if lang.Detect(source) == nil {
-		return Exception{}, 0, gone
-	}
-	if status == nil {
-		return Exception{}, 0, errors.New("mutation source status binding is missing")
-	}
-	kind, failure := status.Kind(ctx, source)
-	var canceled InputCancelled
-	if errors.As(failure, &canceled) {
-		return Exception{}, 0, failure
-	}
-	if failure != nil || kind != SourceNonDirectory {
-		return Exception{}, 0, gone
+		return Exception{}, 0, err
 	}
 	f, err := parseExceptionSource(ctx, source, opt)
 	if err != nil {
 		return Exception{}, 0, err
 	}
 	defer f.Close()
-	unit, err := identifiedUnit(f, id)
+	s, err := IdentifiedSite(f, id)
 	if err != nil {
 		return Exception{}, 0, err
 	}
-	u := f.Units[unit]
-	for _, s := range Sites(f) {
-		if s.Unit != unit || s.Key() != id.Key {
-			continue
-		}
-		if err := recordedSurvivor(ctx, f, source, unit, s, opt); err != nil {
-			return Exception{}, 0, err
-		}
-		return Exception{File: snapshot.Key(opt.Root, source), Function: UnitID(u.Namespace, u.Name), Hash: UnitHash(f, u),
-			LineInFunction: s.Line - u.StartLine + 1, Column: s.Column, Original: s.Original, Replacement: s.Replacement,
-			LineText: LineText(f.Src, s.Line)}, s.Line, nil
+	if err := recordedSurvivor(ctx, f, source, s.Unit, s, opt); err != nil {
+		return Exception{}, 0, err
 	}
-	return Exception{}, 0, gone
+	u := f.Units[s.Unit]
+	return Exception{File: snapshot.Key(opt.Root, source), Function: UnitID(u.Namespace, u.Name), Hash: UnitHash(f, u),
+		LineInFunction: s.Line - u.StartLine + 1, Column: s.Column, Original: s.Original, Replacement: s.Replacement,
+		LineText: LineText(f.Src, s.Line)}, s.Line, nil
+}
+
+// ShownMutant is the mutant an identity names, as the source is now: its
+// function, its site, and the site's line before and after the change, each
+// less the space around it.
+type ShownMutant struct {
+	Function    string
+	Site        Site
+	LineText    string
+	MutatedText string
+}
+
+// IdentifiedMutant is the mutant id names, found as IdentifiedSurvivor finds
+// it, in the source as it is now, with nothing run and no snapshot read
+// (mutation show). A test file holds no mutant, so its identity is gone, as a
+// counted run has it. A file only another system builds is found: nothing
+// here runs its tests.
+func IdentifiedMutant(ctx context.Context, id Identity, opt CheckOptions, status SourceStatus) (ShownMutant, error) {
+	source, err := identifiedSource(ctx, id, opt, status)
+	if err != nil {
+		return ShownMutant{}, err
+	}
+	// The identity's own file, from the project root, as a folder above the
+	// root named test says nothing of it.
+	if lang.Detect(source).IsTest(path.Clean(id.File)) {
+		return ShownMutant{}, &IdentityStaleError{Why: ExceptionGone}
+	}
+	f, err := parseExceptionSource(ctx, source, opt)
+	if err != nil {
+		return ShownMutant{}, err
+	}
+	defer f.Close()
+	s, err := IdentifiedSite(f, id)
+	if err != nil {
+		return ShownMutant{}, err
+	}
+	u := f.Units[s.Unit]
+	return ShownMutant{Function: UnitID(u.Namespace, u.Name), Site: s, LineText: LineText(f.Src, s.Line),
+		MutatedText: LineText(s.Apply(f.Src), s.Line)}, nil
+}
+
+// identifiedSource is the path of the file id names, from opt.Root, once
+// the system can name it there and it is a file of a language. Any other
+// is gone; a status that was cancelled is its failure.
+func identifiedSource(ctx context.Context, id Identity, opt CheckOptions, status SourceStatus) (string, error) {
+	if ctx.Err() != nil {
+		return "", context.Cause(ctx)
+	}
+	gone := &IdentityStaleError{Why: ExceptionGone}
+	file, err := filepath.Localize(path.Clean(id.File))
+	if err != nil {
+		return "", gone
+	}
+	source := filepath.Join(opt.Root, file)
+	if lang.Detect(source) == nil {
+		return "", gone
+	}
+	if status == nil {
+		return "", errors.New("mutation source status binding is missing")
+	}
+	kind, failure := status.Kind(ctx, source)
+	var canceled InputCancelled
+	if errors.As(failure, &canceled) {
+		return "", failure
+	}
+	if failure != nil || kind != SourceNonDirectory {
+		return "", gone
+	}
+	return source, nil
+}
+
+// IdentifiedSite is the site of f that id names: of the unit identifiedUnit
+// finds, the one of its whole key. This is the one way an identity reaches a
+// site, mutation except's, mutation run --site's and mutation show's. An
+// *IdentityStaleError says why there is none. When two units of one name and
+// hash sit on one line their sites have one key, and the first is the site:
+// the two are the same change of the same text.
+func IdentifiedSite(f *lang.File, id Identity) (Site, error) {
+	unit, err := identifiedUnit(f, id)
+	if err != nil {
+		return Site{}, err
+	}
+	for _, s := range Sites(f) {
+		if s.Unit == unit && s.Key() == id.Key {
+			return s, nil
+		}
+	}
+	return Site{}, &IdentityStaleError{Why: ExceptionGone}
 }
 
 // identifiedUnit is the index of f's unit id names: of those of its name,

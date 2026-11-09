@@ -195,9 +195,9 @@ func openNamed(ctx context.Context, plan *FreshPlan, tree selport.Tree, around l
 }
 
 // namedCandidates are the sites of f named names: every site at its
-// position, or the one site of its identity, found as mutation except
-// finds it (identifiedUnit), its function by name and hash, its lines
-// choosing among several. None is an UnmatchedSite saying why.
+// position, or the one site of its identity (IdentifiedSite), its function
+// by name and hash, its lines choosing among several. None is an
+// UnmatchedSite saying why.
 func namedCandidates(f *namedFile, named FreshSite) ([]Site, *UnmatchedSite) {
 	if f.file == nil {
 		why := f.why
@@ -220,15 +220,10 @@ func namedCandidates(f *namedFile, named FreshSite) ([]Site, *UnmatchedSite) {
 		}
 		return found, nil
 	}
-	unit, err := identifiedUnit(f.file, *named.Identity)
+	s, err := IdentifiedSite(f.file, *named.Identity)
 	var stale *IdentityStaleError
 	if errors.As(err, &stale) {
 		return nil, &UnmatchedSite{Why: stale.Why, Hash: stale.Hash}
 	}
-	for _, s := range Sites(f.file) {
-		if s.Unit == unit && s.Key() == named.Identity.Key {
-			return []Site{s}, nil
-		}
-	}
-	return nil, &UnmatchedSite{Why: UnmatchedGone}
+	return []Site{s}, nil
 }

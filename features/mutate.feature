@@ -4629,7 +4629,7 @@ Feature: Mutation testing
   # each scenario fails at its first Then.
   Rule: mutation show says where a mutant is and what it changes, running nothing
 
-    @wip @slice-73 @ID-MUT-406
+    @slice-73 @ID-MUT-406
     Scenario: An identity is shown with no run, no toolchain and nothing written
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And .metrics/mutate holds no snapshot of board/board.go
@@ -4649,7 +4649,7 @@ Feature: Mutation testing
 
     # The third row is the issue's: a comment inside the function keeps its hash and the offset,
     # and moves the line, so reading the offset as bytes finds the wrong one.
-    @wip @slice-73 @ID-MUT-407
+    @slice-73 @ID-MUT-407
     Scenario Outline: The line is where the mutant is now: <change>
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And <change>
@@ -4664,7 +4664,7 @@ Feature: Mutation testing
         | a blank line was added above Count's comment since the report | 6    |
         | a comment was added above Count's return since the report     | 6    |
 
-    @wip @slice-73 @ID-MUT-408
+    @slice-73 @ID-MUT-408
     Scenario Outline: An identity that names no mutant now is refused, naming why (<why>)
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And <change>
@@ -4682,7 +4682,7 @@ Feature: Mutation testing
         | nothing changed                  | board/board_test.go:example.com/fx/board#TestCount@5:9:8eadd2e557f714a7:35:!>  | gone     |
         | itos-cc.yaml excludes "board/**" | board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=         | excluded |
 
-    @wip @slice-73 @ID-MUT-409
+    @slice-73 @ID-MUT-409
     Scenario Outline: A line that names no identity is refused before anything is read: <args>
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       When I run "itos-cc mutation show <args> --json"

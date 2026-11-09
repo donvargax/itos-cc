@@ -69,6 +69,13 @@ type NoSurvivor struct {
 // no stale entry whose reason it would keep.
 type ReasonMissing struct{}
 
+// MutantUnmatched is show's Argument, an identity that names no mutant of
+// the source as it is now: Why is changed, the function's hash now Hash,
+// gone or excluded.
+type MutantUnmatched struct {
+	Argument, Why, Hash string
+}
+
 // StrictCoverageFlag is run's coverage Flag, which reads reports instead of
 // measuring, beside strict coverage of Language, the first strict language
 // of the selection.
@@ -106,6 +113,7 @@ func (SiteExcluded) failure()       {}
 func (NoSurvivor) failure()         {}
 func (IdentityStale) failure()      {}
 func (ReasonMissing) failure()      {}
+func (MutantUnmatched) failure()    {}
 func (StrictCoverageFlag) failure() {}
 func (CountedNoGit) failure()       {}
 func (OutsideRepository) failure()  {}
@@ -121,6 +129,7 @@ func (f SiteExcluded) Error() string    { return f.Path + " is excluded" }
 func (f NoSurvivor) Error() string      { return f.Path + " holds no survivor: " + f.Reason }
 func (f IdentityStale) Error() string   { return f.Identity + " is " + f.Why }
 func (ReasonMissing) Error() string     { return "no --reason" }
+func (f MutantUnmatched) Error() string { return f.Argument + " is " + f.Why }
 func (f StrictCoverageFlag) Error() string {
 	return f.Flag + " beside strict " + f.Language + " coverage"
 }

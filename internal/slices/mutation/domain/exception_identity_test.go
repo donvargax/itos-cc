@@ -12,6 +12,7 @@ import (
 	selected "github.com/donvargax/itos-cc/internal/selection"
 	seltest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 // No public scenario reaches an original or a replacement holding > or :,
@@ -240,5 +241,102 @@ func TestDomainIdentifiedSurvivorKeepsItsFailures(t *testing.T) {
 	unread.Store = nil
 	if _, _, err := mutants.IdentifiedSurvivor(t.Context(), id, unread, f.edits); err == nil || errors.As(err, &stale) || errors.As(err, &none) {
 		t.Fatalf("no snapshots: %v", err)
+	}
+}
+
+// The scenarios' fixture is a Go function with a `<`: these hold a deleted
+// operator's lines, a file only another system builds, a file under a folder
+// named test above the root, and the failures no scenario reaches. Options
+// holding no snapshot store, no toolchain and no fingerprints show that none
+// is asked.
+func TestDomainIdentifiedMutantIsTheSiteAndItsLinesWithNothingRun(t *testing.T) {
+	t.Parallel()
+	const source = "package board\n\n// Pos says x is not negative.\nfunc Pos(x bool) bool {\n\t// so\n\treturn !x\n}\n"
+	root := filepath.Join(t.TempDir(), "test", "project")
+	opt := func(rel, text string) (mutants.CheckOptions, *porttest.SourceEdits) {
+		path := filepath.Join(root, rel)
+		return mutants.CheckOptions{Root: root, Tree: seltest.TreeOf(root, map[string]string{rel: text}, nil),
+			Surroundings: &porttest.Inputs{Dir: root, Files: map[string]string{path: text}}}, &porttest.SourceEdits{Files: map[string]string{path: text}}
+	}
+	identity := func(t *testing.T, rel string, o mutants.CheckOptions) mutants.Identity {
+		t.Helper()
+		parsed, err := selected.Parse(t.Context(), o.Tree, o.Surroundings, filepath.Join(root, rel))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer parsed.Close()
+		sites := mutants.Sites(parsed)
+		if len(sites) == 0 {
+			t.Fatalf("%s has no site", rel)
+		}
+		u := parsed.Units[sites[0].Unit]
+		text := fmt.Sprintf("%s:%s@%d:%d:%s:%s", filepath.ToSlash(rel), mutants.UnitID(u.Namespace, u.Name), u.StartLine, u.EndLine, mutants.UnitHash(parsed, u), sites[0].Key())
+		id, ok := mutants.ParseIdentity(text)
+		if !ok {
+			t.Fatalf("%q is no identity", text)
+		}
+		return id
+	}
+	for _, rel := range []string{"board.go", "board_plan9.go"} {
+		o, status := opt(rel, source)
+		got, err := mutants.IdentifiedMutant(t.Context(), identity(t, rel, o), o, status)
+		if err != nil {
+			t.Fatalf("%s: %v", rel, err)
+		}
+		if got.Function != "board#Pos" || got.Site.Line != 6 || got.Site.Column != 9 || got.Site.Original != "!" || got.Site.Replacement != "" ||
+			got.LineText != "return !x" || got.MutatedText != "return x" {
+			t.Fatalf("%s: %+v", rel, got)
+		}
+	}
+	// A test file holds no mutant, though it parses and has the site.
+	var stale *mutants.IdentityStaleError
+	o, status := opt("board_test.go", source)
+	id := identity(t, "board_test.go", o)
+	if _, err := mutants.IdentifiedMutant(t.Context(), id, o, status); !errors.As(err, &stale) || stale.Why != mutants.ExceptionGone {
+		t.Fatalf("test file: %v", err)
+	}
+	// An unclean file is judged as it reads once clean.
+	unclean := id
+	unclean.File = "sub/../board_test.go"
+	if _, err := mutants.IdentifiedMutant(t.Context(), unclean, o, status); !errors.As(err, &stale) {
+		t.Fatalf("unclean test file: %v", err)
+	}
+	// A folder named test within the root makes a Python file a test, and one
+	// above the root does not.
+	const python = "def pos(x):\n    return not x\n"
+	o, status = opt("a.py", python)
+	if _, err := mutants.IdentifiedMutant(t.Context(), identity(t, "a.py", o), o, status); err != nil {
+		t.Fatalf("a folder named test above the root: %v", err)
+	}
+	o, status = opt(filepath.Join("test", "a.py"), python)
+	if _, err := mutants.IdentifiedMutant(t.Context(), identity(t, filepath.Join("test", "a.py"), o), o, status); !errors.As(err, &stale) {
+		t.Fatalf("a folder named test within the root: %v", err)
+	}
+
+	o, status = opt("board.go", source)
+	id = identity(t, "board.go", o)
+	cause := errors.New("show stopped")
+	ctx, cancel := context.WithCancelCause(t.Context())
+	cancel(cause)
+	if _, err := mutants.IdentifiedMutant(ctx, id, o, status); !errors.Is(err, cause) {
+		t.Fatalf("cancelled: %v", err)
+	}
+	if _, err := mutants.IdentifiedMutant(t.Context(), id, o, nil); err == nil || !strings.Contains(err.Error(), "status binding") {
+		t.Fatalf("no status: %v", err)
+	}
+	unparsed := o
+	unparsed.Tree = nil
+	if _, err := mutants.IdentifiedMutant(t.Context(), id, unparsed, status); err == nil || errors.As(err, &stale) {
+		t.Fatalf("no tree: %v", err)
+	}
+	other := id
+	other.Key = "1:!>"
+	if _, err := mutants.IdentifiedMutant(t.Context(), other, o, status); !errors.As(err, &stale) || stale.Why != mutants.ExceptionGone {
+		t.Fatalf("no site of the key: %v", err)
+	}
+	hashed := id
+	hashed.Hash = "00"
+	if _, err := mutants.IdentifiedMutant(t.Context(), hashed, o, status); !errors.As(err, &stale) || stale.Why != mutants.ExceptionChanged || stale.Hash != id.Hash {
+		t.Fatalf("another hash: %v", err)
 	}
 }

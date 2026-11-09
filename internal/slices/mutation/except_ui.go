@@ -146,10 +146,9 @@ func (c Except) excepted(p *Presentation, found ExceptFound) exceptResult {
 // run reports it, with reason; args.invalid when it is neither.
 func exceptQuery(arg string, reason *string) (ExceptQuery, *cli.Problem) {
 	if mutants.IsIdentity(arg) {
-		id, ok := mutants.ParseIdentity(arg)
-		if !ok {
-			return ExceptQuery{}, cli.NewProblem(cli.CodeUsage, "args.invalid", fmt.Sprintf("%q is not a mutant's identity, <file>:<namespace#name>@<start>:<end>:<hash>:<offset>:<original>><replacement>", arg),
-				"Copy the identity whole from the report of mutation run --count, such as its mutation.survived problem.").With("argument", arg)
+		id, invalid := identityOf(arg)
+		if invalid != nil {
+			return ExceptQuery{}, invalid
 		}
 		return ExceptQuery{Identity: &id, Reason: reason}, nil
 	}
@@ -159,6 +158,17 @@ func exceptQuery(arg string, reason *string) (ExceptQuery, *cli.Problem) {
 			"Name a survivor as mutation run lists it, such as src/board.ts:7:19.").With("argument", arg)
 	}
 	return ExceptQuery{Path: path, Line: line, Column: column, Reason: reason}, nil
+}
+
+// identityOf is arg read as a mutant's identity; args.invalid when it is
+// none.
+func identityOf(arg string) (mutants.Identity, *cli.Problem) {
+	id, ok := mutants.ParseIdentity(arg)
+	if !ok {
+		return mutants.Identity{}, cli.NewProblem(cli.CodeUsage, "args.invalid", fmt.Sprintf("%q is not a mutant's identity, <file>:<namespace#name>@<start>:<end>:<hash>:<offset>:<original>><replacement>", arg),
+			"Copy the identity whole from the report of mutation run --count, such as its mutation.survived problem.").With("argument", arg)
+	}
+	return id, nil
 }
 
 // renew is mutation except --renew: each entry of itos-cc.yaml that no

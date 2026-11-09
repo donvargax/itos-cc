@@ -76,6 +76,8 @@ func failureError(failure Failure, rel func(string) string) error {
 		return identityStale(failure, named(failure.File, failure.Path, rel))
 	case ReasonMissing:
 		return reasonMissing()
+	case MutantUnmatched:
+		return mutantUnmatched(failure)
 	case StrictCoverageFlag:
 		return flagConflict(failure.Flag, failure.Flag+" is not admitted with strict "+LanguageName(failure.Language)+" coverage; use a fresh built-in or listed measurement")
 	case CountedNoGit:
@@ -122,6 +124,26 @@ func identityStale(failure IdentityStale, file string) *cli.Problem {
 func reasonMissing() *cli.Problem {
 	return cli.NewProblem(cli.CodeUsage, "flags.value-missing", "--reason is required: an exception says why no test can kill its mutant",
 		"Give it, such as --reason 'the loop only counts up'.").With("flag", "--reason")
+}
+
+// mutantUnmatched is site.unmatched in mutation show's words: nothing is
+// judged or committed there, as --site's say, and no exception is involved,
+// as exception.identity-stale's say.
+func mutantUnmatched(failure MutantUnmatched) *cli.Problem {
+	why, fix := "its file, its function or its site is gone", "Name a mutant from a report of the code as it is now, such as the code proof of the next push."
+	switch failure.Why {
+	case mutants.UnmatchedChanged:
+		why = "its function changed since, its hash now " + failure.Hash
+	case mutants.UnmatchedExcluded:
+		why = "its source is one the exclude of itos-cc.yaml leaves out"
+		fix = "Name a mutant of a source mutation run judges, or take its file out of exclude in itos-cc.yaml first."
+	}
+	p := cli.NewProblem(cli.CodeUsage, "site.unmatched", fmt.Sprintf("%s names no mutant of the code as it is now: %s", failure.Argument, why), fix).
+		With("argument", failure.Argument).With("why", failure.Why)
+	if failure.Why == mutants.UnmatchedChanged {
+		p = p.With("hash", failure.Hash)
+	}
+	return p
 }
 
 // flagConflict is flag given beside another it cannot be, as message says.

@@ -294,10 +294,10 @@ a `context.Context` first (decision 30); pure logic takes none.
   lifetime failures and partial trial results. Its depguard rule permits only the served
   domain, the slice's `settings` adapter and the actual project/coverage/language/selection
   libraries it wraps.
-- `internal/slices/mutation` declares the whole mutation group and its five child command
+- `internal/slices/mutation` declares the whole mutation group and its six child command
   structs and help contracts (T-96), the sixth slice under `internal/slices` and the first that
   is a group (T-157); it was `internal/mutation`. `Command` declares the group, its `New` a fresh
-  `*CLI` whose fields kong reads the five children from, and `Ports` names what
+  `*CLI` whose fields kong reads the six children from, and `Ports` names what
   `NewHandler(ctx, p)` builds the handler over: `SelectionTree`, `LangSurroundings` and
   `SnapshotStore`, as the other slices declare them, a method for each mutation port the handler
   holds, named for the domain's port (`MutationSettings`, `MutationSnapshotReader`,
@@ -369,7 +369,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   missing binding, stays apart. `crap`, `dry` and `units` read only the selection
   settings, through selection's `SettingsReader`, which `settings.Reader` implements over
   the same read and codec (`ReadSelection`), so every command classifies the file alike. The
-  unit fake owns only semantic values. The memory driver runs all five children over its
+  unit fake owns only semantic values. The memory driver runs all six children over its
   fakes (T-125), binding a counted run as the disk adapters bind it: porttest's `Fresh`
   over the fake repository, the same `Workers` for its trials, the fake repository's
   root, a context of the run's own that installs no signal handling, and the configured

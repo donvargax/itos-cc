@@ -1,6 +1,6 @@
 // Package mutation is the mutation command group, a slice named for it,
-// the first that is a group. Kong owns parsing; run, list, check, sample and
-// except own their application/UI here. Their handler reads settings
+// the first that is a group. Kong owns parsing; run, list, check, sample,
+// except and show own their application/UI here. Their handler reads settings
 // through mutants' SettingsReader at each original admission point and
 // returns refusals as the sealed Failure set, which Run's classifier words
 // with the exit codes cmd gave them.
@@ -14,20 +14,21 @@ import "github.com/donvargax/itos-cc/internal/cli"
 
 // Command is the mutation group as cmd assembles it: its name, the line the
 // top-level help lists it by, and a fresh command line for each parser,
-// whose five children kong reads from CLI's fields.
+// whose six children kong reads from CLI's fields.
 var Command = cli.Declaration{
 	Name: "mutation",
 	Help: "mutation testing: do the tests notice small changes?",
 	New:  func() any { return &CLI{} },
 }
 
-// CLI is one invocation's mutation group and its five child commands.
+// CLI is one invocation's mutation group and its six child commands.
 type CLI struct {
 	Run    Run    `cmd:"" help:"mutate each function and run its tests: are the mutants killed?"`
 	List   List   `cmd:"" help:"list the mutation sites without running tests"`
 	Check  Check  `cmd:"" help:"check the cached mutation results without running tests"`
 	Sample Sample `cmd:"" help:"run a sample of the cached mutants again: do their outcomes hold?"`
 	Except Except `cmd:"" help:"except an equivalent mutant, a survivor no test can kill, with a reason"`
+	Show   Show   `cmd:"" help:"print where a mutant is and what it changes, running nothing"`
 }
 
 // Contract is the group's existing description and examples.
@@ -39,10 +40,12 @@ the tests; mutation list lists those changes, the mutation sites, without
 running any test; mutation check says whether the results mutation run
 cached are there, fresh, and passing, without running any test either;
 mutation sample runs a few of the cached mutants again and fails when an
-outcome differs from the one recorded; and mutation except excepts an
+outcome differs from the one recorded; mutation except excepts an
 equivalent mutant, a survivor no test can kill, in itos-cc.yaml, with the
-reason no test can. The sources itos-cc.yaml's exclude names, globs from
-the project root such as **/porttest/**, are none of theirs, however they
+reason no test can; and mutation show says where the mutant an identity
+names is and what it changes, without running any test. The sources
+itos-cc.yaml's exclude names, globs from the project root such as
+**/porttest/**, are none of theirs, however they
 are chosen; a test never is.`, Examples: []string{
 		"itos-cc mutation run --changed",
 		"itos-cc mutation list src/billing/invoice.ts",
@@ -126,3 +129,14 @@ type Except struct {
 func (Except) Synopsis() string {
 	return "<file>:<line>:<column>|<identity> --reason TEXT [options] | --renew [options] | --prune [options] | --rehash [options]"
 }
+
+// Show says where the mutant an identity names is. Identity holds what the
+// line gave, so the slice words a missing or a second one itself, as Except
+// does its Site.
+type Show struct {
+	JSON     bool     `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
+	Identity []string `arg:"" optional:"" name:"identity" help:"the mutant's identity as mutation run --count reports it"`
+}
+
+// Synopsis names the one identity Show takes.
+func (Show) Synopsis() string { return "<identity> [options]" }
