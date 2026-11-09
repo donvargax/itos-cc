@@ -6441,12 +6441,9 @@ items:
     title: mutation except re-points an entry stale only by its function's hash, keeping its reason
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Issue #87. SameSite ignores the hash, so an entry whose function changed only in its hash
-      skips Repointed: no --reason is refused and a given one overwrites the reviewed text.
     refs: ["#87"]
   - id: slice-78
     title: mutation.exception-stale names the identity that re-points the entry with no mutation run
