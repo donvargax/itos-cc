@@ -6447,8 +6447,8 @@ items:
   - id: slice-78
     title: mutation.exception-stale names the identity that re-points the entry with no mutation run
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [slice-76]
     kind: slice
     why: >
