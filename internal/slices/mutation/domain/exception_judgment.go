@@ -73,12 +73,15 @@ func Elsewhere(ctx context.Context, exceptions []Exception, sources []string, ju
 }
 
 // Repointed is the index of the entry of entries that excepting survivor,
-// the exception Survivor gives for a site of the file at path, re-points:
-// the one entry that names survivor's file, its function by namespace#name,
-// and its original and replacement, and that no longer holds for the file
-// as it is now (Locate), its function changed or its site moved. An entry
-// that holds, as one stale as killed does, and one whose file moved name no
-// such entry. -1 when there is none, or more than one.
+// the exception Survivor gives for a site of the file at path, re-points. Of
+// the entries that name survivor's file, its function by namespace#name, and
+// its original and replacement, one at survivor's own place (SameSite) settles
+// it: when it holds for the file as it is now (Locate) nothing is re-pointed,
+// and when it no longer does, its function's hash moved, it is the one
+// re-pointed, ahead of any other. With none there, it is the one such entry
+// that no longer holds, its function changed or its site moved. An entry that
+// holds, as one stale as killed does, and one whose file moved name no such
+// entry. -1 when there is none, or more than one.
 func Repointed(ctx context.Context, entries []Exception, survivor Exception, path string, opt CheckOptions) (int, error) {
 	if ctx.Err() != nil {
 		return -1, context.Cause(ctx)
@@ -98,17 +101,25 @@ func Repointed(ctx context.Context, entries []Exception, survivor Exception, pat
 	}
 	defer f.Close()
 	sites := Sites(f)
-	found := -1
+	var stale, atPlace []int
 	for _, i := range candidates {
-		if _, why, _ := Locate(entries[i], f, sites); why == "" {
-			continue
-		}
-		if found >= 0 {
+		_, why, _ := Locate(entries[i], f, sites)
+		switch same := entries[i].SameSite(survivor); {
+		case why == "" && same:
 			return -1, nil
+		case why != "" && same:
+			atPlace = append(atPlace, i)
+		case why != "":
+			stale = append(stale, i)
 		}
-		found = i
 	}
-	return found, nil
+	if len(atPlace) > 0 {
+		return atPlace[0], nil
+	}
+	if len(stale) == 1 {
+		return stale[0], nil
+	}
+	return -1, nil
 }
 
 // NoSurvivorError is a site Survivor cannot except: Reason says why, and

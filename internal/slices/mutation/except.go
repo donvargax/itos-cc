@@ -65,11 +65,10 @@ var errNoExceptions = errors.New("mutation Exceptions binding is missing")
 // tests that reach each source, then the domain's survivor at the site, or
 // the one an identity names, its file from the settings' root, running
 // nothing, whose entry, with the reason, goes through the Exceptions writer
-// made for the settings' root. When no entry is for the site and one stale
-// entry names its file, function and change (Repointed), the survivor's
-// entry replaces it, keeping its reason when none is given. Given no
-// reason and re-pointing none, every refusal is ReasonMissing. A refusal is
-// a Failure the UI words.
+// made for the settings' root. When a stale entry is the one to re-point
+// (Repointed), the survivor's entry replaces it, keeping its reason when none
+// is given. Given no reason and re-pointing none, every refusal is
+// ReasonMissing. A refusal is a Failure the UI words.
 func (h Handler) Except(ctx context.Context, q ExceptQuery) (ExceptFound, error) {
 	root, cfg, err := h.settings(ctx)
 	if err != nil {
@@ -104,11 +103,9 @@ func (h Handler) Except(ctx context.Context, q ExceptQuery) (ExceptFound, error)
 	if err != nil {
 		return ExceptFound{}, err
 	}
-	stale := -1
-	if !slices.ContainsFunc(cfg.Exceptions, e.SameSite) {
-		if stale, err = mutants.Repointed(ctx, cfg.Exceptions, e, path, opt); err != nil {
-			return ExceptFound{}, err
-		}
+	stale, err := mutants.Repointed(ctx, cfg.Exceptions, e, path, opt)
+	if err != nil {
+		return ExceptFound{}, err
 	}
 	switch {
 	case q.Reason != nil:

@@ -284,7 +284,9 @@ func TestDomainElsewhereUsesLexicalRootsAndLazyParse(t *testing.T) {
 
 // slice-22: excepting a survivor re-points the one stale entry of its
 // file, function and change; an entry that holds, another function's, and
-// one of several are not re-pointed.
+// one of several are not re-pointed. slice-76: an entry at the survivor's own
+// place settles it: holding, nothing is re-pointed, and stale, by its hash
+// alone, it is the one, ahead of any other.
 func TestDomainRepointedIsTheOneStaleEntryOfTheSurvivorsChange(t *testing.T) {
 	f, site := survivingFixture(t)
 	opt := exceptionOptions(f)
@@ -298,6 +300,10 @@ func TestDomainRepointedIsTheOneStaleEntryOfTheSurvivorsChange(t *testing.T) {
 	other.Column++
 	elsewhere := moved
 	elsewhere.Function = "other#Function"
+	rehashed := survivor
+	rehashed.Hash, rehashed.Reason = "old hash", "kept"
+	again := rehashed
+	again.Reason = "kept too"
 	for _, c := range []struct {
 		name    string
 		entries []mutants.Exception
@@ -306,8 +312,13 @@ func TestDomainRepointedIsTheOneStaleEntryOfTheSurvivorsChange(t *testing.T) {
 		{"none", nil, -1},
 		{"one that holds", []mutants.Exception{survivor}, -1},
 		{"another function's", []mutants.Exception{elsewhere}, -1},
-		{"the one stale", []mutants.Exception{elsewhere, survivor, moved}, 2},
+		{"the one stale", []mutants.Exception{elsewhere, moved}, 1},
 		{"one of two stale", []mutants.Exception{moved, other}, -1},
+		{"one that holds at the place, a stale one after it", []mutants.Exception{survivor, moved}, -1},
+		{"one that holds at the place, a stale one before it", []mutants.Exception{moved, survivor}, -1},
+		{"stale by its hash at the place", []mutants.Exception{rehashed}, 0},
+		{"stale at the place, ahead of two others", []mutants.Exception{moved, other, rehashed}, 2},
+		{"the first of two stale at the place", []mutants.Exception{elsewhere, rehashed, again}, 1},
 	} {
 		got, err := mutants.Repointed(t.Context(), c.entries, survivor, f.path, opt)
 		if err != nil || got != c.want {

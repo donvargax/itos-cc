@@ -4433,8 +4433,10 @@ Feature: Mutation testing
     # - A given --reason still replaces the reason, on purpose.
     # A signature change moves the hash and the site's offset, and leaves its
     # line_in_function, column and line text. Before: ID-MUT-410, 411 and 412
-    # are flags.value-missing, failing at their first Then.
-    @wip @slice-76 @ID-MUT-410
+    # are flags.value-missing, the entry untouched: 410 and 411 fail at the Then
+    # naming Count's current hash, their one entry being there already, and 412
+    # at its first Then.
+    @slice-76 @ID-MUT-410
     Scenario: An identity re-points an entry stale only by its function's hash, keeping its reason
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
@@ -4448,7 +4450,7 @@ Feature: Mutation testing
       And run again with no --reason, the entry holding now, the command is "flags.value-missing", exit 80, leaving itos-cc.yaml byte for byte as it was
       But given "--reason 'reworded'" while the entry is stale, it is re-pointed the same way, its reason "reworded"
 
-    @wip @slice-76 @ID-MUT-411
+    @slice-76 @ID-MUT-411
     Scenario: A site re-points an entry stale only by its function's hash, keeping its reason
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
@@ -4459,7 +4461,7 @@ Feature: Mutation testing
       And the JSON says "replaced": true
       And the exit code is 0
 
-    @wip @slice-76 @ID-MUT-412
+    @slice-76 @ID-MUT-412
     Scenario: The entry at the site's place is the one re-pointed, beside another stale entry of its change
       Given a committed Go module whose "example.com/fx/board#Count" holds two `<` → `<=` sites on two lines, each surviving its test
       And itos-cc.yaml excepts both, the first with reason "first reviewed", the second with reason "second reviewed"

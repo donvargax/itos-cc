@@ -536,14 +536,16 @@ is `args.unexpected`, and with `--reason` `flags.conflict`, exit 80.
 function, by `namespace#name`, still has a site of its change, and `gone`
 when the function or every such site is gone, as `--renew` does.
 
-`mutation except <file>:<line>:<column>` re-points the one stale entry that
-names the site's file, its function by `namespace#name`, and its `original`
-and `replacement`, when no entry is for the site itself: the entry is
-replaced, `"replaced": true`, and keeps its `reason` unless `--reason`
-gives another. Without `--reason` and nothing to re-point, it is
+`mutation except <file>:<line>:<column>` and `mutation except <identity>`
+re-point the one stale entry that names the site's file, its function by
+`namespace#name`, and its `original` and `replacement`: the entry is replaced,
+`"replaced": true`, and keeps its `reason` unless `--reason` gives another. An
+entry at the site's place settles which: when it holds nothing is re-pointed,
+and when it is stale, by its function's hash, it is the one, the others left
+as they are. Without `--reason` and nothing to re-point, it is
 `flags.value-missing`, exit 80. An entry that holds, one stale as `killed`,
-and one whose file moved are never re-pointed; with several, the site is
-excepted as a new entry.
+and one whose file moved are never re-pointed; with several and none at the
+site's place, the site is excepted as a new entry.
 
 `mutation except <identity>` takes the identity a counted run reports for a
 survivor, `<file>:<namespace#name>@<start>:<end>:<hash>:<offset>:<original>><replacement>`,
