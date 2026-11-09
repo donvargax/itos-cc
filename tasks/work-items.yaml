@@ -6276,3 +6276,15 @@ items:
       command, so itos-cc likely cannot build once for them; the design choice is asked as a
       question.
     refs: ["#85"]
+  - id: covdata-stderr-in-error
+    title: A failed covdata conversion says what covdata said
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #84: count.preparation-failed ends "execute .../covdata exited 1". The conversion sends
+      stderr to the run log (internal/covrun/supervised.go), yet the message a proof reader sees
+      holds none of it. Check where the log goes under --json before specifying.
+    refs: ["#84"]
