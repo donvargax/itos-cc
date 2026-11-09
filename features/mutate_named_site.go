@@ -27,6 +27,9 @@ const (
 	siteOverTest = "\nfunc TestOver(t *testing.T) {\n\tif !Over(11) || Over(3) {\n\t\tt.Fatal(\"Over\")\n\t}\n}\n"
 	// siteIdle is a test of the board package that calls nothing.
 	siteIdle = "package board\n\nimport \"testing\"\n\nfunc TestNothing(t *testing.T) {}\n"
+	// siteGarbageTest writes what go tool covdata cannot read where
+	// GOCOVERDIR names, as a process a test starts writes its data there.
+	siteGarbageTest = "package board\n\nimport (\n\t\"os\"\n\t\"path/filepath\"\n\t\"testing\"\n)\n\nfunc TestGarbage(t *testing.T) {\n\tdir := os.Getenv(\"GOCOVERDIR\")\n\tif dir == \"\" {\n\t\treturn\n\t}\n\tif err := os.WriteFile(filepath.Join(dir, \"covmeta.T81-invalid\"), []byte(\"T81 invalid Go coverage metadata\"), 0o600); err != nil {\n\t\tt.Fatal(err)\n\t}\n}\n"
 	// siteCountMain is a program the listed test builds, printing whether
 	// its argument's length is under five.
 	siteCountMain = "package main\n\nimport (\n\t\"fmt\"\n\t\"os\"\n\n\t\"example.com/fx/board\"\n)\n\nfunc main() {\n\tfmt.Println(board.Count(len(os.Args[1])))\n}\n"
@@ -144,6 +147,9 @@ func (i *identityException) namedSiteSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the selected site's stages are "own" alone, survived$`, n.ownStageAlone)
 	sc.Step(`^no listed test or listed coverage command ran$`, n.noListed)
 	sc.Step(`^"own_tests" is true$`, n.ownTests)
+	sc.Step(`^a committed test of board writes a covmeta\.T81-invalid where GOCOVERDIR names$`, func() error {
+		return n.commit(map[string]string{"board/garbage_test.go": siteGarbageTest}, "write garbage coverage data")
+	})
 }
 
 // counted skips the scenario where itos-cc makes no counted run: a --site

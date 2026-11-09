@@ -3,6 +3,7 @@ package features
 import (
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/cucumber/godog"
@@ -19,6 +20,77 @@ func (q *countedMutation) preparationSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^no mutation trial starts after failed preparation$`, q.noFailedPreparationTrial)
 	sc.Step(`^no preexisting local measurement or per-scenario coverage map is required for successful preparation$`, q.freshPreparation)
 	sc.Step(`^raw or existing coverage overrides cannot silently bypass required fresh evidence or listed tests$`, q.noCoverageBypass)
+	sc.Step(`^the listed tests' coverage data is a covmeta\.T81-invalid that go tool covdata cannot read$`, func() error { return q.listedMode("bad-metadata") })
+	sc.Step(`^the problem is "([^"]*)", at stage "([^"]*)", and its message names "([^"]*)"$`, q.problemAtStageNames)
+	sc.Step(`^the stage "([^"]*)" failed with an error naming "([^"]*)"$`, q.stageFailedNaming)
+	sc.Step(`^without --json, the line on stderr that starts "([^"]*)" names "([^"]*)"$`, q.plainLineNames)
+	sc.Step(`^stderr still has the converter's own line naming "([^"]*)"$`, q.stderrNames)
+}
+
+// problemAtStageNames holds the last --json run to one problem, of that
+// rule and stage, whose message names want.
+func (q *countedMutation) problemAtStageNames(rule, stage, want string) error {
+	w := q.e.m.w
+	obj, report, err := w.lastObject()
+	if err != nil {
+		return err
+	}
+	problems := checkProblems(obj)
+	if len(problems) != 1 || problems[0]["rule"] != rule || problems[0]["stage"] != stage || !strings.Contains(fmt.Sprint(problems[0]["message"]), want) {
+		return fmt.Errorf("problems %v, want one %s at %s naming %q\n%s", problems, rule, stage, want, report)
+	}
+	return nil
+}
+
+// stageFailedNaming holds the last --json run's stage to failed, with an
+// error naming want.
+func (q *countedMutation) stageFailedNaming(name, want string) error {
+	obj, report, err := q.e.m.w.lastObject()
+	if err != nil {
+		return err
+	}
+	for _, stage := range objectList(obj, "stages") {
+		if stage["name"] == name {
+			if stage["state"] != "failed" || !strings.Contains(fmt.Sprint(stage["error"]), want) {
+				return fmt.Errorf("stage %v, want failed with an error naming %q\n%s", stage, want, report)
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("no stage %q\n%s", name, report)
+}
+
+// plainLineNames runs the last command again without --json, which must
+// exit as it did, and holds its stderr's line starting prefix to name want.
+func (q *countedMutation) plainLineNames(prefix, want string) error {
+	w := q.e.m.w
+	args := slices.DeleteFunc(slices.Clone(w.last.args), func(arg string) bool { return arg == "--json" })
+	code, out, errOut, err := w.capture(w.last.dir, w.last.env, args...)
+	if err != nil {
+		return err
+	}
+	if code != w.exit {
+		return fmt.Errorf("without --json itos-cc exited %d, not %d as with it\n%s\n--- stdout\n%s--- stderr\n%s", code, w.exit, w.report(), out, errOut)
+	}
+	for line := range strings.Lines(errOut) {
+		if strings.HasPrefix(line, prefix) {
+			if !strings.Contains(line, want) {
+				return fmt.Errorf("the line %q does not name %q", line, want)
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("no stderr line starts %q\n--- stderr\n%s", prefix, errOut)
+}
+
+// stderrNames holds the last run's stderr to a line naming want. A --json
+// run prints no problem line there, so that line is the converter's own.
+func (q *countedMutation) stderrNames(want string) error {
+	w := q.e.m.w
+	if !slices.Contains(w.last.args, "--json") || !strings.Contains(w.stderr, want) {
+		return fmt.Errorf("want a --json run whose stderr names %q\n%s", want, w.report())
+	}
+	return nil
 }
 func (q *countedMutation) preparationFailures() error {
 	for _, mode := range []string{"list-fail", "list-malformed", "coverage-fail", "listed-coverage-fail", "bad-metadata"} {
