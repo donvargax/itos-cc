@@ -4550,6 +4550,93 @@ Feature: Mutation testing
       Then its standard error names the survivor `<` → `<=` at board/board.go:5:11 with its identity "board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><="
       And with --json, the "mutation.survived" problem's fix names "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason"
 
+  # slice-73 (issue #82): an identity names a function and an offset taken with comments
+  # left out, so reading it as bytes from the function's start lands on the wrong line, and only
+  # mutation except, which writes, or mutation run --site, which runs tests, said where it is.
+  # Decisions:
+  # - mutation show <identity> resolves it as except does, through the one resolver except and
+  #   --site share: the working tree, the file from the project root, the function by name and
+  #   hash, its lines choosing among several, the site by its whole key. No position form:
+  #   mutation list prints those.
+  # - It runs nothing and writes nothing, needing no git and no toolchain, like except --rehash.
+  # - Refusals reuse site.unmatched, not exception.identity-stale, as no exception is involved:
+  #   why changed with hash, gone, excluded; an identity of a test file is gone, as --site has it.
+  #   A file only another system builds is shown: refusing it is for what must run its tests.
+  # - The plain line names the site as <file> line <line> column <column> (docs/CLI.md).
+  # Before the slice "mutation show" is command.unknown, exit 81, printing nothing on stdout, so
+  # each scenario fails at its first Then.
+  Rule: mutation show says where a mutant is and what it changes, running nothing
+
+    @wip @slice-73 @ID-MUT-406
+    Scenario: An identity is shown with no run, no toolchain and nothing written
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And .metrics/mutate holds no snapshot of board/board.go
+      When I run "itos-cc mutation show 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><='" with no Go toolchain on the PATH
+      Then its standard output says "mutant `<` → `<=` in example.com/fx/board#Count, board/board.go line 5 column 11"
+      And its standard output says "before: return x < 5"
+      And its standard output says "after:  return x <= 5"
+      And no stdout line starts with a path or holds "board/board.go:5:11"
+      And the exit code is 0
+      And no test or coverage command ran, and .metrics/mutate was not written
+      And neither .metrics/mutate nor board/board.go was written
+      And itos-cc.yaml was not written
+      And with --json, "mutant" is exactly:
+        """
+        {"identity":"board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=","file":"board/board.go","line":5,"column":11,"function":"example.com/fx/board#Count","original":"<","replacement":"<=","line_text":"return x < 5","mutated_text":"return x <= 5"}
+        """
+
+    # The third row is the issue's: a comment inside the function keeps its hash and the offset,
+    # and moves the line, so reading the offset as bytes finds the wrong one.
+    @wip @slice-73 @ID-MUT-407
+    Scenario Outline: The line is where the mutant is now: <change>
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And <change>
+      When I run "itos-cc mutation show 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><='"
+      Then its standard output says "mutant `<` → `<=` in example.com/fx/board#Count, board/board.go line <line> column 11"
+      And its standard output says "before: return x < 5"
+      And the exit code is 0
+
+      Examples:
+        | change                                                | line |
+        | nothing changed                                       | 5    |
+        | a blank line was added above Count's comment since the report | 6    |
+        | a comment was added above Count's return since the report     | 6    |
+
+    @wip @slice-73 @ID-MUT-408
+    Scenario Outline: An identity that names no mutant now is refused, naming why (<why>)
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And <change>
+      When I run "itos-cc mutation show '<identity>' --json"
+      Then the problem is "site.unmatched", its argument the identity and its why "<why>"
+      And the exit code is 80
+      And no test or coverage command ran, and .metrics/mutate was not written
+
+      Examples:
+        | change                           | identity                                                                       | why      |
+        | Count's "x < 5" became "x < 6"   | board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=         | changed  |
+        | Count was renamed Below          | board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=         | gone     |
+        | nothing changed                  | board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:36:<><=         | gone     |
+        | nothing changed                  | board/gone.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=          | gone     |
+        | nothing changed                  | board/board_test.go:example.com/fx/board#TestCount@5:9:8eadd2e557f714a7:35:!>  | gone     |
+        | itos-cc.yaml excludes "board/**" | board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=         | excluded |
+
+    @wip @slice-73 @ID-MUT-409
+    Scenario Outline: A line that names no identity is refused before anything is read: <args>
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      When I run "itos-cc mutation show <args> --json"
+      Then the problem is "<rule>"
+      And the exit code is 80
+      And no test or coverage command ran, and .metrics/mutate was not written
+
+      Examples:
+        | args                                                                                                                     | rule            |
+        |                                                                                                                          | args.missing    |
+        | board/board.go:5:11                                                                                                      | args.invalid    |
+        | '/tmp/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><='                                                  | args.invalid    |
+        | '../board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><='                                                    | args.invalid    |
+        | 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' | args.unexpected |
+        | 'board/board.go:example.com/fx/board#Count@4:6:b1a8f41702cd975f:35:<><=' --reason x                                      | flags.unknown   |
+
   # slice-63 (judge-named-site, issue #68): confirming that a test kills a survivor a
   # report named (file, line, column, operator, or a counted run's
   # identity) took a run over its whole file, minutes, judging and
