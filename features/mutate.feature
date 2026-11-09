@@ -5699,6 +5699,46 @@ Feature: Mutation testing
       And no preexisting local measurement or per-scenario coverage map is required for successful preparation
       And raw or existing coverage overrides cannot silently bypass required fresh evidence or listed tests
 
+    # slice-74 (covdata-stderr-in-error), issue #84: a conversion that fails in a
+    # counted or named run ended its problem "execute .../covdata exited 1".
+    # What the converter printed reached stderr, in plain and --json runs
+    # alike, but neither the problem's message nor the stage's error, so a
+    # reader of --json or of the last line had to reproduce the failure.
+    # - The conversion's output still reaches stderr as it comes, and its
+    #   text, trimmed, ends the error, which fills the message and the
+    #   stage's "error". No key is added and no rule or exit code changes.
+    # - Stdout and stderr share one writer, as they share log today, so no
+    #   second copying goroutine writes to the log.
+    # - A complete run keeps logging a failed conversion and going on
+    #   (slice-15 q-F); nothing here changes it.
+    # - The steps name the fixture's file, covmeta.T81-invalid, which only
+    #   the converter's words can bring into the message, never Go's wording,
+    #   which a toolchain update may change. They do not use
+    #   ListedTests.ConversionOutput, which only the in-process fake reads.
+    # - Not the issue's umask 0777: a root runner opens mode 0000 files.
+    # Binary-only for good, as ID-MUT-181: the converter is the real one.
+    # Before: each fails at its first Then, the message ending "exited 1".
+    # stderr's own line already holds: a guardrail, reported apart.
+    @wip @slice-74 @ID-MUT-395 @binary-only
+    Scenario: A listed test's conversion that fails says in its problem what the converter printed
+      Given fresh counted preparation requires list, coverage or provider commands
+      And the listed tests' coverage data is a covmeta.T81-invalid that go tool covdata cannot read
+      When I run "itos-cc mutation run --count 1 --workers 1 --json subject.go"
+      Then the problem is "count.preparation-failed", at stage "listed-coverage", and its message names "covmeta.T81-invalid"
+      And the stage "listed-coverage" failed with an error naming "covmeta.T81-invalid"
+      And without --json, the line on stderr that starts "itos-cc: counted preparation failed at listed-coverage" names "covmeta.T81-invalid"
+      And stderr still has the converter's own line naming "covmeta.T81-invalid"
+      And the exit code is 1
+
+    @wip @slice-74 @ID-MUT-396 @binary-only
+    Scenario: A failed conversion of what a test's processes wrote says in its problem what the converter printed
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And a committed test of board writes a covmeta.T81-invalid where GOCOVERDIR names
+      When I run "itos-cc mutation run --site board/board.go:5:11 --json"
+      Then the problem is "count.preparation-failed", at stage "coverage", and its message names "covmeta.T81-invalid"
+      And the stage "coverage" failed with an error naming "covmeta.T81-invalid"
+      And the exit code is 1
+
     @mutation-counted-listed @ID-MUT-182
     Scenario: Clean baseline failure is not a mutation kill
       Given one selected fresh mutant needs own or applicable listed baselines
