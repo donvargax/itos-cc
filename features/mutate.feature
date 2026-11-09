@@ -3017,6 +3017,68 @@ Feature: Mutation testing
       Then the problem is "mutation.exception-stale", with file, function, line, column, original, replacement and why "killed"
       And the exit code is 1
 
+    # slice-75 (progress-says-excepted), issue #81: a mutant a valid exception takes
+    # printed "survived" on its progress line, in a run that ends ok, so a
+    # reader of the log saw survivors in a passing run. The summary and
+    # --json kept them apart already. Decided:
+    # - The line says "excepted" where it said the outcome, in the complete
+    #   run's "judged" line and the counted and named runs' "fresh-trial"
+    #   line. Stdout, --json and the snapshot do not change: "outcome" stays
+    #   "survived". Plain output may change in any release.
+    # - It names no reason: --json and the summary comment hold that.
+    # - After a listed stage the line stays "survived its own tests, then
+    #   excepted with <IDs>": the first part is true of the own stage, as in
+    #   "then killed with".
+    # - Only the run that ends a judgment says it: a run that goes again, or
+    #   a mutant that comes out flaky, says what that run gave. No exception
+    #   takes a flaky mutant, and a killed one makes its entry stale.
+    # - mutation sample's lines stay: it holds no exceptions.
+    # The rows' files have one site, so "its mutant's line" is that one.
+    # Before: ID-MUT-397 and 398 fail at their Then, the line saying
+    # "survived". ID-MUT-399 holds today: it is a guardrail against "excepted"
+    # for every held entry, and is reported apart.
+    @wip @slice-75 @ID-MUT-397
+    Scenario Outline: The progress line of an excepted survivor says excepted (<args>)
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
+      When I run "itos-cc mutation run <args>"
+      Then its mutant's line ends "excepted (<duration>)"
+      And the exit code is 0
+
+      Examples:
+        | args                              |
+        | --site board/board.go:5:11        |
+        | --site board/board.go:5:11 --json |
+        | --count 1 board/board.go          |
+        | board/board.go                    |
+        | --json board/board.go             |
+
+    @wip @slice-75 @ID-MUT-398
+    Scenario Outline: The line of a survivor the listed tests also miss says excepted after its own tests (<args>)
+      Given the counted listed fixture, whose selected mutant survives its own tests and the listed tests, and itos-cc.yaml excepts it
+      When I run "itos-cc mutation run <args>"
+      Then its mutant's line ends "survived its own tests, then excepted with ID-A-01 ID-A-02 (<duration>, the listed tests <duration>)"
+      And the exit code is 0
+
+      Examples:
+        | args                                               |
+        | --count 1 --seed slice-64-2 --workers 1 subject.go |
+        | --mutate-all --no-annotate --workers 1 subject.go  |
+
+    @wip @slice-75 @ID-MUT-399
+    Scenario Outline: A line keeps its outcome when the exception takes no survivor (<case>)
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
+      And <change>
+      When I run "itos-cc mutation run <args>"
+      Then <then>
+      And the exit code is 1
+
+      Examples:
+        | case               | change                                                                                          | args                                         | then                                                          |
+        | a flaky named site | its test kills that mutant on one run and misses it on the next, with nothing it hashes changed | --site board/board.go:5:11 --repeat 2 --json | its mutant's line ends "flaky: killed, survived (<duration>)" |
+        | a stale entry      | a later commit's test also checks Count(5)                                                      | --site board/board.go:5:11                   | its mutant's line ends "killed (<duration>)"                  |
+
     @mutation-exceptions @ID-MUT-93
     Scenario: An entry whose function changed is stale
       Given itos-cc.yaml excepts a survivor of "Board#count"
