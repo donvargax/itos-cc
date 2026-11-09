@@ -11,7 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
-  - covdata-stderr-in-error
+  - slice-74
   - progress-says-excepted
   - slice-72
   - slice-73
@@ -6284,14 +6284,15 @@ items:
       back; its harness is being fixed there. Close #85 once its proof log says "ran" rather than
       "ran one at a time". A later idea might say in that log line why the fallback ran.
     refs: ["#85"]
-  - id: covdata-stderr-in-error
+  - id: slice-74
     title: A failed covdata conversion says what covdata said
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was covdata-stderr-in-error.
       Issue #84: count.preparation-failed ends "execute .../covdata exited 1". The conversion sends
       stderr to the run log (internal/covrun/supervised.go), yet the message a proof reader sees
       holds none of it. Check where the log goes under --json before specifying.
