@@ -7242,3 +7242,23 @@
     2026-11-08. What the crossed releases ask by hand is done here or recorded as its own item.
   done_when:
     - run: "grep -q 'version: \"8.49.0\"' itos.yaml"
+- id: T-229
+  type: ci
+  title: A nightly whose only problems are survivors is green
+  why: >
+    q-108 (a), the person on 2026-11-08: Nightly passed in none of its last 29 runs, as mutation run
+    exits 1 on any survivor, so a real failure looks the same; the 504 of 2026-11-08, which judged
+    no mutant, did. Survivors are recorded in .metrics/mutate/, so red should mean the run itself or
+    another step failed. The exit code cannot say which, since tests.list-failed,
+    mutation.baseline-failed and mutation.flaky are exit 1 too: read the problems of --json. Harvest
+    tools/bin/nightly-survivors from donvargax/itos (T-341 there), which exits 0 only for exit 1
+    whose top-level problems are at least one and all mutation.survived, warning for each, and
+    passes every other exit through, keeping a comment naming where it came from. Mutate runs the
+    built program around mutation run --json with timeout as now, and SIGINT must still reach
+    mutation run so it keeps what it finished; a survivor stays visible in the run page and log. The
+    commit step goes on reading the status: 0 or 1 finished, anything else partial, and a run that
+    judged nothing commits nothing as today. The push proof is unchanged and still fails on a
+    survivor. Correct the workflow comments saying the job ends red on most nights.
+  done_when:
+    - run: go test ./tools/bin/nightly-survivors -count=1
+    - run: grep -q 'nightly-survivors' .github/workflows/nightly.yml
