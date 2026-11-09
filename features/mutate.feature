@@ -3040,6 +3040,7 @@ Feature: Mutation testing
     @slice-75 @ID-MUT-397
     Scenario Outline: The progress line of an excepted survivor says excepted (<args>)
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc makes counted runs on this system
       And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
       When I run "itos-cc mutation run <args>"
       Then its mutant's line ends "excepted (<duration>)"
@@ -3068,6 +3069,7 @@ Feature: Mutation testing
     @slice-75 @ID-MUT-399
     Scenario Outline: A line keeps its outcome when the exception takes no survivor (<case>)
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc makes counted runs on this system
       And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
       And <change>
       When I run "itos-cc mutation run <args>"
@@ -4727,6 +4729,28 @@ Feature: Mutation testing
         | command                                 |
         | mutation check board/board.go           |
         | mutation run board/board.go             |
+
+    # T-231: on Windows itos-cc refuses these two commands, count.platform and
+    # fail-fast.platform, exit 82, as ID-MUT-248 specifies (#29), so no stale
+    # problem can be read there, and they skip where ID-MUT-413's two run. They
+    # stay slice-78's rows, and TestStaleEntryScenariosNeedNoCountedRun leaves
+    # this one out by ID.
+    @slice-78 @ID-MUT-422
+    Scenario Outline: A stale entry's problem names the identity that re-points it, from <command>, where that run is made
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc makes counted runs on this system
+      And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
+      And a commit made Count's signature "func Count(x int) (ok bool)"
+      When I run "itos-cc <command> --json"
+      Then the problem is "mutation.exception-stale", with why "changed"
+      And its "identity" is that mutant's as the code is now, with Count's current hash
+      And its fix names "itos-cc mutation except '<its identity>'", saying that this runs nothing and keeps the entry's reason, and to read the function first
+      And its fix still names "itos-cc mutation except --renew" after that
+      And running the named command, with no --reason and no Go toolchain on the PATH, exits 0 with the entry at Count's current hash and the reason "x is never 5"
+      And "itos-cc mutation check board/board.go --json" then reports no "mutation.exception-stale"
+
+      Examples:
+        | command                                 |
         | mutation run --count 5                  |
         | mutation run board/board.go --fail-fast |
 
@@ -5031,6 +5055,7 @@ Feature: Mutation testing
     @slice-63 @ID-MUT-357
     Scenario Outline: A named site that still survives fails, unless a valid exception takes it
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc makes counted runs on this system
       And <exception>
       When I run "itos-cc mutation run --site board/board.go:5:11 --json"
       Then <verdict>
@@ -5232,6 +5257,7 @@ Feature: Mutation testing
     @slice-72 @ID-MUT-401
     Scenario: An excepted survivor is judged and excepted, not survived
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc makes counted runs on this system
       And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
       When I run "itos-cc mutation run --count 1 --json"
       Then "itos_proof" is exactly:

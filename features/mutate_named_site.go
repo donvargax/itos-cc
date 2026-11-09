@@ -109,6 +109,7 @@ func (i *identityException) namedSiteSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^board/board_test\.go now also checks Count\(5\), not committed$`, n.uncommittedKill)
 	sc.Step(`^a committed Go module whose "example\.com/fx/board#Count" no test calls$`, n.uncalled)
 	sc.Step(`^itos-cc\.yaml excepts nothing$`, n.counted)
+	sc.Step(`^itos-cc makes counted runs on this system$`, n.counted)
 	sc.Step("^itos-cc\\.yaml excepts Count's `<` → `<=` with reason \"x is never 5\"$", n.excepted)
 	sc.Step(`^mutation\.tests lists a test that reaches board/board\.go line 5 and kills the mutant$`, n.listed)
 	sc.Step(`^nothing changed, committed$`, n.counted)
@@ -243,9 +244,6 @@ func (n *namedSite) uncalled() error {
 // (slice-41), and commits the itos-cc.yaml that writes.
 func (n *namedSite) excepted() error {
 	w := n.i.w
-	if err := n.counted(); err != nil {
-		return err
-	}
 	if err := w.runWith(w.env(), "mutation except '"+siteIdentity+"' --reason '"+identityReason+"'"); err != nil {
 		return err
 	}
