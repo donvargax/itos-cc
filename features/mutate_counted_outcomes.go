@@ -15,6 +15,45 @@ func (q *countedMutation) outcomeSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^a killed mutant or its own test deadline is a valid completed judgment$`, q.killOrTimeout)
 	sc.Step(`^stale exceptions fail without being trusted as successful outcomes$`, q.staleExceptions)
 	sc.Step(`^counted mode does not silently become fail-fast scheduling$`, q.countedAggregate)
+	sc.Step(`^the counted listed fixture, whose selected mutant survives its own tests and the listed tests, and itos-cc.yaml excepts it$`, q.listedExcepted)
+}
+
+// listedExcepted is listedProject's fixture with its selected mutant
+// surviving both stages and a committed exception for it. Unlike
+// listedFixture it adds no --seed to the run, which a complete run refuses:
+// the scenario's rows give their own options.
+func (q *countedMutation) listedExcepted() error {
+	if err := q.listedProject(); err != nil {
+		return err
+	}
+	if err := q.listedMode("survive"); err != nil {
+		return err
+	}
+	return q.exceptRecordedSurvivor()
+}
+
+// exceptRecordedSurvivor records subject.go's survivor by a complete run,
+// excepts it as a review would, and commits the entry.
+func (q *countedMutation) exceptRecordedSurvivor() error {
+	recorded, err := q.observe("mutation", "run", "--json", "--workers", "1", "--mutate-all", "--no-annotate", "subject.go")
+	if err != nil {
+		return err
+	}
+	if recorded.result.Exit != 1 {
+		return fmt.Errorf("actual reviewed survivor setup: %v", recorded.object)
+	}
+	review, err := q.observe("mutation", "except", "--json", "subject.go:3:37", "--reason", "T81 equivalent fixture case")
+	if err != nil {
+		return err
+	}
+	if review.result.Exit != 0 {
+		return fmt.Errorf("actual survivor exception review: %v", review.object)
+	}
+	w := q.e.m.w
+	if err = w.d.Git(w.dir, "add", "itos-cc.yaml"); err != nil {
+		return err
+	}
+	return w.d.Git(w.dir, "commit", "-qm", "reviewed counted exception")
 }
 func (q *countedMutation) survivorJudge() error {
 	if err := q.listedMode("survive"); err != nil {
@@ -39,25 +78,7 @@ func (q *countedMutation) survivorUnlessReviewed() error {
 		return err
 	}
 	q.saved["aggregate"] = aggregate
-	recorded, err := q.observe("mutation", "run", "--json", "--workers", "1", "--mutate-all", "--no-annotate", "subject.go")
-	if err != nil {
-		return err
-	}
-	if recorded.result.Exit != 1 {
-		return fmt.Errorf("actual reviewed survivor setup: %v", recorded.object)
-	}
-	review, err := q.observe("mutation", "except", "--json", "subject.go:3:37", "--reason", "T81 equivalent fixture case")
-	if err != nil {
-		return err
-	}
-	if review.result.Exit != 0 {
-		return fmt.Errorf("actual survivor exception review: %v", review.object)
-	}
-	w := q.e.m.w
-	if err = w.d.Git(w.dir, "add", "itos-cc.yaml"); err != nil {
-		return err
-	}
-	if err = w.d.Git(w.dir, "commit", "-qm", "reviewed counted exception"); err != nil {
+	if err = q.exceptRecordedSurvivor(); err != nil {
 		return err
 	}
 	valid, err := q.count("--count", "1", "--seed", q.seed, "--workers", "1", "subject.go")
