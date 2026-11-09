@@ -6359,15 +6359,9 @@ items:
     title: An identity copied from raw --json is refused, its < and > escaped
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was json-identity-escaped.
-      Found drafting slice-73 and seen once by the drafter, not checked since: Emit in
-      internal/cli/cli.go runs json.Marshal before its SetEscapeHTML(false) encoder, so
-      selected[].identity prints < for <. It is valid JSON, yet pasting the raw text into mutation
-      except says it names no survivor. mutation show takes identities too.
     refs: ["#82"]
   - id: converted-line-after-failure
     title: A complete run says it converted the coverage of a listed test whose conversion failed
