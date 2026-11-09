@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -11,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	seltest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/exceptions"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
@@ -232,54 +230,5 @@ func TestMemoryExceptionWriterUsesCurrentDocumentBytes(t *testing.T) {
 	cfg, err = settings.Parse(actual)
 	if failure != nil || replaced || err != nil || !reflect.DeepEqual(cfg.Exceptions, []mutation.Exception{old}) {
 		t.Fatalf("missing memory creation: %s %v %v", actual, failure, err)
-	}
-}
-
-// readCounting is a tree counting its reads of path, and refusing the one
-// numbered refuse, counted from 1.
-type readCounting struct {
-	selport.Tree
-	path          string
-	reads, refuse int
-}
-
-func (r *readCounting) Read(ctx context.Context, path string) ([]byte, selport.Failure) {
-	if path == r.path {
-		r.reads++
-		if r.reads == r.refuse {
-			return nil, &selport.Unreadable{Path: path, Reason: "the source went away while it was re-pointed"}
-		}
-	}
-	return r.Tree.Read(ctx, path)
-}
-
-// No public scenario loses a source between judging the survivor and judging
-// which entry it re-points, the last read of it: that failure stops except
-// with nothing written.
-func TestExceptStopsWhenTheEntryItWouldRepointCannotBeJudged(t *testing.T) {
-	f, a, entry := exceptionBindingFixture(t)
-	site := fmt.Sprintf("board.go:%d:%d", f.snapshots.Values["board.go"].Units[0].Mutants[0].Line, entry.Column)
-	old := entry
-	old.Hash = "earlier function hash"
-	data, _, err := exceptions.ExceptDocument([]byte("# stale entry\n"), old)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(f.root, settings.File), data, 0600); err != nil {
-		t.Fatal(err)
-	}
-	store := a.Exceptions(f.root).(*mutantstest.Exceptions)
-	store.Entries = []mutation.Exception{old}
-	except := []string{"mutation", "except", site, "--json"}
-	counted := &readCounting{Tree: a.Tree, path: filepath.Join(f.root, "board.go")}
-	a.Tree = counted
-	if code, out := invokeRead(t, f, a, except...); code != 0 || store.Writes != 1 {
-		t.Fatalf("re-pointed: %d %s, %d writes", code, out, store.Writes)
-	}
-	counted.refuse, counted.reads = counted.reads, 0
-	store.Writes = 0
-	code, out := invokeRead(t, f, a, except...)
-	if code == 0 || !strings.Contains(compactRead(out), "the source went away while it was re-pointed") || store.Writes != 0 {
-		t.Fatalf("not stopped: %d %s, %d writes", code, out, store.Writes)
 	}
 }

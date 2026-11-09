@@ -167,3 +167,54 @@ func TestRehashStopsAtWhatItCannotReadOrWrite(t *testing.T) {
 		t.Errorf("refused document: exit %d, %q %q", code, out.String(), errOut.String())
 	}
 }
+
+// readCounting is a tree counting its reads of path, and refusing the one
+// numbered refuse, counted from 1.
+type readCounting struct {
+	selport.Tree
+	path          string
+	reads, refuse int
+}
+
+func (r *readCounting) Read(ctx context.Context, path string) ([]byte, selport.Failure) {
+	if path == r.path {
+		r.reads++
+		if r.reads == r.refuse {
+			return nil, &selport.Unreadable{Path: path, Reason: "the source went away while it was re-pointed"}
+		}
+	}
+	return r.Tree.Read(ctx, path)
+}
+
+// No public scenario loses a source between judging the survivor and judging
+// which entry it re-points, the last read of it: that failure stops except
+// with nothing written. The identity's hash, of Pos with its comment left out,
+// was measured with sha256sum.
+func TestExceptStopsWhenTheEntryItWouldRepointCannotBeJudged(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "project")
+	src := "package board\n\nfunc Pos(x int) bool {\n\treturn x > 0\n}\n"
+	path := filepath.Join(root, "board.go")
+	inputs := &mutantstest.Inputs{Dir: root, Files: map[string]string{path: src}, Imports: map[string][]string{path: nil}}
+	counted := &readCounting{Tree: selporttest.TreeOf(root, map[string]string{"board.go": src}, nil), path: path}
+	stale := mutants.Exception{File: "board.go", Function: "board#Pos", Hash: "earlier", LineInFunction: 2, Column: 11, Original: ">", Replacement: ">=", Reason: "reviewed"}
+	store := &mutantstest.Exceptions{Entries: []mutants.Exception{stale}}
+	h := Handler{
+		Settings: &mutantstest.Settings{Value: mutants.Config{Selection: selport.Settings{Root: root}, Exceptions: []mutants.Exception{stale}}},
+		Tree:     counted, Surroundings: inputs, Toolchain: inputs, Fingerprints: inputs, Reach: inputs,
+		Store: &mutantstest.Snapshots{RootDir: root}, Status: &mutantstest.SourceEdits{Files: map[string]string{path: src}},
+		Exceptions: func(string) mutants.Exceptions { return store }, Dir: root,
+	}
+	id, ok := mutants.ParseIdentity("board.go:board#Pos@3:5:7330520693604d29:33:>>>=")
+	if !ok {
+		t.Fatal("no identity")
+	}
+	found, err := h.Except(t.Context(), ExceptQuery{Identity: &id})
+	if err != nil || !found.Replaced || store.Writes != 1 || found.Exception.Reason != "reviewed" {
+		t.Fatalf("re-pointed: %+v %v, %d writes", found, err, store.Writes)
+	}
+	counted.refuse, counted.reads, store.Writes = counted.reads, 0, 0
+	store.Entries = []mutants.Exception{stale}
+	if _, err = h.Except(t.Context(), ExceptQuery{Identity: &id}); err == nil || !strings.Contains(err.Error(), "the source went away") || store.Writes != 0 {
+		t.Fatalf("not stopped: %v, %d writes", err, store.Writes)
+	}
+}

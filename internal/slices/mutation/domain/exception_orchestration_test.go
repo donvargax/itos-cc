@@ -325,6 +325,9 @@ func TestDomainRepointedIsTheOneStaleEntryOfTheSurvivorsChange(t *testing.T) {
 			t.Errorf("%s: %d, %v, want %d", c.name, got, err, c.want)
 		}
 	}
+	if _, err := mutants.Repointed(t.Context(), []mutants.Exception{moved}, survivor, f.path, mutants.CheckOptions{Root: f.root}); err == nil {
+		t.Error("no parser accepted")
+	}
 	ctx, cancel := context.WithCancelCause(t.Context())
 	cause := errors.New("stopped")
 	cancel(cause)
