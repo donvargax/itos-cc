@@ -70,5 +70,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0066: A mutant both ways on one tree is mutation.flaky, and no exception takes it](0066-a-mutant-both-ways-on-one-tree-is-mutation-flaky-and-no-exception-takes-it.md)
 - [ADR-0067: The graph snapshot is one project per file, its repository named by its git remote](0067-the-graph-snapshot-is-one-project-per-file-its-repository-named-by-its-git-remote.md)
 - [ADR-0068: itos-cc.yaml refuses unknown keys, reads a missing version as 1 and accepts x- keys](0068-itos-cc-yaml-refuses-unknown-keys-reads-a-missing-version-as-1-and-accepts-x-keys.md)
+- [ADR-0069: A red nightly means the run failed, not that survivors remain](0069-a-red-nightly-means-the-run-failed-not-that-survivors-remain.md)
 
 <!-- itos:decisions:end -->
