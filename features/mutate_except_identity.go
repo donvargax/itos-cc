@@ -117,6 +117,7 @@ func identityExceptionSteps(sc *godog.ScenarioContext, w *world) {
 	i.namedSiteSteps(sc)
 	i.rehashSteps(sc)
 	i.showSteps(sc)
+	i.proofSummarySteps(sc)
 }
 
 // module writes and commits the module, board_test.go holding test, and
