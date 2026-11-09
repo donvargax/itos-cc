@@ -6358,8 +6358,8 @@ items:
   - id: slice-77
     title: An identity copied from raw --json is refused, its < and > escaped
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
