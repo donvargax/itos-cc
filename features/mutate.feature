@@ -4818,7 +4818,7 @@ Feature: Mutation testing
     # of --json prints; the decoded values do not change, so only a reader of
     # the raw text can tell, and it is no contract change. Before: \u003c in
     # stdout, failing at the Then that reads the raw text.
-    @wip @slice-77 @ID-MUT-419
+    @slice-77 @ID-MUT-419
     Scenario: A problem's identity and fix read in --json's raw text as they are written
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       When I run "itos-cc mutation except 'board/board.go:example.com/fx/board#Count@4:6:0000000000000000:35:<><=' --reason 'x' --json"
@@ -4826,7 +4826,7 @@ Feature: Mutation testing
       And stdout's raw text holds "board#Count@4:6:0000000000000000:35:<><=" and "<file>:<line>:<column>"
       And stdout's raw text holds none of "\u003c", "\u003e" and "\u0026"
 
-    @wip @slice-77 @ID-MUT-420
+    @slice-77 @ID-MUT-420
     Scenario: A survivor's identity read from --json's raw text is excepted as it is
       Given a committed Go module whose "example.com/fx/board#Count" survives its test
       When I run "itos-cc mutation run --count 5 --json"

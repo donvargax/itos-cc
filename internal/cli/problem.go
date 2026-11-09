@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -58,7 +59,9 @@ func (p *Problem) Error() string { return p.Message }
 
 // MarshalJSON is the problem as --json gives it: rule, message, fix when
 // there is one, its own exit code, as RFC 9457's status gives each problem
-// its own (q-54), and the subject's keys beside them.
+// its own (q-54), and the subject's keys beside them. Its text is as written,
+// <, > and & among it: UI.JSON's encoder keeps a marshaller's escapes as they
+// are, and an identity or a command is copied from this raw text.
 func (p *Problem) MarshalJSON() ([]byte, error) {
 	out := map[string]any{"rule": p.Rule, "message": p.Message, "exit": p.Code}
 	if p.Fix != "" {
@@ -67,7 +70,13 @@ func (p *Problem) MarshalJSON() ([]byte, error) {
 	for k, v := range p.subject {
 		out[k] = v
 	}
-	return json.Marshal(out)
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(out); err != nil {
+		return nil, err
+	}
+	return bytes.TrimSuffix(buf.Bytes(), []byte("\n")), nil
 }
 
 // plain is the problem as a line for people: its message, then its fix.

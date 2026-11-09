@@ -202,6 +202,26 @@ func TestAProblemWithoutAFixOrShownAlready(t *testing.T) {
 	}
 }
 
+// A problem's own marshalling is one JSON value with its text as written: the
+// scenarios of --json reach it through UI.JSON's encoder, which drops a trailing
+// newline a marshaller gives, so only a direct call can see one.
+func TestAProblemMarshalsItsTextAsWritten(t *testing.T) {
+	p := NewProblem(CodeNo, "x.text", "a <b> & c", "Run d <e> & f.").With("identity", "g:h@1:2:<><=")
+	got, err := p.MarshalJSON()
+	want := `{"exit":1,"fix":"Run d <e> & f.","identity":"g:h@1:2:<><=","message":"a <b> & c","rule":"x.text"}`
+	if err != nil || string(got) != want {
+		t.Errorf("MarshalJSON = %q, %v; want %q", got, err, want)
+	}
+}
+
+// A subject JSON cannot say is the marshalling's failure, not a broken object.
+func TestAProblemWhoseSubjectJSONCannotSayFails(t *testing.T) {
+	got, err := NewProblem(CodeNo, "x.chan", "m", "").With("subject", make(chan int)).MarshalJSON()
+	if err == nil || got != nil {
+		t.Errorf("MarshalJSON = %q, %v; want no text and an error", got, err)
+	}
+}
+
 // A subject key never takes a name --json gives the problem itself: one
 // that tried would hide the rule a script reads.
 func TestASubjectKeyIsNeverReserved(t *testing.T) {
