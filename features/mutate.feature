@@ -4818,6 +4818,112 @@ Feature: Mutation testing
         | --count 1 --own-tests                                 |
         | --site board/board.go:5:11 --own-tests --all-tests    |
 
+  # slice-72 (issue #75 and its correcting comment): itos 8.23 and later read an
+  # optional summary from a code proof's stdout and log it (its
+  # features/ci-proof-summary.feature, the same at 8.25.2, this repository's pin, and at
+  # 8.49.0). Decisions:
+  # - One JSON object, as ever, with itos_proof a top-level member, there exactly when "ok"
+  #   is true: the reader parses nothing else, and a failed run's object is unchanged.
+  # - unit names what judged counts: "mutant" for mutation run, counted or complete, whose
+  #   Site is one change and whose identity names one mutant; "function" for mutation check,
+  #   whose counts are per function. Never "site", which --site uses for a position that can
+  #   hold several mutants.
+  # - judged is every mutant with an outcome: a counted run's uncovered ones, which have one
+  #   though no trial ran, and a complete run's reused ones, which killed already counts.
+  # - itos refuses an explicit judged of 0 (ci-code-proof-empty). A range with no site passes
+  #   here (itos.yaml's proof comment, docs/go.md, MUT-173's not applicable), and a push
+  #   touching only tests or feature steps, a repair above all, is such a range, so nothing
+  #   judged is every count null, never a zero: the reader says "unavailable" and passes.
+  # Before the slice no object holds itos_proof, so each scenario fails at its first Then.
+  # The exit codes hold today and are guardrails.
+  Rule: A green run's --json says what it judged, in the summary itos's code proof reads
+
+    @wip @slice-72 @ID-MUT-400
+    Scenario Outline: A kill is reported as one mutant judged (<args>)
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And a later commit's test also checks Count(5)
+      When I run "itos-cc mutation run <args> --json"
+      Then "itos_proof" is exactly:
+        """
+        {"version":1,"judged":1,"unit":"mutant","files":1,"killed":1,"survived":0,"excepted":0,"uncovered":0}
+        """
+      And the exit code is 0
+
+      Examples:
+        | args                       |
+        | --count 1                  |
+        | --site board/board.go:5:11 |
+
+    @wip @slice-72 @ID-MUT-401
+    Scenario: An excepted survivor is judged and excepted, not survived
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And itos-cc.yaml excepts Count's `<` → `<=` with reason "x is never 5"
+      When I run "itos-cc mutation run --count 1 --json"
+      Then "itos_proof" is exactly:
+        """
+        {"version":1,"judged":1,"unit":"mutant","files":1,"killed":0,"survived":0,"excepted":1,"uncovered":0}
+        """
+      And the exit code is 0
+
+    # Counting only state "judged", or "executed", would say 0 here, and itos would refuse a
+    # draw that merely landed on an uncovered line.
+    @wip @slice-72 @ID-MUT-402
+    Scenario: A drawn mutant no test reaches is judged and uncovered, with no trial
+      Given a committed Go module whose "example.com/fx/board#Count" no test calls
+      When I run "itos-cc mutation run --count 1 --json"
+      Then "itos_proof" is exactly:
+        """
+        {"version":1,"judged":1,"unit":"mutant","files":1,"killed":0,"survived":0,"excepted":0,"uncovered":1}
+        """
+      And no mutation trial ran
+      And the exit code is 0
+
+    # A true zero would fail the push: this range's only change is a test, and itos refuses
+    # judged 0. Nothing judged reports nothing, which is the reader's "unavailable".
+    @wip @slice-72 @ID-MUT-403
+    Scenario Outline: A range with nothing to judge reports every count null, never a zero (<command>)
+      Given a committed Go module whose "example.com/fx/board#Count" survives its test
+      And that commit is tagged "base"
+      And a later commit's test also checks Count(5)
+      When I run "itos-cc <command> --json"
+      Then "itos_proof" is exactly:
+        """
+        {"version":1,"judged":null,"unit":null,"files":null,"killed":null,"survived":null,"excepted":null,"uncovered":null}
+        """
+      And the exit code is 0
+
+      Examples:
+        | command                                                    |
+        | mutation run --count 1 --since base                        |
+        | mutation run --count 1 --since base --fail-uncovered=lines |
+        | mutation run --since base                                  |
+        | mutation check --since base                                |
+
+    # Counting only what ran would say 0 here, and itos would refuse an unchanged re-run.
+    @wip @slice-72 @ID-MUT-404
+    Scenario: A complete run counts the results it reused
+      Given a committed Go module whose test also checks Count(5), so `<` → `<=` is killed
+      And "itos-cc mutation run board/board.go" recorded it killed
+      When I run "itos-cc mutation run board/board.go --json"
+      Then "itos_proof" is exactly:
+        """
+        {"version":1,"judged":1,"unit":"mutant","files":1,"killed":1,"survived":0,"excepted":0,"uncovered":0}
+        """
+      And "files" lists board/board.go with "ran" 0 and "reused" 1
+      And the exit code is 0
+
+    # itos's README names mutation check --since {base} --fail-uncovered --json as the proof.
+    @wip @slice-72 @ID-MUT-405
+    Scenario: mutation check counts the functions it judged
+      Given a committed Go module whose test also checks Count(5), so `<` → `<=` is killed
+      And "itos-cc mutation run board/board.go" recorded it killed
+      When I run "itos-cc mutation check board/board.go --json"
+      Then "itos_proof" is exactly:
+        """
+        {"version":1,"judged":1,"unit":"function","files":1,"killed":1,"survived":0,"excepted":0,"uncovered":0}
+        """
+      And the exit code is 0
+
   # integration-coverage-python, integration-coverage-typescript and
   # integration-coverage-kotlin, q-41 (answered 2026-10-10): issue #14's
   # two parts, integration coverage (ID-MUT-117 to 120) and per-test
