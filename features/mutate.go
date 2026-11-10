@@ -96,6 +96,7 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 	executionMutationSteps(sc, m, since)
 	countedMutationSteps(sc, m, since)
 	emptyCaseSteps(sc, m)
+	continuationLineSteps(sc, m)
 	pristineSteps(sc, m)
 	vitestThroughSteps(sc, m)
 	workspaceCopySteps(sc, m)

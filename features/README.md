@@ -1426,6 +1426,15 @@ from `Files`; `ListFails` continues to describe an actual command failure.
 Only the real requested list operation returns those bytes to the existing
 parser, which determines whether the inventory is valid.
 
+`ListedTests.Unmarked` (slice-79) declares lines a listed test runs that its
+coverage marks on no line, as coverage.py and Vitest mark a statement split
+over several lines on its first line alone: the in-process selection runs a
+mutant there as on a line of `Lines`, while the per-test report the fake
+measurer writes holds `Lines` alone, as the real tools' report does. The
+continuation-line scenarios (ID-MUT-424 to 427) declare, the same way, own
+reports giving a split statement's first line alone a DA line, and Vitest's
+arrow function body on a later line one of its own.
+
 MUT184 keeps its primary sampled report and obtains unattempted, blocked and
 cancelled observations from separate real controls. Child products join
 before fixture removal. It stays eligible in process: its later cancellation

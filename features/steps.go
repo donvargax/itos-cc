@@ -203,10 +203,15 @@ type TestTrace struct {
 // ListedTests is a fixture's public test inventory and observable outcomes.
 // Lines name source files relative to the declared project's folder.
 type ListedTests struct {
-	Files   map[string]string
-	Lines   map[string]map[int][]string
-	Split   bool
-	Elapsed map[string]time.Duration
+	Files map[string]string
+	Lines map[string]map[int][]string
+	// Unmarked are lines each ID's tests run that their coverage marks on
+	// no line, as coverage.py and Vitest mark a statement split over several
+	// lines on its first line alone: a mutant there runs as on Lines' lines,
+	// but no report covers it.
+	Unmarked map[string]map[int][]string
+	Split    bool
+	Elapsed  map[string]time.Duration
 	// Failing is the exact selection of IDs that fails alone; a larger
 	// selection containing those IDs may still pass.
 	Failing []string

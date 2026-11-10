@@ -78,15 +78,21 @@ func ownListed(in *features.ListedTests) *features.ListedTests {
 	out.Elapsed = maps.Clone(in.Elapsed)
 	out.Failing = slices.Clone(in.Failing)
 	out.CoverageMetadata = slices.Clone(in.CoverageMetadata)
-	if in.Lines != nil {
-		out.Lines = map[string]map[int][]string{}
-		for file, lines := range in.Lines {
-			out.Lines[file] = maps.Clone(lines)
+	cloneLines := func(in map[string]map[int][]string) map[string]map[int][]string {
+		if in == nil {
+			return nil
+		}
+		out := map[string]map[int][]string{}
+		for file, lines := range in {
+			out[file] = maps.Clone(lines)
 			for line, ids := range lines {
-				out.Lines[file][line] = slices.Clone(ids)
+				out[file][line] = slices.Clone(ids)
 			}
 		}
+		return out
 	}
+	out.Lines = cloneLines(in.Lines)
+	out.Unmarked = cloneLines(in.Unmarked)
 	cloneSites := func(in map[string][]features.Site) map[string][]features.Site {
 		if in == nil {
 			return nil
@@ -103,19 +109,20 @@ func ownListed(in *features.ListedTests) *features.ListedTests {
 }
 func TestListedRootSetupDeepCopiesAllNestedFacts(t *testing.T) {
 	m, root := listedSetupFixture(t)
-	input := &features.ListedTests{Files: map[string]string{"A": "a.feature"}, Lines: map[string]map[int][]string{"main.go": {2: {"A"}}}, Elapsed: map[string]time.Duration{"A": time.Second}, Failing: []string{"A"}, Surviving: map[string][]features.Site{"A": {{File: "main.go", Original: ">"}}}, TimingOut: map[string][]features.Site{"A": {{File: "main.go", Replacement: "<="}}}, CoverageMetadata: []byte("owned"), Split: true}
+	input := &features.ListedTests{Files: map[string]string{"A": "a.feature"}, Lines: map[string]map[int][]string{"main.go": {2: {"A"}}}, Unmarked: map[string]map[int][]string{"main.go": {3: {"A"}}}, Elapsed: map[string]time.Duration{"A": time.Second}, Failing: []string{"A"}, Surviving: map[string][]features.Site{"A": {{File: "main.go", Original: ">"}}}, TimingOut: map[string][]features.Site{"A": {{File: "main.go", Replacement: "<="}}}, CoverageMetadata: []byte("owned"), Split: true}
 	if err := m.Tests(root, features.Tests{Language: "go", Command: "go test ./first", Listed: input}); err != nil {
 		t.Fatal(err)
 	}
 	input.Files["A"] = "changed"
 	input.Lines["main.go"][2][0] = "changed"
+	input.Unmarked["main.go"][3][0] = "changed"
 	input.Elapsed["A"] = 2 * time.Second
 	input.Failing[0] = "changed"
 	input.Surviving["A"][0].Original = "changed"
 	input.TimingOut["A"][0].Replacement = "changed"
 	input.CoverageMetadata[0] = 'X'
 	input.Split = false
-	expected := &features.ListedTests{Files: map[string]string{"A": "a.feature"}, Lines: map[string]map[int][]string{"main.go": {2: {"A"}}}, Elapsed: map[string]time.Duration{"A": time.Second}, Failing: []string{"A"}, Surviving: map[string][]features.Site{"A": {{File: "main.go", Original: ">"}}}, TimingOut: map[string][]features.Site{"A": {{File: "main.go", Replacement: "<="}}}, CoverageMetadata: []byte("owned"), Split: true}
+	expected := &features.ListedTests{Files: map[string]string{"A": "a.feature"}, Lines: map[string]map[int][]string{"main.go": {2: {"A"}}}, Unmarked: map[string]map[int][]string{"main.go": {3: {"A"}}}, Elapsed: map[string]time.Duration{"A": time.Second}, Failing: []string{"A"}, Surviving: map[string][]features.Site{"A": {{File: "main.go", Original: ">"}}}, TimingOut: map[string][]features.Site{"A": {{File: "main.go", Replacement: "<="}}}, CoverageMetadata: []byte("owned"), Split: true}
 	if !reflect.DeepEqual(m.listed[root], expected) {
 		t.Fatalf("root setup not owned: %+v", m.listed[root])
 	}
@@ -233,12 +240,18 @@ func listedSelection(listed *features.ListedTests, selected []string) mutantstes
 	if failing := slices.Sorted(slices.Values(listed.Failing)); len(failing) > 0 && slices.Equal(failing, slices.Sorted(slices.Values(selected))) {
 		t.Baseline = "the selection " + strings.Join(selected, ",") + " fails without any mutant"
 	}
-	for file, lines := range listed.Lines {
-		for line, ids := range lines {
-			if slices.ContainsFunc(ids, func(id string) bool { return slices.Contains(selected, id) }) {
-				t.Reached[file] = append(t.Reached[file], line)
+	// A line the tests run but their coverage marks on no line, Unmarked's,
+	// runs a mutant as a marked one does.
+	for _, run := range []map[string]map[int][]string{listed.Lines, listed.Unmarked} {
+		for file, lines := range run {
+			for line, ids := range lines {
+				if slices.ContainsFunc(ids, func(id string) bool { return slices.Contains(selected, id) }) {
+					t.Reached[file] = append(t.Reached[file], line)
+				}
 			}
 		}
+	}
+	for file := range t.Reached {
 		slices.Sort(t.Reached[file])
 	}
 	var sites []features.Site
@@ -252,7 +265,7 @@ func listedSelection(listed *features.ListedTests, selected []string) mutantstes
 	for _, site := range sites {
 		outcome := mutation.Survived
 		for _, id := range selected {
-			if !slices.Contains(listed.Lines[site.File][site.Line], id) {
+			if !slices.Contains(listed.Lines[site.File][site.Line], id) && !slices.Contains(listed.Unmarked[site.File][site.Line], id) {
 				continue
 			}
 			if slices.Contains(listed.TimingOut[id], site) {
