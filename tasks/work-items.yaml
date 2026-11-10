@@ -6535,3 +6535,21 @@ items:
       -gcflags=-S, or objdump of the symbol), inlining and line-number noise in the comparison, and
       whether a proven mutant still counts as a survivor or as its own outcome. Not before
       nightly-full-rejudge-cause.
+  - id: continuation-line-since
+    title: A change only to a later line of a statement is judged under --fail-uncovered=lines --since
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Left out of slice-79. coverage.py's LCOV and Vitest's v8 report measure a statement split over
+      lines on its first line only, so the uncovered statement --fail-uncovered reports is that one
+      line (LineScope.JudgesBlock tests the block's own lines). Under --fail-uncovered=lines
+      --since, a change only to a later line of such a statement, holding no mutation site (as
+      renaming b in '+ b)' to c is not, but a continued argument list can be), judges no line no
+      test executes, so a statement nothing runs passes as judged. By reading only, not run: a
+      fixture's git history needs a commit, which this repository's hook refuses in the
+      coordinator's shell. A fix would let a block's lines run to its statement's end, from the
+      parse slice-79 adds. Where a site is on the changed line, slice-79's uncovered outcome already
+      fails the run.
