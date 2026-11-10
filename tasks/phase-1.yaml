@@ -7302,3 +7302,42 @@
     ID-MUT-410, 411 and 413 to 418 with no skipped step; ID-MUT-357, 397, 399, 401 and 422 still
     skipped. Until the test exists, this task's check passes with no tests to run, so red first
     is the test's own failure, not the check's.
+- id: T-232
+  type: ci
+  title: Every scenario needing Python, Node, Kotlin or Flutter runs through its real tools in CI
+  why: >
+    Found by slice-79's agent (2026-11-09): the binary driver skips a scenario needing Python,
+    TypeScript or Kotlin tools in any CI job but cd.yml's languages job, which sets
+    ITOS_CC_LANGUAGE_TOOLS (features/binary.go languageJob), and a Dart one in any job but the dart
+    job, which sets ITOS_CC_FLUTTER_TOOLS. godog counts a skip as passed, so green jobs hide it. The
+    languages job selects its scenarios by hand-kept ID regexes ending at ID-MUT-242, and the dart
+    job by the tags of slices 32 to 37, so ID-MUT-424 to 427, and any later scenario of that kind,
+    run their real tools nowhere in CI, only in process against the fakes. The coordinator's calls:
+    a tag marks each such scenario, @language-tools for Python, Node and Kotlin (the tools the
+    languages job installs) and @flutter-tools for Dart, on the scenario, or on an Examples block
+    when only some rows need them; the languages job's scenario shards select @language-tools and
+    the dart job @flutter-tools, instead of ID lists. A guard keeps it from drifting: in CI (CI
+    set), where languageJob would skip a scenario for want of its language's tools, a scenario
+    without the tag those tools need fails instead, naming the tag to add, so a new untagged one
+    turns the push red on every system, Windows and macOS too, rather than skipping. With the tag it
+    skips as today. The t78 and t79 shards are closed families (T-78, T-79) and keep their ID lists
+    and their separate invocations; their scenarios carry @language-tools too, for the guard, and
+    the other shards leave them out by those fixed lists (-skip-scenarios), so the only lists left
+    never grow. The scenarios-a and scenarios-b shards split @language-tools by their ID's last
+    digit, as features-a and features-b split theirs, both installing the Kotlin tools: the
+    languages job runs beside the Windows test jobs, which are the slower, so a minute of setup is
+    off the critical path. A shard over about 10 minutes splits into a third, by measured times.
+    Every scenario that newly runs through its real tools and fails is this task's to fix: a fixture
+    or step that is wrong is fixed in the step; a product that is wrong is fixed in the product, in
+    a fix commit naming this task, with a unit test of its package; never by skipping or loosening a
+    Then; only a failure whose right behaviour is a question stops and is reported. The check is a
+    Go test in features, TestLanguageScenariosCarryTheirToolsTag, run in process with no tools: it
+    sets CI and leaves the tools variables unset, and shows that languageJob fails for an untagged
+    Python, TypeScript, Kotlin and Dart scenario, skips for one with its tag, and that Go needs no
+    tag. The check greps the test's PASS line, as go test passes with no tests to run before the
+    test exists (itos#276). Out of scope: the Go tests of cmd/itos-cc that need the language tools,
+    picked by the languages tests shard's hand-kept -run list (cmd/itos-cc/language_tools_test.go
+    skips them in CI elsewhere), the idea language-tests-ci-selection.
+  done_when:
+    - run: "bash -c \"go test ./features -run '^TestLanguageScenariosCarryTheirToolsTag$' -count=1 -v | grep -q -- '--- PASS: TestLanguageScenariosCarryTheirToolsTag'\""
+      timeout: 600

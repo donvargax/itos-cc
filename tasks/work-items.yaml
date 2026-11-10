@@ -6530,19 +6530,10 @@ items:
       coordinator's shell. A fix would let a block's lines run to its statement's end, from the
       parse slice-79 adds. Where a site is on the changed line, slice-79's uncovered outcome already
       fails the run.
-  - id: language-scenarios-ci-selection
-    title: Run every scenario needing Python or Node through its real tools in CI
+  - id: T-232
+    title: Every scenario needing Python, Node, Kotlin or Flutter runs through its real tools in CI
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Found by slice-79's agent (2026-11-09). The binary driver skips a Python, TypeScript or Kotlin
-      scenario in any CI job but one that sets ITOS_CC_LANGUAGE_TOOLS (features/binary.go
-      languageJob), and cd.yml's languages job selects its scenarios by hand-kept ID lists ending at
-      ID-MUT-242. So ID-MUT-424 to 427, which run coverage.py and Vitest, and the later Python and
-      Vitest scenarios before them, run through their real tools nowhere in CI: only in process
-      against the fakes, and locally where an agent opts in. A tag or a rule over the Givens'
-      declared languages, rather than ID lists, would keep each new one in a languages shard. By
-      reading only; the earlier scenarios past 242 were not each checked.
+    kind: task
