@@ -6537,3 +6537,18 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: language-tests-ci-selection
+    title: Every cmd/itos-cc test needing Python, Node or Kotlin runs in the languages tests shard
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Left out of T-232. cmd/itos-cc/language_tools_test.go's languageTools skips a test in any CI
+      job but the one setting ITOS_CC_LANGUAGE_TOOLS, and cd.yml's languages tests shard runs them
+      by a hand-kept -run list of test names, so a new Go test that needs a language's tools and is
+      not added to the list skips everywhere in CI, a skip go test reports as ok. The same guard as
+      T-232's fits: in CI without the tools, a test not marked as needing them fails instead of
+      skipping, and the shard selects the marked ones, by a name convention or a registry the
+      shard's -run is built from. Not checked which tests, if any, are missing from the list today.
