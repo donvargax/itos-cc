@@ -3323,7 +3323,7 @@
       "file": "cmd/itos-cc/scenarios_listed_setup_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 9.8,
+      "pressure": 10,
       "examples": 5,
       "setup_lines": 0,
       "average_score": 3,
@@ -3331,7 +3331,7 @@
       "recommendations": [
         {
           "confidence": "MEDIUM",
-          "text": "\"TestListedMeasurementRequiresExplicitRootSetup\" (lines 131-153) takes 2 branches or loops: a test should not need logic; split the cases"
+          "text": "\"TestListedMeasurementRequiresExplicitRootSetup\" (lines 138-160) takes 2 branches or loops: a test should not need logic; split the cases"
         }
       ],
       "clusters": null,
@@ -3361,19 +3361,19 @@
         },
         {
           "name": "TestListedRootSetupDeepCopiesAllNestedFacts",
-          "start_line": 104,
-          "end_line": 129,
-          "score": 3.2,
-          "lines": 26,
-          "raw_lines": 26,
+          "start_line": 110,
+          "end_line": 136,
+          "score": 3.4,
+          "lines": 27,
+          "raw_lines": 27,
           "decisions": 0,
           "assertions": 4,
           "mocks": 0
         },
         {
           "name": "TestListedMeasurementRequiresExplicitRootSetup",
-          "start_line": 131,
-          "end_line": 153,
+          "start_line": 138,
+          "end_line": 160,
           "table": true,
           "score": 7.6,
           "smells": [
@@ -3387,8 +3387,8 @@
         },
         {
           "name": "TestListedSetupCopyPreservesNilAndEmptyCollections",
-          "start_line": 155,
-          "end_line": 164,
+          "start_line": 162,
+          "end_line": 171,
           "table": true,
           "score": 1,
           "lines": 7,
@@ -3557,6 +3557,45 @@
           "raw_lines": 46,
           "decisions": 1,
           "assertions": 8,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "cmd/itos-cc/scenarios_stale_entry_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 10.9,
+      "examples": 1,
+      "setup_lines": 0,
+      "average_score": 11.9,
+      "max_score": 11.9,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestStaleEntryScenariosNeedNoCountedRun\" (lines 26-82) is 57 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestStaleEntryScenariosNeedNoCountedRun\" (lines 26-82) takes 1 branch or loop: a test should not need logic; split the cases"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestStaleEntryScenariosNeedNoCountedRun",
+          "start_line": 26,
+          "end_line": 82,
+          "table": true,
+          "score": 11.9,
+          "smells": [
+            "large",
+            "logic"
+          ],
+          "lines": 57,
+          "raw_lines": 57,
+          "decisions": 1,
+          "assertions": 4,
           "mocks": 0
         }
       ]
@@ -5672,6 +5711,53 @@
           "raw_lines": 46,
           "decisions": 4,
           "assertions": 8,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "features/language_tools_tag_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 40.3,
+      "examples": 2,
+      "setup_lines": 0,
+      "average_score": 21.2,
+      "max_score": 41.3,
+      "recommendations": [
+        {
+          "confidence": "MEDIUM",
+          "text": "\"in each job\" (lines 64-94) takes 15 branches or loops: a test should not need logic; split the cases"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "in each job",
+          "group": "TestLanguageScenariosCarryTheirToolsTag",
+          "start_line": 64,
+          "end_line": 94,
+          "table": true,
+          "score": 41.3,
+          "smells": [
+            "logic"
+          ],
+          "lines": 29,
+          "raw_lines": 31,
+          "decisions": 15,
+          "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "in the languages job",
+          "group": "TestLanguageScenariosCarryTheirToolsTag",
+          "start_line": 96,
+          "end_line": 105,
+          "score": 1,
+          "lines": 10,
+          "raw_lines": 10,
+          "decisions": 0,
+          "assertions": 1,
           "mocks": 0
         }
       ]
@@ -8705,6 +8791,54 @@
       ]
     },
     {
+      "file": "internal/coverage/siteline_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 1.2,
+      "examples": 3,
+      "setup_lines": 0,
+      "average_score": 1.4,
+      "max_score": 2.2,
+      "recommendations": [],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestASiteOnAnUnmeasuredLineOfAStatementReadsItsStatementsLine",
+          "start_line": 13,
+          "end_line": 46,
+          "table": true,
+          "score": 2.2,
+          "lines": 21,
+          "raw_lines": 34,
+          "decisions": 0,
+          "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "TestAnArrowFunctionsBodyOnALaterLineKeepsItsOwnCoverage",
+          "start_line": 51,
+          "end_line": 58,
+          "score": 1,
+          "lines": 8,
+          "raw_lines": 8,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestASiteLineIsChosenByWhatTheListedTestsMeasureToo",
+          "start_line": 63,
+          "end_line": 76,
+          "score": 1,
+          "lines": 14,
+          "raw_lines": 14,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        }
+      ]
+    },
+    {
       "file": "internal/coverage/typescript_test.go",
       "language": "go",
       "action": "LEAVE_ALONE",
@@ -11418,6 +11552,32 @@
           "raw_lines": 12,
           "decisions": 0,
           "assertions": 3,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/lang/statement_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 0,
+      "examples": 1,
+      "setup_lines": 0,
+      "average_score": 1,
+      "max_score": 1,
+      "recommendations": [],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestASitesStatementStartsWhereItsInnermostStatementDoes",
+          "start_line": 28,
+          "end_line": 57,
+          "table": true,
+          "score": 1,
+          "lines": 8,
+          "raw_lines": 30,
+          "decisions": 0,
+          "assertions": 1,
           "mocks": 0
         }
       ]
@@ -17455,6 +17615,39 @@
       ]
     },
     {
+      "file": "internal/slices/mutation/counted_continuation_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 3.6,
+      "examples": 1,
+      "setup_lines": 0,
+      "average_score": 4.6,
+      "max_score": 4.6,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestACountedRunReadsASiteOnAStatementsLaterLineByItsStatement\" (lines 21-53) is 33 lines: split it into examples that each check one behavior"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestACountedRunReadsASiteOnAStatementsLaterLineByItsStatement",
+          "start_line": 21,
+          "end_line": 53,
+          "score": 4.6,
+          "smells": [
+            "large"
+          ],
+          "lines": 33,
+          "raw_lines": 33,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        }
+      ]
+    },
+    {
       "file": "internal/slices/mutation/counted_named_test.go",
       "language": "go",
       "action": "LEAVE_ALONE",
@@ -17858,6 +18051,32 @@
           "raw_lines": 48,
           "decisions": 1,
           "assertions": 2,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/slices/mutation/domain/continuation_line_test.go",
+      "language": "go",
+      "action": "LEAVE_ALONE",
+      "pressure": 2.2,
+      "examples": 1,
+      "setup_lines": 0,
+      "average_score": 3.2,
+      "max_score": 3.2,
+      "recommendations": [],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestASiteOnAStatementsLaterLineTakesItsStatementsCoverage",
+          "start_line": 15,
+          "end_line": 40,
+          "table": true,
+          "score": 3.2,
+          "lines": 26,
+          "raw_lines": 26,
+          "decisions": 0,
+          "assertions": 5,
           "mocks": 0
         }
       ]
@@ -21338,6 +21557,93 @@
           "lines": 14,
           "raw_lines": 24,
           "decisions": 1,
+          "assertions": 2,
+          "mocks": 0
+        }
+      ]
+    },
+    {
+      "file": "internal/slices/mutation/domain/stale_identity_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 30.6,
+      "examples": 4,
+      "setup_lines": 0,
+      "average_score": 8.7,
+      "max_score": 15.7,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestRenewLeavesANoResultsEntryItsIdentity\" (lines 98-128) is 31 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestRepointedIsTheStaleEntryWhoseMutantIsTheSurvivor\" (lines 140-192) is 38 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestApplyExceptionsNamesTheIdentityThatRepointsAChangedEntry\" (lines 26-72) takes 5 branches or loops: a test should not need logic; split the cases"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestRepointedIsTheStaleEntryWhoseMutantIsTheSurvivor\" (lines 140-192) takes 3 branches or loops: a test should not need logic; split the cases"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestApplyExceptionsNamesTheIdentityThatRepointsAChangedEntry",
+          "start_line": 26,
+          "end_line": 72,
+          "table": true,
+          "score": 15.7,
+          "smells": [
+            "logic"
+          ],
+          "lines": 26,
+          "raw_lines": 47,
+          "decisions": 5,
+          "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "TestRehashLeavesAChangedEntryItsIdentity",
+          "start_line": 76,
+          "end_line": 93,
+          "score": 1.6,
+          "lines": 18,
+          "raw_lines": 18,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestRenewLeavesANoResultsEntryItsIdentity",
+          "start_line": 98,
+          "end_line": 128,
+          "score": 4.2,
+          "smells": [
+            "large"
+          ],
+          "lines": 31,
+          "raw_lines": 31,
+          "decisions": 0,
+          "assertions": 4,
+          "mocks": 0
+        },
+        {
+          "name": "TestRepointedIsTheStaleEntryWhoseMutantIsTheSurvivor",
+          "start_line": 140,
+          "end_line": 192,
+          "table": true,
+          "score": 13.1,
+          "smells": [
+            "large",
+            "logic"
+          ],
+          "lines": 38,
+          "raw_lines": 53,
+          "decisions": 3,
           "assertions": 2,
           "mocks": 0
         }

@@ -327,8 +327,8 @@
       "language": "go",
       "left": {
         "file": "internal/lang/lang.go",
-        "start_line": 195,
-        "end_line": 201,
+        "start_line": 201,
+        "end_line": 207,
         "namespace": "github.com/donvargax/itos-cc/internal/lang",
         "name": "set",
         "nodes": 53
@@ -347,8 +347,8 @@
       "language": "go",
       "left": {
         "file": "internal/lang/lang.go",
-        "start_line": 683,
-        "end_line": 688,
+        "start_line": 704,
+        "end_line": 709,
         "namespace": "github.com/donvargax/itos-cc/internal/lang",
         "name": "fieldText",
         "nodes": 53
@@ -708,7 +708,7 @@
       "left": {
         "file": "internal/slices/mutation/check_contract.go",
         "start_line": 6,
-        "end_line": 168,
+        "end_line": 170,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Check",
         "name": "Contract",
         "nodes": 168
@@ -1588,7 +1588,7 @@
       "left": {
         "file": "internal/slices/mutation/except_contract.go",
         "start_line": 6,
-        "end_line": 160,
+        "end_line": 166,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Except",
         "name": "Contract",
         "nodes": 164
@@ -1600,6 +1600,26 @@
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.List",
         "name": "Contract",
         "nodes": 108
+      }
+    },
+    {
+      "score": 0.83,
+      "language": "go",
+      "left": {
+        "file": "internal/imports/resolve.go",
+        "start_line": 114,
+        "end_line": 119,
+        "namespace": "github.com/donvargax/itos-cc/internal/imports",
+        "name": "join",
+        "nodes": 33
+      },
+      "right": {
+        "file": "internal/slices/mutation/presentation.go",
+        "start_line": 240,
+        "end_line": 246,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
+        "name": "repointFirst",
+        "nodes": 36
       }
     },
     {
@@ -1656,7 +1676,7 @@
       "right": {
         "file": "internal/slices/mutation/run_contract.go",
         "start_line": 6,
-        "end_line": 605,
+        "end_line": 609,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Run",
         "name": "Contract",
         "nodes": 184
@@ -1756,7 +1776,7 @@
         {
           "file": "internal/slices/mutation/except_contract.go",
           "start_line": 6,
-          "end_line": 160,
+          "end_line": 166,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Except",
           "name": "Contract",
           "nodes": 164
@@ -1772,7 +1792,7 @@
         {
           "file": "internal/slices/mutation/run_contract.go",
           "start_line": 6,
-          "end_line": 605,
+          "end_line": 609,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Run",
           "name": "Contract",
           "nodes": 184
@@ -2282,8 +2302,8 @@
       "members": [
         {
           "file": "internal/lang/lang.go",
-          "start_line": 195,
-          "end_line": 201,
+          "start_line": 201,
+          "end_line": 207,
           "namespace": "github.com/donvargax/itos-cc/internal/lang",
           "name": "set",
           "nodes": 53
@@ -2305,8 +2325,8 @@
       "members": [
         {
           "file": "internal/lang/lang.go",
-          "start_line": 683,
-          "end_line": 688,
+          "start_line": 704,
+          "end_line": 709,
           "namespace": "github.com/donvargax/itos-cc/internal/lang",
           "name": "fieldText",
           "nodes": 53
@@ -2467,7 +2487,7 @@
         {
           "file": "internal/slices/mutation/check_contract.go",
           "start_line": 6,
-          "end_line": 168,
+          "end_line": 170,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Check",
           "name": "Contract",
           "nodes": 168
@@ -2856,6 +2876,29 @@
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "exceptError",
           "nodes": 127
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "min_score": 0.83,
+      "max_score": 0.83,
+      "members": [
+        {
+          "file": "internal/imports/resolve.go",
+          "start_line": 114,
+          "end_line": 119,
+          "namespace": "github.com/donvargax/itos-cc/internal/imports",
+          "name": "join",
+          "nodes": 33
+        },
+        {
+          "file": "internal/slices/mutation/presentation.go",
+          "start_line": 240,
+          "end_line": 246,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
+          "name": "repointFirst",
+          "nodes": 36
         }
       ]
     },
