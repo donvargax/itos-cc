@@ -4837,26 +4837,32 @@ Feature: Mutation testing
     # slice-80, idea stale-identity-two-moved (seen reading slice-78's code):
     # two entries of one change in one function, neither at its site's place
     # after a line was added above both. Each problem names an identity by
-    # matchSite, from its entry's line_text, but Repointed found two stale
-    # entries and none at the site's place, so excepting either identity with
-    # no --reason was flags.value-missing, exit 80, though its fix said it
-    # keeps the entry's reason. Reproduced by the coordinator on 2026-11-09
-    # with 0.49.1-dev and the source below.
+    # matchSite, from its entry's line_text, but Repointed does not choose by
+    # it. The second entry's old place is the first site's place now, so
+    # excepting the first identity re-pointed the second entry onto it, with
+    # the reason "y is never 7", exit 0. With that entry re-pointed, the
+    # second identity then found two stale entries, none at its place, and was
+    # flags.value-missing, exit 80, though its fix said it keeps the entry's
+    # reason. Reproduced on 2026-11-09 with 0.49.1-dev and the source below:
+    # the coordinator found the second case, slice-80's agent the first.
     # Coordinator's calls:
-    # - Of several stale entries, none at the site's place, Repointed takes
-    #   the one whose mutant matchSite names as the site being excepted: the
-    #   rule a stale entry's identity is named by, so an identity and the
-    #   entry it re-points never disagree. Rather than naming no identity
-    #   there, as the identity does name one site.
-    # - Otherwise as today: an entry at the site's place first; else the one
-    #   stale entry; else none, and the site is a new entry.
+    # - Repointed takes first the one stale entry, at the site's place or
+    #   not, whose mutant matchSite names as the site being excepted: the rule
+    #   a stale entry's identity is named by, so an identity and the entry it
+    #   re-points never disagree, and a place another entry's site moved to
+    #   never carries that entry's reason onto it.
+    # - Only when no stale entry, or more than one, names the site, as today:
+    #   an entry at the site's place; else the one stale entry; else none,
+    #   and the site is a new entry. An entry at the site's place that holds
+    #   still means nothing is re-pointed.
     # - mutation except <file>:<line>:<column> shares Repointed and follows.
     #   A scenario of that form needs a recorded survivor and a real run, so a
     #   unit test of Repointed shows it.
     # - Entries with no line_text, several and none at the place, name no
     #   identity (ID-MUT-415's "two could be it"), and are not this slice's.
     # It needs no tool: check and an identity's except run nothing. Before:
-    # the first except is flags.value-missing, failing at its second Then.
+    # the first except leaves the first entry as it was and re-points the
+    # second, failing at its second Then.
     @slice-80 @ID-MUT-423 @wip
     Scenario: Two stale entries of one change that moved are each re-pointed by their identity
       Given Go source whose "example.com/fx/board#Count" has the lines "a := x < 5" and "b := y < 7"
