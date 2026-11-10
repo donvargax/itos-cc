@@ -6512,3 +6512,24 @@ items:
       of 2026-10-22 to 10-29 were cut off the same way, seven of them. Read 2026-11-10's night
       first: if it finishes, this is one large change's cost; if a change to one test file can stale
       the whole repository every day, the nightly can never finish.
+  - id: mutation-tce-equivalence
+    title: an excepted mutant whose compiled code equals the original's is proven equivalent
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      An exception in itos-cc.yaml goes stale when a test kills its mutant or its code changes, but
+      nothing checks that the mutant is truly equivalent rather than untested: both survive every
+      test, and the reason is free text only the coordinator's approval and the person's weekly
+      review judge. Trivial Compiler Equivalence settles part of it: compile the original and the
+      mutant and compare the function's machine code; identical code proves the mutant equivalent.
+      Studies on C found it catches about a third of equivalent mutants (redundant bounds, dead
+      assignments). It only confirms, never refutes: differing code may still be equivalent. Uses:
+      mark an exception proven so the weekly review reads only the unproven ones, and possibly skip
+      such mutants without a trial, saving Nightly time. Go first; the other languages' compilers
+      may not allow it. Open questions: how to compare one function's code in Go (go build
+      -gcflags=-S, or objdump of the symbol), inlining and line-number noise in the comparison, and
+      whether a proven mutant still counts as a survivor or as its own outcome. Not before
+      nightly-full-rejudge-cause.
