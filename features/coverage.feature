@@ -14,7 +14,7 @@ Feature: Coverage
       And its coverage is the same as with the whole module's tests
       # a test binary that does not link a package cannot cover it
 
-    @ID-COV-02 @binary-only
+    @ID-COV-02 @binary-only @language-tools
     Scenario: A TypeScript file is measured by the tests that import it
       When I run "itos-cc crap src/board.ts" in a Vitest or Jest project
       Then coverage runs vitest related --run src/board.ts, or jest --findRelatedTests src/board.ts
@@ -46,6 +46,7 @@ Feature: Coverage
       When coverage is run for it
       Then the command is <command>
 
+      @language-tools
       Examples:
         | language   | marker           | setup                                        | command                                                           |
         | Go         | go.mod           | nothing else                                 | go test ./... -covermode=set -coverpkg=./... -coverprofile=...    |
@@ -63,7 +64,7 @@ Feature: Coverage
       # never pub get (--no-pub: nothing the lockfile has not fetched is
       # downloaded, as npx is never used). With no path flutter test runs
       # test/ alone, so integration_test/ never counts (q-76).
-      @slice-32
+      @slice-32 @flutter-tools
       Examples:
         | language   | marker           | setup                                        | command                                                           |
         | Dart       | pubspec.yaml     | a dependency on the flutter SDK              | flutter test --no-pub --coverage --coverage-path=... writing LCOV |
@@ -76,7 +77,7 @@ Feature: Coverage
       # mutation does. Binary-only, as COV-05 is. Before slice-17 the
       # command is the installed c8 around <pm> run test, failing at the
       # Then.
-      @slice-17
+      @slice-17 @language-tools
       Examples:
         | language   | marker       | setup                                                                                                                              | command                                                    |
         | TypeScript | package.json | vitest 5 or later installed through another package, named in neither its dependencies nor its devDependencies, its test script "vitest run" | the installed vitest run with the v8 provider writing LCOV |
@@ -88,7 +89,7 @@ Feature: Coverage
       Then <pm> is pnpm
       # otherwise the nearest lockfile decides (pnpm, yarn, bun, npm), and npm when there is none
 
-    @ID-COV-07 @binary-only
+    @ID-COV-07 @binary-only @language-tools
     Scenario: Node tools come from node_modules, never from the registry
       Given a TypeScript project in a workspace, with its tools installed at the workspace root
       When coverage is run for it
@@ -115,7 +116,7 @@ Feature: Coverage
       # slice-32: flutter is never downloaded (decision 26), and a package
       # pub has not resolved is not resolved for it: the user runs
       # flutter pub get, as they install node_modules.
-      @slice-32
+      @slice-32 @flutter-tools
       Examples:
         | language   | missing                                                      |
         | Dart       | whose flutter is not installed                               |
@@ -131,7 +132,7 @@ Feature: Coverage
       And only complexity is reported for it
       # older Vitest writes V8 blocks, not branches; Jest's istanbul branches are the same in every version
 
-    @ID-COV-10 @binary-only
+    @ID-COV-10 @binary-only @language-tools
     Scenario: Python uses the project's own virtualenv
       Given a Python project with a .venv directory
       When coverage is run for it
@@ -146,14 +147,14 @@ Feature: Coverage
     # slice-32: FVM pins a Flutter app's SDK as gradlew pins Gradle's.
     # Without .fvm/flutter_sdk (fvm install never ran there), the flutter on
     # PATH runs, as when there is no .fvmrc.
-    @slice-32 @ID-COV-40 @binary-only
+    @slice-32 @ID-COV-40 @binary-only @flutter-tools
     Scenario: A Flutter app's FVM SDK is preferred
       Given a Flutter app whose .fvmrc pins the SDK that .fvm/flutter_sdk links to
       When coverage is run for it
       Then .fvm/flutter_sdk/bin/flutter runs the tests instead of the flutter on PATH
 
     # slice-32, q-74 (a): pure Dart packages (dart test) are a later idea.
-    @slice-32 @ID-COV-41 @binary-only
+    @slice-32 @ID-COV-41 @binary-only @flutter-tools
     Scenario: A Dart package that does not use Flutter is not measured yet
       Given a Dart package whose pubspec.yaml does not depend on the flutter SDK
       When coverage is run for it
@@ -163,14 +164,14 @@ Feature: Coverage
 
     # slice-32: a pub workspace's members are its build roots, each run in
     # its own directory, as flutter test writes SF: paths relative to it.
-    @slice-32 @ID-COV-42 @binary-only
+    @slice-32 @ID-COV-42 @binary-only @flutter-tools
     Scenario: Each member of a pub workspace is measured in its own directory
       Given a pub workspace whose root pubspec.yaml lists the Flutter packages app and core
       When coverage is run
       Then flutter test runs in app and in core, and nothing runs at the workspace root
       And each report's lib/ paths are read against its member's directory
 
-    @ID-COV-12 @binary-only
+    @ID-COV-12 @binary-only @language-tools
     Scenario: Several build roots and languages are measured separately and merged
       Given a repository with a Go module and a TypeScript package
       When coverage is run
@@ -262,7 +263,7 @@ Feature: Coverage
     # with the pinned Vitest and coverage.py. Before slice-16 the command
     # exits 1 after writing its report, failing at the first Then, and
     # every function of the file is mutation.coverage-missing.
-    @slice-16 @ID-COV-44 @binary-only
+    @slice-16 @ID-COV-44 @binary-only @language-tools
     Scenario Outline: A run of one file's tests is not held to the project's <language> coverage floor
       Given a <language> project with two files, each fully covered by its own test, and <floor>
       And the whole suite meets that floor, and either file's test alone does not
@@ -293,7 +294,7 @@ Feature: Coverage
     # every run would rewrite the project's vitest.config.ts with what one
     # file's tests measured, as coverage runs in the project's own folder.
     # Binary-only for good: the config is the real Vitest's to write.
-    @slice-16 @ID-COV-46 @binary-only
+    @slice-16 @ID-COV-46 @binary-only @language-tools
     Scenario: Measuring never rewrites the project's coverage floor
       Given the TypeScript project of ID-COV-44, its thresholds set to autoUpdate
       When I run "itos-cc mutation run --json" for one of the two files
@@ -305,7 +306,7 @@ Feature: Coverage
     # lines mutation.uncovered-statement, failing at the Then before
     # slice-16. Binary-only for good: the inventory is the real Vitest's
     # run, which the fake does not make.
-    @slice-16 @ID-COV-47 @binary-only
+    @slice-16 @ID-COV-47 @binary-only @language-tools
     Scenario: The lines of a file no test loads are listed under the project's floor
       Given the TypeScript project of ID-COV-44, with a third file no test imports
       When I run "itos-cc mutation run --fail-uncovered --json" for that file
@@ -475,7 +476,7 @@ Feature: Coverage
     # not unknown as a language nobody measured is (ID-CRAP-05). A file
     # whose coverage:ignore-file pragma Flutter honours is not coverable at
     # all, loaded or not.
-    @slice-32 @ID-COV-43 @binary-only
+    @slice-32 @ID-COV-43 @binary-only @flutter-tools
     Scenario: A Dart library no test loads is uncovered, not unmeasured
       Given a Flutter app whose test loads lib/board.dart and no test loads lib/unused.dart or lib/ignored.dart
       And lib/ignored.dart's first line is "// coverage:ignore-file"

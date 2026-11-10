@@ -23,9 +23,19 @@ import (
 // signals (decision 44).
 type binary struct {
 	bin, root string
+	// tags are the tags of the scenario it serves, its own, its feature's
+	// and its Examples block's, which say the CI job that runs it with the
+	// tools it needs (languageJob); the world gives them (withTags).
+	tags []string
 }
 
 var _ Driver = binary{}
+
+// withTags is b serving the scenario whose tags are tags.
+func (b binary) withTags(tags []string) Driver {
+	b.tags = tags
+	return b
+}
 
 // Folder makes a fresh folder in the system's temporary directory.
 func (binary) Folder() (string, error) {
@@ -118,7 +128,7 @@ func (b binary) Coverage(dir string, c Coverage) error {
 		return err
 	}
 	required := os.Getenv(languageToolsEnv) != ""
-	if err := languageJob(c.Language); err != nil {
+	if err := languageJob(c.Language, b.tags); err != nil {
 		return err
 	}
 	switch c.Language {
@@ -251,18 +261,36 @@ func missing(what string) error {
 	return fmt.Errorf("%w: %s is not installed", godog.ErrSkip, what)
 }
 
+// The tags that mark a scenario needing tools CI installs in one job alone:
+// languageToolsTag Python's, TypeScript's and Kotlin's, which cd.yml's
+// languages job installs, and flutterToolsTag Dart's, which its dart job
+// does. Each job selects the scenarios by its tag (features/README.md).
+const (
+	languageToolsTag = "@language-tools"
+	flutterToolsTag  = "@flutter-tools"
+)
+
 // languageJob skips a scenario needing language's tools in a CI job that
 // did not install the pinned ones, for any language but Go: its runner's
 // are whatever its image has. Flutter is installed in cd.yml's dart job
-// alone, which sets flutterToolsEnv.
-func languageJob(language string) error {
-	if language != "go" && os.Getenv(languageToolsEnv) == "" && os.Getenv("CI") != "" {
-		return fmt.Errorf("%w: CI installs the %s tools on ubuntu-latest only, where it sets %s", godog.ErrSkip, language, languageToolsEnv)
+// alone, which sets flutterToolsEnv. A scenario so skipped whose tags lack
+// the one that selects it into the job that installs those tools fails
+// instead, naming that tag, since no job would ever run it through them.
+func languageJob(language string, tags []string) error {
+	if language == "go" || os.Getenv("CI") == "" {
+		return nil
 	}
-	if language == "dart" && os.Getenv(flutterToolsEnv) == "" && os.Getenv("CI") != "" {
-		return fmt.Errorf("%w: CI installs Flutter in cd.yml's dart job only, where it sets %s", godog.ErrSkip, flutterToolsEnv)
+	if os.Getenv(languageToolsEnv) != "" && (language != "dart" || os.Getenv(flutterToolsEnv) != "") {
+		return nil
 	}
-	return nil
+	tag, why := languageToolsTag, fmt.Sprintf("CI installs the %s tools on ubuntu-latest only, where it sets %s", language, languageToolsEnv)
+	if language == "dart" {
+		tag, why = flutterToolsTag, "CI installs Flutter in cd.yml's dart job only, where it sets "+flutterToolsEnv
+	}
+	if !slices.Contains(tags, tag) {
+		return fmt.Errorf("the scenario needs the %s tools but lacks %s, the tag that selects it into the one CI job that installs them (%s): tag the scenario, or the Examples block of its rows, %s", language, tag, why, tag)
+	}
+	return fmt.Errorf("%w: %s", godog.ErrSkip, why)
 }
 
 // testTools are the programs each language's tests need, beside the one
@@ -283,7 +311,7 @@ var testTools = map[string][]string{
 // scenario needing other tools than Go's, as Coverage does. Tests said to
 // run within quickRun skip where the system cannot run them that fast
 // (quickRunsOn). The tests themselves then decide every outcome.
-func (binary) Tests(_ string, t Tests) error {
+func (b binary) Tests(_ string, t Tests) error {
 	if t.Command == "" && t.Imports != nil {
 		if t.Baseline != "" || len(t.Surviving) > 0 || len(t.TimingOut) > 0 || len(t.Flipping) > 0 || t.Elapsed != 0 || t.Trace != nil || t.Listed != nil {
 			return fmt.Errorf("imports-only setup cannot declare execution outcomes")
@@ -297,7 +325,7 @@ func (binary) Tests(_ string, t Tests) error {
 	if t.Elapsed > 0 && t.Elapsed < quickRun && !quickRunsOn(runtime.GOOS) {
 		return fmt.Errorf("%w: tests said to take %s run several times longer on %s, their first run most", godog.ErrSkip, t.Elapsed, runtime.GOOS)
 	}
-	if err := languageJob(t.Language); err != nil {
+	if err := languageJob(t.Language, b.tags); err != nil {
 		return err
 	}
 	if words := strings.Fields(t.Command); len(words) > 0 && !strings.ContainsAny(words[0], `/\`) {

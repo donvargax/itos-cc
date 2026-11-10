@@ -183,7 +183,7 @@ Feature: Mutation testing
     # of the function around it, while mutation run --json lists a file's
     # mutants by line and column (ID-MUT-52). Both list in line and column
     # order (the coordinator's call, 2026-10-07).
-    @mutation-list-line-order @ID-MUT-101
+    @mutation-list-line-order @ID-MUT-101 @language-tools
     Scenario: Sites are listed in line order, inline callbacks included
       Given src/app.ts has a function with a site before, inside and after an inline callback
       When I run "itos-cc mutation list src/app.ts"
@@ -204,6 +204,7 @@ Feature: Mutation testing
       When its mutants run
       Then the test command is <command>
 
+      @language-tools
       Examples:
         | language   | setup             | command                                                          |
         | Go         | go.mod            | go test -count=1 -failfast on the file's package                 |
@@ -218,7 +219,7 @@ Feature: Mutation testing
       # slice-35, dart-support: flutter test has no fail-fast flag; the
       # files are the test files that reach the source (slice-34), and an
       # FVM-pinned SDK is preferred as coverage prefers it (slice-32).
-      @slice-35
+      @slice-35 @flutter-tools
       Examples:
         | language   | setup                        | command                                                     |
         | Dart       | a resolved Flutter package   | flutter test --no-pub on the test files that reach the file |
@@ -254,7 +255,7 @@ Feature: Mutation testing
 
     # Binary-only for good: the worker copies and their links are real
     # folders the tests run in.
-    @ID-MUT-11 @binary-only
+    @ID-MUT-11 @binary-only @language-tools
     Scenario: The real tree is never modified while tests run
       When I run "itos-cc mutation run src/board.ts"
       Then each worker runs mutants in its own private copy of the project
@@ -263,7 +264,7 @@ Feature: Mutation testing
 
     # Binary-only for good: PYTHONPATH is what the real interpreter reads
     # in a worker's real copy.
-    @ID-MUT-12 @binary-only
+    @ID-MUT-12 @binary-only @language-tools
     Scenario: Python tests import the worker's copy
       Given a Python project installed in editable mode
       When its mutants run
@@ -276,7 +277,7 @@ Feature: Mutation testing
       Then that command first runs unmutated inside a worker's copy
       And its duration sets the mutant timeout
 
-    @ID-MUT-14
+    @ID-MUT-14 @language-tools
     Scenario: Timeouts
       Given the baseline took 3 seconds
       When I run "itos-cc mutation run --timeout-factor 10"
@@ -306,7 +307,7 @@ Feature: Mutation testing
       When mutants run with the default timeout factor of 10
       Then a mutant times out after 5.5 seconds: ten times the baseline, plus 5 seconds
 
-    @ID-MUT-16
+    @ID-MUT-16 @language-tools
     Scenario: A failing baseline
       Given the tests of src/board.py fail without any mutation
       When I run "itos-cc mutation run src/board.py"
@@ -333,7 +334,7 @@ Feature: Mutation testing
     # whole, as it is under 40 lines" in the feat, its step with it. Both
     # drivers run it, as it needs no real tool. Before slice-24 only the
     # last 20 lines follow, failing at the Then.
-    @slice-24 @ID-MUT-303
+    @slice-24 @ID-MUT-303 @language-tools
     Scenario: A failing baseline's report keeps the head and the tail of its output
       Given the tests of src/board.py fail without any mutation, printing 100 numbered lines, the first naming the cause
       When I run "itos-cc mutation run src/board.py"
@@ -575,7 +576,7 @@ Feature: Mutation testing
         | testdata/left-behind is there |
         | testdata/keep.txt is gone     |
 
-    @slice-43 @ID-MUT-326 @binary-only
+    @slice-43 @ID-MUT-326 @binary-only @language-tools
     Scenario: A worker's copy still links node_modules and leaves out a stray ignored file
       Given a TypeScript package, tested with Vitest, whose .gitignore ignores node_modules/ and tmp/, with tmp/stray.log, and whose tests pass in the project
       When I run "itos-cc mutation run --workers 1 --json" for its source
@@ -727,7 +728,7 @@ Feature: Mutation testing
     # are the real Workers' and the real Vitest's, and the fake Workers
     # hold no copy (as MUT-267). Before slice-19 every baseline fails in
     # the copy with TSCONFIG_ERROR, failing at the first Then.
-    @slice-19 @ID-MUT-283 @binary-only
+    @slice-19 @ID-MUT-283 @binary-only @language-tools
     Scenario Outline: A member of a <workspace> whose tsconfig extends one at the workspace root is mutated in a copy of its workspace
       Given a <workspace> whose root holds tsconfig.base.json, with the member packages/shapes, tested with Vitest, whose tsconfig.json extends ../../tsconfig.base.json and whose tests pass in the project
       When I run "itos-cc mutation run --workers 1 --json packages/shapes/src/area.ts"
@@ -755,7 +756,7 @@ Feature: Mutation testing
     # above it, which slice-19 still does not copy. Binary-only for good,
     # as MUT-283. Before slice-19 the message says only that its tests
     # fail, failing at the Then; the But holds today.
-    @slice-19 @ID-MUT-284 @binary-only
+    @slice-19 @ID-MUT-284 @binary-only @language-tools
     Scenario: A baseline that fails only in the worker's copy says so
       Given a TypeScript package in no workspace, tested with Vitest, whose tsconfig.json extends ../tsconfig.base.json in the folder above it, and whose tests pass in the project
       When I run "itos-cc mutation run --json" for its source
@@ -873,13 +874,13 @@ Feature: Mutation testing
 
   Rule: Coverage decides which mutants run
 
-    @ID-MUT-18
+    @ID-MUT-18 @language-tools
     Scenario: Mutants on lines no test executes are not run
       Given coverage shows line 12 of src/board.ts is never executed
       When I run "itos-cc mutation run src/board.ts"
       Then the mutants on line 12 are reported as uncovered without running
 
-    @ID-MUT-19
+    @ID-MUT-19 @language-tools
     Scenario: A file the tests never load is entirely uncovered
       Given coverage measured other TypeScript files but never src/unused.ts
       When I run "itos-cc mutation run src/unused.ts"
@@ -895,7 +896,7 @@ Feature: Mutation testing
     # file's language measures that language, even when its report names no
     # file of the run (the coordinator's call, 2026-10-07). Go fixtures do
     # not show it, since go test reports a package without tests at 0%.
-    @unloaded-file-uncovered @ID-MUT-105
+    @unloaded-file-uncovered @ID-MUT-105 @language-tools
     Scenario: A file no test loads, mutated alone, is entirely uncovered
       Given a TypeScript project whose tests import src/board.ts but never src/unused.ts
       When I run "itos-cc mutation run src/unused.ts"
@@ -944,7 +945,7 @@ Feature: Mutation testing
     # 2026-10-07). The output of the test and coverage commands themselves is
     # passed on as it is. ID-MUT-20 and ID-MUT-22 said the old text and changed
     # with the fix.
-    @mutation-progress-prefix @ID-MUT-100
+    @mutation-progress-prefix @ID-MUT-100 @language-tools
     Scenario: Progress lines begin itos-cc:
       Given src/board.ts has a mutant that is killed and one on a line no test executes
       When I run "itos-cc mutation run src/board.ts"
@@ -1710,7 +1711,7 @@ Feature: Mutation testing
   # even where no mutation site exists (strict-go-coverage below).
   Rule: Uncovered mutants as failures
 
-    @slice-2 @ID-MUT-47
+    @slice-2 @ID-MUT-47 @language-tools
     Scenario: An uncovered mutant fails the run
       Given coverage shows line 12 of src/board.ts is never executed
       And every mutant on the lines the tests execute is killed
@@ -1718,7 +1719,7 @@ Feature: Mutation testing
       Then each mutant on line 12 is listed as "uncovered `>` → `>=` in board#place, src/board.ts line 12 column 9"
       And the exit code is 1
 
-    @slice-2 @ID-MUT-48
+    @slice-2 @ID-MUT-48 @language-tools
     Scenario: A file the tests never load fails whole
       Given coverage measured other TypeScript files but never src/unused.ts
       When I run "itos-cc mutation run --fail-uncovered src/unused.ts"
@@ -1734,7 +1735,7 @@ Feature: Mutation testing
       And none of "Board#clear" is
       And the exit code is 1
 
-    @slice-2 @ID-MUT-50
+    @slice-2 @ID-MUT-50 @language-tools
     Scenario: Uncovered mutants as JSON
       When I run "itos-cc mutation run --fail-uncovered --json src/board.ts"
       Then each uncovered mutant is a "mutation.uncovered" problem with file, line, column, function, original, and replacement
@@ -1937,7 +1938,7 @@ Feature: Mutation testing
   # (mutate.Options.Judge, project.ChangedSince) follows these already.
   Rule: Judging the functions a range of commits changed
 
-    @slice-1 @ID-MUT-37
+    @slice-1 @ID-MUT-37 @language-tools
     Scenario: Only the functions the commits since a ref changed are judged
       Given a commit after "base" changed lines of "Board#place" in src/board.ts
       And "Board#clear" in the same file did not change
@@ -1946,7 +1947,7 @@ Feature: Mutation testing
       And no mutant of "Board#clear" runs
       And stdout says "… in src/board.ts … (judged 1 of 2 functions)"
 
-    @slice-1 @ID-MUT-38
+    @slice-1 @ID-MUT-38 @language-tools
     Scenario: Functions not judged keep what their snapshot holds
       Given a previous run recorded a survivor in "Board#clear"
       And only "Board#place" changed since "base"
@@ -1955,7 +1956,7 @@ Feature: Mutation testing
       And it is not reported, and the exit code is 0 when every mutant of "Board#place" is killed
       # a function never judged before gets no entry: it neither ran nor has an outcome to keep
 
-    @slice-1 @ID-MUT-39
+    @slice-1 @ID-MUT-39 @language-tools
     Scenario: Uncommitted changes are not in the range
       Given "Board#place" changed since "base" in a commit
       And "Board#clear" has an uncommitted change
@@ -1963,13 +1964,13 @@ Feature: Mutation testing
       Then "Board#place" is judged
       And "Board#clear" is not
 
-    @slice-1 @ID-MUT-40
+    @slice-1 @ID-MUT-40 @language-tools
     Scenario: Deleting lines changes the function around them
       Given a commit after "base" only deleted a line inside "Board#place"
       When I run "itos-cc mutation run --since base"
       Then "Board#place" is judged
 
-    @slice-1 @ID-MUT-41
+    @slice-1 @ID-MUT-41 @language-tools
     Scenario: Paths narrow the range
       Given commits after "base" changed src/board.ts and lib/util.ts
       When I run "itos-cc mutation run --since base src"
@@ -2004,7 +2005,7 @@ Feature: Mutation testing
       # --changed judges whole files of the working tree, --since functions of
       # commits: together they would judge neither
 
-    @slice-1 @ID-MUT-46
+    @slice-1 @ID-MUT-46 @language-tools
     Scenario: The functions judged, as JSON
       When I run "itos-cc mutation run --since base --json"
       Then each file in "files" has "judged", the namespace#name of each function judged
@@ -2016,7 +2017,7 @@ Feature: Mutation testing
     # coordinator's call, 2026-10-07). The summary comment counting the whole
     # snapshot while stdout counts what was judged is by design: the comment
     # is the file's state, stdout the run's.
-    @since-untouched-files @ID-MUT-102
+    @since-untouched-files @ID-MUT-102 @language-tools
     Scenario: A file with nothing judged is left as it was
       Given a commit after "base" changed only the imports of src/board.ts
       When I run "itos-cc mutation run --since base"
@@ -2115,7 +2116,7 @@ Feature: Mutation testing
       # guardrail that passes before slice-36. Strict Dart evidence is bound
       # to that hash, so a comment changes no evidence either. It needs no
       # Flutter: the results come from a --test-command.
-      @slice-36
+      @slice-36 @flutter-tools
       Examples:
         | language |
         | dart     |
@@ -2136,7 +2137,7 @@ Feature: Mutation testing
   # are their own items.
   Rule: Checking cached results without running
 
-    @mutation-check @ID-MUT-57
+    @mutation-check @ID-MUT-57 @language-tools
     Scenario: Fresh results with every mutant killed pass
       Given a run recorded every mutant of src/board.ts killed
       And no function of src/board.ts has changed since
@@ -2144,14 +2145,14 @@ Feature: Mutation testing
       Then no coverage or test command runs
       And the exit code is 0
 
-    @mutation-check @ID-MUT-58
+    @mutation-check @ID-MUT-58 @language-tools
     Scenario: A function changed since its results is stale
       Given "Board#place" changed since the run that recorded it
       When I run "itos-cc mutation check src/board.ts"
       Then the problem is "mutation.stale", with file "src/board.ts" and function "Board#place"
       And the exit code is 1
 
-    @mutation-check @ID-MUT-59
+    @mutation-check @ID-MUT-59 @language-tools
     Scenario: A function with no results is missing
       Given "Board#reset" was added after the last run
       When I run "itos-cc mutation check src/board.ts"
@@ -2159,35 +2160,35 @@ Feature: Mutation testing
       And the exit code is 1
       # a file with no snapshot at all has every function with a site missing
 
-    @mutation-check @ID-MUT-60
+    @mutation-check @ID-MUT-60 @language-tools
     Scenario: A recorded survivor fails the check
       Given a fresh run recorded a survivor in "Board#place"
       When I run "itos-cc mutation check src/board.ts"
       Then the problem is "mutation.survived", with its file, line, column, function, original, and replacement
       And the exit code is 1
 
-    @mutation-check @ID-MUT-61
+    @mutation-check @ID-MUT-61 @language-tools
     Scenario: A recorded uncovered mutant fails only with --fail-uncovered
       Given a fresh run recorded every covered mutant of src/board.ts killed and one uncovered
       When I run "itos-cc mutation check src/board.ts"
       Then the exit code is 0
       But "itos-cc mutation check --fail-uncovered src/board.ts" reports it as "mutation.uncovered" and exits 1
 
-    @mutation-check @ID-MUT-62
+    @mutation-check @ID-MUT-62 @language-tools
     Scenario: With --since only the functions the range changed are checked
       Given only "Board#place" changed since "base", and its fresh results are all killed
       And "Board#clear", unchanged, has a recorded survivor
       When I run "itos-cc mutation check --since base"
       Then the exit code is 0
 
-    @mutation-check @ID-MUT-63
+    @mutation-check @ID-MUT-63 @language-tools
     Scenario: A function with no mutation site needs no results
       Given "Board#size" has no mutation site and no entry in the snapshot
       And every other function of src/board.ts has fresh results, all killed
       When I run "itos-cc mutation check src/board.ts"
       Then the exit code is 0
 
-    @mutation-check @ID-MUT-64
+    @mutation-check @ID-MUT-64 @language-tools
     Scenario: Each function's state as JSON
       When I run "itos-cc mutation check --json src/board.ts"
       Then each file in "files" has "functions", each with function and state "fresh", "stale" or "missing"
@@ -2201,7 +2202,7 @@ Feature: Mutation testing
     # mutation run runs only those sites and reuses the recorded outcomes.
     # The fixtures stand for a new operator by removing a mutant from the
     # entry.
-    @check-unrecorded-sites @ID-MUT-106
+    @check-unrecorded-sites @ID-MUT-106 @language-tools
     Scenario: A site the entry never recorded makes the function stale
       Given fresh results for every function of src/board.ts, all killed
       But the entry of "Board#place" does not record one of its sites, as when a newer itos-cc adds an operator
@@ -2209,7 +2210,7 @@ Feature: Mutation testing
       Then the problem is "mutation.stale", with file and function "Board#place", and its message names that site's line, column, original and replacement
       And the exit code is 1
 
-    @check-unrecorded-sites @ID-MUT-107
+    @check-unrecorded-sites @ID-MUT-107 @language-tools
     Scenario: mutation run runs only the sites the entry never recorded
       Given the entry of "Board#place" does not record one of its sites, and records every other one killed
       When I run "itos-cc mutation run src/board.ts"
@@ -2234,28 +2235,28 @@ Feature: Mutation testing
   # A test that does not import the file leaves an own-scope outcome fresh.
   Rule: Results go stale when their tests change
 
-    @mutation-test-hash @ID-MUT-65
+    @mutation-test-hash @ID-MUT-65 @language-tools
     Scenario: The snapshot records the tests that import the file
       Given src/board.test.ts imports src/board.ts and src/other.test.ts does not
       When I run "itos-cc mutation run src/board.ts"
       Then .metrics/mutate/src/board.ts.json records the hash of src/board.test.ts
       And not of src/other.test.ts
 
-    @mutation-test-hash @ID-MUT-66
+    @mutation-test-hash @ID-MUT-66 @language-tools
     Scenario: Changing a test that imports the file reruns its kills
       Given a previous run killed every mutant of "Board#place"
       And "Board#place" has not changed since, but src/board.test.ts has
       When I run "itos-cc mutation run src/board.ts"
       Then every mutant of "Board#place" runs again
 
-    @mutation-test-hash @ID-MUT-67
+    @mutation-test-hash @ID-MUT-67 @language-tools
     Scenario: Deleting a test that imports the file reruns its kills
       Given a previous run killed every mutant of "Board#place"
       And src/board.test.ts was deleted since
       When I run "itos-cc mutation run src/board.ts"
       Then no mutant of "Board#place" is reused
 
-    @mutation-test-hash @ID-MUT-68
+    @mutation-test-hash @ID-MUT-68 @language-tools
     Scenario: mutation check calls results stale when their tests changed
       Given fresh results for every function of src/board.ts, all killed
       And src/board.test.ts changed since they were recorded
@@ -2263,7 +2264,7 @@ Feature: Mutation testing
       Then each function of src/board.ts is a "mutation.stale" problem whose message names src/board.test.ts
       And the exit code is 1
 
-    @mutation-test-hash @ID-MUT-69
+    @mutation-test-hash @ID-MUT-69 @language-tools
     Scenario: A snapshot that records no tests is stale
       Given .metrics/mutate/src/board.ts.json was written before snapshots recorded tests
       And no function of src/board.ts has changed since
@@ -2286,7 +2287,7 @@ Feature: Mutation testing
     # recorded was lost. Decided with the person on 2026-10-07 (q-14): it
     # keeps those entries, marked stale, so check calls them stale and their
     # outcomes are kept until a run judges them again.
-    @since-keeps-stale-entries @ID-MUT-108
+    @since-keeps-stale-entries @ID-MUT-108 @language-tools
     Scenario: --since keeps the entries it does not judge, marked stale, when their tests changed
       Given fresh results for "Board#place" and "Board#clear", with a survivor recorded in "Board#clear"
       And a commit after "base" changed "Board#place" and src/board.test.ts
@@ -2315,7 +2316,7 @@ Feature: Mutation testing
   # It takes the selection of mutation check: paths, --changed and --since.
   Rule: Re-running a sample of cached results
 
-    @mutation-sample @ID-MUT-71
+    @mutation-sample @ID-MUT-71 @language-tools
     Scenario: A sample whose outcomes hold passes and writes nothing
       Given fresh results for every function of src/board.ts, with killed mutants and one survivor
       And the tests still kill and miss the same mutants
@@ -2325,7 +2326,7 @@ Feature: Mutation testing
       And .metrics/mutate/src/board.ts.json and src/board.ts are unchanged
       And the exit code is 0
 
-    @mutation-sample @ID-MUT-72
+    @mutation-sample @ID-MUT-72 @language-tools
     Scenario: A recorded kill that now survives is a mismatch
       Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
       But the tests no longer kill it
@@ -2333,7 +2334,7 @@ Feature: Mutation testing
       Then the problem is "mutation.mismatch", with file, line, column, function, original, replacement, recorded "killed" and outcome "survived"
       And the exit code is 1
 
-    @mutation-sample @ID-MUT-73
+    @mutation-sample @ID-MUT-73 @language-tools
     Scenario: A recorded survivor that is now killed is a mismatch too
       Given the snapshot records a mutant of "Board#place" as survived
       But the tests now kill it
@@ -2341,7 +2342,7 @@ Feature: Mutation testing
       Then the problem is "mutation.mismatch", with recorded "survived" and outcome "killed"
       And the exit code is 1
 
-    @mutation-sample @ID-MUT-74
+    @mutation-sample @ID-MUT-74 @language-tools
     Scenario: Killed and timeout agree
       Given the snapshot records a mutant of "Board#place" as killed
       And it now runs past its timeout
@@ -2350,7 +2351,7 @@ Feature: Mutation testing
       And the exit code is 0
       # and a recorded timeout that is now killed agrees too
 
-    @mutation-sample @ID-MUT-75
+    @mutation-sample @ID-MUT-75 @language-tools
     Scenario: Only fresh mutants that ran are sampled
       Given "Board#place" has fresh results, with one mutant recorded uncovered
       And "Board#clear" changed since its results, and "Board#reset" has none
@@ -2411,7 +2412,7 @@ Feature: Mutation testing
       And the exit code is 0
       # stale or missing results are mutation check's to fail
 
-    @mutation-sample @ID-MUT-83
+    @mutation-sample @ID-MUT-83 @language-tools
     Scenario: A failing baseline
       Given the tests of src/board.ts fail without any mutation
       When I run "itos-cc mutation sample src/board.ts"
@@ -2421,7 +2422,7 @@ Feature: Mutation testing
 
     # Since q-15 each sampled mutant also has "scope", the scope of the
     # tests it ran with, a key added with sample-recorded-scope.
-    @mutation-sample @ID-MUT-84
+    @mutation-sample @ID-MUT-84 @language-tools
     Scenario: The sample as JSON
       When I run "itos-cc mutation sample --json src/board.ts"
       Then stdout is one object with "schema": 1, "ok", "seed", and "files"
@@ -2458,7 +2459,7 @@ Feature: Mutation testing
     # MUT-341 and MUT-342 fail at the mutation.flaky step, MUT-339 at the
     # ran-3-times step and MUT-340 at the ran-once step; MUT-72 and MUT-73
     # stay guardrails.
-    @slice-50 @ID-MUT-337
+    @slice-50 @ID-MUT-337 @language-tools
     Scenario: A recorded kill its tests decide differently each run is flaky, not a mismatch
       Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
       But the tests miss it on one run and kill it on the next, with nothing they hash changed
@@ -2468,7 +2469,7 @@ Feature: Mutation testing
       And .metrics/mutate/src/board.ts.json and src/board.ts are unchanged
       And the exit code is 1
 
-    @slice-50 @ID-MUT-338
+    @slice-50 @ID-MUT-338 @language-tools
     Scenario: A recorded survivor its tests decide differently each run is flaky too
       Given the snapshot records a mutant of "Board#place" as survived
       But the tests kill it on one run and miss it on the next, with nothing they hash changed
@@ -2476,7 +2477,7 @@ Feature: Mutation testing
       Then the problem is "mutation.flaky", with recorded "survived" and outcomes "killed", "survived"
       And the exit code is 1
 
-    @slice-50 @ID-MUT-339
+    @slice-50 @ID-MUT-339 @language-tools
     Scenario: A mismatch its re-runs repeat stays a mismatch
       Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
       But the tests no longer kill it
@@ -2485,7 +2486,7 @@ Feature: Mutation testing
       And that mutant ran 3 times
       And the exit code is 1
 
-    @slice-50 @ID-MUT-340
+    @slice-50 @ID-MUT-340 @language-tools
     Scenario: An outcome that agrees runs once
       Given fresh results for every function of src/board.ts, with killed mutants and one survivor
       And the tests still kill and miss the same mutants
@@ -2493,7 +2494,7 @@ Feature: Mutation testing
       Then each sampled mutant ran once
       And the exit code is 0
 
-    @slice-50 @ID-MUT-341
+    @slice-50 @ID-MUT-341 @language-tools
     Scenario: A survivor that runs past its timeout on one run and survives the next is flaky
       Given the snapshot records a mutant of "Board#place" as survived
       But it runs past its timeout on one run and survives the next
@@ -2501,7 +2502,7 @@ Feature: Mutation testing
       Then the problem is "mutation.flaky", with recorded "survived" and outcomes "timeout", "survived"
       And the exit code is 1
 
-    @slice-50 @ID-MUT-342
+    @slice-50 @ID-MUT-342 @language-tools
     Scenario: A flaky mutant in the plain output and as JSON
       Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
       But the tests miss it on one run and kill it on the next, with nothing they hash changed
@@ -2521,7 +2522,7 @@ Feature: Mutation testing
     # mutation.flaky, exit 1. N below 1 is flags.value-invalid, exit 80.
     # Killed, timeout and over-limit still agree with each other. Before this
     # item --repeat is an unknown flag (flags.unknown), failing at each Then.
-    @slice-58 @ID-MUT-348
+    @slice-58 @ID-MUT-348 @language-tools
     Scenario: --repeat catches a flaky mutant that agreed with its recording once
       Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
       But the tests kill it on one run and miss it on the next, with nothing they hash changed
@@ -2530,7 +2531,7 @@ Feature: Mutation testing
       And the exit code is 1
       But without --repeat the sample passes, its one run agreeing with the recording
 
-    @slice-58 @ID-MUT-349
+    @slice-58 @ID-MUT-349 @language-tools
     Scenario: With --repeat each sampled mutant runs that many times
       Given fresh results for every function of src/board.ts, with killed mutants and one survivor
       And the tests still kill and miss the same mutants
@@ -2570,7 +2571,7 @@ Feature: Mutation testing
     # outcome, without the key. No exception takes one (mutation except
     # still takes only a survivor). Before this item MUT-345 and MUT-346 fail
     # at their flaky step and MUT-347 at check's problem step.
-    @slice-57 @ID-MUT-345
+    @slice-57 @ID-MUT-345 @language-tools
     Scenario: A retried survivor its tests decide differently each run is recorded flaky
       Given the snapshot records a mutant of "Board#place" as survived
       But the tests kill it on one run and miss it on the next, with nothing they hash changed
@@ -2579,14 +2580,14 @@ Feature: Mutation testing
       And stdout lists it on a "flaky" line, and src/board.ts's summary counts 1 flaky
       And the exit code is 1
 
-    @slice-57 @ID-MUT-346
+    @slice-57 @ID-MUT-346 @language-tools
     Scenario: Under --mutate-all a recorded kill its tests decide differently is recorded flaky
       Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
       But the tests miss it on one run and kill it on the next, with nothing they hash changed
       When I run "itos-cc mutation run --mutate-all --json src/board.ts"
       Then that mutant is recorded with "flaky": true and "outcomes" ["survived", "killed"]
 
-    @slice-57 @ID-MUT-347
+    @slice-57 @ID-MUT-347 @language-tools
     Scenario: mutation check fails on a recorded flaky mutant until a run settles it
       Given the snapshot records a mutant of "Board#place" as flaky, with outcomes killed and survived
       When I run "itos-cc mutation check"
@@ -2606,33 +2607,33 @@ Feature: Mutation testing
     # every mutant. An outcome with no recorded scope, written before this,
     # is taken as "own" (the coordinator's call: it is what a run without
     # those flags used).
-    @sample-recorded-scope @ID-MUT-109
+    @sample-recorded-scope @ID-MUT-109 @language-tools
     Scenario: Each recorded outcome keeps the scope of the tests that decided it
       When I run "itos-cc mutation run --all-tests src/board.ts"
       Then each mutant in .metrics/mutate/src/board.ts.json records scope "all-tests"
       And with --test-command 'make test' each records "make test", and with neither each records "own"
 
-    @sample-recorded-scope @ID-MUT-110
+    @sample-recorded-scope @ID-MUT-110 @language-tools
     Scenario: A reused outcome keeps its scope
       Given a run with --all-tests killed every mutant of "Board#place"
       And nothing has changed since
       When I run "itos-cc mutation run src/board.ts"
       Then the mutants of "Board#place" are reused and still record scope "all-tests"
 
-    @sample-recorded-scope @ID-MUT-111
+    @sample-recorded-scope @ID-MUT-111 @language-tools
     Scenario: mutation sample re-runs each mutant with its recorded scope
       Given a run with --all-tests recorded a kill in src/board.ts that only an end-to-end test makes
       When I run "itos-cc mutation sample --count 100 src/board.ts"
       Then that mutant runs the whole suite and is killed
       And no "mutation.mismatch" is reported
 
-    @sample-recorded-scope @ID-MUT-112
+    @sample-recorded-scope @ID-MUT-112 @language-tools
     Scenario: A scope given to mutation sample overrides the recorded one
       Given outcomes of src/board.ts recorded with scope "all-tests"
       When I run "itos-cc mutation sample --test-command 'make test' src/board.ts"
       Then every sampled mutant runs "make test"
 
-    @sample-recorded-scope @ID-MUT-113
+    @sample-recorded-scope @ID-MUT-113 @language-tools
     Scenario: An outcome with no recorded scope was decided by the file's own tests
       Given fresh results for src/board.ts written before outcomes recorded their scope
       When I run "itos-cc mutation sample src/board.ts"
@@ -2651,7 +2652,7 @@ Feature: Mutation testing
     #   --test-command with the line in single quotes, a quote in it written
     #   '\''.
     # - The problem carries the scope as "scope", as the sample's JSON does.
-    @mismatch-fix-scope @ID-MUT-147
+    @mismatch-fix-scope @ID-MUT-147 @language-tools
     Scenario Outline: A mismatch's fix re-runs the mutant in the scope it was sampled with
       Given a run <recorded with> recorded a kill in src/board.ts that those tests no longer make
       When I run "itos-cc mutation sample --count 100 src/board.ts"
@@ -2664,7 +2665,7 @@ Feature: Mutation testing
         | with --all-tests                | all-tests | itos-cc mutation run --mutate-all --all-tests src/board.ts              |
         | with --test-command 'make test' | make test | itos-cc mutation run --mutate-all --test-command 'make test' src/board.ts |
 
-    @mismatch-fix-scope @ID-MUT-148
+    @mismatch-fix-scope @ID-MUT-148 @language-tools
     Scenario: A scope given to sample is the one the fix names
       Given outcomes of src/board.ts recorded with scope "own", one of them a kill the whole suite no longer makes
       When I run "itos-cc mutation sample --all-tests --count 100 src/board.ts"
@@ -2681,7 +2682,7 @@ Feature: Mutation testing
     # step "its fix says to run" of MUT-147 and MUT-148 checks that ending in
     # the feat, its sentence unchanged. Before this item the fix's command
     # sat inside quotes, failing at the ending step.
-    @slice-45 @ID-MUT-334
+    @slice-45 @ID-MUT-334 @language-tools
     Scenario: A mismatch's fix ends with its command, which pastes as written
       Given a run with --test-command 'make test' recorded a kill in src/board.ts that those tests no longer make
       When I run "itos-cc mutation sample --count 100 src/board.ts"
@@ -2726,13 +2727,13 @@ Feature: Mutation testing
         | mutation check             |
         | mutation sample            |
 
-    @ID-MUT-28
+    @ID-MUT-28 @language-tools
     Scenario: Summary per file
       When I run "itos-cc mutation run src/board.ts"
       Then stdout says "14 killed, 1 survived, 2 uncovered in src/board.ts (ran 7, reused 8)"
       And each survivor is listed as "survived `>` → `>=` in board#place, src/board.ts line 5 column 9"
 
-    @ID-MUT-29
+    @ID-MUT-29 @language-tools
     Scenario Outline: Exit codes
       Given <situation>
       When I run "itos-cc mutation run"
@@ -2744,7 +2745,7 @@ Feature: Mutation testing
         | a baseline fails              | 1    |
         | a mutant survives             | 1    |
 
-    @ID-MUT-30
+    @ID-MUT-30 @language-tools
     Scenario: Survivors as JSON
       When I run "itos-cc mutation run --json src/board.ts"
       Then stdout is one object with "schema": 1, "ok", and "files", each with file, killed, survived, uncovered, ran, reused, and baseline
@@ -2760,7 +2761,7 @@ Feature: Mutation testing
     # listed, as only they are counted. Since q-15 each mutant also has
     # "scope", the scope of the tests that decided it, a key added with
     # sample-recorded-scope.
-    @slice-3 @ID-MUT-52
+    @slice-3 @ID-MUT-52 @language-tools
     Scenario: Every mutant as JSON
       Given src/board.ts has mutants that are killed, one that survives, and one on a line no test executes
       When I run "itos-cc mutation run --json src/board.ts"
@@ -2768,14 +2769,14 @@ Feature: Mutation testing
       And each has line, column, function, original, replacement, outcome, reused, and scope
       And their outcomes are "killed", "survived", and "uncovered" as each was decided
 
-    @slice-3 @ID-MUT-53
+    @slice-3 @ID-MUT-53 @language-tools
     Scenario: A timed-out mutant's outcome is its own
       Given a mutant of src/board.ts runs past its timeout
       When I run "itos-cc mutation run --json src/board.ts"
       Then its outcome is "timeout"
       And it is counted in "killed"
 
-    @slice-3 @ID-MUT-54
+    @slice-3 @ID-MUT-54 @language-tools
     Scenario: Mutants taken from the snapshot say so
       Given a previous run killed every mutant of "Board#place"
       And "Board#place" has not changed since, while "Board#clear" has
@@ -2783,24 +2784,24 @@ Feature: Mutation testing
       Then the mutants of "Board#place" are "killed" with reused true
       And the mutants of "Board#clear" have reused false
 
-    @slice-3 @ID-MUT-55
+    @slice-3 @ID-MUT-55 @language-tools
     Scenario: With --since only the judged functions' mutants are listed
       Given only "Board#place" changed since "base"
       When I run "itos-cc mutation run --since base --json"
       Then the "mutants" of src/board.ts all have function "Board#place"
 
-    @slice-3 @ID-MUT-56
+    @slice-3 @ID-MUT-56 @language-tools
     Scenario: A failing baseline lists no mutant
       Given the tests of src/board.ts fail without any mutation
       When I run "itos-cc mutation run --json src/board.ts"
       Then its file has "baseline": "failed" and "mutants": []
 
-    @ID-MUT-31
+    @ID-MUT-31 @language-tools
     Scenario: Results are cached per file
       When I run "itos-cc mutation run src/billing/invoice.ts"
       Then .metrics/mutate/src/billing/invoice.ts.json records each function's hash and the outcome of every mutant
 
-    @ID-MUT-32
+    @ID-MUT-32 @language-tools
     Scenario: A summary comment at the end of each source file
       Given the file "x.py":
         """
@@ -2815,20 +2816,20 @@ Feature: Mutation testing
         # end itos-cc mutation
         """
 
-    @ID-MUT-33
+    @ID-MUT-33 @language-tools
     Scenario: The summary comment is replaced, not repeated
       Given a file that already ends with an itos-cc mutation comment
       When its mutants run again
       Then the file holds exactly one, updated summary comment
       And the file is only written when the summary changed
 
-    @ID-MUT-34
+    @ID-MUT-34 @language-tools
     Scenario: A comment block followed by code is not ours
       Given an itos-cc mutation comment block followed by more code
       When the summary is rewritten
       Then that block is left in place
 
-    @ID-MUT-35
+    @ID-MUT-35 @language-tools
     Scenario: Turning the summary comment off
       When I run "itos-cc mutation run --no-annotate"
       Then no source file is modified
@@ -2840,7 +2841,7 @@ Feature: Mutation testing
     # finds a comment with the old markers, so a file annotated before is
     # rewritten with one comment, never two. ID-MUT-32 and the scenarios of
     # annotate-excepted quote the old text and change with the fix.
-    @annotate-marker @ID-MUT-145
+    @annotate-marker @ID-MUT-145 @language-tools
     Scenario: A summary comment with the old markers is replaced by one with the new
       Given the file "x.py" ends with a summary comment opening "# itos-cc mutate:" and closing "# end itos-cc mutate"
       When its mutants run again
@@ -2883,7 +2884,7 @@ Feature: Mutation testing
   # matches what its snapshot records.
   Rule: Equivalent mutants excepted, each with a reason
 
-    @mutation-exceptions @ID-MUT-85
+    @mutation-exceptions @ID-MUT-85 @language-tools
     Scenario: Excepting a survivor records it with its reason
       Given a fresh run recorded the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
       When I run "itos-cc mutation except src/board.ts:7:19 --reason 'the loop only counts up'"
@@ -2891,7 +2892,7 @@ Feature: Mutation testing
       And it records src/board.ts, "Board#count", the function's hash, the site's line within the function, its column, `<`, `<=`, and the reason
       And the exit code is 0
 
-    @mutation-exceptions @ID-MUT-86
+    @mutation-exceptions @ID-MUT-86 @language-tools
     Scenario: Only a recorded survivor can be excepted
       Given the snapshot records the mutant at src/board.ts:5:9 as killed, and the one at src/board.ts:9:3 as uncovered
       When I run "itos-cc mutation except src/board.ts:5:9 --reason 'x'"
@@ -2914,7 +2915,7 @@ Feature: Mutation testing
     # as before. Both drivers run it, as it needs no real tool. Before
     # slice-23 the message says only that a survivor is excepted, and the fix
     # asks for a site listed as survived, failing at the second Then.
-    @slice-23 @ID-MUT-299
+    @slice-23 @ID-MUT-299 @language-tools
     Scenario: Refusing to except an uncovered site says it is on purpose and names the way out
       Given the snapshot records the mutant at src/board.ts:5:9 as killed, and the one at src/board.ts:9:3 as uncovered
       When I run "itos-cc mutation except src/board.ts:9:3 --reason 'no test can reach it'"
@@ -2924,14 +2925,14 @@ Feature: Mutation testing
       And the exit code is 80
       But refusing the killed site at src/board.ts:5:9 says neither
 
-    @mutation-exceptions @ID-MUT-87
+    @mutation-exceptions @ID-MUT-87 @language-tools
     Scenario: A reason is required
       When I run "itos-cc mutation except src/board.ts:7:19"
       Then the problem is "flags.value-missing", with flag "--reason"
       And the exit code is 80
       And "--reason ''" is "flags.value-invalid", exit 80
 
-    @mutation-exceptions @ID-MUT-88
+    @mutation-exceptions @ID-MUT-88 @language-tools
     Scenario: The rest of itos-cc.yaml is kept
       Given itos-cc.yaml holds a comment, another key, and an entry for src/board.ts:7:19
       When I run "itos-cc mutation except src/board.ts:7:19 --reason 'reworded'"
@@ -2968,7 +2969,7 @@ Feature: Mutation testing
     # make the run use listed tests; it was an unlisted key, "other", until
     # slice-52 refused one. Both drivers run it, as it needs no real tool.
     # Before slice-20 the whole document is re-encoded, failing at the Then.
-    @slice-20 @ID-MUT-290
+    @slice-20 @ID-MUT-290 @language-tools
     Scenario: Excepting a survivor changes no byte of itos-cc.yaml outside its new entry
       Given a fresh run recorded the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
       And itos-cc.yaml is laid out by hand: a "---" line, blank lines between keys, `copy: [ "dist/**" ]`, a block four spaces deep, a comment two spaces after a value, and an exceptions list at its key's indentation with one entry for another function, whose reason is folded
@@ -2976,7 +2977,7 @@ Feature: Mutation testing
       Then itos-cc.yaml is the text it was, with the new entry's lines after the last entry and no other byte changed
       And the exit code is 0
 
-    @slice-20 @ID-MUT-291
+    @slice-20 @ID-MUT-291 @language-tools
     Scenario: Excepting a site again changes only the lines of its entry
       Given a fresh run recorded the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
       And itos-cc.yaml is laid out by hand, its entry for src/board.ts:7:19 with reason "first" between two entries for other functions, a comment above it
@@ -2984,14 +2985,14 @@ Feature: Mutation testing
       Then only the lines of that entry changed in itos-cc.yaml, its reason now "reworded" and the comment above it kept
       And the exit code is 0
 
-    @mutation-exceptions @ID-MUT-89
+    @mutation-exceptions @ID-MUT-89 @language-tools
     Scenario: An excepted survivor fails nothing
       Given itos-cc.yaml excepts the survivor of "Board#count", and every other mutant of src/board.ts is killed
       When I run "itos-cc mutation run src/board.ts"
       Then stdout says "14 killed, 0 survived, 1 excepted, 0 uncovered in src/board.ts (ran 15, reused 0)"
       And the exit code is 0
 
-    @mutation-exceptions @ID-MUT-90
+    @mutation-exceptions @ID-MUT-90 @language-tools
     Scenario: An excepted survivor is reused while nothing changed
       Given a run recorded the excepted survivor of "Board#count"
       And neither "Board#count" nor the tests that import src/board.ts have changed since
@@ -3000,7 +3001,7 @@ Feature: Mutation testing
       And it is counted "excepted"
       But "itos-cc mutation run --mutate-all src/board.ts" runs it
 
-    @mutation-exceptions @ID-MUT-91
+    @mutation-exceptions @ID-MUT-91 @language-tools
     Scenario: After its tests change, an excepted mutant that still survives stays excepted
       Given a run recorded the excepted survivor of "Board#count"
       And src/board.test.ts changed since, and still does not kill it
@@ -3009,7 +3010,7 @@ Feature: Mutation testing
       And it is counted "excepted"
       And the exit code is 0
 
-    @mutation-exceptions @ID-MUT-92
+    @mutation-exceptions @ID-MUT-92 @language-tools
     Scenario: An excepted mutant that is now killed makes its entry stale
       Given a run recorded the excepted survivor of "Board#count"
       And src/board.test.ts changed since, and now kills it
@@ -3081,7 +3082,7 @@ Feature: Mutation testing
         | a flaky named site | its test kills that mutant on one run and misses it on the next, with nothing it hashes changed | --site board/board.go:5:11 --repeat 2 --json | its mutant's line ends "flaky: killed, survived (<duration>)" |
         | a stale entry      | a later commit's test also checks Count(5)                                                      | --site board/board.go:5:11                   | its mutant's line ends "killed (<duration>)"                  |
 
-    @mutation-exceptions @ID-MUT-93
+    @mutation-exceptions @ID-MUT-93 @language-tools
     Scenario: An entry whose function changed is stale
       Given itos-cc.yaml excepts a survivor of "Board#count"
       And "Board#count" changed since the entry was written
@@ -3091,7 +3092,7 @@ Feature: Mutation testing
       And the exit code is 1
       # moving the function is not a change, as for reuse
 
-    @mutation-exceptions @ID-MUT-94
+    @mutation-exceptions @ID-MUT-94 @language-tools
     Scenario: An entry whose site is gone is stale
       Given itos-cc.yaml excepts a survivor in "Board#count"
       And "Board#count" was deleted, or no longer has that site
@@ -3099,35 +3100,35 @@ Feature: Mutation testing
       Then the problem is "mutation.exception-stale", with why "gone"
       And the exit code is 1
 
-    @mutation-exceptions @ID-MUT-95
+    @mutation-exceptions @ID-MUT-95 @language-tools
     Scenario: An entry does not excuse an uncovered mutant
       Given itos-cc.yaml holds an entry for a site whose mutant is uncovered
       When I run "itos-cc mutation run --fail-uncovered src/board.ts"
       Then the problem is "mutation.uncovered" for that site
       And the exit code is 1
 
-    @mutation-exceptions @ID-MUT-96
+    @mutation-exceptions @ID-MUT-96 @language-tools
     Scenario: mutation check passes an excepted survivor and fails a stale entry
       Given fresh results for src/board.ts with one survivor, which itos-cc.yaml excepts
       When I run "itos-cc mutation check src/board.ts"
       Then the exit code is 0
       But after "Board#count" changes, mutation check reports "mutation.exception-stale" and exits 1
 
-    @mutation-exceptions @ID-MUT-97
+    @mutation-exceptions @ID-MUT-97 @language-tools
     Scenario: With --since only the judged functions' entries are checked
       Given only "Board#place" changed since "base"
       And itos-cc.yaml holds an entry for "Board#count" that would be stale
       When I run "itos-cc mutation run --since base"
       Then no "mutation.exception-stale" problem is reported
 
-    @mutation-exceptions @ID-MUT-98
+    @mutation-exceptions @ID-MUT-98 @language-tools
     Scenario: An invalid itos-cc.yaml is a config error
       Given itos-cc.yaml holds an entry with no reason
       When I run "itos-cc mutation run src/board.ts"
       Then the problem is "config.invalid", with file "itos-cc.yaml"
       And the exit code is 80
 
-    @mutation-exceptions @ID-MUT-99
+    @mutation-exceptions @ID-MUT-99 @language-tools
     Scenario: Excepted mutants as JSON
       When I run "itos-cc mutation run --json src/board.ts" with one excepted survivor
       Then its file has "excepted": 1 beside "killed", "survived" and "uncovered"
@@ -3150,7 +3151,7 @@ Feature: Mutation testing
     #   mutation-annotate-marker's.
     # - A reason is written on one line, each run of whitespace one space, so
     #   the comment never puts uncommented text in a source file.
-    @annotate-excepted @ID-MUT-138
+    @annotate-excepted @ID-MUT-138 @language-tools
     Scenario: The summary comment counts an excepted survivor apart, with its reason
       Given itos-cc.yaml excepts the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count" with reason "the loop only counts up", and every other mutant of src/board.ts is killed
       When I run "itos-cc mutation run src/board.ts"
@@ -3175,7 +3176,7 @@ Feature: Mutation testing
     # Board#count", saying so, and MUT-140's, which quotes the same line;
     # MUT-32's "in a" stays, a top-level function.
     # Before this item the line read "in count", failing at the Then.
-    @slice-46 @ID-MUT-335
+    @slice-46 @ID-MUT-335 @language-tools
     Scenario: The summary comment names a method with its class
       Given the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count", and every other mutant of src/board.ts is killed
       When I run "itos-cc mutation run src/board.ts"
@@ -3186,7 +3187,7 @@ Feature: Mutation testing
         // end itos-cc mutation
         """
 
-    @annotate-excepted @ID-MUT-139
+    @annotate-excepted @ID-MUT-139 @language-tools
     Scenario: A stale entry's survivor is listed as survived
       Given itos-cc.yaml excepts a survivor of "Board#count"
       And "Board#count" changed since the entry was written, and the mutant at its site still survives
@@ -3194,7 +3195,7 @@ Feature: Mutation testing
       Then the summary comment of src/board.ts counts it as survived and lists it on a "survived:" line
       And the comment holds no "excepted" count and no "excepted:" line
 
-    @annotate-excepted @ID-MUT-140
+    @annotate-excepted @ID-MUT-140 @language-tools
     Scenario: A reason over several lines is written on one comment line
       Given itos-cc.yaml excepts the survivor of "Board#count" with reason "the loop\n  only counts up"
       When I run "itos-cc mutation run src/board.ts"
@@ -3220,7 +3221,7 @@ Feature: Mutation testing
     # - Only mutation except writes itos-cc.yaml: a run never moves an entry.
     # - With paths or --changed, an entry for a file outside the selection
     #   is not judged, as now.
-    @exceptions-deleted-file @ID-MUT-141
+    @exceptions-deleted-file @ID-MUT-141 @language-tools
     Scenario: A run of the whole project fails an entry whose file is gone
       Given itos-cc.yaml excepts a survivor of "Board#count" in src/board.ts
       And src/board.ts and its tests were deleted
@@ -3228,7 +3229,7 @@ Feature: Mutation testing
       Then the problem is "mutation.exception-stale", with file "src/board.ts", function "Board#count", no line, and why "gone"
       And the exit code is 1
 
-    @exceptions-deleted-file @ID-MUT-142
+    @exceptions-deleted-file @ID-MUT-142 @language-tools
     Scenario: mutation check of the whole project fails it too
       Given itos-cc.yaml excepts a survivor of "Board#count" in src/board.ts
       And fresh results for every source file, src/board.ts having been deleted
@@ -3236,7 +3237,7 @@ Feature: Mutation testing
       Then the problem is "mutation.exception-stale", with file "src/board.ts" and why "gone"
       And the exit code is 1
 
-    @exceptions-deleted-file @ID-MUT-143
+    @exceptions-deleted-file @ID-MUT-143 @language-tools
     Scenario: With --since, an entry whose file the range deleted is gone
       Given itos-cc.yaml excepts a survivor of "Board#count" in src/board.ts
       And a commit after "base" deleted src/board.ts and its tests
@@ -3244,7 +3245,7 @@ Feature: Mutation testing
       Then the problem is "mutation.exception-stale", with file "src/board.ts" and why "gone"
       And the exit code is 1
 
-    @exceptions-deleted-file @ID-MUT-144
+    @exceptions-deleted-file @ID-MUT-144 @language-tools
     Scenario: An entry whose file was renamed has moved, and still excepts its mutant
       Given itos-cc.yaml excepts the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
       And a commit after "base" renamed src/board.ts to src/grid.ts, changing nothing else
@@ -3255,7 +3256,7 @@ Feature: Mutation testing
       And itos-cc.yaml still names src/board.ts
       And the exit code is 1
 
-    @exceptions-deleted-file @ID-MUT-146
+    @exceptions-deleted-file @ID-MUT-146 @language-tools
     Scenario: A run of the whole project finds a renamed file's entry moved
       Given itos-cc.yaml excepts the survivor of "Board#count" in src/board.ts
       And src/board.ts was renamed to src/grid.ts, changing nothing else
@@ -3449,6 +3450,7 @@ Feature: Mutation testing
       And no mutant of that file is judged or reported as covered
       But without --fail-uncovered the run falls back to running every mutant as before
 
+      @language-tools
       Examples:
         | language   | failure                              | rule                      | exit |
         | TypeScript | tool is missing                      | coverage.tool-missing     | 82   |
@@ -3460,7 +3462,7 @@ Feature: Mutation testing
       # --fail-uncovered path (run.go's unmeasuredToJudge), so this row is a
       # guardrail: it passes before slice-36 and holds that strict Dart
       # keeps failing closed.
-      @slice-36
+      @slice-36 @flutter-tools
       Examples:
         | language | failure         | rule                  | exit |
         | Dart     | tool is missing | coverage.tool-missing | 82   |
@@ -3478,7 +3480,7 @@ Feature: Mutation testing
     # cannot clear, such as a Vitest threshold for a glob pattern. Both
     # drivers run it, but only the binary driver shows it red: the fake
     # measurer already reads a failed command as measuring nothing.
-    @slice-16 @ID-MUT-270
+    @slice-16 @ID-MUT-270 @language-tools
     Scenario: A strict run whose coverage command fails after writing its report measured nothing
       Given a Python project whose test fails only when coverage.py runs it, after its file's every line has run
       When I run "itos-cc mutation run --fail-uncovered --json" for that file
@@ -3496,6 +3498,7 @@ Feature: Mutation testing
       When I run mutation run with <scope> for the production file
       Then the outcome runs again rather than being reused
 
+      @language-tools
       Examples:
         | language   | test                    | scope                       |
         | TypeScript | e2e/cli.test.ts         | --all-tests                 |
@@ -3511,12 +3514,12 @@ Feature: Mutation testing
       # import. Before slice-36 a Dart whole-suite outcome recorded no
       # test, failing at the Given's check that its evidence names
       # test/cli_test.dart.
-      @slice-36
+      @slice-36 @flutter-tools
       Examples:
         | language | test               | scope       |
         | Dart     | test/cli_test.dart | --all-tests |
 
-    @whole-suite-freshness-all @ID-MUT-206
+    @whole-suite-freshness-all @ID-MUT-206 @language-tools
     Scenario: Build roots, support files and legacy evidence are explicit for every language
       Given whole-suite outcomes in a TypeScript, a Python and a Kotlin project with support globs
       When a support file is added, changed or removed
@@ -3544,7 +3547,7 @@ Feature: Mutation testing
     # existing partial/fail-fast guards. Check/sample/graph still reject stale
     # unjudged outcomes, and a later full run must judge them rather than reuse.
     # No new flags, schema, dependencies, exit policy or broad freshness changes.
-    @bug-2 @whole-suite-freshness-all @ID-MUT-207
+    @bug-2 @whole-suite-freshness-all @ID-MUT-207 @language-tools
     Scenario: Mixed scopes and partial runs keep their own dependencies in every language
       Given TypeScript, Python and Kotlin outcomes recorded with own, all-tests and test-command scopes
       And only a non-importing test file changed beneath each build root
@@ -3577,7 +3580,7 @@ Feature: Mutation testing
       # slice-36, dart-support: as MUT-205's Dart row. Before slice-36 the
       # Dart outcomes record no test, failing at the Given's check that they
       # record nonempty test evidence.
-      @slice-36
+      @slice-36 @flutter-tools
       Examples:
         | language |
         | Dart     |
@@ -3607,7 +3610,7 @@ Feature: Mutation testing
 
     # Binary-only for good: the coverage command and the folder it writes
     # into are the real collector's.
-    @ts-coverage-scope @ID-MUT-208 @binary-only
+    @ts-coverage-scope @ID-MUT-208 @binary-only @language-tools
     Scenario: TypeScript coverage comes from the related tests that judge the mutants
       Given a Vitest project with a coverage script that runs the whole suite
       And src/a.ts has a line that only an unrelated test, which does not import it, executes
@@ -3642,7 +3645,7 @@ Feature: Mutation testing
     # the fixture's node_modules/.bin, and the binary driver links the
     # pinned Vitest. Before slice-17 the baseline is <pm> run test, failing
     # at the first Then in both drivers.
-    @slice-17 @ID-MUT-280
+    @slice-17 @ID-MUT-280 @language-tools
     Scenario: A package whose Vitest comes through another package is measured and mutated with Vitest
       Given a TypeScript package whose package.json names neither vitest nor jest, whose node_modules/.bin holds vitest and @vitest/coverage-v8 installed through a toolchain package it depends on, whose test script is "vitest run", and no c8
       When I run "itos-cc mutation run src/area.ts"
@@ -3662,6 +3665,7 @@ Feature: Mutation testing
       And no command downloads or installs anything
       And the live working tree is left unchanged
 
+      @language-tools
       Examples:
         | language   | installed                         |
         | TypeScript | node_modules at the project root  |
@@ -3679,7 +3683,7 @@ Feature: Mutation testing
       # resolved, and the run stops as count.preparation-failed, failing at
       # the preparation step; the second row then still runs the PATH's
       # flutter until the link is made.
-      @slice-37
+      @slice-37 @flutter-tools
       Examples:
         | language | installed                                                |
         | Dart     | the pub cache, run with --no-pub                         |
@@ -3699,7 +3703,7 @@ Feature: Mutation testing
   Rule: A Python mutant always runs as mutated
 
     # Real interpreter bytecode and worker filesystem cache lifecycle.
-    @binary-only @python-fresh-bytecode @ID-MUT-210
+    @binary-only @python-fresh-bytecode @ID-MUT-210 @language-tools
     Scenario: A same-size Python mutant written within the baseline's second is still killed
       Given a Python project whose test kills a mutant that replaces "==" with "!="
       And the baseline and the mutant are written within the same second
@@ -3755,7 +3759,7 @@ Feature: Mutation testing
       But when the TypeScript file has an eligible site the run fails with "count.preparation-failed" at its coverage stage, as before
 
     # Real pytest cache lifecycle in original and disposable worker trees.
-    @binary-only @python-no-pytest-cache @ID-MUT-214
+    @binary-only @python-no-pytest-cache @ID-MUT-214 @language-tools
     Scenario: Measuring and judging a Python project leaves no pytest cache in its tree
       Given a Python project with a pytest test that kills its mutant and no .pytest_cache directory
       When I run "itos-cc mutation run --json" for its file
@@ -3791,7 +3795,7 @@ Feature: Mutation testing
         | kotlin     |
 
       # slice-34, dart-support: as TypeScript, Python and Kotlin.
-      @slice-34
+      @slice-34 @flutter-tools
       Examples:
         | language   |
         | dart       |
@@ -3800,7 +3804,7 @@ Feature: Mutation testing
     # is lib/x.dart of the package whose pubspec.yaml has that name; an
     # export passes reach on; a part file is its library's, so reaching the
     # library reaches the part; a conditional import reaches each target.
-    @slice-34 @ID-MUT-263
+    @slice-34 @ID-MUT-263 @flutter-tools
     Scenario Outline: A Dart test reaches a library through <link>
       Given a Flutter package "demo" whose test reaches lib/a.dart only through <link>
       And a mutant of lib/a.dart has a recorded result
@@ -3837,7 +3841,7 @@ Feature: Mutation testing
   #   outcome is: any test change makes them stale.
   Rule: A file's own tests are the tests that reach it, in every language
 
-    @own-tests-python @ID-MUT-216
+    @own-tests-python @ID-MUT-216 @language-tools
     Scenario Outline: A Python file's own tests are the tests that reach it, with <runner>
       Given a Python project run with <runner> where test_a reaches a.py, test_b reaches only b.py, and test_b fails
       When I run "itos-cc mutation run --json" for a.py
@@ -3855,7 +3859,7 @@ Feature: Mutation testing
         | runner   |
         | unittest |
 
-    @own-tests-kotlin @ID-MUT-217
+    @own-tests-kotlin @ID-MUT-217 @language-tools
     Scenario Outline: A Kotlin file's own tests are the test classes that reach it, with <build>
       Given a Kotlin project built with <build> where ATest, in A.kt's package, uses A without importing it, BTest reaches only B.kt, and BTest fails
       When I run "itos-cc mutation run --json" for A.kt
@@ -3869,7 +3873,7 @@ Feature: Mutation testing
 
     # slice-35: a Dart file's own tests are the test files that reach it,
     # as Python's are; integration_test/ never runs (q-76).
-    @slice-35 @ID-MUT-264 @binary-only
+    @slice-35 @ID-MUT-264 @binary-only @flutter-tools
     Scenario: A Dart file's own tests are the test files that reach it
       Given a Flutter package where test/a_test.dart reaches lib/a.dart, test/b_test.dart reaches only lib/b.dart and fails, and integration_test/app_test.dart imports lib/a.dart
       When I run "itos-cc mutation run --json" for lib/a.dart
@@ -3886,7 +3890,7 @@ Feature: Mutation testing
     # never among them, though it imports the file. Both drivers run it, as
     # mutation check runs no test. Before slice-38 reach counts those files,
     # so the check reports the result stale, failing at the Then.
-    @slice-38 @ID-MUT-274
+    @slice-38 @ID-MUT-274 @flutter-tools
     Scenario Outline: A Dart result recorded by <run> stays fresh when only tests flutter test never runs change
       Given a Flutter package where test/a_test.dart reaches lib/a.dart, and integration_test/app_test.dart and test_driver/app.dart import lib/a.dart
       And a mutant of lib/a.dart has a result recorded by "<run>"
@@ -3904,7 +3908,7 @@ Feature: Mutation testing
     # copy; platform folders stay out (q-75) and generated Dart stays in,
     # as tests compile against it (q-77). A pub workspace member needs the
     # workspace root's resolution and its sibling members beside it.
-    @slice-35 @ID-MUT-265 @binary-only
+    @slice-35 @ID-MUT-265 @binary-only @flutter-tools
     Scenario Outline: Workers run the mutants of a <package> offline, in copies of their own
       Given a resolved <package> with android and ios folders and a generated lib/user.g.dart its tests import
       When I run "itos-cc mutation run --workers 2" for one of its libraries
@@ -3918,7 +3922,7 @@ Feature: Mutation testing
         | Flutter app                            |
         | member of a pub workspace with a sibling member it depends on |
 
-    @own-tests-ts-fallback @ID-MUT-218
+    @own-tests-ts-fallback @ID-MUT-218 @language-tools
     Scenario: A TypeScript test script without Vitest or Jest records whole-suite outcomes
       Given a TypeScript project whose test script runs Node's own test runner, with neither Vitest nor Jest installed
       And a mutant of one of its files has a result from "itos-cc mutation run"
@@ -3958,13 +3962,13 @@ Feature: Mutation testing
       # slice-34: flutter test loads the nearest flutter_test_config.dart at
       # or above a test file, up to its package root, as pytest loads
       # conftest.py.
-      @slice-34
+      @slice-34 @flutter-tools
       Examples:
         | language   | support                                   |
         | dart       | a helper library under test/              |
         | dart       | a flutter_test_config.dart above it       |
 
-    @test-support-reach @ID-MUT-220
+    @test-support-reach @ID-MUT-220 @language-tools
     Scenario: A Python mutant reached only through conftest.py is judged by the test that uses the fixture
       Given a Python project whose test_a.py uses a conftest.py fixture that imports a.py, and no test imports a.py
       When I run "itos-cc mutation run --json" for a.py
@@ -4000,7 +4004,7 @@ Feature: Mutation testing
   # Without --fail-uncovered nothing changes.
   Rule: Strict runs prove executable line coverage in every language
 
-    @strict-lines-python @ID-MUT-221
+    @strict-lines-python @ID-MUT-221 @language-tools
     Scenario: A strict Python run proves every executable line of every judged function
       Given a Python project whose judged file has a function with no mutation site that no test executes, and a reached function with one line no test executes
       When I run "itos-cc mutation run --fail-uncovered --json" for the file
@@ -4010,7 +4014,7 @@ Feature: Mutation testing
       And a strict Python run refuses --coverage-report, --use-existing-coverage and --coverage-command
       But without --fail-uncovered the run and the check report as before
 
-    @strict-lines-typescript @ID-MUT-222
+    @strict-lines-typescript @ID-MUT-222 @language-tools
     Scenario: A strict TypeScript run proves every executable line of every judged function
       Given a TypeScript project tested with Vitest whose judged file has a function with no mutation site that no test executes, and a reached function with one line no test executes
       When I run "itos-cc mutation run --fail-uncovered --json" for the file
@@ -4020,7 +4024,7 @@ Feature: Mutation testing
       And a strict TypeScript run refuses --coverage-report, --use-existing-coverage and --coverage-command
       But without --fail-uncovered the run and the check report as before
 
-    @strict-lines-kotlin @ID-MUT-223
+    @strict-lines-kotlin @ID-MUT-223 @language-tools
     Scenario: A strict Kotlin run proves every executable line of every judged function
       Given a Kotlin project built with Gradle and JaCoCo whose judged file has a function with no mutation site that no test executes, a reached function with one line no test executes, and a line a test executes only one branch of
       When I run "itos-cc mutation run --fail-uncovered --json" for the file
@@ -4039,7 +4043,7 @@ Feature: Mutation testing
     # run it: the fake measures what it declares, cd.yml's dart job the real
     # flutter test. Before slice-36 Dart is not strict, so no line is
     # reported and the run passes, failing at the first Then.
-    @slice-36 @ID-MUT-271
+    @slice-36 @ID-MUT-271 @flutter-tools
     Scenario: A strict Dart run proves every executable line of every judged function
       Given a Flutter package whose judged library has a function with no mutation site that no test executes, a reached function with one line no test executes, and a line a test executes only one operand of
       When I run "itos-cc mutation run --fail-uncovered --json" for the file
@@ -4056,7 +4060,7 @@ Feature: Mutation testing
     # as a TypeScript file under Jest or c8 is, and its mutants stay
     # uncovered. Both drivers run it. Before slice-36 no function of it is
     # reported, failing at the Then.
-    @slice-36 @ID-MUT-272
+    @slice-36 @ID-MUT-272 @flutter-tools
     Scenario: A strict Dart run fails closed on a library no test loads
       Given a Flutter package whose lib/lonely.dart no test imports, beside a library a test reaches
       When I run "itos-cc mutation run --fail-uncovered --json" for both libraries
@@ -4077,7 +4081,7 @@ Feature: Mutation testing
     # counted integration_test/app_test.dart among the library's tests and
     # so made its results stale; slice-38 restores the step's whole check,
     # the check exiting 0.
-    @slice-36 @ID-MUT-273
+    @slice-36 @ID-MUT-273 @flutter-tools
     Scenario Outline: Strict Dart evidence goes stale when <changed> changes
       Given a <package> whose judged library a strict mutation run measured
       When <changed> changes, and nothing else
@@ -4103,6 +4107,7 @@ Feature: Mutation testing
       And itos-cc reads nothing outside the project root
       But without --fail-uncovered both report as before
 
+      @language-tools
       Examples:
         | language   | scope                                              |
         | typescript | an npm workspace                                   |
@@ -4118,7 +4123,7 @@ Feature: Mutation testing
       # into a nested package that is not a member, which the fingerprints
       # leave out. Before slice-36's refusal, the fresh Dart evidence was
       # reused, failing at the Then.
-      @slice-36
+      @slice-36 @flutter-tools
       Examples:
         | language | scope                                                   |
         | dart     | a path dependency outside the root                      |
@@ -4129,7 +4134,7 @@ Feature: Mutation testing
       # names the dependency rather than the workspace file, since the file
       # alone no longer refuses anything. Before slice-18 it names
       # pnpm-workspace.yaml, failing at the Then.
-      @slice-18
+      @slice-18 @language-tools
       Examples:
         | language   | scope                                                |
         | typescript | a pnpm workspace member with a workspace: dependency |
@@ -4151,7 +4156,7 @@ Feature: Mutation testing
     # ones. Before slice-18 every function is
     # "mutation.coverage-unsupported", naming pnpm-workspace.yaml, and the
     # run exits 1, failing at the first Then.
-    @slice-18 @ID-MUT-281
+    @slice-18 @ID-MUT-281 @language-tools
     Scenario: A pnpm-workspace.yaml with no packages key is the package's settings, not a workspace
       Given a TypeScript package tested with Vitest whose own pnpm-workspace.yaml holds "minimumReleaseAge: 1440" and no packages key
       When I run "itos-cc mutation run --fail-uncovered --json" for its source
@@ -4184,7 +4189,7 @@ Feature: Mutation testing
     # worker's copy cannot reach it until slice-19. Before slice-18 every
     # function is "mutation.coverage-unsupported", naming
     # pnpm-workspace.yaml, failing at the first Then.
-    @slice-18 @ID-MUT-282
+    @slice-18 @ID-MUT-282 @language-tools
     Scenario Outline: A pnpm workspace member with no local dependency is proven as a package of its own, beside its workspace root's settings
       Given a pnpm workspace whose root lists packages/* and holds pnpm-lock.yaml and tsconfig.base.json, with the members packages/label, tested with Vitest and depending on no workspace:, file: or link: package, and packages/other
       When I run "itos-cc mutation run --fail-uncovered --json" for packages/label/src/label.ts, from <folder>
@@ -4215,7 +4220,7 @@ Feature: Mutation testing
   # Without --since, --fail-uncovered=lines is a usage error.
   Rule: With --since, --fail-uncovered=lines judges coverage only on the changed lines
 
-    @strict-changed-lines @ID-MUT-225
+    @strict-changed-lines @ID-MUT-225 @language-tools
     Scenario Outline: A <language> change is judged on the lines it changed, not the old code around them
       Given a <language> project whose function has an executable line no test runs, committed at a base
       And a commit since the base that changes another line of that function, which a test runs
@@ -4283,7 +4288,7 @@ Feature: Mutation testing
       And "itos-cc mutation check" passes
       But an exception whose mutant the fresh run killed, whose line changed, or whose function has no fresh results is not renewed, is reported with why, and stays "mutation.exception-stale"
 
-    @stale-fix-renew @ID-MUT-242
+    @stale-fix-renew @ID-MUT-242 @language-tools
     Scenario: A stale exception whose function changed names the renewal as its fix
       Given itos-cc.yaml excepts a survivor of "Board#count", and "Board#count" changed since the entry was written
       When I run "itos-cc mutation run src/board.ts --json"
@@ -4397,7 +4402,7 @@ Feature: Mutation testing
     # column 19, failing at the second Then of MUT-297; given --reason, a
     # second entry is added. run and check call the entry gone, failing at
     # the Then of MUT-298.
-    @slice-22 @ID-MUT-297
+    @slice-22 @ID-MUT-297 @language-tools
     Scenario: Excepting the same change in the same function re-points its stale entry, keeping its reason
       Given itos-cc.yaml excepts the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
       And "Board#count" became "count(x){ const n=x; return n<5; }", and "itos-cc mutation run src/board.ts" recorded its `<` → `<=` at src/board.ts:7:30 surviving
@@ -4408,7 +4413,7 @@ Feature: Mutation testing
       And "itos-cc mutation check src/board.ts --json" exits 0
       But given "--reason 'reworded'", the entry is re-pointed the same way, its reason "reworded"
 
-    @slice-22 @ID-MUT-298
+    @slice-22 @ID-MUT-298 @language-tools
     Scenario: run, check and --renew give the same why for an entry whose change moved along its line
       Given itos-cc.yaml excepts the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
       And "Board#count" became "count(x){ const n=x; return n<5; }", and "itos-cc mutation run src/board.ts" recorded its `<` → `<=` at src/board.ts:7:30 surviving
@@ -4503,7 +4508,7 @@ Feature: Mutation testing
   # at the first Then of each scenario.
   Rule: Stale exceptions that nothing can mend are pruned
 
-    @slice-21 @ID-MUT-293
+    @slice-21 @ID-MUT-293 @language-tools
     Scenario Outline: --prune removes an entry that is <why>, and reports it
       Given itos-cc.yaml excepts the survivor of "Board#count", and every other mutant of src/board.ts is killed
       And <how>
@@ -4552,14 +4557,14 @@ Feature: Mutation testing
         | itos-cc.yaml excepts a survivor in src/port/porttest/fake.go and excludes "**/porttest/**"                                                                                                                                                 | itos-cc mutation except --prune | src/port/porttest/fake.go |
         | a Go project with a reviewed exception for an equivalent mutant in Label of label.go, and a commit that renames a string literal on another line of Label, and "itos-cc mutation run" has judged Label again and the mutant still survives | itos-cc mutation except --renew | label.go                  |
 
-    @slice-21 @ID-MUT-295
+    @slice-21 @ID-MUT-295 @language-tools
     Scenario: --prune keeps an entry that --renew or an edit can mend
       Given itos-cc.yaml excepts a survivor of "Board#count", and "Board#count" changed since the entry was written
       When I run "itos-cc mutation except --prune --json"
       Then it reports nothing pruned, and the exit code is 0
       And itos-cc.yaml is byte for byte as it was
 
-    @slice-21 @ID-MUT-296
+    @slice-21 @ID-MUT-296 @language-tools
     Scenario: --prune takes no site and no reason
       When I run "itos-cc mutation except --prune src/board.ts:7:19"
       Then the problem is "args.unexpected", with argument "src/board.ts:7:19"
@@ -5393,7 +5398,7 @@ Feature: Mutation testing
   # integration coverage, as today.
   Rule: Coverage from tests that start other processes, in every language
 
-    @integration-coverage-python @ID-MUT-228
+    @integration-coverage-python @ID-MUT-228 @language-tools
     Scenario: Lines a Python test reaches through a subprocess are covered
       Given a Python project whose only test runs its module in a subprocess and checks one branch of its output
       When I run "itos-cc mutation run --all-tests --fail-uncovered --json"
@@ -5401,7 +5406,7 @@ Feature: Mutation testing
       And a mutant the test notices is killed, one it does not notice survives, and only mutants on lines never run are uncovered
       And with mutation.tests listing two tests that run different branches, each line is covered by the IDs of the tests that reached it
 
-    @integration-coverage-typescript @ID-MUT-229
+    @integration-coverage-typescript @ID-MUT-229 @language-tools
     Scenario: Lines a TypeScript test reaches through a child Node process are covered
       Given a TypeScript project with Vitest and c8 installed whose only test runs its CLI in a child Node process and checks one branch of its output
       When I run "itos-cc mutation run --all-tests --fail-uncovered --json"
@@ -5410,7 +5415,7 @@ Feature: Mutation testing
       And with mutation.tests listing two tests that run different branches, each line is covered by the IDs of the tests that reached it
       But without c8 the run logs that integration coverage needs it and goes on, and a strict run fails with "coverage.tool-missing"
 
-    @integration-coverage-kotlin @ID-MUT-230
+    @integration-coverage-kotlin @ID-MUT-230 @language-tools
     Scenario: Lines a Kotlin test reaches through a JVM it starts are covered
       Given a Kotlin project built with Gradle whose only test starts its main class in a JVM with the agent ITOS_CC_JACOCO_AGENT names, and checks one branch of its output
       When I run "itos-cc mutation run --all-tests --fail-uncovered --json"
@@ -5483,21 +5488,21 @@ Feature: Mutation testing
   #   problem: it changes no verdict and no exit code.
   Rule: Mutation results say what happened, and leave nothing stale behind
 
-    @unreached-baseline-not-run-fix @ID-MUT-231
+    @unreached-baseline-not-run-fix @ID-MUT-231 @language-tools
     Scenario: A file no test reaches reports its baseline as not run
       Given a Python project with a file no test reaches
       When I run "itos-cc mutation run --json" for that file
       Then its "baseline" is "not-run" and its mutants are uncovered
       And a file whose tests ran reports its baseline as "passed", as before
 
-    @counted-unreached-listed-fix @ID-MUT-232
+    @counted-unreached-listed-fix @ID-MUT-232 @language-tools
     Scenario: A counted run judges an unreached file by the listed tests that reach it
       Given a committed Python project whose file no own test reaches, but a listed test reaches one of its lines and kills its mutant
       When a count-one run judges that file
       Then its mutant is judged by the listed test and killed, as a complete run judges it
       And no "no clean baseline was prepared" problem is reported
 
-    @python-parallel-data-fix @ID-MUT-233 @binary-only
+    @python-parallel-data-fix @ID-MUT-233 @binary-only @language-tools
     Scenario: A Python project that writes parallel coverage data is measured
       Given a Python project whose coverage.py configuration sets parallel = true, with a test that kills its mutant
       When I run "itos-cc mutation run --json" for its file
@@ -5512,14 +5517,14 @@ Feature: Mutation testing
       Then the killed run's worker copies are removed
       And the running one's are left alone
 
-    @check-removed-operator-sites-fix @ID-MUT-235
+    @check-removed-operator-sites-fix @ID-MUT-235 @language-tools
     Scenario: A recorded mutant whose site is gone is left out
       Given fresh results for "Board#place" that record a surviving mutant at a site the function no longer holds, as when a newer itos-cc removes an operator, and every other mutant killed
       When I run "itos-cc mutation check src/board.ts"
       Then no "mutation.survived" is reported for that mutant, and the exit code is 0
       And "itos-cc mutation run src/board.ts" runs no mutant, and rewrites the entry without it
 
-    @renamed-snapshot-left-behind-fix @ID-MUT-236
+    @renamed-snapshot-left-behind-fix @ID-MUT-236 @language-tools
     Scenario: A snapshot whose source file is gone is removed by the next run over its directory
       Given a snapshot under .metrics/mutate for src/old.ts, a file that no longer exists
       When I run "itos-cc mutation check src"
@@ -5527,7 +5532,7 @@ Feature: Mutation testing
       When I run "itos-cc mutation run src"
       Then the orphaned snapshot is removed, and the snapshots of files that exist are kept
 
-    @outside-root-snapshot-kept-fix @ID-MUT-237
+    @outside-root-snapshot-kept-fix @ID-MUT-237 @language-tools
     Scenario: A snapshot of a file outside the project root is kept while its file exists
       Given a snapshot that "itos-cc mutation run" wrote for a file outside the project root, which still exists
       When I run "itos-cc mutation check" at the project root
@@ -5535,7 +5540,7 @@ Feature: Mutation testing
       When I run "itos-cc mutation run" at the project root
       Then that snapshot is kept
 
-    @renamed-orphan-kept-fix @ID-MUT-238
+    @renamed-orphan-kept-fix @ID-MUT-238 @language-tools
     Scenario: A --since run whose paths miss a committed rename's new path keeps the old snapshot
       Given src/old.ts, with a snapshot, renamed to lib/new.ts in a commit since HEAD~1
       When I run "itos-cc mutation run --since HEAD~1 src"
@@ -5543,7 +5548,7 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --since HEAD~1 lib"
       Then the snapshot moves to lib/new.ts, and src/old.ts's is gone
 
-    @renamed-orphan-kept-fix @ID-MUT-239
+    @renamed-orphan-kept-fix @ID-MUT-239 @language-tools
     Scenario: A run before a rename is committed keeps the old snapshot
       Given src/old.ts, with a snapshot, renamed to lib/new.ts with git mv and not committed
       When I run "itos-cc mutation run src"
@@ -5558,7 +5563,7 @@ Feature: Mutation testing
       Then its "baseline" is "not-run", and it ran no mutant
       And after an edit to one of its functions, the next run reports its "baseline" as "passed"
 
-    @check-left-out-count @ID-MUT-241
+    @check-left-out-count @ID-MUT-241 @language-tools
     Scenario: mutation check says how many recorded mutants it left out
       Given fresh results for "Board#place" that record a killed mutant at a site the function no longer holds, and every other mutant killed
       When I run "itos-cc mutation check src/board.ts --json"
@@ -5712,7 +5717,7 @@ Feature: Mutation testing
       And moving a function down within its file reports uncovered blocks at their current lines after current measurement
       And repeated init functions retain the correct separate inventories when paired by name and hash
 
-    @strict-go-coverage @ID-MUT-163
+    @strict-go-coverage @ID-MUT-163 @language-tools
     Scenario: Strict coverage validates flags and does not widen other modes
       When I combine --fail-uncovered with --no-coverage, even for an empty selection
       Then the problem is "flags.conflict" for "--no-coverage" and the exit code is 80
@@ -7001,7 +7006,7 @@ Feature: Mutation testing
   # Then.
   Rule: A file's own tests' coverage is reused while nothing it was measured from changed
 
-    @slice-70 @ID-MUT-389
+    @slice-70 @ID-MUT-389 @language-tools
     Scenario Outline: A second run over an unchanged <language> file reuses its own coverage
       Given <fixture>
       And "itos-cc mutation run <file>" has run
@@ -7101,7 +7106,7 @@ Feature: Mutation testing
   # Then. ID-MUT-427 holds today.
   Rule: A site on a later line of a statement takes its statement's coverage where its own line is unmeasured
 
-    @slice-79 @ID-MUT-424
+    @slice-79 @ID-MUT-424 @language-tools
     Scenario: A listed test that runs a statement split over two lines judges a site on its second line
       Given a Python project whose two_lines returns "(a" and then "* b)" on the next line, and whose own test calls two_lines(2, 3) without checking what it returns
       And itos-cc.yaml lists one test, scn1, a script that fails unless two_lines(2, 3) is 6
@@ -7109,7 +7114,7 @@ Feature: Mutation testing
       Then the `*` → `/` mutant on two_lines' second line survives its own tests, then runs the run command selecting scn1 alone, and is killed
       And its snapshot entry records scope "listed" and tests ["scn1"]
 
-    @slice-79 @ID-MUT-425
+    @slice-79 @ID-MUT-425 @language-tools
     Scenario Outline: A site on the second line of a statement no test runs is uncovered, in <language>
       Given a <language> file <file> whose add returns "(a" and then "+ b" on the next line, which a test calls, and whose never returns the same over lines 7 and 8, which nothing calls
       When I run "itos-cc mutation run --json" for <file>
@@ -7122,14 +7127,14 @@ Feature: Mutation testing
         | Python                         | calc.py     |
         | TypeScript, tested with Vitest | src/calc.ts |
 
-    @slice-79 @ID-MUT-426
+    @slice-79 @ID-MUT-426 @language-tools
     Scenario: A --site run calls a site on a statement's second line uncovered as a complete run does
       Given the Python file calc.py of ID-MUT-425
       And itos-cc makes counted runs on this system
       When I run "itos-cc mutation run --site calc.py:8:13 --json"
       Then that mutant is "uncovered", and no test command ran for it
 
-    @slice-79 @ID-MUT-427
+    @slice-79 @ID-MUT-427 @language-tools
     Scenario: A later line the report measures keeps its own answer
       Given a TypeScript file src/inc.ts, tested with Vitest, whose inc returns "xs.map((x) =>" and then "x + 1);" on the next line, and whose test checks only that inc([]) is []
       When I run "itos-cc mutation run --json" for src/inc.ts

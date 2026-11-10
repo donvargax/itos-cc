@@ -726,9 +726,23 @@ func (w *world) setUp(s *godog.Scenario) error {
 	w.last, w.problem, w.without, w.wrote, w.each, w.binary, w.edges, w.signal = nil, nil, nil, "", nil, "", nil, 0
 	w.feature, w.scored, w.noTests, w.with, w.project, w.config, w.runIn = filepath.Base(s.Uri), nil, nil, nil, "", "", ""
 	w.folders = nil
+	if d, ok := w.d.(tagged); ok {
+		tags := make([]string, len(s.Tags))
+		for i, tag := range s.Tags {
+			tags[i] = tag.Name
+		}
+		w.d = d.withTags(tags)
+	}
 	var err error
 	w.dir, err = w.d.Folder()
 	return err
+}
+
+// A tagged driver judges by the tags of the scenario it serves, as the
+// binary driver's languageJob does, so the world gives it them before each
+// scenario.
+type tagged interface {
+	withTags(tags []string) Driver
 }
 
 // A failed join retains the complete fixture for safe recovery; later hooks

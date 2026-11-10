@@ -94,7 +94,15 @@ project's coverage runs besides, such as make (`Program`). A tool missing skips 
 pinned tools, sets; any other CI job skips the TypeScript, Python and Kotlin ones, its runner's tools being
 whatever its image has. Flutter is installed in `cd.yml`'s `dart` job alone, which sets
 `ITOS_CC_FLUTTER_TOOLS` beside `ITOS_CC_LANGUAGE_TOOLS`; every other CI job, the languages job
-included, skips the Dart ones. The in-process driver hands what was declared to the fake measurer a
+included, skips the Dart ones. Those jobs select their scenarios by tag (T-232): the languages job's
+scenario shards `@language-tools`, which a scenario needing the Python, TypeScript or Kotlin tools
+carries, and the `dart` job `@flutter-tools`, which one needing Flutter carries, on the scenario, or
+on the Examples block holding the rows that need them. So the tag is never forgotten, a CI job (`CI`
+set) where a scenario would skip for want of its language's tools fails it instead when it lacks the
+tag those tools need, naming the tag (`languageJob`, `TestLanguageScenariosCarryTheirToolsTag`): a new
+scenario of that kind turns the push red on every system rather than skipping in every job. With the
+tag it skips there as before; Go needs none. The binary driver learns a scenario's tags, its own, its
+feature's and its Examples block's, from the world before the scenario (`withTags`). The in-process driver hands what was declared to the fake measurer a
 command measuring coverage is given, which writes on stderr what the command prints when it
 succeeds (`Output`, such as go test's `ok` line), as the real collectors pass a tool's output
 on. A Given that changes its project and runs again declares what the tools measure in it again,
@@ -399,6 +407,8 @@ this tool changes neither product environments nor dependency caches or nightly 
 | `@ID-<AREA>-<nn>` | Stable scenario ID. Commits reference these. Never reuse or renumber them.           |
 | `@bug-<n>`        | Reproduces a fixed bug. Added by `fix:` commits.                                     |
 | `@wip`            | Written, not yet implemented. Excluded from every run, and a `feat` may not name it. |
+| `@language-tools` | Needs the pinned Python, TypeScript (Node) or Kotlin tools: `cd.yml`'s languages job runs it through them, every other CI job skips it. On the scenario, or the Examples block of the rows that need them. |
+| `@flutter-tools`  | Needs, or is about, the pinned Flutter: `cd.yml`'s `dart` job runs it, every other CI job skips what needs it. On the scenario, or the Examples block of its Dart rows. |
 
 **IDs.** `<AREA>` is one word in capitals for the area of behaviour, and one feature file holds
 one area: `DRY` is `dry.feature`, `CLI` is `cli.feature`, `COMPL` is `completion.feature`.

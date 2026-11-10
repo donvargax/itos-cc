@@ -385,7 +385,7 @@ Feature: Command line
       Then stdout names the subcommands run and list
       And the exit code is 0
 
-    @mutation-group @ID-CLI-13
+    @mutation-group @ID-CLI-13 @language-tools
     Scenario: mutation run mutates
       When I run "itos-cc mutation run src/board.ts"
       Then stdout says "14 killed, 1 survived, 2 uncovered in src/board.ts (ran 7, reused 8)"
