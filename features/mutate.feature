@@ -4834,6 +4834,40 @@ Feature: Mutation testing
         | TypeScript | Board#count | src/board.ts |
         | Python     | Board#count | src/board.py |
 
+    # slice-80, idea stale-identity-two-moved (seen reading slice-78's code):
+    # two entries of one change in one function, neither at its site's place
+    # after a line was added above both. Each problem names an identity by
+    # matchSite, from its entry's line_text, but Repointed found two stale
+    # entries and none at the site's place, so excepting either identity with
+    # no --reason was flags.value-missing, exit 80, though its fix said it
+    # keeps the entry's reason. Reproduced by the coordinator on 2026-11-09
+    # with 0.49.1-dev and the source below.
+    # Coordinator's calls:
+    # - Of several stale entries, none at the site's place, Repointed takes
+    #   the one whose mutant matchSite names as the site being excepted: the
+    #   rule a stale entry's identity is named by, so an identity and the
+    #   entry it re-points never disagree. Rather than naming no identity
+    #   there, as the identity does name one site.
+    # - Otherwise as today: an entry at the site's place first; else the one
+    #   stale entry; else none, and the site is a new entry.
+    # - mutation except <file>:<line>:<column> shares Repointed and follows.
+    #   A scenario of that form needs a recorded survivor and a real run, so a
+    #   unit test of Repointed shows it.
+    # - Entries with no line_text, several and none at the place, name no
+    #   identity (ID-MUT-415's "two could be it"), and are not this slice's.
+    # It needs no tool: check and an identity's except run nothing. Before:
+    # the first except is flags.value-missing, failing at its second Then.
+    @slice-80 @ID-MUT-423 @wip
+    Scenario: Two stale entries of one change that moved are each re-pointed by their identity
+      Given Go source whose "example.com/fx/board#Count" has the lines "a := x < 5" and "b := y < 7"
+      And itos-cc.yaml excepts each line's `<` → `<=`, with its line_text, the first with reason "x is never 5" and the second with reason "y is never 7"
+      And the line "_ = x" was added above both
+      When I run "itos-cc mutation check board/board.go --json"
+      Then each entry's "mutation.exception-stale" problem, with why "changed", has an "identity"
+      And excepting the first's identity with no --reason exits 0, its entry at Count's current hash and line_in_function 3 with the reason "x is never 5", the second entry as it was
+      And excepting the second's identity with no --reason then exits 0, its entry at line_in_function 4 with the reason "y is never 7"
+      And "itos-cc mutation check board/board.go --json" then reports no "mutation.exception-stale"
+
     # slice-77, idea json-identity-escaped: a problem's --json text wrote <, >
     # and & as \u003c, \u003e and \u0026, so an identity read from the raw text,
     # or the command in a fix, was refused as naming no survivor. Checked
@@ -7021,3 +7055,76 @@ Feature: Mutation testing
       When I run "itos-cc mutation except" on Count's survivor with --reason 'x is never 5'
       Then "itos-cc mutation check --fail-uncovered board/board.go --json" reports no stale coverage evidence
       And the exit code is 0
+
+  # slice-79, idea mutation-continuation-line-reach, from the survey of Uncle
+  # Bob's tools on 2026-11-08 (unclebob/mutator a5a0cb8; the behaviour only,
+  # no code copied): coverage.py's LCOV, and Vitest's v8 report, give a DA
+  # line only to the line a statement starts on, so a site on a later line of
+  # a statement split over several lines finds its own line unmeasured. What
+  # reads a site's coverage by its line (markUncovered, countedUncovered,
+  # LineTests, LineSources) then calls it neither uncovered nor reached by a
+  # listed test: a listed test that kills it never runs, and a mutant no test
+  # runs is run and reported survived, though --fail-uncovered reports its
+  # statement's first line as an uncovered statement. Reproduced by the
+  # coordinator on 2026-11-09 with 0.49.1-dev, Python 3.14 with coverage.py,
+  # and Vitest 5.0.2 with @vitest/coverage-v8.
+  # Coordinator's calls:
+  # - A site whose own line the report does not measure takes the coverage of
+  #   the nearest line above it that the report measures, going no higher
+  #   than the line its statement starts on: whether a test executed it,
+  #   which sources did, and which listed tests did. Its statement is the
+  #   innermost statement enclosing it in its language's parse. With no such
+  #   line it is unmeasured, as today.
+  # - A line the report measures keeps its own answer, measured and never
+  #   executed included. Vitest measures an arrow function's body on a later
+  #   line by itself (DA:3,0 in the probe), so taking the statement's first
+  #   line for every site, as mutator does, would call a mutant there covered
+  #   though its body never ran (ID-MUT-427, a guardrail).
+  # - One rule for every language with line coverage and every path that
+  #   reads a site's line coverage: a complete run, a counted run and --site;
+  #   the uncovered outcome, the listed tests' reach and the recorded sources.
+  #   Go's coverage is spans and is not affected; a Go switch case line is
+  #   case-line-reach, not this. Kotlin (JaCoCo) and Dart were not probed:
+  #   the rule holds for them unchanged, since a line they measure keeps its
+  #   answer.
+  # - Out of scope: under --fail-uncovered=lines --since, a change only to a
+  #   later line of a statement holding no site, whose uncovered statement is
+  #   judged by its first line alone (idea continuation-line-since).
+  # Before: ID-MUT-424 reports the `*` mutant survived with scn1 never run,
+  # and ID-MUT-425 and 426 the `+` mutant survived, each failing at its first
+  # Then. ID-MUT-427 holds today.
+  Rule: A site on a later line of a statement takes its statement's coverage where its own line is unmeasured
+
+    @slice-79 @ID-MUT-424 @wip
+    Scenario: A listed test that runs a statement split over two lines judges a site on its second line
+      Given a Python project whose two_lines returns "(a" and then "* b)" on the next line, and whose own test calls two_lines(2, 3) without checking what it returns
+      And itos-cc.yaml lists one test, scn1, a script that fails unless two_lines(2, 3) is 6
+      When I run "itos-cc mutation run --json"
+      Then the `*` → `/` mutant on two_lines' second line survives its own tests, then runs the run command selecting scn1 alone, and is killed
+      And its snapshot entry records scope "listed" and tests ["scn1"]
+
+    @slice-79 @ID-MUT-425 @wip
+    Scenario Outline: A site on the second line of a statement no test runs is uncovered, in <language>
+      Given a <language> file <file> whose add returns "(a" and then "+ b" on the next line, which a test calls, and whose never returns the same over lines 7 and 8, which nothing calls
+      When I run "itos-cc mutation run --json" for <file>
+      Then the `+` → `-` mutant on line 8 is "uncovered", and no test command ran for it
+      And the `+` → `-` mutant on line 3 is killed
+      And the file's counts say 1 killed, 0 survived and 1 uncovered
+
+      Examples:
+        | language                       | file        |
+        | Python                         | calc.py     |
+        | TypeScript, tested with Vitest | src/calc.ts |
+
+    @slice-79 @ID-MUT-426 @wip
+    Scenario: A --site run calls a site on a statement's second line uncovered as a complete run does
+      Given the Python file calc.py of ID-MUT-425
+      And itos-cc makes counted runs on this system
+      When I run "itos-cc mutation run --site calc.py:8:13 --json"
+      Then that mutant is "uncovered", and no test command ran for it
+
+    @slice-79 @ID-MUT-427 @wip
+    Scenario: A later line the report measures keeps its own answer
+      Given a TypeScript file src/inc.ts, tested with Vitest, whose inc returns "xs.map((x) =>" and then "x + 1);" on the next line, and whose test checks only that inc([]) is []
+      When I run "itos-cc mutation run --json" for src/inc.ts
+      Then the `+` → `-` mutant on line 3 is "uncovered", as the arrow function's body never ran
