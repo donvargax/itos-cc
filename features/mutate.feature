@@ -4863,7 +4863,7 @@ Feature: Mutation testing
     # It needs no tool: check and an identity's except run nothing. Before:
     # the first except leaves the first entry as it was and re-points the
     # second, failing at its second Then.
-    @slice-80 @ID-MUT-423 @wip
+    @slice-80 @ID-MUT-423
     Scenario: Two stale entries of one change that moved are each re-pointed by their identity
       Given Go source whose "example.com/fx/board#Count" has the lines "a := x < 5" and "b := y < 7"
       And itos-cc.yaml excepts each line's `<` → `<=`, with its line_text, the first with reason "x is never 5" and the second with reason "y is never 7"

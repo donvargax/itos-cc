@@ -37,7 +37,7 @@ func TestStaleEntryScenariosNeedNoCountedRun(t *testing.T) {
 			// ID-MUT-422 is left out as its commands are the counted and
 			// fail-fast runs Windows refuses (ID-MUT-248): it skips there on
 			// purpose.
-			Tags:        "@slice-76,@slice-78&&~@ID-MUT-422&&~@wip",
+			Tags:        "@slice-76,@slice-78&&~@ID-MUT-422&&~@wip,@slice-80&&~@wip",
 			Strict:      true,
 			Concurrency: 1,
 		},

@@ -91,24 +91,41 @@ func (id Identity) Function() string { return UnitID(id.Namespace, id.Name) }
 // another one. Its file is e's, from the project root, wherever the command
 // ran. It does not say the mutant survived.
 func repointingIdentity(e Exception, f *lang.File, sites []Site) string {
+	at := repointingSite(e, f, sites)
+	if at < 0 {
+		return ""
+	}
+	s := sites[at]
+	u := f.Units[s.Unit]
+	return Identity{File: e.File, Namespace: u.Namespace, Name: u.Name, StartLine: u.StartLine, EndLine: u.EndLine,
+		Hash: UnitHash(f, u), Key: s.Key()}.String()
+}
+
+// repointingSite is the index in sites, those of f, of the site the rule of
+// mutation except --renew says is e's mutant (matchSite), of the function e
+// names by namespace#name, the first of that name as --renew takes it: the
+// site e's identity names (repointingIdentity) and the one whose survivor
+// re-points e (Repointed). -1 when there is no such function, or the rule
+// names no site.
+func repointingSite(e Exception, f *lang.File, sites []Site) int {
 	for unit, u := range f.Units {
 		if UnitID(u.Namespace, u.Name) != e.Function {
 			continue
 		}
-		var own []Site
-		for _, s := range sites {
+		var own []int
+		var ownSites []Site
+		for i, s := range sites {
 			if s.Unit == unit {
-				own = append(own, s)
+				own, ownSites = append(own, i), append(ownSites, s)
 			}
 		}
-		at, _, why := matchSite(e, u.StartLine, own, f.Src)
+		at, _, why := matchSite(e, u.StartLine, ownSites, f.Src)
 		if why != "" {
-			return ""
+			return -1
 		}
-		return Identity{File: e.File, Namespace: u.Namespace, Name: u.Name, StartLine: u.StartLine, EndLine: u.EndLine,
-			Hash: UnitHash(f, u), Key: own[at].Key()}.String()
+		return own[at]
 	}
-	return ""
+	return -1
 }
 
 // IdentityStaleError is an identity that names no site of the source as it

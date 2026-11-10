@@ -75,13 +75,16 @@ func Elsewhere(ctx context.Context, exceptions []Exception, sources []string, ju
 // Repointed is the index of the entry of entries that excepting survivor,
 // the exception Survivor gives for a site of the file at path, re-points. Of
 // the entries that name survivor's file, its function by namespace#name, and
-// its original and replacement, one at survivor's own place (SameSite) settles
-// it: when it holds for the file as it is now (Locate) nothing is re-pointed,
-// and when it no longer does, its function's hash moved, it is the one
-// re-pointed, ahead of any other. With none there, it is the one such entry
-// that no longer holds, its function changed or its site moved. An entry that
-// holds, as one stale as killed does, and one whose file moved name no such
-// entry. -1 when there is none, or more than one.
+// its original and replacement, one at survivor's own place (SameSite) that
+// holds for the file as it is now (Locate) means nothing is re-pointed. Of
+// those that no longer hold, the one whose mutant the rule of mutation except
+// --renew says is survivor's site (namingSurvivor), the rule its identity is
+// named by, is the one re-pointed, at survivor's place or not, so a place
+// another entry's site moved to never takes that entry's reason. When none,
+// or more than one, names it: the first at survivor's place, its function's
+// hash moved; else the one that no longer holds, its function changed or its
+// site moved. An entry that holds, as one stale as killed does, and one whose
+// file moved name no such entry. -1 when there is none, or more than one.
 func Repointed(ctx context.Context, entries []Exception, survivor Exception, path string, opt CheckOptions) (int, error) {
 	if ctx.Err() != nil {
 		return -1, context.Cause(ctx)
@@ -107,11 +110,15 @@ func Repointed(ctx context.Context, entries []Exception, survivor Exception, pat
 		switch same := entries[i].SameSite(survivor); {
 		case why == "" && same:
 			return -1, nil
-		case why != "" && same:
+		case why == "":
+			continue
+		case same:
 			atPlace = append(atPlace, i)
-		case why != "":
-			stale = append(stale, i)
 		}
+		stale = append(stale, i)
+	}
+	if named := namingSurvivor(entries, stale, survivor, f, sites); named >= 0 {
+		return named, nil
 	}
 	if len(atPlace) > 0 {
 		return atPlace[0], nil
@@ -120,6 +127,29 @@ func Repointed(ctx context.Context, entries []Exception, survivor Exception, pat
 		return stale[0], nil
 	}
 	return -1, nil
+}
+
+// namingSurvivor is the one of the entries at the indexes of that the rule of
+// mutation except --renew (repointingSite) says is the mutant at survivor's
+// place in f, with sites: its line in its function and its column. -1 when
+// none is, or more than one.
+func namingSurvivor(entries []Exception, of []int, survivor Exception, f *lang.File, sites []Site) int {
+	named := -1
+	for _, i := range of {
+		at := repointingSite(entries[i], f, sites)
+		if at < 0 {
+			continue
+		}
+		s := sites[at]
+		if s.Line-f.Units[s.Unit].StartLine+1 != survivor.LineInFunction || s.Column != survivor.Column {
+			continue
+		}
+		if named >= 0 {
+			return -1
+		}
+		named = i
+	}
+	return named
 }
 
 // NoSurvivorError is a site Survivor cannot except: Reason says why, and

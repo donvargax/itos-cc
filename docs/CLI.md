@@ -547,12 +547,15 @@ more than one site it could be, names none. The plain line ends
 re-point the one stale entry that names the site's file, its function by
 `namespace#name`, and its `original` and `replacement`: the entry is replaced,
 `"replaced": true`, and keeps its `reason` unless `--reason` gives another. An
-entry at the site's place settles which: when it holds nothing is re-pointed,
-and when it is stale, by its function's hash, it is the one, the others left
-as they are. Without `--reason` and nothing to re-point, it is
-`flags.value-missing`, exit 80. An entry that holds, one stale as `killed`,
-and one whose file moved are never re-pointed; with several and none at the
-site's place, the site is excepted as a new entry.
+entry at the site's place that holds means nothing is re-pointed. Of the stale
+ones, the one whose mutant is the site by `--renew`'s rule, the rule a stale
+entry's identity is named by, is re-pointed, at the site's place or not, the
+others left as they are. Only when none, or more than one, is: an entry stale
+at the site's place, by its function's hash; else the one stale entry. Without
+`--reason` and nothing to re-point, it is `flags.value-missing`, exit 80. An
+entry that holds, one stale as `killed`, and one whose file moved are never
+re-pointed; with several stale, none at the site's place and not exactly one
+the site by that rule, the site is excepted as a new entry.
 
 `mutation except <identity>` takes the identity a counted run reports for a
 survivor, `<file>:<namespace#name>@<start>:<end>:<hash>:<offset>:<original>><replacement>`,

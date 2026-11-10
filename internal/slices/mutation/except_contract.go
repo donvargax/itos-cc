@@ -43,9 +43,11 @@ around it (line_text), so a function that only moves keeps it.
 Excepting a site again replaces its entry. So does excepting the same
 change in the same function when a stale entry names them: the entry names
 its file, its function by namespace#name, its original and replacement, and
-it no longer holds. One at the site's place is the one, ahead of any other,
-as is the only such entry otherwise, so a site that moved along its line, or
-whose function changed, is re-pointed. Such an entry keeps its reason unless
+it no longer holds. The one whose mutant is the site by --renew's rule, the
+rule a stale entry's identity is named by, is the one, at the site's place
+or not. Otherwise one at the site's place is, ahead of any other, as is the
+only such entry otherwise, so a site that moved along its line, or whose
+function changed, is re-pointed. Such an entry keeps its reason unless
 --reason gives another, so --reason may be left out then; it is required
 otherwise. An entry that holds, one stale as killed and one whose file moved
 are never re-pointed.

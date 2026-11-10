@@ -126,3 +126,67 @@ func TestRenewLeavesANoResultsEntryItsIdentity(t *testing.T) {
 		t.Fatalf("changed: %+v %v", left, err)
 	}
 }
+
+// twoMovedSource is Count with a line added above two sites of `<` → `<=`,
+// "a := x < 5" now at line_in_function 3 and "b := y < 7" at 4, and two more
+// on one line, at 5.
+const twoMovedSource = "package board\n\nfunc Count(x, y int) bool {\n\t_ = x\n\ta := x < 5\n\tb := y < 7\n\treturn a && b && x < 9 && y < 9\n}\n"
+
+// slice-80: of the stale entries of the survivor's change, the one whose
+// mutant --renew's rule names as the survivor's site is re-pointed, so the
+// entry an identity names is the one it re-points, even over an entry at the
+// survivor's place whose own site moved. Only when none, or more than one,
+// names the site, the entry at the place, else the one stale entry.
+func TestRepointedIsTheStaleEntryWhoseMutantIsTheSurvivor(t *testing.T) {
+	f := newRunFixtureOf(t, twoMovedSource)
+	parsed, sites, units := rehashParsed(t, f)
+	u := parsed.Units[units["Count"]]
+	var changes []mutants.Site
+	for _, s := range sites {
+		if s.Original == "<" && s.Replacement == "<=" {
+			changes = append(changes, s)
+		}
+	}
+	if len(changes) != 4 {
+		t.Fatalf("Count has %d sites of `<` → `<=`, not 4: %+v", len(changes), changes)
+	}
+	survivor := func(s mutants.Site) mutants.Exception {
+		return mutants.Exception{File: "sub/board.go", Function: mutants.UnitID(u.Namespace, u.Name), Hash: mutants.UnitHash(parsed, u),
+			LineInFunction: s.Line - u.StartLine + 1, Column: s.Column, Original: s.Original, Replacement: s.Replacement, LineText: mutants.LineText(parsed.Src, s.Line)}
+	}
+	a, b, x9 := survivor(changes[0]), survivor(changes[1]), survivor(changes[2])
+	entry := func(line, column int, text string) mutants.Exception {
+		return staleEntry(parsed, units, "Count", line, column, "<", "<=", text)
+	}
+	// first and second are a's and b's entries from before the line was added:
+	// second is at a's place now.
+	first, second := entry(2, 9, "a := x < 5"), entry(3, 9, "b := y < 7")
+	placeGone := entry(3, 9, "c := x < 5")
+	rehashed := entry(3, 9, "a := x < 5")
+	firstAgain := entry(6, 9, "a := x < 5")
+	secondFar, gone := entry(6, 9, "b := y < 7"), entry(7, 9, "c := z < 1")
+	otherColumn := entry(5, x9.Column+9, "return a && b && x < 9 && y < 9")
+	holdsB := b
+	holdsB.Reason = "kept"
+	for _, c := range []struct {
+		name     string
+		entries  []mutants.Exception
+		survivor mutants.Exception
+		want     int
+	}{
+		{"the first moved, over the second at its place", []mutants.Exception{first, second}, a, 0},
+		{"the second moved, none at its place", []mutants.Exception{first, second}, b, 1},
+		{"the first moved, after the second", []mutants.Exception{second, first}, a, 1},
+		{"one at the place that names it", []mutants.Exception{second, rehashed}, a, 1},
+		{"one at the place when none names it", []mutants.Exception{secondFar, placeGone}, a, 1},
+		{"several, none naming it", []mutants.Exception{secondFar, gone}, a, -1},
+		{"two that name it", []mutants.Exception{first, firstAgain}, a, -1},
+		{"the one stale, beside one that holds elsewhere", []mutants.Exception{holdsB, gone}, a, 1},
+		{"one on its line at another column", []mutants.Exception{otherColumn, secondFar}, x9, -1},
+	} {
+		got, err := mutants.Repointed(t.Context(), c.entries, c.survivor, f.path, exceptionOptions(f))
+		if err != nil || got != c.want {
+			t.Errorf("%s: %d, %v, want %d", c.name, got, err, c.want)
+		}
+	}
+}
