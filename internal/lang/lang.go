@@ -190,6 +190,12 @@ type Syntax struct {
 	Literals map[string]bool
 	// Comments are the kinds of a comment, which a unit's hash leaves out.
 	Comments map[string]bool
+	// Statements are the kinds of a statement, and StatementLists the kinds
+	// each child of which is a statement, where the grammar makes an
+	// expression a statement by where it stands, as Kotlin's statements
+	// does. Both nil where the language's coverage is spans, as Go's is:
+	// StatementLine is then a node's own line.
+	Statements, StatementLists map[string]bool
 }
 
 func set(kinds ...string) map[string]bool {
@@ -633,6 +639,21 @@ func (f *File) WalkOwn(u Unit, visit func(*sitter.Node) bool) {
 			return visit(n)
 		})
 	}
+}
+
+// StatementLine is the line the innermost statement holding n starts on,
+// n itself included (Syntax.Statements), or n's own line where no
+// statement holds it. A line coverage report, coverage.py's or Vitest's,
+// marks a statement split over several lines on that line alone.
+func (f *File) StatementLine(n *sitter.Node) int {
+	s := f.Spec.Syntax
+	for at := n; at != nil; at = at.Parent() {
+		parent := at.Parent()
+		if s.Statements[at.Kind()] || parent != nil && s.StatementLists[parent.Kind()] {
+			return line(at)
+		}
+	}
+	return line(n)
 }
 
 // InnerNodes are the syntax trees of u's inline units, in source order.

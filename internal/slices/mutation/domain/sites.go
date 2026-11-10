@@ -22,11 +22,15 @@ import (
 
 // Site is one mutation: a byte range of the source and its replacement.
 type Site struct {
-	Unit        int // index into the file's units
-	Start, End  uint
-	Offset      int // start relative to the unit, stable while the unit's text is
-	Line        int
-	Column      int
+	Unit       int // index into the file's units
+	Start, End uint
+	Offset     int // start relative to the unit, stable while the unit's text is
+	Line       int
+	Column     int
+	// Statement is the line the innermost statement holding the site
+	// starts on (lang.File.StatementLine), the one a line coverage report
+	// marks when the statement is split over several lines.
+	Statement   int
 	Original    string
 	Replacement string
 }
@@ -89,6 +93,7 @@ func Sites(f *lang.File) []Site {
 					Offset:      int(start-unitStart) - removedBefore(comments, start),
 					Line:        int(p.Row) + 1,
 					Column:      int(p.Column) + 1,
+					Statement:   f.StatementLine(from),
 					Original:    string(f.Src[start:n.EndByte()]),
 					Replacement: replacement,
 				})

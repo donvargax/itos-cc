@@ -42,6 +42,13 @@ func init() {
 			Literals:    set("string", "concatenated_string", "integer", "float", "true", "false", "none"),
 			// A docstring is a string, so code; only # comments are comments.
 			Comments: set("comment"),
+			// The grammar's _simple_statement and _compound_statement.
+			Statements: set("assert_statement", "break_statement", "continue_statement", "delete_statement",
+				"exec_statement", "expression_statement", "future_import_statement", "global_statement",
+				"import_from_statement", "import_statement", "nonlocal_statement", "pass_statement",
+				"print_statement", "raise_statement", "return_statement", "type_alias_statement",
+				"class_definition", "decorated_definition", "for_statement", "function_definition",
+				"if_statement", "match_statement", "try_statement", "while_statement", "with_statement"),
 		},
 		Mutations: Mutations{
 			Swaps:         swaps(map[string]string{"and": "or", "or": "and"}),

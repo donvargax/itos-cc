@@ -219,11 +219,13 @@ func (s *Execution) decided() []MutantResult {
 
 // markUncovered settles pending sites on lines no test executes, and records
 // which sources of coverage, and which listed tests, executed each site's
-// line. A file the report never mentions is uncovered when coverage
-// measured its language: a coverage command for it succeeded, even with a
-// report that names no file of the run, or the report measured other files
-// of the run in it. The tests ran and never loaded it. A line a listed test
-// executes is never uncovered.
+// line: the line coverage.Report.SiteLine reads for it, its statement's
+// first line where the report measures no later one. A file the report
+// never mentions is uncovered when coverage measured its language: a
+// coverage command for it succeeded, even with a report that names no file
+// of the run, or the report measured other files of the run in it. The
+// tests ran and never loaded it. A line a listed test executes is never
+// uncovered.
 func markUncovered(ctx context.Context, states []*Execution, opt Options) error {
 	if opt.Coverage == nil && opt.Measurement == nil {
 		return nil
@@ -251,14 +253,15 @@ func markUncovered(ctx context.Context, states []*Execution, opt Options) error 
 		s.coverage = make([][]string, len(s.sites))
 		s.reach = make([][]string, len(s.sites))
 		for i, site := range s.sites {
-			s.coverage[i] = measuredReport.LineSources(s.file.Path, site.Line)
+			line := measuredReport.SiteLine(s.file.Path, site.Line, site.Statement)
+			s.coverage[i] = measuredReport.LineSources(s.file.Path, line)
 			if opt.Listed != nil {
-				s.reach[i] = measuredReport.LineTests(s.file.Path, site.Line)
+				s.reach[i] = measuredReport.LineTests(s.file.Path, line)
 			}
 			if s.outcomes[i] != "" || len(s.reach[i]) > 0 {
 				continue
 			}
-			covered, lineMeasured := measuredReport.LineCovered(s.file.Path, site.Line)
+			covered, lineMeasured := measuredReport.LineCovered(s.file.Path, line)
 			if !has || (lineMeasured && !covered) {
 				s.outcomes[i] = Uncovered
 			}

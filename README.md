@@ -478,7 +478,13 @@ test. What keeps `mutation run` fast:
   decide it differently with nothing changed, and it is recorded flaky
   (below).
 - **Coverage first.** Mutants on lines no test executes are reported as
-  uncovered and never run.
+  uncovered and never run. A line report, coverage.py's or Vitest's, marks
+  a statement split over several lines on its first line alone, so a
+  mutant on a later line its report does not measure takes the coverage of
+  the nearest line above it that it does, no higher than the line its
+  statement starts on: uncovered when that statement never ran, and judged
+  by the listed tests that ran it. A later line the report measures by
+  itself, as Vitest does an arrow function's body, keeps its own answer.
 - **Narrow, fail-fast test runs.** The file's own Go package (`-failfast`),
   `vitest related` / `jest --findRelatedTests`, in Python the test files
   that reach the file (named `test_*.py` or `*_test.py`), as

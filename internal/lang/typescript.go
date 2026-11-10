@@ -49,6 +49,16 @@ func init() {
 				"type_identifier", "statement_identifier"),
 			Literals: set("string", "template_string", "number", "regex", "true", "false", "null", "undefined"),
 			Comments: set("comment", "html_comment"),
+			// The grammars' statement and declaration, JavaScript's and
+			// TypeScript's.
+			Statements: set("break_statement", "continue_statement", "debugger_statement", "do_statement",
+				"empty_statement", "export_statement", "expression_statement", "for_in_statement",
+				"for_statement", "if_statement", "import_statement", "labeled_statement", "return_statement",
+				"statement_block", "switch_statement", "throw_statement", "try_statement", "while_statement",
+				"with_statement", "abstract_class_declaration", "ambient_declaration", "class_declaration",
+				"enum_declaration", "function_declaration", "function_signature", "generator_function_declaration",
+				"import_alias", "interface_declaration", "internal_module", "lexical_declaration", "module",
+				"type_alias_declaration", "using_declaration", "variable_declaration"),
 		},
 		Mutations: Mutations{
 			Swaps:         swaps(map[string]string{"===": "!==", "!==": "===", "&&": "||", "||": "&&", "??": "||"}),

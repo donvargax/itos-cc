@@ -50,6 +50,12 @@ func init() {
 			Literals: set("string_literal", "decimal_integer_literal", "hex_integer_literal",
 				"decimal_floating_point_literal", "true", "false", "null_literal", "symbol_literal"),
 			Comments: set("comment", "documentation_comment"),
+			// The grammar's _statement, and a function's body written as
+			// "=> expression;", which is one.
+			Statements: set("assert_statement", "block", "break_statement", "continue_statement", "do_statement",
+				"empty_statement", "expression_statement", "for_statement", "if_statement", "labeled_statement",
+				"local_function_declaration", "local_variable_declaration", "return_statement", "switch_statement",
+				"try_statement", "while_statement", "yield_each_statement", "yield_statement", "function_body"),
 		},
 		Mutations: Mutations{
 			Swaps:             dartSwaps,

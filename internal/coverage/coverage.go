@@ -264,6 +264,45 @@ func (r *Report) LineCovered(file string, line int) (covered, measured bool) {
 	return false, measured
 }
 
+// SiteLine is the line whose coverage a site on line of file stands for,
+// statement being the line its innermost statement starts on: line itself
+// when the report, or a listed test's, measures it, measured and never
+// executed included; else the nearest line above it that one measures, no
+// higher than statement; else line, unmeasured. coverage.py and Vitest
+// mark a statement split over several lines on its first line alone, so a
+// site on a later line takes its statement's coverage, while a later line
+// they measure by itself, as Vitest does an arrow function's body, keeps
+// its own. A statement unknown, 0, or after line bounds the search at line
+// itself. Every reader of a site's line coverage, LineCovered, LineSources
+// and LineTests, reads the line this gives.
+func (r *Report) SiteLine(file string, line, statement int) int {
+	if statement < 1 {
+		statement = line
+	}
+	for at := line; at >= statement; at-- {
+		if r.measures(file, at) {
+			return at
+		}
+	}
+	return line
+}
+
+// measures is whether r, or a listed test's report, measures line of file.
+func (r *Report) measures(file string, line int) bool {
+	if _, measured := r.LineCovered(file, line); measured {
+		return true
+	}
+	if r == nil || r.tests == nil {
+		return false
+	}
+	for _, id := range r.tests.ids {
+		if _, measured := r.tests.reports[id].LineCovered(file, line); measured {
+			return true
+		}
+	}
+	return false
+}
+
 // LineSources names the sources whose data executed a segment covering
 // line, in the order of Source: "in-process", "integration", or both. It is
 // empty when no segment covering line was executed.

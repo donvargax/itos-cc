@@ -262,13 +262,14 @@ func (h Handler) trials(ctx context.Context, q CountedQuery, plan *mutants.Fresh
 	for i, c := range plan.Selected {
 		path := filepath.Join(plan.FrozenRoot, filepath.FromSlash(c.Path))
 		site := &result.Selected[i]
-		if countedUncovered(prep.Report, path, c.Site.Line) {
+		line := prep.Report.SiteLine(path, c.Site.Line, c.Site.Statement)
+		if countedUncovered(prep.Report, path, line) {
 			site.State, site.Outcome = "uncovered", mutants.Uncovered
 			continue
 		}
 		var reach []string
 		if listed != nil {
-			reach = prep.Report.LineTests(path, c.Site.Line)
+			reach = prep.Report.LineTests(path, line)
 		}
 		baseline, ok := baselineOf(prep.Baselines, c.Path)
 		if !ok && len(reach) > 0 {
@@ -475,8 +476,8 @@ func countedSubjectsOf(plan *mutants.FreshPlan) countedSubjects {
 }
 
 // countedUncovered says whether the fresh measurement shows no test, own
-// or listed, executing line of path, as complete mode marks a mutant
-// uncovered.
+// or listed, executing line of path, the line coverage.Report.SiteLine
+// reads for a site, as complete mode marks a mutant uncovered.
 func countedUncovered(report *coverage.Report, path string, line int) bool {
 	if len(report.LineTests(path, line)) > 0 {
 		return false

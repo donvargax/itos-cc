@@ -7101,7 +7101,7 @@ Feature: Mutation testing
   # Then. ID-MUT-427 holds today.
   Rule: A site on a later line of a statement takes its statement's coverage where its own line is unmeasured
 
-    @slice-79 @ID-MUT-424 @wip
+    @slice-79 @ID-MUT-424
     Scenario: A listed test that runs a statement split over two lines judges a site on its second line
       Given a Python project whose two_lines returns "(a" and then "* b)" on the next line, and whose own test calls two_lines(2, 3) without checking what it returns
       And itos-cc.yaml lists one test, scn1, a script that fails unless two_lines(2, 3) is 6
@@ -7109,7 +7109,7 @@ Feature: Mutation testing
       Then the `*` → `/` mutant on two_lines' second line survives its own tests, then runs the run command selecting scn1 alone, and is killed
       And its snapshot entry records scope "listed" and tests ["scn1"]
 
-    @slice-79 @ID-MUT-425 @wip
+    @slice-79 @ID-MUT-425
     Scenario Outline: A site on the second line of a statement no test runs is uncovered, in <language>
       Given a <language> file <file> whose add returns "(a" and then "+ b" on the next line, which a test calls, and whose never returns the same over lines 7 and 8, which nothing calls
       When I run "itos-cc mutation run --json" for <file>
@@ -7122,14 +7122,14 @@ Feature: Mutation testing
         | Python                         | calc.py     |
         | TypeScript, tested with Vitest | src/calc.ts |
 
-    @slice-79 @ID-MUT-426 @wip
+    @slice-79 @ID-MUT-426
     Scenario: A --site run calls a site on a statement's second line uncovered as a complete run does
       Given the Python file calc.py of ID-MUT-425
       And itos-cc makes counted runs on this system
       When I run "itos-cc mutation run --site calc.py:8:13 --json"
       Then that mutant is "uncovered", and no test command ran for it
 
-    @slice-79 @ID-MUT-427 @wip
+    @slice-79 @ID-MUT-427
     Scenario: A later line the report measures keeps its own answer
       Given a TypeScript file src/inc.ts, tested with Vitest, whose inc returns "xs.map((x) =>" and then "x + 1);" on the next line, and whose test checks only that inc([]) is []
       When I run "itos-cc mutation run --json" for src/inc.ts

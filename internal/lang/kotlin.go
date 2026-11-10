@@ -44,6 +44,12 @@ func init() {
 			Literals: set("string_literal", "integer_literal", "real_literal", "long_literal", "hex_literal",
 				"bin_literal", "unsigned_literal", "boolean_literal", "character_literal", "null_literal"),
 			Comments: set("line_comment", "multiline_comment"),
+			// A function's body written as "= expression" is one statement.
+			Statements: set("function_body"),
+			// The grammar names no statement kind: a statement is a child
+			// of statements, or the body of an if, a loop or a when entry
+			// without braces.
+			StatementLists: set("statements", "control_structure_body"),
 		},
 		Mutations: Mutations{
 			Swaps: swaps(map[string]string{"===": "!==", "!==": "===", "&&": "||", "||": "&&"}),
