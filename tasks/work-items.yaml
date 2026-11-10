@@ -6417,8 +6417,8 @@ items:
   - id: slice-79
     title: A site on a later line of a multi-line statement takes its statement coverage
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
