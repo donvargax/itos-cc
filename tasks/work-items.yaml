@@ -6464,8 +6464,8 @@ items:
   - id: slice-80
     title: Two stale entries of one change that moved are each re-pointed by their identity
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
