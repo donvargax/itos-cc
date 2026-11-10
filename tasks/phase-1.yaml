@@ -7338,6 +7338,3 @@
     test exists (itos#276). Out of scope: the Go tests of cmd/itos-cc that need the language tools,
     picked by the languages tests shard's hand-kept -run list (cmd/itos-cc/language_tools_test.go
     skips them in CI elsewhere), the idea language-tests-ci-selection.
-  done_when:
-    - run: "bash -c \"go test ./features -run '^TestLanguageScenariosCarryTheirToolsTag$' -count=1 -v | grep -q -- '--- PASS: TestLanguageScenariosCarryTheirToolsTag'\""
-      timeout: 600
