@@ -106,6 +106,7 @@ func (b *byHash) staleIdentitySteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the "mutation\.exception-stale" problem, with why "changed", has an "identity"$`, s.languageIdentity)
 	sc.Step(`^excepting that identity with no --reason exits 0, the entry at Board#count's current hash with the reason "x is never 5"$`, s.exceptLanguage)
 	sc.Step(`^"itos-cc mutation check (\S+) --json" (?:then )?reports no "mutation\.exception-stale"$`, s.noneStale)
+	s.twoMovedSteps(sc)
 }
 
 // committedSignature is slice-76's signature change, committed, as a counted
