@@ -6448,16 +6448,9 @@ items:
     title: Two stale entries of one change that moved are each re-pointed by their identity
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was stale-identity-two-moved.
-      Two stale entries of one change in one function, neither at its site's place: each names an
-      identity by the rule of matchSite, but Repointed finds several candidates and none at the
-      place, so excepting that identity with no --reason is flags.value-missing, though the fix said
-      it keeps the entry's reason. Either name no identity then, or let the identity choose the
-      entry. Seen reading slice-78's code, not in the field.
   - id: T-231
     title: Stale-entry scenarios run on Windows, needing no counted run
     phase: 1
