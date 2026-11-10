@@ -6534,8 +6534,8 @@ items:
   - id: T-232
     title: Every scenario needing Python, Node, Kotlin or Flutter runs through its real tools in CI
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: language-tests-ci-selection
