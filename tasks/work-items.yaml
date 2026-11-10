@@ -6412,14 +6412,15 @@ items:
       whether it caused this is unconfirmed. Find what creates it first: a fixture or tool running
       git init in the wrong folder would be the real defect. Passing -buildvcs=false would likely
       hide it, untried.
-  - id: mutation-continuation-line-reach
+  - id: slice-79
     title: A site on a later line of a multi-line statement takes its statement coverage
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutation-continuation-line-reach.
       From the survey of Uncle Bob tools (2026-11-08): unclebob/mutator a5a0cb8 counts a site as
       covered when the line its statement starts on is, as a line report marks only that line.
       itos-cc 0.47.0 fails the other way for Python, reproduced on scratch fixtures: coverage.py
