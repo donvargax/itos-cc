@@ -1,0 +1,270 @@
+{
+  "version": 1,
+  "file": "tools/bin/nightly-survivors/main.go",
+  "language": "go",
+  "tests": {
+    "tools/bin/nightly-survivors/main_test.go": "4ce34c67446712455fb2e907563b75d2239f1330d22539335f7cf45d3d28fe39"
+  },
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/nightly-survivors",
+      "name": "main",
+      "hash": "c767d323c81947d5",
+      "start_line": 50,
+      "end_line": 52,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 51,
+          "column": 22,
+          "offset": 35,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/nightly-survivors",
+      "name": "run",
+      "hash": "92021e63f71cbba7",
+      "start_line": 54,
+      "end_line": 89,
+      "killed": 18,
+      "survived": 1,
+      "uncovered": 0,
+      "sites": 19,
+      "mutants": [
+        {
+          "line": 55,
+          "column": 15,
+          "offset": 70,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "killed"
+        },
+        {
+          "line": 55,
+          "column": 19,
+          "offset": 74,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 55,
+          "column": 27,
+          "offset": 82,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 55,
+          "column": 30,
+          "offset": 85,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 61,
+          "column": 37,
+          "offset": 230,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
+        },
+        {
+          "line": 63,
+          "column": 27,
+          "offset": 317,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 66,
+          "column": 22,
+          "offset": 461,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 68,
+          "column": 39,
+          "offset": 569,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 74,
+          "column": 10,
+          "offset": 684,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 74,
+          "column": 13,
+          "offset": 687,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 74,
+          "column": 15,
+          "offset": 689,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 74,
+          "column": 22,
+          "offset": 696,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 76,
+          "column": 10,
+          "offset": 815,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 78,
+          "column": 10,
+          "offset": 829,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 78,
+          "column": 13,
+          "offset": 832,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 82,
+          "column": 19,
+          "offset": 911,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 82,
+          "column": 22,
+          "offset": 914,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 83,
+          "column": 10,
+          "offset": 927,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 88,
+          "column": 9,
+          "offset": 1040,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/nightly-survivors",
+      "name": "exitCode",
+      "hash": "5cdf0bff84dcc79a",
+      "start_line": 92,
+      "end_line": 97,
+      "killed": 2,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 93,
+          "column": 52,
+          "offset": 95,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 94,
+          "column": 14,
+          "offset": 127,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/nightly-survivors",
+      "name": "survivors",
+      "hash": "39f185a896aba85b",
+      "start_line": 101,
+      "end_line": 126,
+      "killed": 4,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 4,
+      "mutants": [
+        {
+          "line": 109,
+          "column": 37,
+          "offset": 255,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 112,
+          "column": 28,
+          "offset": 307,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 117,
+          "column": 13,
+          "offset": 421,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 120,
+          "column": 16,
+          "offset": 468,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        }
+      ]
+    }
+  ]
+}

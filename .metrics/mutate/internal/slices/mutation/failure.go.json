@@ -418,11 +418,28 @@
       "hash": "86e0b23f25cb0635",
       "start_line": 130,
       "end_line": 130,
-      "killed": 0,
+      "killed": 2,
       "survived": 0,
       "uncovered": 0,
-      "sites": 0,
-      "mutants": []
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 130,
+          "column": 61,
+          "offset": 60,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 130,
+          "column": 70,
+          "offset": 69,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        }
+      ]
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.ReasonMissing",
@@ -442,11 +459,28 @@
       "hash": "5763f42bf209f4b1",
       "start_line": 132,
       "end_line": 132,
-      "killed": 0,
+      "killed": 2,
       "survived": 0,
       "uncovered": 0,
-      "sites": 0,
-      "mutants": []
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 132,
+          "column": 61,
+          "offset": 60,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 132,
+          "column": 70,
+          "offset": 69,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        }
+      ]
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.StrictCoverageFlag",
