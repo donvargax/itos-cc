@@ -15549,7 +15549,7 @@
       "start_line": 492,
       "end_line": 494,
       "killed": 2,
-      "survived": 2,
+      "survived": 3,
       "uncovered": 0,
       "sites": 5,
       "mutants": [
@@ -16695,7 +16695,7 @@
           "offset": 128,
           "original": "0",
           "replacement": "1",
-          "outcome": "killed",
+          "outcome": "survived",
           "scope": "listed",
           "tests": [
             "ID-CLI-20",
@@ -16971,11 +16971,6 @@
             "ID-MUT-424",
             "ID-MUT-425",
             "ID-MUT-427"
-          ],
-          "flaky": true,
-          "outcomes": [
-            "killed",
-            "survived"
           ]
         }
       ]
