@@ -249,12 +249,7 @@ func (h Handler) Run(ctx context.Context, q RunQuery) (RunFound, error) {
 		if len(elsewhere) > 0 {
 			// Known before anything runs: an entry of a file the run does
 			// not select that no longer holds.
-			e := elsewhere[0]
-			at := filepath.FromSlash(e.File)
-			if !filepath.IsAbs(at) {
-				at = filepath.Join(root, at)
-			}
-			ff.Known = &mutants.Stop{Rule: "mutation.exception-stale", File: cli.Rel(h.Dir, at), Exception: &e} //nolint:forbidigo // a lookup or a containment test, no line names it
+			ff.Known = h.knownStop(root, elsewhere[0])
 		}
 		found.Results, found.Stop, err = mutants.RunFailFast(ctx, sources, opt, ff)
 	} else {
@@ -492,4 +487,14 @@ func listedSuite(q RunQuery, cfg *mutants.Config) *mutants.Tests {
 // --fail-uncovered, so only a language it does not prove reaches this.
 func rawCoverage(q RunQuery) bool {
 	return q.UseExistingCoverage || given(q.CoverageCommand) != "" || len(q.CoverageReports) > 0
+}
+
+// knownStop is the stop of e, the stale entry of a file the run does not
+// select: its file named from the working directory, as the system names it.
+func (h Handler) knownStop(root string, e mutants.StaleException) *mutants.Stop {
+	at := filepath.FromSlash(e.File)
+	if !filepath.IsAbs(at) {
+		at = filepath.Join(root, at)
+	}
+	return &mutants.Stop{Rule: "mutation.exception-stale", File: cli.Rel(h.Dir, at), Exception: &e} //nolint:forbidigo // a lookup or a containment test, no line names it
 }
