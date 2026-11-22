@@ -6603,7 +6603,7 @@ items:
     title: A function's recorded results pair with it by one key, never by name or position
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-239

@@ -7525,9 +7525,6 @@
     worktree of the finished tree, put back 979960b1's positional lookup and see the check fail, by
     compile or by the test; quote it in the close. Out of scope: findings F1, F2, F4 and F5, the
     snapshot format, the graph slice (internal/slices/graph), the mutation slice's plain lines.
-  done_when:
-    - run: "go test ./internal/slices/mutation/domain -run '^TestResultsPairWithTheirFunctionsByKey$' -v 2>&1 | grep -q -- '--- PASS: TestResultsPairWithTheirFunctionsByKey'"
-      timeout: 300
 - id: T-239
   type: test
   title: Every order of a process group's end is played on Linux against a fake of the system calls
