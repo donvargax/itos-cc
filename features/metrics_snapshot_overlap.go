@@ -148,7 +148,7 @@ func (q *snapshotState) launch(ctx context.Context, commands ...string) error {
 		if err != nil {
 			return err
 		}
-		r.run, err = q.w.start(ctx, Run{Dir: q.w.dir, Args: args, Env: env})
+		r.run, err = q.w.d.Start(ctx, Run{Dir: q.w.dir, Args: args, Env: env})
 		if errors.Is(err, ErrPhysicalUnsupported) {
 			return godog.ErrSkip
 		}
@@ -394,7 +394,7 @@ func (q *snapshotState) latestReports(ctx context.Context) error {
 		}
 		trace[r.name] = data
 	}
-	r, err := q.w.run(Run{Dir: q.w.dir, Args: []string{"crap", "--use-existing-coverage", "--json"}})
+	r, err := q.w.d.Run(Run{Dir: q.w.dir, Args: []string{"crap", "--use-existing-coverage", "--json"}})
 	if err != nil {
 		return err
 	}

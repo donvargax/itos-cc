@@ -357,7 +357,7 @@ func (q *snapshotState) killedAtRoot() error {
 	return nil
 }
 func (q *snapshotState) checkAtRoot() error {
-	r, err := q.w.run(Run{Dir: q.w.dir, Args: []string{"mutation", "check", "src/board.go"}})
+	r, err := q.w.d.Run(Run{Dir: q.w.dir, Args: []string{"mutation", "check", "src/board.go"}})
 	if err != nil {
 		return err
 	}
@@ -373,7 +373,7 @@ func (q *snapshotState) summaryName(file string) error {
 	return nil
 }
 func (q *snapshotState) jsonName(file string) error {
-	r, err := q.w.run(Run{Dir: filepath.Join(q.w.dir, "src"), Args: []string{"mutation", "run", "--json", "board.go"}})
+	r, err := q.w.d.Run(Run{Dir: filepath.Join(q.w.dir, "src"), Args: []string{"mutation", "run", "--json", "board.go"}})
 	if err != nil {
 		return err
 	}

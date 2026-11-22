@@ -73,13 +73,6 @@ itos-cc keeps the variable to itself: the commands it starts never inherit it (s
 `ID-MUT-352`), so the projects' tests it runs write nothing there and never take a run for a
 coverage run, and its own coverage runs set their own.
 
-Every scenario's runs get a temporary folder of the scenario's own (`TMPDIR`, `TMP` and `TEMP`),
-and the harness (`stray_files.go`, both drivers) fails the scenario, naming the path, when a run
-adds a path to the project tree, but under `.metrics/`, or leaves anything in that folder. The
-tree is fingerprinted just before and just after each run, so what a step wrote between runs is the
-scenario's. A scenario whose subject is what a run writes is let by an allowance there, naming its
-ID tag and the path with its reason, never a glob.
-
 `ITOS_CC_FEATURES_BINARY` names an itos-cc binary built elsewhere, which `TestFeatures` runs in
 place of the one it builds, as T-132 runs today's scenarios against the binary of the commit
 before the refactor. The build is skipped then, `GOCOVERDIR` or not, and the binary runs as it
