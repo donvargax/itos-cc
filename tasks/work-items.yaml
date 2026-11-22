@@ -6661,3 +6661,19 @@ items:
       rather than copying gardener's regex matching; any code copied carries gardener's notice in
       THIRD_PARTY_NOTICES. Starts after the pstack trial's two runs (the pstack copy and the itos
       arm, F1 to F5) finish, so it touches nothing either run is fixing.
+  - id: gardener-compare
+    title: "compare <commit or range>: fixes and rework on the touched files, before against after"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [gardener-outcomes]
+    kind: idea
+    why: >
+      For a commit or range: fixes and rework on the files it touched, in the window before against
+      the window after, with the shared-file split (files too many commits touch to attribute) and
+      'still measuring' while the after-window is short. It is how a fix like F1 to F5 is judged
+      after it lands. From gardener (subsy/gardener at c58a2ad, MIT; the chief's adoption note,
+      2026-11-22, which the person agreed to). Port the idea to Go on itos-cc's tree-sitter core
+      rather than copying gardener's regex matching; any code copied carries gardener's notice in
+      THIRD_PARTY_NOTICES. Starts after the pstack trial's two runs (the pstack copy and the itos
+      arm, F1 to F5) finish, so it touches nothing either run is fixing.
