@@ -254,7 +254,10 @@ a `context.Context` first (decision 30); pure logic takes none.
   workers run through, `ErrCommandTimeout` the cause of a command's own timeout, judged
   `TimedOut` rather than cancelled, and `PlatformAtBoundary` the host only for a zero
   platform: the OS is a value, and the build tags of `proc_unix.go` and `proc_windows.go` hold
-  only the group calls Windows lacks. Crap's and mutation's coverage commands (cmd's
+  only the group calls Windows lacks. A group's signal, wait, runnable inspection and clock are
+  `groupCalls` values (`group_calls.go`), the system's unless a test of the package gives a script:
+  `TestGroupEndsAreJudgedInEveryOrder` plays every order a group's end took on each system, on
+  Linux; add the next order there. Crap's and mutation's coverage commands (cmd's
   `coverageCommand`), counted preparation and mutation's workers run through it; cmd binds
   it, and no domain or slice imports it, so crap reaches no mutation adapter.
 - `internal/imports` is the import-resolution engine (ADR-0051, T-162), lifted out of graph, an
