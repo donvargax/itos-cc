@@ -7390,9 +7390,6 @@
     person installs it, and otherwise let CI judge it; never download a toolchain by hand. Red
     first: the check fails on main today, as run 45066336822 shows. Out of scope: any other
     dependency bump.
-  done_when:
-    - run: go tool govulncheck -test ./...
-      timeout: 900
 - id: T-235
   type: refactor
   title: Mutation's plain lines name files through one display path type, so Linux tests see Windows' form

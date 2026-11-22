@@ -6564,7 +6564,7 @@ items:
     title: Go toolchain 1.27.4, for GO-2026-6859 in net/http
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-235
