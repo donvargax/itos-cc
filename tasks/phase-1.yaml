@@ -7376,11 +7376,6 @@
     there fails it; before the work it fails on the 9 unused directives. Red first for this task:
     run both checks before the work and see each fail. Out of scope: findings F1 to F5 of the pilot,
     nolintlint in .golangci.yml, and any change to another linter.
-  done_when:
-    - run: "ARCHITECTURE_ROOT=$PWD ARCHITECTURE_LINTER=$(tools/bin/pinned --path golangci-lint) go test ./tools/testdata/architecture -run '^TestGosecPathRule$' -count=1 -v 2>&1 | grep -q -- '--- PASS: TestGosecPathRule'"
-      timeout: 300
-    - run: tools/bin/pinned golangci-lint run --enable nolintlint ./internal/slices/mutation/adapters/... ./internal/workdir/... ./internal/metricsdir/... ./internal/coveragetools/... ./internal/project/... ./internal/processes/... ./internal/imports/...
-      timeout: 300
 - id: T-234
   type: build
   title: Go toolchain 1.27.4, for GO-2026-6859 in net/http

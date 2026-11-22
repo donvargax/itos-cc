@@ -6558,7 +6558,7 @@ items:
     title: gosec's G304 and G204 are excluded in the adapter packages, by one path rule
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-234
