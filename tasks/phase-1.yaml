@@ -7428,3 +7428,44 @@
     check fail, by the type or the lint or the test, quoting the output in the task's close; then do
     the same with 5ff7350d's (the excepted line). Out of scope: findings F2 to F5, other commands'
     paths, the domain's error keys.
+- id: T-236
+  type: test
+  title: Every scenario refuses a file a run left in its project or its temporary folder
+  why: >
+    Finding F5 of the quality pilot (2026-11-22, .git/itos/quality-pilot/findings.md), the itos arm
+    of the pstack trial. Runs left files behind four times, each fixed by itself: pytest left
+    .pytest_cache in the user's project (daec1b7d; its first try e02364db was reverted in d655746c),
+    __pycache__ bytecode made mutants survive falsely (b87f8d69), killed runs left 3.7 GB of worker
+    copies in the temp folder (b4f0ed59), and slice-62 gave each worker its own temp folder
+    (ID-MUT-353 and 354). The coordinator's calls: one rule in the scenario harness replaces the
+    fixes per tool. Every scenario's project tree is fingerprinted before the scenario's first
+    itos-cc command and again in the After hook, and a file or folder that the command added is
+    refused, naming its path and saying a run of itos-cc must leave the project as it found it but
+    for .metrics/; a scenario whose subject is what a run writes (mutation except writing
+    itos-cc.yaml, a --coverage-report the scenario names, a scenario that checks what is left) is
+    let by an allowance in the harness that names the scenario's ID tag and the path, each with its
+    reason, never by a broad glob. Changed bytes of a file the scenario wrote are not refused: only
+    new paths are. Each scenario's itos-cc commands run with a temporary folder of the scenario's
+    own (TMPDIR, TMP and TEMP, as mutate_tmpdir.go does for its two scenarios), and the After hook
+    refuses what is left in it, naming it, but for the same tagged allowances (ID-MUT-354 leaves its
+    file on purpose). Both drivers run the hook, the binary and the in-process one, so a CI job that
+    runs scenarios with real tools (cd.yml's languages and dart jobs) holds the real tools to it and
+    the in-process run holds the product's own writes. A scenario the hook newly refuses is this
+    task's to fix: a step that wrote outside the scenario's fixture is fixed in the step; a product
+    that leaves a file is fixed in the product, in a fix commit naming this task with a unit test of
+    its package; never by an allowance without a reason that the scenario's subject is that file.
+    The check is a Go test in features, TestScenarioLeavesNoStrayFiles, run in process: a scenario
+    whose command adds .pytest_cache/v/cache/lastfailed to the project fails at the hook naming that
+    path, one that leaves a file in its temporary folder fails naming it, one under an allowance
+    passes, and one that leaves nothing passes. It greps the PASS line, as go test passes with no
+    test to run before the test exists (itos#276). Red first: commit the test first and see it fail.
+    The proof the check catches the past mistake (the pilot's rule): in a throwaway worktree of the
+    finished tree, take -p no:cacheprovider out of internal/covrun/python.go's pytestRunner
+    (daec1b7d's fix) and run ID-MUT-214 through the binary driver with the real tools
+    (ITOS_CC_FEATURES_BINARY_DRIVER=1 ITOS_CC_LANGUAGE_TOOLS=1; this machine has python3 with pytest
+    9.2 and coverage 7.17), and see the hook refuse .pytest_cache; quote it in the close. Out of
+    scope: findings F1 to F4, the mutation slice's plain lines (T-235 just changed them), cleaning
+    up anything a scenario's own steps make outside the project and its temporary folder.
+  done_when:
+    - run: "go test ./features -run '^TestScenarioLeavesNoStrayFiles$' -v 2>&1 | grep -q -- '--- PASS: TestScenarioLeavesNoStrayFiles'"
+      timeout: 300
