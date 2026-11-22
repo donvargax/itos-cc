@@ -7531,3 +7531,34 @@
   done_when:
     - run: "go test ./internal/slices/mutation/domain -run '^TestResultsPairWithTheirFunctionsByKey$' -v 2>&1 | grep -q -- '--- PASS: TestResultsPairWithTheirFunctionsByKey'"
       timeout: 300
+- id: T-239
+  type: test
+  title: Every order of a process group's end is played on Linux against a fake of the system calls
+  why: >
+    Finding F4 of the quality pilot (2026-11-22, .git/itos/quality-pilot/findings.md), the itos arm
+    of the pstack trial. Ending a process group raced differently on each system, six times: ESRCH
+    from a cancel that landed after the command had exited, reported as Wait's error (bug-5,
+    713506df); macOS refusing kill(-pgid, SIGKILL) with EPERM when only zombies are left (891f0567);
+    the reaping slack tighter than the cleanup deadline (bug-7, 6ec9027c); the cleanup budget for
+    aborts (f779e4c8); Windows streams after a capped run (2c5f50fc); output loops exhausting a
+    runner (issue #54). Each was found by a CI job of one system. The coordinator's calls: a table
+    test over a fake, not a formal model, since the orders are few and finite. internal/processes
+    takes the group signal, the wait and the group's gone and runnable inspection as values (a small
+    unexported port with the real calls behind it), with the platform as a value as it already is,
+    so one test on Linux plays every order on every system: cancel before the command exits, cancel
+    after it exited (ESRCH), the group gone before the kill, only zombies left (EPERM on darwin,
+    ESRCH on linux), the kill landing inside and past the cleanup deadline. Each order asserts the
+    Result and the error the runner gives: an exited command is judged as it finished, never as an
+    internal error, and the deadline holds. No behaviour changes, so no scenario changes. Build tags
+    keep only the calls unavailable on a system (AGENTS.md); no runtime.GOOS branch in logic. The
+    check is TestGroupEndsAreJudgedInEveryOrder in internal/processes; it greps the PASS line
+    (itos#276). Red first: commit the test first; where the seams do not exist yet it fails to
+    compile, so commit it with the seams' signatures stubbed to the real calls and see the orders
+    that today's code gets right pass and say so. The proof the check catches the past mistakes: in
+    a throwaway worktree of the finished tree, put back 713506df's mistake (the cancel's ESRCH
+    returned as the error) and then 891f0567's (EPERM on a zombie-only group as an error), and see
+    the check fail on each; quote both in the close. Out of scope: findings F1, F2, F3 and F5, a
+    formal model, the mutation workers' use of the runner beyond what its signature change needs.
+  done_when:
+    - run: "go test ./internal/processes -run '^TestGroupEndsAreJudgedInEveryOrder$' -v 2>&1 | grep -q -- '--- PASS: TestGroupEndsAreJudgedInEveryOrder'"
+      timeout: 300
