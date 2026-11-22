@@ -7398,3 +7398,46 @@
   done_when:
     - run: go tool govulncheck -test ./...
       timeout: 900
+- id: T-235
+  type: refactor
+  title: Mutation's plain lines name files through one display path type, so Linux tests see Windows' form
+  why: >
+    Finding F1 of the quality pilot (2026-11-22, .git/itos/quality-pilot/findings.md), the itos arm
+    of the pstack trial. Five fixes for one mistake: a plain line naming its file in the system's
+    form, board\board.go on Windows, where every plain line names it slash-separated from the
+    working directory (bug-9 46ef2e19, bug-12 5ff7350d, slice-68 936781b4, bug-6 2b672d33, bug-1
+    9d31226c). Each was found only by cd.yml's Windows jobs, because the slashing reads
+    filepath.Separator, so Linux and macOS cannot see a line that skips it. dry finds three copies
+    of the path-from-the-working-directory helper (internal/cli/cli.go Rel,
+    internal/slices/mutation/handler.go relTo, internal/slices/mutation/domain/run_binding.go
+    relativeName), none slashing. The coordinator's calls: the fix is a type, then a lint, then a
+    test, in that order of strength. internal/cli gets a display path type, Shown (a file as a
+    person reads it: from the UI's Dir when within it, slash-separated), made only by
+    (*cli.UI).Show(path), and cli.UI carries the system's separator as a value, Separator, which cmd
+    sets from filepath.Separator and a test sets to '\\' (AGENTS.md: code differing by OS takes the
+    OS as a value), so a Linux test sees what Windows prints. Every plain line of the mutation slice
+    (run, check, sample, list, show, except with --renew, --prune and --rehash) that names a file
+    takes a Shown, never a string, and mutation's Slashed and relTo go once nothing calls them.
+    --json and the problems keep naming files in the system's form, as today (bug-9). The domain's
+    relativeName stays only if it names no file for a person; otherwise it goes too. A forbidigo
+    rule in .golangci.yml, for internal/slices/mutation's non-test files, refuses what printed the
+    raw form (filepath.Rel, Slashed, the UI's Rel for a plain line), its message naming the fix:
+    "name a file for people with (*cli.UI).Show". Other commands' plain lines (crap, dry, scrap,
+    units, graph) are out of scope: whether they slash on Windows is a behaviour question, an idea
+    for the coordinator, not this task. This changes no plain line on any system, so no scenario
+    changes; ID-MUT-303, 377 and 391 stay as they are. The check is
+    TestPlainLinesNameFilesSlashSeparated in internal/slices/mutation, in process against porttest's
+    fakes with Separator '\\' and Windows-form paths, one case per plain line that names a file, the
+    rehash, renew, prune, excepted and failing-baseline lines among them; it greps the PASS line, as
+    go test passes with no test to run before the test exists (itos#276); and the lint of the slice.
+    Red first: commit the test first and see it fail at its assertions where a line skips Show. The
+    proof the check catches the past mistake (the pilot's rule): put 936781b4's mistake back into
+    the finished tree, the rehash line printing rel unslashed, in a throwaway worktree, and see the
+    check fail, by the type or the lint or the test, quoting the output in the task's close; then do
+    the same with 5ff7350d's (the excepted line). Out of scope: findings F2 to F5, other commands'
+    paths, the domain's error keys.
+  done_when:
+    - run: "go test ./internal/slices/mutation -run '^TestPlainLinesNameFilesSlashSeparated$' -v 2>&1 | grep -q -- '--- PASS: TestPlainLinesNameFilesSlashSeparated'"
+      timeout: 300
+    - run: tools/bin/pinned golangci-lint run ./internal/slices/mutation/...
+      timeout: 300

@@ -6568,12 +6568,10 @@ items:
     status: doing
     depends_on: []
     kind: task
-  - id: display-path-type
+  - id: T-235
     title: Mutation's plain lines name files through one display path type, so Linux tests see Windows' form
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Placeholder; the ledger entry holds the why.
+    kind: task
