@@ -40,7 +40,7 @@ func TestGosecPathRule(t *testing.T) {
 	}
 	write("go.mod", "module "+module+"\n\ngo 1.27\n")
 	read := "package probe\n\nimport \"os\"\n\nfunc Read(path string) ([]byte, error) {\n\treturn os.ReadFile(path)\n}\n"
-	run := "package probe\n\nimport (\n\t\"os\"\n\t\"os/exec\"\n)\n\nfunc Run() error {\n\ttool := os.Getenv(\"TOOL\")\n\treturn exec.Command(tool).Run()\n}\n"
+	run := "package probe\n\nimport \"os/exec\"\n\nfunc Run(args []string) error {\n\treturn exec.Command(\"git\", args...).Run()\n}\n"
 	both := func(dirPath string) {
 		write(dirPath+"/read.go", read)
 		write(dirPath+"/run.go", run)
