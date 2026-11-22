@@ -7466,9 +7466,6 @@
     9.2 and coverage 7.17), and see the hook refuse .pytest_cache; quote it in the close. Out of
     scope: findings F1 to F4, the mutation slice's plain lines (T-235 just changed them), cleaning
     up anything a scenario's own steps make outside the project and its temporary folder.
-  done_when:
-    - run: "go test ./features -run '^TestScenarioLeavesNoStrayFiles$' -v 2>&1 | grep -q -- '--- PASS: TestScenarioLeavesNoStrayFiles'"
-      timeout: 300
 - id: T-237
   type: test
   title: Prove and close the graph's way back to its own copy of mutation check's rule

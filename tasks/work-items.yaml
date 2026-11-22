@@ -6589,7 +6589,7 @@ items:
     title: Every scenario refuses a file a run left in its project or its temporary folder
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-237
