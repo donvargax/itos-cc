@@ -7498,3 +7498,36 @@
     the PASS line (itos#276), -count=1 because the linter reads files Go cannot track. Red first:
     commit the test first and see the hole's case fail. Quote the proof's output in the close. Out
     of scope: findings F1 and F3 to F5, the port's shape, graph's own crap, dry and scrap reads.
+- id: T-238
+  type: refactor
+  title: A function's recorded results pair with it by one key, never by name or position
+  why: >
+    Finding F3 of the quality pilot (2026-11-22, .git/itos/quality-pilot/findings.md), the itos arm
+    of the pstack trial. A function's recorded results were paired with it by name alone or by its
+    place in the file, and each way broke: functions sharing a namespace#name were told apart three
+    ways in run, keepUnjudged and check (9a0d79fb); kept entries were read by the function's place
+    in the file, so one missing entry shifted every later one (979960b1); Exception.SameSite
+    compares no hash, so an entry whose function changed only in its hash counted as the same site
+    (2ed38ddf, issue #87); issue #50 an entry never renewed. The coordinator's calls: the fix is a
+    type. The mutation domain gets one comparable key for a function's results, UnitKey (its
+    namespace#name, its hash and its ordinal among the file's functions sharing both, in file order,
+    the rule 979960b1 settled), made only from a parsed unit or a snapshot entry by the domain's own
+    constructors, and one lookup, by that key, used by every place that pairs a function with its
+    recorded results: run's keeping of unjudged entries, the --since judge, check, the graph
+    judgment the mutation slice exports (domain/graph.go OnSites) and the exceptions' matching.
+    Pairing by a slice index of another list or by a name string alone goes. Exception.SameSite
+    keeps its meaning, the same site, and whether an entry's function changed is said by the key's
+    hash, as Repointed decides it today; no exception behaviour changes, so no scenario changes and
+    docs/CLI.md stays. The snapshot's JSON is unchanged. The check is a table test in
+    internal/slices/mutation/domain, TestResultsPairWithTheirFunctionsByKey, one case per past
+    mistake: a snapshot missing one function's entry among several (979960b1), two functions sharing
+    a namespace#name with different and with equal hashes (9a0d79fb), a function whose hash alone
+    changed (2ed38ddf), each asserting which entry each function gets; it greps the PASS line
+    (itos#276). Red first: commit the test first and see the cases fail that today's code gets
+    wrong, or say which already hold. The proof the check catches the past mistake: in a throwaway
+    worktree of the finished tree, put back 979960b1's positional lookup and see the check fail, by
+    compile or by the test; quote it in the close. Out of scope: findings F1, F2, F4 and F5, the
+    snapshot format, the graph slice (internal/slices/graph), the mutation slice's plain lines.
+  done_when:
+    - run: "go test ./internal/slices/mutation/domain -run '^TestResultsPairWithTheirFunctionsByKey$' -v 2>&1 | grep -q -- '--- PASS: TestResultsPairWithTheirFunctionsByKey'"
+      timeout: 300

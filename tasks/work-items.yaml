@@ -6599,12 +6599,10 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: function-results-key
+  - id: T-238
     title: A function's recorded results pair with it by one key, never by name or position
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Placeholder; the ledger entry holds the why.
+    kind: task
