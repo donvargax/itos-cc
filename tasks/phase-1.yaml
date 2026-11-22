@@ -7469,3 +7469,35 @@
   done_when:
     - run: "go test ./features -run '^TestScenarioLeavesNoStrayFiles$' -v 2>&1 | grep -q -- '--- PASS: TestScenarioLeavesNoStrayFiles'"
       timeout: 300
+- id: T-237
+  type: test
+  title: Prove and close the graph's way back to its own copy of mutation check's rule
+  why: >
+    Finding F2 of the quality pilot (2026-11-22, .git/itos/quality-pilot/findings.md), the itos arm
+    of the pstack trial. The graph decided mutation states with its own copy of mutation check's
+    rule, and the copy fell behind three times (842b8675 the snapshot lookup, 7ac3be89 staleness by
+    hash alone, bd2d5119 two later rules). Since T-208 and q-95 (GRAPH-38) the design already holds
+    it: graph is a slice, the sibling rule of tools/bin/architecture-check refuses its importing the
+    mutation slice, and its Mutation port (internal/slices/graph/mutation.go) hands it the snapshot
+    and the facts as values it keeps and never reads, with cmd/itos-cc/graph_mutation.go binding
+    Judge to the mutation slice's own judgment. The coordinator's calls: this task proves that guard
+    against the past mistake and closes what the proof finds open, rather than building a second
+    guard. The proof: in a throwaway worktree, write into internal/slices/graph a staleness rule of
+    its own in each of the ways the past copies did it (deciding Stale from the snapshot's hash or
+    its test hashes by reading the snapshot, as bd2d5119's parent did), and see a check refuse each.
+    A way no check refuses is a hole this task closes, with the cheapest check that refuses it: an
+    architecture rule first (depguard or architecture-check, its message naming the Mutation port),
+    then a lint. The one the coordinator already sees: graph imports internal/metricsdir and
+    internal/snapshot (build.go, command.go) for its crap, dry and scrap snapshots, so it could read
+    .metrics/mutate itself; if so, a rule refuses graph reading a mutation snapshot except through
+    the port. The check is a test in tools/testdata/architecture,
+    TestGraphJudgesMutationOnlyThroughItsPort, with compile-valid fixtures as TestArchitecture
+    writes them: a graph fixture importing the mutation slice is refused, one reading a mutation
+    snapshot file through metricsdir or by path is refused if the hole is closed, and one calling
+    the port passes. It runs alone with the variables tools/bin/architecture-check sets, and greps
+    the PASS line (itos#276), -count=1 because the linter reads files Go cannot track. Red first:
+    commit the test first and see the hole's case fail. Quote the proof's output in the close. Out
+    of scope: findings F1 and F3 to F5, the port's shape, graph's own crap, dry and scrap reads.
+  done_when:
+    - run: "ARCHITECTURE_ROOT=$PWD ARCHITECTURE_LINTER=$(tools/bin/pinned --path golangci-lint) go test ./tools/testdata/architecture -run '^TestGraphJudgesMutationOnlyThroughItsPort$' -count=1 -v 2>&1 | grep -q -- '--- PASS: TestGraphJudgesMutationOnlyThroughItsPort'"
+      timeout: 300

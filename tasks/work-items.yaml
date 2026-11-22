@@ -6592,12 +6592,10 @@ items:
     status: doing
     depends_on: []
     kind: task
-  - id: graph-mutation-port-guard
+  - id: T-237
     title: Prove and close the graph's way back to its own copy of mutation check's rule
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Placeholder; the ledger entry holds the why.
+    kind: task
