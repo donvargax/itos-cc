@@ -7553,3 +7553,45 @@
     returned as the error) and then 891f0567's (EPERM on a zombie-only group as an error), and see
     the check fail on each; quote both in the close. Out of scope: findings F1, F2, F3 and F5, a
     formal model, the mutation workers' use of the runner beyond what its signature change needs.
+- id: T-240
+  type: test
+  title: Re-land the stray-file refusal, with fixture markers moved out, allowances in both drivers and tool folders let by
+  why: >
+    The re-land of T-236 (finding F5 of the quality pilot, the itos arm of the pstack trial),
+    reverted in 66e8d42e. T-236 refused, in each scenario's After hook, a path a run of itos-cc
+    added to the scenario's project tree (but for .metrics/) or left in the scenario's own temporary
+    folder, with tagged allowances, and caught daec1b7d's .pytest_cache. ci.yml passed it, but
+    cd.yml run 45073170503 refused about 230 paths in the binary driver with real tools, in three
+    kinds (the full log is .git/itos/quality-pilot/cd-45073170503.log). This task brings T-236's
+    three commits back (git revert 66e8d42e is the start) and fixes those three kinds. The
+    coordinator's calls, one per kind. First, files a fixture project's own tests write on purpose
+    (a/test-ran, src/test-ran, test-ran, cover.out, testdata/left-behind, tmp/copies.txt): what a
+    project's own tests do to its tree is the project's, not itos-cc's, so these fixture tests write
+    their markers into a marks folder the scenario owns outside both the project and its temporary
+    folder, given to them by an environment variable, and the steps that read the markers read them
+    there; never an allowance by name. Second, the --coverage-report allowances (T81.observed,
+    setup.coverage) did not apply under the binary driver: the allowance is matched the same way in
+    both drivers, and a test of the hook proves it for each driver. Third, what a language tool
+    leaves when itos-cc runs it in place (Flutter's build/ and app/build/,
+    node_modules/.vite/vitest/.../results.json, __pycache__/pytest.cpython-314.pyc): a path inside a
+    folder the language's own tooling owns and every project ignores (anything under node_modules/,
+    Flutter's build/ at a Flutter package root) is not the project's tree and is let by, named in
+    one list in the harness with each entry's reason; a cache next to the sources (__pycache__,
+    .pytest_cache, .coverage) stays refused, and the run that leaves it is fixed in the product, in
+    a fix commit naming this task with a unit test of its package, as daec1b7d did (the pyc says
+    some pytest command still runs without PYTHONDONTWRITEBYTECODE or its rewrite cache off). The
+    person may overrule the third call; the list is where that lands. The check is T-236's
+    TestScenarioLeavesNoStrayFiles, which gains a case per kind: a marker in the marks folder
+    passes, a --coverage-report allowance passes under each driver, a file under node_modules/
+    passes, a __pycache__ beside the sources fails. It greps the PASS line (itos#276). Before
+    pushing, run every scenario that uses real tools through the binary driver locally: this machine
+    has Python, Node, Java with Gradle and Kotlin, and Flutter with Dart
+    (ITOS_CC_FEATURES_BINARY_DRIVER=1 ITOS_CC_LANGUAGE_TOOLS=1 ITOS_CC_FLUTTER_TOOLS=1, as cd.yml's
+    languages and dart jobs run them, in their shards), and the features shards of the binary
+    driver; the hook must refuse nothing there. The proof the check catches the past mistake is
+    T-236's again: in a throwaway worktree, take -p no:cacheprovider out of
+    internal/covrun/python.go's pytestRunner and see ID-MUT-214 refused at the hook; quote it in the
+    close. Out of scope: findings F1 to F4, cd.yml and the other workflows.
+  done_when:
+    - run: "go test ./features -run '^TestScenarioLeavesNoStrayFiles$' -v 2>&1 | grep -q -- '--- PASS: TestScenarioLeavesNoStrayFiles'"
+      timeout: 300

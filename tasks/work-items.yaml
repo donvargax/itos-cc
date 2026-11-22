@@ -6744,12 +6744,10 @@ items:
       gardener's regex matching; any code copied carries gardener's notice in THIRD_PARTY_NOTICES.
       Starts after the pstack trial's two runs (the pstack copy and the itos arm, F1 to F5) finish,
       so it touches nothing either run is fixing.
-  - id: no-stray-files-again
+  - id: T-240
     title: Re-land the stray-file refusal, with fixture markers moved out, allowances in both drivers and tool folders let by
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Placeholder; the ledger entry holds the why.
+    kind: task
