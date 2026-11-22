@@ -6906,8 +6906,8 @@
       "start_line": 34,
       "end_line": 67,
       "complexity": 13,
-      "coverage": 78.3,
-      "crap": 14.7
+      "coverage": 69.6,
+      "crap": 17.8
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/processes",
