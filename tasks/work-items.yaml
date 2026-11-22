@@ -6575,3 +6575,15 @@ items:
     status: doing
     depends_on: []
     kind: task
+  - id: progress-lines-display-path
+    title: Mutation's stderr progress lines name files and folders in the system's form
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-235 left Progress alone: its lines (baseline <dir>$, [n/m] <file>:<line>, coverage <file>)
+      name the command's folder with ui.Rel and the file as e.Rel, so on Windows they print
+      board\board.go. They are not plain lines of the list T-235 names, so whether they should take
+      Shown is a behaviour question for the coordinator, with its scenarios.
