@@ -7381,3 +7381,20 @@
       timeout: 300
     - run: tools/bin/pinned golangci-lint run --enable nolintlint ./internal/slices/mutation/adapters/... ./internal/workdir/... ./internal/metricsdir/... ./internal/coveragetools/... ./internal/project/... ./internal/processes/... ./internal/imports/...
       timeout: 300
+- id: T-234
+  type: build
+  title: Go toolchain 1.27.4, for GO-2026-6859 in net/http
+  why: >
+    main is red since 64982a48 (ci.yml run 45066336822): govulncheck -test ./... finds GO-2026-6859,
+    an HTTP/1 server crash in net/http's MaxBytesReader, reached through features' http.Client.Do
+    and the test main, fixed in go1.27.4. go.mod names toolchain go1.27.3, which CI's setup-go
+    installs from go-version-file. The fix is go.mod's toolchain line at go1.27.4, the go line left
+    at 1.27.1 since nothing needs a newer language version, and nothing else. The check is the CI
+    plan's own govulncheck step. Locally it passes only with go1.27.4 installed (Arch's go package
+    is at 1.27.4; this machine still has 1.27.3), so run it with GOTOOLCHAIN=local only after the
+    person installs it, and otherwise let CI judge it; never download a toolchain by hand. Red
+    first: the check fails on main today, as run 45066336822 shows. Out of scope: any other
+    dependency bump.
+  done_when:
+    - run: go tool govulncheck -test ./...
+      timeout: 900
