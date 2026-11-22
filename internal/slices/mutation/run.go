@@ -245,12 +245,7 @@ func (h Handler) Run(ctx context.Context, q RunQuery) (RunFound, error) {
 		}
 	}
 	if q.FailFast {
-		ff := mutants.FailFast{FailUncovered: q.FailUncovered, Lines: scope}
-		if len(elsewhere) > 0 {
-			// Known before anything runs: an entry of a file the run does
-			// not select that no longer holds.
-			ff.Known = h.knownStop(root, elsewhere[0])
-		}
+		ff := mutants.FailFast{FailUncovered: q.FailUncovered, Lines: scope, Known: h.knownStop(root, elsewhere)}
 		found.Results, found.Stop, err = mutants.RunFailFast(ctx, sources, opt, ff)
 	} else {
 		found.Results, err = mutants.Run(ctx, sources, opt)
@@ -489,9 +484,14 @@ func rawCoverage(q RunQuery) bool {
 	return q.UseExistingCoverage || given(q.CoverageCommand) != "" || len(q.CoverageReports) > 0
 }
 
-// knownStop is the stop of e, the stale entry of a file the run does not
-// select: its file named from the working directory, as the system names it.
-func (h Handler) knownStop(root string, e mutants.StaleException) *mutants.Stop {
+// knownStop is the stop known before anything runs: the first of the stale
+// entries of files the run does not select, its file named from the working
+// directory as the system names it; nil when there is none.
+func (h Handler) knownStop(root string, stale []mutants.StaleException) *mutants.Stop {
+	if len(stale) == 0 {
+		return nil
+	}
+	e := stale[0]
 	at := filepath.FromSlash(e.File)
 	if !filepath.IsAbs(at) {
 		at = filepath.Join(root, at)
