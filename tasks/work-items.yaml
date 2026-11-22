@@ -6585,3 +6585,12 @@ items:
       name the command's folder with ui.Rel and the file as e.Rel, so on Windows they print
       board\board.go. They are not plain lines of the list T-235 names, so whether they should take
       Shown is a behaviour question for the coordinator, with its scenarios.
+  - id: no-stray-files
+    title: Every scenario refuses a file a run left in its project or its temporary folder
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Placeholder; the ledger entry holds the why.
