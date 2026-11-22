@@ -6613,3 +6613,19 @@ items:
     status: doing
     depends_on: []
     kind: task
+  - id: gardener-history-objects
+    title: Measure any commit from git objects, without a checkout, cached per commit in the git directory
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The base for the other gardener pieces: history is read from git objects, so any commit can be
+      measured without checking it out, and each commit's numbers are cached in the git common
+      directory, shared by every worktree, since a commit's numbers never change under the same
+      settings. From gardener (subsy/gardener at c58a2ad, MIT; the chief's adoption note,
+      2026-11-22, which the person agreed to). Port the idea to Go on itos-cc's tree-sitter core
+      rather than copying gardener's regex matching; any code copied carries gardener's notice in
+      THIRD_PARTY_NOTICES. Starts after the pstack trial's two runs (the pstack copy and the itos
+      arm, F1 to F5) finish, so it touches nothing either run is fixing.
