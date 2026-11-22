@@ -108,10 +108,7 @@ func (l *languageMutation) tempProject(left string) error {
 	if err != nil {
 		return err
 	}
-	if l.system, err = w.d.Folder(); err != nil {
-		return err
-	}
-	w.folders = append(w.folders, l.system)
+	l.system = w.tmp
 	l.language, l.file, l.m.file = "go", "src/board.go", "src/board.go"
 	if w.d.Platform() == "windows" {
 		w.variables = append(w.variables, "TMPDIR", "TMP="+l.system, "TEMP="+l.system)
