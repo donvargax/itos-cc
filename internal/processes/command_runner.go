@@ -22,6 +22,8 @@ type Runner struct {
 	// Hold marks the command's owned group being killed and joined, so a
 	// later interrupt waits for it (decision 38); nil marks nothing.
 	Hold func() func()
+	// calls replaces the system's group calls in this package's own tests.
+	calls *groupCalls
 }
 
 // Lifecycle can replace the start/wait boundary for one runner, and lets
