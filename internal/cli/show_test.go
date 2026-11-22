@@ -13,8 +13,8 @@ func TestShowNamesAFileSlashSeparatedWhateverTheSystem(t *testing.T) {
 		path, want string
 	}{
 		{"Windows' relative file", &UI{Separator: '\\'}, `src\board.go`, "src/board.go"},
-		{"a file outside the directory", &UI{Dir: "/work", Separator: '/'}, "/other/board.go", "/other/board.go"},
-		{"a slash file", &UI{Dir: "/work", Separator: '/'}, "/work/src/board.go", "src/board.go"},
+		{"a file outside the directory", &UI{Dir: "/work", Separator: filepath.Separator}, "/other/board.go", "/other/board.go"},
+		{"a slash file", &UI{Dir: "/work", Separator: filepath.Separator}, "/work/src/board.go", "src/board.go"},
 		{"this system's separator when none is given", &UI{}, filepath.Join("src", "board.go"), "src/board.go"},
 	} {
 		if got := tc.ui.Show(tc.path).String(); got != tc.want {
