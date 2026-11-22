@@ -6714,3 +6714,18 @@ items:
       carries gardener's notice in THIRD_PARTY_NOTICES. Starts after the pstack trial's two runs
       (the pstack copy and the itos arm, F1 to F5) finish, so it touches nothing either run is
       fixing.
+  - id: gardener-history-viewer
+    title: History week by week as a page of itos-cc serve's viewer
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [gardener-outcomes, gardener-snapshot-counts]
+    kind: idea
+    why: >
+      A weekly trend of the measures, as a page in the existing viewer (itos-cc serve), not a
+      separate HTML file, reading the nightly .metrics/ snapshots plus the outcomes. From gardener
+      (subsy/gardener at c58a2ad, MIT; the chief's adoption note, 2026-11-22, which the person
+      agreed to). Port the idea to Go on itos-cc's tree-sitter core rather than copying gardener's
+      regex matching; any code copied carries gardener's notice in THIRD_PARTY_NOTICES. Starts after
+      the pstack trial's two runs (the pstack copy and the itos arm, F1 to F5) finish, so it touches
+      nothing either run is fixing.
