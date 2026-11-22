@@ -6729,3 +6729,18 @@ items:
       regex matching; any code copied carries gardener's notice in THIRD_PARTY_NOTICES. Starts after
       the pstack trial's two runs (the pstack copy and the itos arm, F1 to F5) finish, so it touches
       nothing either run is fixing.
+  - id: gardener-unmeasured-json
+    title: Unmeasured, never zero, on thin data; --json on every measure; gardener's agent prompts in the docs
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [gardener-outcomes]
+    kind: idea
+    why: >
+      Small rules across the gardener pieces: a measure with too little data says unmeasured, never
+      zero; every one has --json; and gardener's agent prompts are adapted into itos-cc's docs. From
+      gardener (subsy/gardener at c58a2ad, MIT; the chief's adoption note, 2026-11-22, which the
+      person agreed to). Port the idea to Go on itos-cc's tree-sitter core rather than copying
+      gardener's regex matching; any code copied carries gardener's notice in THIRD_PARTY_NOTICES.
+      Starts after the pstack trial's two runs (the pstack copy and the itos arm, F1 to F5) finish,
+      so it touches nothing either run is fixing.
