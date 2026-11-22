@@ -6564,7 +6564,7 @@ items:
   - id: T-234
     title: Go toolchain 1.27.4, for GO-2026-6859 in net/http
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
