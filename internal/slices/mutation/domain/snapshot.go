@@ -435,7 +435,7 @@ func (p Previous) Kept(f *lang.File, s Site, excepted bool) (string, bool) {
 func MarkExcepted(units []UnitResult, results map[int]writtenResult, mutants []MutantResult) {
 	reasons := map[UnitKey]map[string]string{}
 	for _, m := range mutants {
-		w, ok := results[m.Site.Unit]
+		w, ok := results[m.Unit]
 		if !ok || m.Excepted == "" {
 			continue
 		}
