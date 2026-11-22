@@ -12,26 +12,21 @@ func (s *Execution) markBroadStale() {
 	if s.judged == nil || s.stored == nil {
 		return
 	}
-	ids, hashes := FileKeys(s.file)
-	marks := map[string][]bool{}
-	for i, entry := range EntriesOf(ids, hashes, s.stored.Units) {
-		switch {
+	keys := KeysOfFile(s.file)
+	results := PairResults(keys, s.stored.Units)
+	// The key each function's result carries in the snapshot written.
+	written, marks := keyer{}, map[UnitKey]bool{}
+	for i, key := range keys {
+		switch recorded := results.For(key); {
 		case s.judged[i]:
-			key := ids[i] + "\x00" + hashes[i]
-			marks[key] = append(marks[key], false)
-		case entry >= 0:
-			recorded := s.stored.Units[entry]
-			key := ids[i] + "\x00" + recorded.Hash
-			marks[key] = append(marks[key], s.broadChanged(recorded))
+			marks[written.next(key.ID(), key.Hash())] = false
+		case recorded != nil:
+			marks[written.next(key.ID(), recorded.Hash)] = s.broadChanged(*recorded)
 		}
 	}
 	units := s.result.Snapshot.Units
-	for i := range units {
-		key := UnitID(units[i].Namespace, units[i].Name) + "\x00" + units[i].Hash
-		if queue := marks[key]; len(queue) > 0 {
-			units[i].Stale = units[i].Stale || queue[0]
-			marks[key] = queue[1:]
-		}
+	for i, key := range KeysOfEntries(units) {
+		units[i].Stale = units[i].Stale || marks[key]
 	}
 }
 

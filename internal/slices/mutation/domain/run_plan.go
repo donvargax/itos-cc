@@ -159,9 +159,8 @@ func (s *Execution) coverageEvidence(ctx context.Context, opt Options) ([]*Cover
 		}
 	}
 	if opt.CachedCoverage != nil {
-		ids, hashes := FileKeys(s.file)
-		for i := range s.file.Units {
-			if evidence := opt.CachedCoverage(s.file.Path, ids[i], hashes[i]); evidence != nil {
+		for i, key := range KeysOfFile(s.file) {
+			if evidence := opt.CachedCoverage(s.file.Path, key.ID(), key.Hash()); evidence != nil {
 				out[i] = evidence
 			}
 		}

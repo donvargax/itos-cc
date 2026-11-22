@@ -57,11 +57,11 @@ func ExceptionsOf(exceptions []Exception, rel string) []Exception {
 // that only moved keeps its hash and the site's place within it.
 func Locate(e Exception, f *lang.File, sites []Site) (site int, why string, line int) {
 	why, site = ExceptionGone, -1
-	for i, u := range f.Units {
-		if UnitID(u.Namespace, u.Name) != e.Function {
+	for i, key := range KeysOfFile(f) {
+		if key.ID() != e.Function {
 			continue
 		}
-		hash := UnitHash(f, u)
+		u := f.Units[i]
 		at := u.StartLine + e.LineInFunction - 1
 		if why == ExceptionGone && line == 0 {
 			line = at
@@ -70,7 +70,7 @@ func Locate(e Exception, f *lang.File, sites []Site) (site int, why string, line
 			if s.Unit != i || s.Original != e.Original || s.Replacement != e.Replacement {
 				continue
 			}
-			if s.Line == at && s.Column == e.Column && hash == e.Hash {
+			if s.Line == at && s.Column == e.Column && key.Hash() == e.Hash {
 				return j, "", s.Line
 			}
 			why = ExceptionChanged

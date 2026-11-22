@@ -124,21 +124,21 @@ func CheckCoverage(ctx context.Context, files []string, opt CheckOptions, langua
 		if snap != nil {
 			entries = snap.Units
 		}
-		ids, hashes := FileKeys(f)
-		pair := EntriesOf(ids, hashes, entries)
+		keys := KeysOfFile(f)
+		results := PairResults(keys, entries)
 		for i, unit := range f.Units {
-			if opt.Judge != nil && !opt.Judge(path, ids[i], hashes[i]) {
+			if opt.Judge != nil && !opt.Judge(path, keys[i].ID(), keys[i].Hash()) {
 				continue
 			}
-			check := CoverageCheck{File: relativeName(opt.Dir, path), Function: ids[i], Language: language, Line: unit.StartLine, EndLine: unit.EndLine, State: "missing"}
+			check := CoverageCheck{File: relativeName(opt.Dir, path), Function: keys[i].ID(), Language: language, Line: unit.StartLine, EndLine: unit.EndLine, State: "missing"}
 			if unsupported != "" {
 				check.State = "unsupported"
 				check.Changed = []string{unsupported}
 				out = append(out, check)
 				continue
 			}
-			if pair[i] >= 0 {
-				check = CoverageFreshness(check, key, hashes[i], entries[pair[i]].Coverage, inputs)
+			if entry := results.For(keys[i]); entry != nil {
+				check = CoverageFreshness(check, key, keys[i].Hash(), entry.Coverage, inputs)
 			}
 			out = append(out, check)
 		}

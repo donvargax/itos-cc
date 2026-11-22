@@ -264,8 +264,25 @@ func TestFunctionsSharingANameMatchTheirEntriesByHash(t *testing.T) {
 		{[]string{"a", "b", "c"}, []string{"b"}, []int{-1, 0, -1}}, // more functions than entries
 	}
 	for _, c := range cases {
-		if got := PairByHash(c.now, c.was); !slices.Equal(got, c.want) {
-			t.Errorf("PairByHash(%q, %q) = %v, want %v", c.now, c.was, got, c.want)
+		var keys []UnitKey
+		var entries []UnitResult
+		k := keyer{}
+		for _, h := range c.now {
+			keys = append(keys, k.next("p#a", h))
+		}
+		for j, h := range c.was {
+			entries = append(entries, UnitResult{Namespace: "p", Name: "a", Hash: h, StartLine: j}) // the line says which
+		}
+		results := PairResults(keys, entries)
+		got := make([]int, len(keys))
+		for i, key := range keys {
+			got[i] = -1
+			if e := results.For(key); e != nil {
+				got[i] = e.StartLine
+			}
+		}
+		if !slices.Equal(got, c.want) {
+			t.Errorf("PairResults(%q, %q) = %v, want %v", c.now, c.was, got, c.want)
 		}
 	}
 

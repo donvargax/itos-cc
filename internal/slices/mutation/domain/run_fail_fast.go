@@ -272,10 +272,11 @@ func (s *Execution) keepCoverage() {
 		return
 	}
 	units := s.result.Snapshot.Units
-	ids, hashes := FileKeys(s.file)
-	for i, j := range EntriesOf(ids, hashes, s.stored.Units) {
-		if j >= 0 && units[i].Coverage == nil && s.stored.Units[j].Hash == hashes[i] {
-			units[i].Coverage = s.stored.Units[j].Coverage
+	keys := KeysOfFile(s.file)
+	results := PairResults(keys, s.stored.Units)
+	for i, key := range keys {
+		if entry := results.For(key); entry != nil && units[i].Coverage == nil && entry.Hash == key.Hash() {
+			units[i].Coverage = entry.Coverage
 		}
 	}
 }

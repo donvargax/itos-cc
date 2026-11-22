@@ -73,10 +73,10 @@ func TestTheGraphJudgesEachFunctionAsCheckDoes(t *testing.T) {
 	path := filepath.Join(root, "a.go")
 	f := parseExecutionMode(t, path, "package a\nfunc A(x int) bool { return x > 1 }\nfunc B(x int) bool { return x < 1 }\n")
 	facts := mutants.GraphFactsOf(f)
-	if len(facts.IDs) != 2 || len(facts.Hashes) != 2 || len(facts.Sites[0]) == 0 {
+	if len(facts.Keys) != 2 || len(facts.Sites[0]) == 0 {
 		t.Fatalf("facts: %+v", facts)
 	}
-	entry := mutants.UnitResult{Namespace: f.Units[0].Namespace, Name: "A", Hash: facts.Hashes[0], Mutants: []mutants.Mutant{}}
+	entry := mutants.UnitResult{Namespace: f.Units[0].Namespace, Name: "A", Hash: facts.Keys[0].Hash(), Mutants: []mutants.Mutant{}}
 	for _, s := range facts.Sites[0] {
 		entry.Mutants = append(entry.Mutants, mutants.Mutant{Line: s.Line, Column: s.Column, Offset: s.Offset, Original: s.Original, Replacement: s.Replacement, Outcome: mutants.Killed})
 	}

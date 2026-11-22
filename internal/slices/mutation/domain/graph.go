@@ -30,22 +30,21 @@ func (g Graph) Bound() error {
 }
 
 // GraphFacts is what the judgment needs of a parsed source's functions, in
-// their order: each one's namespace#name and hash, and its mutation sites,
-// by its index. The graph keeps it with the file, so an unchanged file is
+// their order: each one's key (UnitKey), and its mutation sites, by its
+// index. The graph keeps it with the file, so an unchanged file is
 // never parsed again.
 type GraphFacts struct {
-	IDs, Hashes []string
-	Sites       map[int][]Site
+	Keys  []UnitKey
+	Sites map[int][]Site
 }
 
 // GraphFactsOf is f's facts.
 func GraphFactsOf(f *lang.File) GraphFacts {
-	ids, hashes := FileKeys(f)
 	sites := map[int][]Site{}
 	for _, s := range Sites(f) {
 		sites[s.Unit] = append(sites[s.Unit], s)
 	}
-	return GraphFacts{IDs: ids, Hashes: hashes, Sites: sites}
+	return GraphFacts{Keys: KeysOfFile(f), Sites: sites}
 }
 
 // Snapshot is the snapshot of the source whose key is key, its path from
@@ -84,14 +83,14 @@ type GraphVerdict struct {
 // path in the project whose root is top, snap being its snapshot (nil for
 // none), tests the hashes of the test files that import it now and support
 // those of its project's listed support files. A function's entry is paired
-// as check pairs it, by name and hash (EntriesOf), so of functions sharing
+// as check pairs it, by its key (UnitKey), so of functions sharing
 // a name, reordering them changes nothing and editing one makes only that
 // one stale; it is stale exactly when check calls it stale (FreshnessOf),
 // listed being how the files its listed outcomes rest on changed and broad
 // how its module's tests and support did; a function with no entry, which
 // check calls missing, carries none.
 func (g Graph) Judge(ctx context.Context, top, path string, snap *Snapshot, facts GraphFacts, tests, support map[string]string) []GraphVerdict {
-	out := make([]GraphVerdict, len(facts.IDs))
+	out := make([]GraphVerdict, len(facts.Keys))
 	if snap == nil {
 		return out
 	}
@@ -100,12 +99,14 @@ func (g Graph) Judge(ctx context.Context, top, path string, snap *Snapshot, fact
 	if HasBroadOutcome(snap.Units) {
 		moduleTests, _ = g.Fingerprints.Suite(ctx, path, top)
 	}
-	for i, j := range EntriesOf(facts.IDs, facts.Hashes, snap.Units) {
-		if j < 0 {
+	results := PairResults(facts.Keys, snap.Units)
+	for i, key := range facts.Keys {
+		entry := results.For(key)
+		if entry == nil {
 			continue
 		}
-		hash, sites := facts.Hashes[i], facts.Sites[i]
-		m := OnSites(&snap.Units[j], hash, sites)
+		hash, sites := key.Hash(), facts.Sites[i]
+		m := OnSites(entry, hash, sites)
 		out[i] = GraphVerdict{Mutated: true, Killed: m.Killed, Survived: m.Survived, Uncovered: m.Uncovered,
 			Stale: FreshnessOf(m, hash, snap.TestsChanged(tests), listed, BroadChangesForUnit(m.Mutants, moduleTests, support), sites).State == Stale}
 	}

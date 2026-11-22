@@ -371,78 +371,6 @@ type DecidedBy struct {
 
 func UnitID(namespace, name string) string { return namespace + "#" + name }
 
-// PairByHash pairs the functions of one file that share a namespace#name
-// with the snapshot's entries of that name: hashes are the functions'
-// hashes now, in file order, and recorded the entries', in the snapshot's
-// order. Each function takes the first entry left with its hash, so
-// reordering such functions changes nothing and functions with one hash
-// take their entries in file order; then each function left takes the
-// first entry left, which records it as it was before it changed. It
-// returns the index into recorded of each function's entry, -1 for none.
-func PairByHash(hashes, recorded []string) []int {
-	out := make([]int, len(hashes))
-	used := make([]bool, len(recorded))
-	for i, h := range hashes {
-		out[i] = -1
-		for j, r := range recorded {
-			if !used[j] && r == h {
-				out[i], used[j] = j, true
-				break
-			}
-		}
-	}
-	for i := range hashes {
-		if out[i] >= 0 {
-			continue
-		}
-		if j := slices.Index(used, false); j >= 0 {
-			out[i], used[j] = j, true
-		}
-	}
-	return out
-}
-
-// fileKeys is the namespace#name and the hash of each unit of f, in order.
-func FileKeys(f *lang.File) (ids, hashes []string) {
-	for _, u := range f.Units {
-		ids, hashes = append(ids, UnitID(u.Namespace, u.Name)), append(hashes, UnitHash(f, u))
-	}
-	return ids, hashes
-}
-
-// EntriesOf pairs each function of a file, by its namespace#name in ids
-// and its hash in hashes, with its entry among entries, as PairByHash pairs
-// those sharing a name. It returns the index into entries of each one's
-// entry, -1 for none.
-func EntriesOf(ids, hashes []string, entries []UnitResult) []int {
-	recorded := map[string][]int{}
-	for j, e := range entries {
-		id := UnitID(e.Namespace, e.Name)
-		recorded[id] = append(recorded[id], j)
-	}
-	units := map[string][]int{}
-	for i, id := range ids {
-		units[id] = append(units[id], i)
-	}
-	out := make([]int, len(ids))
-	for id, us := range units {
-		var now, was []string
-		for _, i := range us {
-			now = append(now, hashes[i])
-		}
-		for _, j := range recorded[id] {
-			was = append(was, entries[j].Hash)
-		}
-		for k, p := range PairByHash(now, was) {
-			out[us[k]] = -1
-			if p >= 0 {
-				out[us[k]] = recorded[id][p]
-			}
-		}
-	}
-	return out
-}
-
 // remembered returns the outcomes a run may keep: those of units whose hash
 // is unchanged and whose entry is not marked Stale. s is what of the
 // snapshot holds for the tests that import f now; see Usable.
@@ -458,13 +386,14 @@ func RememberedWithScopes(s *Snapshot, f *lang.File) (Previous, PreviousScopes) 
 	if s == nil {
 		return prev, scopes
 	}
-	ids, hashes := FileKeys(f)
-	for i, j := range EntriesOf(ids, hashes, s.Units) {
-		if j < 0 {
+	keys := KeysOfFile(f)
+	results := PairResults(keys, s.Units)
+	for i, key := range keys {
+		u := results.For(key)
+		if u == nil {
 			continue
 		}
-		u := s.Units[j]
-		if u.Hash != hashes[i] || u.Stale {
+		if u.Hash != key.Hash() || u.Stale {
 			continue
 		}
 		outcomes, decided := map[string]string{}, map[string]DecidedBy{}
@@ -624,7 +553,7 @@ func ListedOf(units []UnitResult, files map[string]string, Previous *Snapshot) m
 
 // keepUnjudged keeps the functions of units, a file's in order, whose index
 // judged holds and puts in place of each other one what previous records
-// for it, its entry paired by name and hash (EntriesOf), so a function not
+// for it, its entry paired by its key (UnitKey), so a function not
 // judged does not change in the snapshot. Unchanged, it keeps its outcomes
 // at its current lines; changed since, it keeps its entry as recorded, old
 // hash included, so a later run still sees the change; and one previous
@@ -639,17 +568,15 @@ func KeepUnjudged(units []UnitResult, judged map[int]bool, Previous *Snapshot, t
 	if Previous != nil {
 		entries = Previous.Units
 	}
-	var ids, hashes []string
-	for _, u := range units {
-		ids, hashes = append(ids, UnitID(u.Namespace, u.Name)), append(hashes, u.Hash)
-	}
-	pair := EntriesOf(ids, hashes, entries)
+	keys := KeysOfEntries(units)
+	results := PairResults(keys, entries)
 	out := []UnitResult{}
 	for i, u := range units {
 		var was UnitResult
-		ok := pair[i] >= 0
+		entry := results.For(keys[i])
+		ok := entry != nil
 		if ok {
-			was = entries[pair[i]]
+			was = *entry
 		}
 		switch {
 		case judged[i]:

@@ -54,8 +54,8 @@ func CheckParsed(ctx context.Context, f *lang.File, path string, opt CheckOption
 	if snap != nil {
 		entries = snap.Units
 	}
-	ids, hashes := FileKeys(f)
-	pair := EntriesOf(ids, hashes, entries)
+	keys := KeysOfFile(f)
+	results := PairResults(keys, entries)
 	all := Sites(f)
 	sites := map[int][]Site{}
 	for _, s := range all {
@@ -65,8 +65,8 @@ func CheckParsed(ctx context.Context, f *lang.File, path string, opt CheckOption
 	// that name is judged.
 	names := map[string]bool{}
 	for i, u := range f.Units {
-		id := ids[i]
-		if opt.Judge != nil && !opt.Judge(path, id, hashes[i]) {
+		id := keys[i].ID()
+		if opt.Judge != nil && !opt.Judge(path, id, keys[i].Hash()) {
 			continue
 		}
 		names[id] = true
@@ -79,10 +79,10 @@ func CheckParsed(ctx context.Context, f *lang.File, path string, opt CheckOption
 		c := FunctionCheck{Function: id, StartLine: u.StartLine, Unit: i}
 		var e *UnitResult
 		var leftOut int
-		if pair[i] >= 0 {
-			e = OnSites(&entries[pair[i]], hashes[i], sites[i])
+		if entry := results.For(keys[i]); entry != nil {
+			e = OnSites(entry, keys[i].Hash(), sites[i])
 			c.Entry = *e
-			leftOut = len(entries[pair[i]].Mutants) - len(e.Mutants)
+			leftOut = len(entry.Mutants) - len(e.Mutants)
 		}
 		var broad []string
 		if e != nil {
@@ -91,7 +91,7 @@ func CheckParsed(ctx context.Context, f *lang.File, path string, opt CheckOption
 			}
 			broad = UniqueSorted(broad)
 		}
-		c.Freshness = FreshnessOf(e, hashes[i], changed, listed, broad, sites[i])
+		c.Freshness = FreshnessOf(e, keys[i].Hash(), changed, listed, broad, sites[i])
 		if c.State == SnapshotFresh {
 			c.LeftOut = leftOut
 		}
