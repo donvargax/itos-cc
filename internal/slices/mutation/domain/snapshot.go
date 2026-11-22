@@ -429,22 +429,27 @@ func (p Previous) Kept(f *lang.File, s Site, excepted bool) (string, bool) {
 	return outcome, Noticed(outcome) || excepted && outcome == Survived
 }
 
-// markExcepted sets Excepted on each mutant of units that mutants, the
+// MarkExcepted sets Excepted on each mutant of units, results being each
+// function's result as the run writes it (Execution.written), that mutants, the
 // mutants decided, says is excepted.
-func MarkExcepted(units []UnitResult, mutants []MutantResult) {
-	reasons := map[string]string{}
+func MarkExcepted(units []UnitResult, results map[int]writtenResult, mutants []MutantResult) {
+	reasons := map[UnitKey]map[string]string{}
 	for _, m := range mutants {
-		if m.Excepted != "" {
-			reasons[m.Function+"\x00"+m.Key()] = m.Excepted
+		w, ok := results[m.Site.Unit]
+		if !ok || m.Excepted == "" {
+			continue
 		}
+		if reasons[w.key] == nil {
+			reasons[w.key] = map[string]string{}
+		}
+		reasons[w.key][m.Key()] = m.Excepted
 	}
 	if len(reasons) == 0 {
 		return
 	}
-	for i := range units {
-		u := &units[i]
-		for j := range u.Mutants {
-			u.Mutants[j].Excepted = reasons[UnitID(u.Namespace, u.Name)+"\x00"+u.Mutants[j].Key()]
+	for i, key := range KeysOfEntries(units) {
+		for j := range units[i].Mutants {
+			units[i].Mutants[j].Excepted = reasons[key][units[i].Mutants[j].Key()]
 		}
 	}
 }

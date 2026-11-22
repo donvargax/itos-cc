@@ -107,4 +107,24 @@ func TestResultsPairWithTheirFunctionsByKey(t *testing.T) {
 			}
 		})
 	}
+
+	// Two functions sharing a name whose sites share a place, each excepted
+	// for its own reason: a reason is the function's, not its name's.
+	t.Run("two same-named functions, one site place, each its own excepted reason", func(t *testing.T) {
+		f := parse(t, "x.py", "def a(x):\n    return x > 0\n\ndef a(x):\n    return x > 1\n")
+		sites := Sites(f)
+		snap := Build(f, "x.py", nil, sites, slices.Repeat([]string{Survived}, len(sites)))
+		var mutants []MutantResult
+		for _, s := range sites {
+			mutants = append(mutants, MutantResult{Function: UnitID(f.Units[s.Unit].Namespace, f.Units[s.Unit].Name), Site: s, Excepted: fmt.Sprint("reason of function ", s.Unit)})
+		}
+		MarkExcepted(snap.Units, (&Execution{file: f}).written(), mutants)
+		for i, u := range snap.Units {
+			for _, m := range u.Mutants {
+				if want := fmt.Sprint("reason of function ", i); m.Excepted != want {
+					t.Errorf("function %d: excepted %q, want %q", i, m.Excepted, want)
+				}
+			}
+		}
+	})
 }

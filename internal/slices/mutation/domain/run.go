@@ -316,7 +316,7 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 		s.markListedStale()
 		recordListedWithInputs(ctx, &s.result.Snapshot, opt.Root, opt.Support, opt.Fingerprints,
 			ListedFingerprintsOf(s.result.Snapshot.Listed, inv, listed, s.stored))
-		MarkExcepted(s.result.Snapshot.Units, s.result.Mutants)
+		MarkExcepted(s.result.Snapshot.Units, s.written(), s.result.Mutants)
 		if incomplete {
 			s.result.Incomplete = true
 			if s.judgedAnew() {

@@ -127,11 +127,11 @@ func TestPartialAndReusedOutcomesKeepTheirOwnBroadEvidence(t *testing.T) {
 	if s.TestsChanged(s.Tests) != nil || s.TestsChanged(map[string]string{}) == nil {
 		t.Fatal("importer changes lost")
 	}
-	MarkExcepted(s.Units, []MutantResult{{Function: "#", Site: Site{}, Excepted: "reviewed"}})
+	MarkExcepted(s.Units, map[int]writtenResult{0: {key: KeysOfEntries(s.Units)[0]}}, []MutantResult{{Function: "#", Site: Site{}, Excepted: "reviewed"}})
 	if s.Units[0].Mutants[1].Excepted != "reviewed" {
 		t.Fatal(s)
 	}
-	MarkExcepted(s.Units, nil)
+	MarkExcepted(s.Units, nil, nil)
 }
 
 func TestCoveragePlanningNeedsOnlyUncachedOrActionableWork(t *testing.T) {
