@@ -6560,3 +6560,12 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: go-1-27-4-vuln
+    title: Go toolchain 1.27.4, for GO-2026-6859 in net/http
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Placeholder; the ledger entry holds the why.
