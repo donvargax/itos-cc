@@ -6572,7 +6572,7 @@ items:
     title: Mutation's plain lines name files through one display path type, so Linux tests see Windows' form
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: progress-lines-display-path

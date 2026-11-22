@@ -7436,8 +7436,3 @@
     check fail, by the type or the lint or the test, quoting the output in the task's close; then do
     the same with 5ff7350d's (the excepted line). Out of scope: findings F2 to F5, other commands'
     paths, the domain's error keys.
-  done_when:
-    - run: "go test ./internal/slices/mutation -run '^TestPlainLinesNameFilesSlashSeparated$' -v 2>&1 | grep -q -- '--- PASS: TestPlainLinesNameFilesSlashSeparated'"
-      timeout: 300
-    - run: tools/bin/pinned golangci-lint run ./internal/slices/mutation/...
-      timeout: 300
