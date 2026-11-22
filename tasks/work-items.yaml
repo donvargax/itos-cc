@@ -6694,3 +6694,23 @@ items:
       regex matching; any code copied carries gardener's notice in THIRD_PARTY_NOTICES. Starts after
       the pstack trial's two runs (the pstack copy and the itos arm, F1 to F5) finish, so it touches
       nothing either run is fixing.
+  - id: gardener-snapshot-counts
+    title: "Snapshot counts: big files, suppressions, type escapes, instructions against lint rules, tests by kind"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [gardener-history-objects]
+    kind: idea
+    why: >
+      One snapshot of where the code stands: files over a size limit; lint suppressions per language
+      (nolint, eslint-disable, noqa, @Suppress, ignore:); type escapes per language;
+      agent-instruction lines against lint rules turned on (the person's 'corrections into checks,
+      not prose' as a number); and test counts by kind (unit, table, property, end-to-end, formal
+      models) from scrap's test-case finder (the person, 2026-11-22: 'test counts could be
+      helpful'). They show whether a swap of implementation-pinning unit tests for models and
+      end-to-end tests happened and stuck. From gardener (subsy/gardener at c58a2ad, MIT; the
+      chief's adoption note, 2026-11-22, which the person agreed to). Port the idea to Go on
+      itos-cc's tree-sitter core rather than copying gardener's regex matching; any code copied
+      carries gardener's notice in THIRD_PARTY_NOTICES. Starts after the pstack trial's two runs
+      (the pstack copy and the itos arm, F1 to F5) finish, so it touches nothing either run is
+      fixing.
