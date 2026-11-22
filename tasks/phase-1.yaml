@@ -7553,6 +7553,3 @@
     returned as the error) and then 891f0567's (EPERM on a zombie-only group as an error), and see
     the check fail on each; quote both in the close. Out of scope: findings F1, F2, F3 and F5, a
     formal model, the mutation workers' use of the runner beyond what its signature change needs.
-  done_when:
-    - run: "go test ./internal/processes -run '^TestGroupEndsAreJudgedInEveryOrder$' -v 2>&1 | grep -q -- '--- PASS: TestGroupEndsAreJudgedInEveryOrder'"
-      timeout: 300
