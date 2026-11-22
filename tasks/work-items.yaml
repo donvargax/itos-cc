@@ -6588,7 +6588,7 @@ items:
   - id: T-236
     title: Every scenario refuses a file a run left in its project or its temporary folder
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
