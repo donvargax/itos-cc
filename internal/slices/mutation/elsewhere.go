@@ -41,7 +41,7 @@ func (h Handler) elsewhere(ctx context.Context, q SelectionQuery, root string, e
 	case len(q.Paths) == 0 && !q.Changed:
 		dir := h.Dir
 		judge = func(file string) bool {
-			rel, err := filepath.Rel(dir, sourcePath(root, file))
+			rel, err := filepath.Rel(dir, sourcePath(root, file)) //nolint:forbidigo // a lookup or a containment test, no line names it
 			return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 		}
 	default:

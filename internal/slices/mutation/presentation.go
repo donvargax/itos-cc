@@ -21,24 +21,9 @@ type Presentation struct {
 	Root     string
 	Tree     selport.Tree
 	Problems []*cli.Problem
-	// Separator is the path separator of the system that named the files
-	// given to it, which its plain lines name slash-separated (bug-9);
-	// zero is this system's, filepath.Separator.
-	Separator rune
 }
 
 func (p *Presentation) report(problem *cli.Problem) { p.Problems = append(p.Problems, problem) }
-
-// plain is the file rel as a plain line names it: slash-separated from
-// the working directory on every system (bug-9). --json and the problems'
-// messages name it as they always did.
-func (p *Presentation) plain(rel string) string {
-	separator := p.Separator
-	if separator == 0 {
-		separator = filepath.Separator
-	}
-	return Slashed(rel, separator)
-}
 
 // baselineFailed is the problem of the file rel whose baseline failed, so
 // none of its mutants was done, judged or run, before command runs again:
@@ -53,7 +38,7 @@ func (p *Presentation) baselineFailed(rel, copied string, leftOut []string, done
 		return cli.NewProblem(cli.CodeNo, "mutation.baseline-failed", rel+": its tests fail before any mutant, so none was "+done,
 			"Make its tests pass, then run "+command+" again.").With("file", rel)
 	}
-	name := p.UI.Rel(copied)
+	name := p.UI.Rel(copied) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 	if name == "." {
 		name = filepath.Base(copied)
 	}
@@ -109,7 +94,7 @@ func (p *Presentation) flaky(rel, function string, m mutants.Mutant) {
 	now := strings.Join(m.Outcomes, ", ")
 	if !p.JSON {
 		_, _ = fmt.Fprintf(p.UI.Stdout, "  flaky %s → %s in %s, %s: %s\n",
-			Quote(m.Original), Quote(m.Replacement), function, SiteAt(p.plain(rel), m.Line, m.Column), now)
+			Quote(m.Original), Quote(m.Replacement), function, SiteAt(p.UI.Show(rel), m.Line, m.Column), now)
 	}
 	problem := cli.NewProblem(cli.CodeNo, "mutation.flaky",
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s is flaky: its runs gave %s, so its tests decide it differently with nothing changed",
@@ -125,7 +110,7 @@ func (p *Presentation) flaky(rel, function string, m mutants.Mutant) {
 func (p *Presentation) Mutant(rel, function string, m mutants.Mutant, rule, what, verdict, fix string) {
 	if !p.JSON {
 		_, _ = fmt.Fprintf(p.UI.Stdout, "  %s %s → %s in %s, %s\n", what,
-			Quote(m.Original), Quote(m.Replacement), function, SiteAt(p.plain(rel), m.Line, m.Column))
+			Quote(m.Original), Quote(m.Replacement), function, SiteAt(p.UI.Show(rel), m.Line, m.Column))
 	}
 	problem := cli.NewProblem(cli.CodeNo, rule,
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s %s", rel, m.Line, m.Column, Quote(m.Original), Quote(m.Replacement), function, verdict),
@@ -138,7 +123,7 @@ func (p *Presentation) Mutant(rel, function string, m mutants.Mutant, rule, what
 
 func (p *Presentation) CoverageProblem(language, file, function string, line int, rule, message string) {
 	if !p.JSON {
-		_, _ = fmt.Fprintf(p.UI.Stdout, "  %s %s:%d in %s\n", strings.TrimPrefix(rule, "mutation."), p.plain(file), line, function)
+		_, _ = fmt.Fprintf(p.UI.Stdout, "  %s %s:%d in %s\n", strings.TrimPrefix(rule, "mutation."), p.UI.Show(file), line, function)
 	}
 	fix := "Add a test that executes the uncovered " + LanguageName(language) + " code, then run mutation run again."
 	if rule == "mutation.coverage-unsupported" {
@@ -152,19 +137,19 @@ func (p *Presentation) CoverageProblem(language, file, function string, line int
 
 func (p *Presentation) StaleExceptions(ctx context.Context, rel string, stale []mutants.StaleException) {
 	for _, e := range stale {
-		at, shown := fmt.Sprintf("%s:%d:%d", rel, e.Line, e.Column), SiteAt(p.plain(rel), e.Line, e.Column)
+		at, shown := fmt.Sprintf("%s:%d:%d", rel, e.Line, e.Column), SiteAt(p.UI.Show(rel), e.Line, e.Column)
 		if e.Line == 0 {
-			at, shown = rel, p.plain(rel)
+			at, shown = rel, p.UI.Show(rel).String()
 		}
 		change := fmt.Sprintf("%s → %s in %s", Quote(e.Original), Quote(e.Replacement), e.Function)
 		var newFile string
 		if e.Why == mutants.ExceptionMoved {
-			newFile = p.UI.Rel(sourcePath(p.Root, e.NewFile))
+			newFile = p.UI.Rel(sourcePath(p.Root, e.NewFile)) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 		}
 		if !p.JSON {
 			why := e.Why
 			if newFile != "" {
-				why += " to " + p.plain(newFile)
+				why += " to " + p.UI.Show(newFile).String()
 			}
 			var identity string
 			if e.Identity != "" {
@@ -224,7 +209,7 @@ func (p *Presentation) StaleSubject(rel string, e mutants.StaleException) map[st
 		subject["line"] = e.Line
 	}
 	if e.Why == mutants.ExceptionMoved {
-		subject["new_file"] = p.UI.Rel(sourcePath(p.Root, e.NewFile))
+		subject["new_file"] = p.UI.Rel(sourcePath(p.Root, e.NewFile)) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 	}
 	if e.Identity != "" {
 		subject["identity"] = e.Identity

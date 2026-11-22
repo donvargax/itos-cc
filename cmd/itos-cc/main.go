@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -60,7 +61,7 @@ var classifiers = []cli.Classifier{classifySelection, classifySnapshot, classify
 // when it is called.
 func stdUI() *cli.UI {
 	dir, _ := os.Getwd()
-	return &cli.UI{In: os.Stdin, Stdout: os.Stdout, Stderr: os.Stderr, Classifiers: classifiers, Dir: dir}
+	return &cli.UI{In: os.Stdin, Stdout: os.Stdout, Stderr: os.Stderr, Classifiers: classifiers, Dir: dir, Separator: filepath.Separator}
 }
 
 // init makes this executable the one go test runs each test binary through
@@ -83,7 +84,7 @@ func init() {
 // world through a; serve keeps this process's streams and disk on its
 // legacy handler. A model kong refuses is a bug, an internal failure.
 func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer, a adapters) int {
-	ui := &cli.UI{In: stdin, Stdout: stdout, Stderr: stderr, Classifiers: classifiers, Dir: a.Dir}
+	ui := &cli.UI{In: stdin, Stdout: stdout, Stderr: stderr, Classifiers: classifiers, Dir: a.Dir, Separator: filepath.Separator}
 	var c commandLine
 	parser, err := parserOf(ctx, &c, ui, a)
 	if err != nil {

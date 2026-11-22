@@ -439,7 +439,7 @@ func rootRelative(wd, root, arg string) (string, bool) {
 	if !filepath.IsAbs(abs) {
 		abs = filepath.Join(wd, arg)
 	}
-	rel, err := filepath.Rel(root, filepath.Clean(abs))
+	rel, err := filepath.Rel(root, filepath.Clean(abs)) //nolint:forbidigo // a lookup or a containment test, no line names it
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return "", false
 	}

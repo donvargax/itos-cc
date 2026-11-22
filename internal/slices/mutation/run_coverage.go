@@ -134,7 +134,7 @@ func (h Handler) unmeasuredToJudge(report *coverage.Report, sources []string, ch
 			if m.Language != language || m.Dir == "" || !ok {
 				continue
 			}
-			if rel, err := filepath.Rel(dir, abs); err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			if rel, err := filepath.Rel(dir, abs); err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) { //nolint:forbidigo // a lookup or a containment test, no line names it
 				continue
 			}
 			matched = true
@@ -196,7 +196,7 @@ func (h Handler) integrationToJudge(report *coverage.Report, files []string) []c
 			if spec == nil || spec.Name != m.Language || !ok {
 				continue
 			}
-			if rel, err := filepath.Rel(dir, abs); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			if rel, err := filepath.Rel(dir, abs); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) { //nolint:forbidigo // a lookup or a containment test, no line names it
 				found = append(found, m)
 				break
 			}

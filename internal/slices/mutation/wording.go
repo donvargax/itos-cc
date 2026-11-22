@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/lang"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
@@ -17,19 +18,11 @@ func Quote(s string) string {
 	return "`" + s + "`"
 }
 
-// SiteAt is a site of file rel, named slash-separated (Slashed), as a
-// plain line names it, after the change: "src/board.go line 5 column 9"
+// SiteAt is a site of file, a Shown, as a plain line names it, after the change: "src/board.go line 5 column 9"
 // (slice-51, q-97). A plain line never holds path:line:column, which CI
 // problem matchers such as setup-go's read as a compiler error.
-func SiteAt(rel string, line, column int) string {
-	return fmt.Sprintf("%s line %d column %d", rel, line, column)
-}
-
-// Slashed is path, written with separator, the path separator of the
-// system that named it, slash-separated: a plain line names a file so on
-// every system, src\board.py on Windows reading src/board.py (bug-9).
-func Slashed(path string, separator rune) string {
-	return strings.ReplaceAll(path, string(separator), "/")
+func SiteAt(file cli.Shown, line, column int) string {
+	return fmt.Sprintf("%s line %d column %d", file, line, column)
 }
 
 // LanguageName retains the existing mutation presentation vocabulary.

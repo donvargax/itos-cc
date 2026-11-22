@@ -53,10 +53,10 @@ func (c List) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		site := Site{File: s.File, Line: s.Line, Column: s.Column, Function: s.Function, Original: s.Original, Replacement: s.Replacement}
 		result.Sites = append(result.Sites, site)
 		if !c.JSON {
-			_, _ = fmt.Fprintf(ui.Stdout, "%s:%d:%d %s → %s in %s\n", site.File, site.Line, site.Column, Quote(site.Original), Quote(site.Replacement), site.Function)
+			_, _ = fmt.Fprintf(ui.Stdout, "%s:%d:%d %s → %s in %s\n", ui.Show(site.File), site.Line, site.Column, Quote(site.Original), Quote(site.Replacement), site.Function)
 		}
 	}
-	return ui.Emit(c.JSON, result, ui.Problems(readError(err, ui.Rel)))
+	return ui.Emit(c.JSON, result, ui.Problems(readError(err, ui.Rel))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 }
 func sayExcluded(ui *cli.UI, n int) {
 	if n > 0 {

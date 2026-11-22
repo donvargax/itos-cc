@@ -52,6 +52,30 @@ type UI struct {
 	// Dir is the working directory, which the paths a person reads are
 	// named from; "" when it is not known.
 	Dir string
+	// Separator is the path separator of the system the paths come from,
+	// which Show writes as a slash: cmd gives filepath.Separator, a test
+	// gives '\\' to see what Windows prints. Zero is this system's.
+	Separator rune
+}
+
+// Shown is a file as a person reads it in a plain line: from the working
+// directory when it is in it, slash-separated on every system, src/board.go
+// where Windows names src\board.go. Only (*UI).Show makes one, so a plain
+// line that takes a Shown cannot name a file in the system's form.
+type Shown struct{ name string }
+
+// String is the file as a person reads it.
+func (s Shown) String() string { return s.name }
+
+// Show is path as a plain line names it: Rel, written with slashes
+// (bug-9). --json and the problems name a file in the system's form, as
+// Rel gives it.
+func (u *UI) Show(path string) Shown {
+	separator := u.Separator
+	if separator == 0 {
+		separator = filepath.Separator
+	}
+	return Shown{strings.ReplaceAll(u.Rel(path), string(separator), "/")}
 }
 
 // Rel is path as a person reads it: from the working directory when it is

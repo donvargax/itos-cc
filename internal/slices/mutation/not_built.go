@@ -2,6 +2,7 @@ package mutation
 
 import (
 	"context"
+	"fmt"
 
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
@@ -32,9 +33,8 @@ type notBuiltFile struct {
 func (p *Presentation) sayNotBuilt(files []mutants.NotBuilt) []notBuiltFile {
 	var out []notBuiltFile
 	for _, f := range files {
-		rel := p.UI.Rel(f.Path)
-		p.UI.Line("not built on " + f.Platform.String() + ", so " + p.plain(rel) + " is not judged here")
-		out = append(out, notBuiltFile{File: rel, Platform: f.Platform.String()})
+		p.UI.Line(fmt.Sprintf("not built on %s, so %s is not judged here", f.Platform.String(), p.UI.Show(f.Path)))
+		out = append(out, notBuiltFile{File: p.UI.Rel(f.Path), Platform: f.Platform.String()}) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 	}
 	return out
 }

@@ -217,12 +217,12 @@ func (c Run) counted(ctx context.Context, ui *cli.UI, h Handler, written Written
 			fmt.Sprintf("mutation run %s supports Linux and macOS, where every command's process tree is owned; this is %s", mode, h.Platform),
 			fmt.Sprintf("Run it on Linux or macOS, or run mutation run without %s; native Windows support is #29.", mode)).With("platform", h.Platform)})
 	}
-	progress := &countedProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, p: &Presentation{UI: ui, JSON: c.JSON, Tree: h.Tree}}
+	progress := &countedProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, p: &Presentation{UI: ui, JSON: c.JSON, Tree: h.Tree}} //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 	err := h.Counted(ctx, CountedQuery{Paths: c.Paths, Since: c.Since, Seed: c.Seed, Count: c.Count, Sites: sites, OwnTestsOnly: c.OwnTests, NoCoverageCache: c.NoCoverageCache, Repeat: c.Repeat, AllTests: c.AllTests,
 		FailUncovered: c.FailUncovered != nil, LinesOnly: c.FailUncovered != nil && *c.FailUncovered == "lines",
 		Workers: c.Workers, TimeoutFactor: c.TimeoutFactor, OutputFactor: c.OutputFactor, MemoryFactor: c.MemoryFactor, Progress: progress})
 	if err != nil {
-		return ui.Emit(c.JSON, nil, ui.Problems(countedError(err, ui.Rel)))
+		return ui.Emit(c.JSON, nil, ui.Problems(countedError(err, ui.Rel))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 	}
 	progress.report.Proof = countedProof(progress.report.Selected, progress.p.Problems)
 	return ui.Emit(c.JSON, progress.report, progress.p.Problems)
@@ -260,7 +260,7 @@ func (r *countedProgress) NotBuilt(files []mutants.NotBuilt) {
 		return
 	}
 	for _, f := range files {
-		_, _ = fmt.Fprintf(r.Log, "itos-cc: not built on %s, so %s is not judged here\n", f.Platform, r.p.plain(f.Path))
+		_, _ = fmt.Fprintf(r.Log, "itos-cc: not built on %s, so %s is not judged here\n", f.Platform, r.p.UI.Show(f.Path))
 	}
 }
 
@@ -347,7 +347,7 @@ func (p *Presentation) printCounted(r *countedResult) {
 		if site.Flaky {
 			what = "flaky"
 		}
-		line := fmt.Sprintf("  %s %s → %s in %s, %s", what, Quote(site.Original), Quote(site.Replacement), site.Function, SiteAt(p.plain(site.File), site.Line, site.Column))
+		line := fmt.Sprintf("  %s %s → %s in %s, %s", what, Quote(site.Original), Quote(site.Replacement), site.Function, SiteAt(p.UI.Show(site.File), site.Line, site.Column))
 		if site.Flaky {
 			line += ": " + strings.Join(site.Outcomes, ", ")
 		}

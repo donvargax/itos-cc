@@ -96,7 +96,7 @@ func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Writte
 		Count:          c.Count, Seed: c.Seed, Workers: c.Workers, TimeoutFactor: c.TimeoutFactor,
 		OutputFactor: c.OutputFactor, MemoryFactor: c.MemoryFactor,
 		TestCommand: c.TestCommand, AllTests: c.AllTests, Repeat: c.Repeat,
-		Progress: selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui},
+		Progress: selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui}, //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 	})
 	result.Seed = found.Seed
 	p := &Presentation{UI: ui, JSON: c.JSON}
@@ -105,7 +105,7 @@ func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Writte
 		return ui.Emit(c.JSON, nil, ui.Problems(err))
 	}
 	if err != nil {
-		return ui.Emit(c.JSON, result, ui.Problems(sampleError(err, ui.Rel)))
+		return ui.Emit(c.JSON, result, ui.Problems(sampleError(err, ui.Rel))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 	}
 	if found.NoSources {
 		ui.Line("no source files to sample")
@@ -134,7 +134,7 @@ func (p *Presentation) sampledFile(f mutants.SampledFile, result *sampleResult, 
 	if len(f.FailedSelections) > 0 && !f.BaselineFailed {
 		result.Files = append(result.Files, sampleFile{File: f.Rel, Baseline: "failed", Mutants: []sampledMutant{}})
 		if !p.JSON {
-			_, _ = fmt.Fprintf(p.UI.Stdout, "listed tests the sampled mutants of %s run fail without any mutant; no sampled mutant is judged\n", p.plain(f.Rel))
+			_, _ = fmt.Fprintf(p.UI.Stdout, "listed tests the sampled mutants of %s run fail without any mutant; no sampled mutant is judged\n", p.UI.Show(f.Rel))
 		}
 		p.FailedSelections(f.FailedSelections, reported, "mutation sample")
 		return
@@ -142,7 +142,7 @@ func (p *Presentation) sampledFile(f mutants.SampledFile, result *sampleResult, 
 	if f.BaselineFailed {
 		result.Files = append(result.Files, sampleFile{File: f.Rel, Baseline: "failed", Mutants: []sampledMutant{}})
 		if !p.JSON {
-			_, _ = fmt.Fprintf(p.UI.Stdout, "baseline tests of %s fail; no sampled mutant ran\n%s\n", p.plain(f.Rel), HeadAndTail(f.BaselineOutput, reportedLines))
+			_, _ = fmt.Fprintf(p.UI.Stdout, "baseline tests of %s fail; no sampled mutant ran\n%s\n", p.UI.Show(f.Rel), HeadAndTail(f.BaselineOutput, reportedLines))
 		}
 		p.report(p.baselineFailed(f.Rel, f.BaselineCopy, f.BaselineLeftOut, "run", "mutation sample").With("output", HeadAndTail(f.BaselineOutput, reportedLines)))
 		return
@@ -160,7 +160,7 @@ func (p *Presentation) sampledFile(f mutants.SampledFile, result *sampleResult, 
 	}
 	result.Files = append(result.Files, out)
 	if !p.JSON {
-		_, _ = fmt.Fprintf(p.UI.Stdout, "%d sampled, %d mismatched, %d flaky in %s\n", len(f.Mutants), verdicts[mutants.Mismatched], verdicts[mutants.Flaky], p.plain(f.Rel))
+		_, _ = fmt.Fprintf(p.UI.Stdout, "%d sampled, %d mismatched, %d flaky in %s\n", len(f.Mutants), verdicts[mutants.Mismatched], verdicts[mutants.Flaky], p.UI.Show(f.Rel))
 	}
 	for _, m := range differ {
 		if m.Verdict() == mutants.Flaky {
@@ -185,7 +185,7 @@ func (p *Presentation) Flaky(rel string, m mutants.SampledMutant) {
 	now := strings.Join(m.Outcomes, ", ")
 	if !p.JSON {
 		_, _ = fmt.Fprintf(p.UI.Stdout, "  flaky %s → %s in %s, %s: recorded %s, now %s\n",
-			Quote(m.Original), Quote(m.Replacement), m.Function, SiteAt(p.plain(rel), m.Line, m.Column), m.Recorded, now)
+			Quote(m.Original), Quote(m.Replacement), m.Function, SiteAt(p.UI.Show(rel), m.Line, m.Column), m.Recorded, now)
 	}
 	problem := cli.NewProblem(cli.CodeNo, "mutation.flaky",
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s was recorded %s, and its runs now gave %s: its tests decide it differently with nothing changed",
@@ -207,7 +207,7 @@ func (p *Presentation) Flaky(rel string, m mutants.SampledMutant) {
 func (p *Presentation) Mismatch(rel string, m mutants.SampledMutant) {
 	if !p.JSON {
 		_, _ = fmt.Fprintf(p.UI.Stdout, "  mismatch %s → %s in %s, %s: recorded %s, now %s\n",
-			Quote(m.Original), Quote(m.Replacement), m.Function, SiteAt(p.plain(rel), m.Line, m.Column), m.Recorded, m.Outcome)
+			Quote(m.Original), Quote(m.Replacement), m.Function, SiteAt(p.UI.Show(rel), m.Line, m.Column), m.Recorded, m.Outcome)
 	}
 	problem := cli.NewProblem(cli.CodeNo, "mutation.mismatch",
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s was recorded %s, and is %s now", rel, m.Line, m.Column,

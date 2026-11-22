@@ -171,21 +171,8 @@ func (h Handler) listing(root string, cfg *mutants.Config) *mutants.ListOnce {
 	return mutants.NewListOnce(h.TestLister, root, cfg.Tests.List)
 }
 func beneath(dir, path string) bool {
-	rel, err := filepath.Rel(dir, path)
+	rel, err := filepath.Rel(dir, path) //nolint:forbidigo // a lookup or a containment test, no line names it
 	return err == nil && rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !filepath.IsAbs(rel)
-}
-
-// relTo is path from dir, as a person reads it: as it is when dir is not
-// known or does not hold it.
-func relTo(dir, path string) string {
-	if dir == "" {
-		return path
-	}
-	rel, err := filepath.Rel(dir, path)
-	if err != nil || strings.HasPrefix(rel, "..") {
-		return path
-	}
-	return rel
 }
 
 // absIn is path made absolute from dir, false when dir is not known and

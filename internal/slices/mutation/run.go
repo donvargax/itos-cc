@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"slices"
 
+	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/lang"
@@ -253,7 +254,7 @@ func (h Handler) Run(ctx context.Context, q RunQuery) (RunFound, error) {
 			if !filepath.IsAbs(at) {
 				at = filepath.Join(root, at)
 			}
-			ff.Known = &mutants.Stop{Rule: "mutation.exception-stale", File: relTo(h.Dir, at), Exception: &e}
+			ff.Known = &mutants.Stop{Rule: "mutation.exception-stale", File: cli.Rel(h.Dir, at), Exception: &e} //nolint:forbidigo // a lookup or a containment test, no line names it
 		}
 		found.Results, found.Stop, err = mutants.RunFailFast(ctx, sources, opt, ff)
 	} else {
@@ -381,7 +382,7 @@ func (h Handler) strict(ctx context.Context, q RunQuery, opt *mutants.Options, s
 	if len(kept) > 0 {
 		dir := h.Dir
 		opt.CachedCoverage = func(path, function, _ string) *mutants.CoverageEvidence {
-			return kept[relTo(dir, path)+"\x00"+function]
+			return kept[cli.Rel(dir, path)+"\x00"+function] //nolint:forbidigo // a lookup or a containment test, no line names it
 		}
 	}
 	report, measuredProducer, listedFiles, err := h.strictCoverage(ctx, q, s, measured, opt.Listing)
@@ -443,7 +444,7 @@ func (h Handler) reuseCoverage(opt *mutants.Options, s strictCoverage, cached []
 	}
 	dir := h.Dir
 	opt.CachedCoverage = func(path, function, _ string) *mutants.CoverageEvidence {
-		return byFunction[relTo(dir, path)+"\x00"+function]
+		return byFunction[cli.Rel(dir, path)+"\x00"+function] //nolint:forbidigo // a lookup or a containment test, no line names it
 	}
 	var report *coverage.Report
 	if s.strictGo {

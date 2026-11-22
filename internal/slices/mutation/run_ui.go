@@ -134,7 +134,7 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 	written := Written(given)
 	linesOnly := c.FailUncovered != nil && *c.FailUncovered == "lines"
 	if linesOnly && !written.given("since") {
-		return ui.Emit(c.JSON, nil, ui.Problems(failureError(LinesWithoutSince{}, ui.Rel)))
+		return ui.Emit(c.JSON, nil, ui.Problems(failureError(LinesWithoutSince{}, ui.Rel))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 	}
 	if written.given("own-tests") && !written.given("site") {
 		return ui.Emit(c.JSON, nil, []*cli.Problem{flagConflict("--own-tests", "--own-tests narrows the judgment of the mutants --site names, and is given without it")})
@@ -178,7 +178,7 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 		MemoryFactor:        c.MemoryFactor,
 		MutateAll:           c.MutateAll,
 		Annotate:            !c.NoAnnotate,
-		Progress:            selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui},
+		Progress:            selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui}, //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 	})
 	p := &Presentation{UI: ui, JSON: c.JSON, Root: found.Root, Tree: h.Tree}
 	result.NotBuilt = p.sayNotBuilt(found.NotBuilt)
@@ -208,10 +208,10 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 		}
 	}
 	if err != nil {
-		return ui.Emit(c.JSON, result, append(p.Problems, ui.Problems(runError(err, ui.Rel))...))
+		return ui.Emit(c.JSON, result, append(p.Problems, ui.Problems(runError(err, ui.Rel))...)) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 	}
 	for _, orphan := range found.Orphans {
-		result.Orphans = append(result.Orphans, Orphan{File: ui.Rel(orphan.Path), Snapshot: orphan.Snapshot, Why: orphan.Why})
+		result.Orphans = append(result.Orphans, Orphan{File: ui.Rel(orphan.Path), Snapshot: orphan.Snapshot, Why: orphan.Why}) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 	}
 	p.Orphans(result.Orphans, "was an orphan, and is removed")
 	p.stopped(found.Stop, &result)
@@ -265,7 +265,7 @@ func GapProblems(ui *cli.UI, ms []coverage.Unmeasured) []*cli.Problem {
 	var out []*cli.Problem
 	for _, m := range ms {
 		if m.Dir != "" {
-			m.Dir = ui.Rel(m.Dir)
+			m.Dir = ui.Rel(m.Dir) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 		}
 		out = append(out, ui.Problems(m)...)
 	}
@@ -304,7 +304,7 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 			result.Files = append(result.Files, f)
 			if !c.JSON {
 				_, _ = fmt.Fprintf(ui.Stdout, "blocked, %s: the tests of %s, or the listed tests its mutants run, fail without any mutant (ran %d, reused %d; %d completed, %d cancelled, %d unattempted, %d blocked); cache %s\n",
-					snapshotKept(r), p.plain(r.Rel), f.Ran, f.Reused, work.Completed, work.Cancelled, work.Unattempted, work.Blocked, cache)
+					snapshotKept(r), p.UI.Show(r.Rel), f.Ran, f.Reused, work.Completed, work.Cancelled, work.Unattempted, work.Blocked, cache)
 				if r.BaselineFailed {
 					_, _ = fmt.Fprintln(ui.Stdout, HeadAndTail(r.BaselineOutput, reportedLines))
 				}
@@ -325,7 +325,7 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 			// without it: it is not decided, so neither is the file.
 			result.Files = append(result.Files, runFile{File: r.Rel, Baseline: "failed", Judged: r.Judged, Mutants: []runMutant{}})
 			if !c.JSON {
-				_, _ = fmt.Fprintf(ui.Stdout, "listed tests the mutants of %s run fail without any mutant; snapshot not updated\n", p.plain(r.Rel))
+				_, _ = fmt.Fprintf(ui.Stdout, "listed tests the mutants of %s run fail without any mutant; snapshot not updated\n", p.UI.Show(r.Rel))
 			}
 			p.FailedSelections(r.FailedSelections, reported, "mutation run")
 			p.StaleExceptions(ctx, r.Rel, r.StaleExceptions)
@@ -334,7 +334,7 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 		if r.BaselineFailed {
 			result.Files = append(result.Files, runFile{File: r.Rel, Baseline: "failed", Judged: r.Judged, Mutants: []runMutant{}})
 			if !c.JSON {
-				_, _ = fmt.Fprintf(ui.Stdout, "baseline tests of %s fail; snapshot not updated\n%s\n", p.plain(r.Rel), HeadAndTail(r.BaselineOutput, reportedLines))
+				_, _ = fmt.Fprintf(ui.Stdout, "baseline tests of %s fail; snapshot not updated\n%s\n", p.UI.Show(r.Rel), HeadAndTail(r.BaselineOutput, reportedLines))
 			}
 			p.report(p.baselineFailed(r.Rel, r.BaselineCopy, r.BaselineLeftOut, "judged", "mutation run").With("output", HeadAndTail(r.BaselineOutput, reportedLines)))
 			p.StaleExceptions(ctx, r.Rel, r.StaleExceptions)
@@ -380,13 +380,13 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 			if f.Flaky > 0 {
 				counts += fmt.Sprintf(", %d flaky", f.Flaky)
 			}
-			line := fmt.Sprintf("%s in %s (ran %d, reused %d)", counts, p.plain(r.Rel), f.Ran, f.Reused)
+			line := fmt.Sprintf("%s in %s (ran %d, reused %d)", counts, p.UI.Show(r.Rel), f.Ran, f.Reused)
 			if r.Judged != nil {
 				line += fmt.Sprintf(" (judged %d of %d functions)", len(r.Judged), r.Functions)
 			}
 			if r.Incomplete {
 				line = fmt.Sprintf("stopped early, %s: %s in %s (ran %d, reused %d); %d cancelled, %d unattempted; cache %s",
-					snapshotKept(r), counts, p.plain(r.Rel), f.Ran, f.Reused, work.Cancelled, work.Unattempted, cache)
+					snapshotKept(r), counts, p.UI.Show(r.Rel), f.Ran, f.Reused, work.Cancelled, work.Unattempted, cache)
 			}
 			_, _ = fmt.Fprintln(ui.Stdout, line)
 		}
@@ -568,7 +568,7 @@ func (p *Presentation) stopSubject(s *mutants.Stop) map[string]any {
 // describeStop names the stop's failure in plain output, its file
 // slash-separated.
 func (p *Presentation) describeStop(s *mutants.Stop) string {
-	file := p.plain(s.File)
+	file := p.UI.Show(s.File)
 	switch {
 	case s.Site != nil:
 		return fmt.Sprintf("%s → %s in %s, %s", Quote(s.Site.Original), Quote(s.Site.Replacement), s.Function, SiteAt(file, s.Site.Line, s.Site.Column))
@@ -581,5 +581,5 @@ func (p *Presentation) describeStop(s *mutants.Stop) string {
 	case s.Function != "":
 		return fmt.Sprintf("%s:%d in %s", file, s.Line, s.Function)
 	}
-	return "in " + file
+	return "in " + file.String()
 }

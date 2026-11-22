@@ -41,7 +41,7 @@ func plainLines(t *testing.T, stdout *bytes.Buffer) []string {
 
 func TestAStopNamesItsSiteAfterTheChange(t *testing.T) {
 	t.Parallel()
-	p := &Presentation{}
+	p := &Presentation{UI: &cli.UI{}}
 	site := &mutants.Stop{Rule: "mutation.survived", File: "src/board.go", Function: "board#place",
 		Site: &mutants.Site{Line: 5, Column: 9, Original: ">", Replacement: ">="}}
 	if got, want := p.describeStop(site), "`>` → `>=` in board#place, src/board.go line 5 column 9"; got != want {

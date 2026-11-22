@@ -500,7 +500,11 @@ a `context.Context` first (decision 30); pure logic takes none.
   `--changed` and the path arguments, is the command line every command selects its files by,
   embedded first in each slice's kong struct (T-63). It alone turns a
   run's problems into its exit code, by the precedence `docs/CLI.md` gives, and prints the
-  plain or JSON answer. It holds `Interrupts`, which stops every command on SIGINT or SIGTERM
+  plain or JSON answer. A plain line names a file only as a `Shown`, made by `(*UI).Show`: from the
+  working directory, slash-separated by the `UI.Separator` cmd gives (`filepath.Separator`) and a test
+  sets to `'\\'` to see what Windows prints (T-235); forbidigo refuses `UI.Rel`, `cli.Rel` and
+  `filepath.Rel` in the mutation slice's own files, so `--json` and the problems, which keep the
+  system's form, say so with a nolint. It holds `Interrupts`, which stops every command on SIGINT or SIGTERM
   (decision 38), cancelling its context with the cause `ErrInterrupted`, and lets a later
   interrupt end it at once unless the process groups it owns are being killed (`Cleaning`);
   cmd makes one per run and binds `Cleaning` into the adapters that kill those groups. A domain's failures

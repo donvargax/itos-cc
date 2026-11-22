@@ -18,7 +18,7 @@ import (
 // windows is a presentation of files Windows named, writing plain lines
 // to stdout and stderr.
 func windows(stdout, stderr *bytes.Buffer) *Presentation {
-	return &Presentation{UI: &cli.UI{Stdout: stdout, Stderr: stderr}, Separator: '\\'}
+	return &Presentation{UI: &cli.UI{Stdout: stdout, Stderr: stderr, Separator: '\\'}}
 }
 
 // wantLines checks that got holds each of want, in order, as whole lines.
@@ -26,16 +26,6 @@ func wantLines(t *testing.T, what string, got []string, want ...string) {
 	t.Helper()
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Errorf("%s\n%s\nwant\n%s", what, strings.Join(got, "\n"), strings.Join(want, "\n"))
-	}
-}
-
-func TestSlashedNamesAPathWithSlashes(t *testing.T) {
-	t.Parallel()
-	if got := Slashed(`src\game\board.py`, '\\'); got != "src/game/board.py" {
-		t.Errorf("Windows' src\\game\\board.py is %q, want src/game/board.py", got)
-	}
-	if got := Slashed("src/game/board.py", '/'); got != "src/game/board.py" {
-		t.Errorf("src/game/board.py is %q, want it unchanged", got)
 	}
 }
 

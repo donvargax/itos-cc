@@ -72,12 +72,12 @@ func (c Show) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 	}
 	found, err := h.Show(ctx, argument, id)
 	if err != nil {
-		return ui.Emit(c.JSON, showResult{}, ui.Problems(readError(err, ui.Rel)))
+		return ui.Emit(c.JSON, showResult{}, ui.Problems(readError(err, ui.Rel))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
 	}
 	s := found.Site
 	if !c.JSON {
 		_, _ = fmt.Fprintf(ui.Stdout, "mutant %s → %s in %s, %s\n  before: %s\n  after:  %s\n", Quote(s.Original), Quote(s.Replacement), found.Function,
-			SiteAt(id.File, s.Line, s.Column), found.LineText, found.MutatedText)
+			SiteAt(ui.Show(id.File), s.Line, s.Column), found.LineText, found.MutatedText)
 	}
 	return ui.Emit(c.JSON, showResult{Mutant: &shownJSON{Identity: argument, File: id.File, Line: s.Line, Column: s.Column, Function: found.Function,
 		Original: s.Original, Replacement: s.Replacement, LineText: found.LineText, MutatedText: found.MutatedText}}, nil)

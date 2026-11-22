@@ -12,6 +12,7 @@ linters:
     # other parameter. tools/bin/architecture-check proves both refuse.
     - containedctx
     - depguard
+    - forbidigo
     - gochecksumtype
     - gosec
     - revive
@@ -25,6 +26,19 @@ linters:
     # tools/bin/architecture-check proves it with compile-valid fixtures.
     gochecksumtype:
       default-signifies-exhaustive: false
+    # A plain line of internal/slices/mutation names a file only as a
+    # cli.Shown, made by (*cli.UI).Show: slash-separated from the working
+    # directory on every system. Windows' separator in a plain line was
+    # found five times only by cd.yml's Windows jobs (bug-9, bug-12,
+    # slice-68, bug-6, bug-1), because Linux cannot see a line that skips
+    # it. What names a file in the system's form, as --json and the problems
+    # do, says so in a nolint comment naming why (T-235). The rule is held to
+    # the slice's non-test files by linters.exclusions.rules below.
+    forbidigo:
+      analyze-types: true
+      forbid:
+        - pattern: ^(.*filepath\.Rel|.*cli\.Rel|.*UI.*\.Rel|.*\.Slashed)$
+          msg: name a file for people with (*cli.UI).Show
     # Layer/production-I/O/mock rules harvested from
     # github.com/donvargax/itos-template/.golangci.yml with owner MIT
     # permission (CONTRIBUTORS.md), adapted to this module and layout.
@@ -747,6 +761,12 @@ linters:
     rules:
       - path: _test\.go$
         linters: [gosec]
+      # forbidigo's rule above is for the mutation slice's own non-test
+      # files, not its adapters, domain or tests.
+      - path-except: ^internal/slices/mutation/[^/]+\.go$
+        linters: [forbidigo]
+      - path: _test\.go$
+        linters: [forbidigo]
       # The adapter packages open the selected project's files and run its
       # tools, which is what an adapter is for, so gosec's G304 (file
       # inclusion by a variable path) and G204 (a subprocess started with a
