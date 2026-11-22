@@ -6609,7 +6609,7 @@ items:
   - id: T-239
     title: Every order of a process group's end is played on Linux against a fake of the system calls
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
