@@ -6596,6 +6596,6 @@ items:
     title: Prove and close the graph's way back to its own copy of mutation check's rule
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task

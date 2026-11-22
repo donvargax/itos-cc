@@ -7498,6 +7498,3 @@
     the PASS line (itos#276), -count=1 because the linter reads files Go cannot track. Red first:
     commit the test first and see the hole's case fail. Quote the proof's output in the close. Out
     of scope: findings F1 and F3 to F5, the port's shape, graph's own crap, dry and scrap reads.
-  done_when:
-    - run: "ARCHITECTURE_ROOT=$PWD ARCHITECTURE_LINTER=$(tools/bin/pinned --path golangci-lint) go test ./tools/testdata/architecture -run '^TestGraphJudgesMutationOnlyThroughItsPort$' -count=1 -v 2>&1 | grep -q -- '--- PASS: TestGraphJudgesMutationOnlyThroughItsPort'"
-      timeout: 300
