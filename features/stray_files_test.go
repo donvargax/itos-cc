@@ -21,14 +21,25 @@ type strayDriver struct {
 func (d strayDriver) withTags([]string) Driver { return d }
 
 func (d strayDriver) Run(r Run) (Result, error) {
-	temp := d.elsewhere
+	temp, marks := d.elsewhere, r.Dir
 	for _, kv := range r.Env {
 		if value, ok := strings.CutPrefix(kv, "TMPDIR="); ok {
 			temp = value
 		}
+		if value, ok := strings.CutPrefix(kv, "FIXTURE_MARKS="); ok {
+			marks = value
+		}
 	}
 	var path string
 	switch r.Args[0] {
+	case "mark":
+		path = filepath.Join(marks, "test-ran")
+	case "report":
+		path = filepath.Join(r.Dir, r.Args[2])
+	case "tool":
+		path = filepath.Join(r.Dir, "node_modules", ".vite", "vitest", "results.json")
+	case "bytecode":
+		path = filepath.Join(r.Dir, "__pycache__", "board.cpython-314.pyc")
 	case "cache":
 		path = filepath.Join(r.Dir, ".pytest_cache", "v", "cache", "lastfailed")
 	case "metrics":
@@ -57,6 +68,10 @@ func TestScenarioLeavesNoStrayFiles(t *testing.T) {
 		{"a file in the temporary folder", "", "temp", true, []string{"left-by-board-test", "temporary folder"}},
 		{"a file in the temporary folder, under its allowance", "@ID-MUT-354", "temp", false, nil},
 		{"a file under .metrics/", "", "metrics", false, nil},
+		{"a mark a fixture's tests leave in the marks folder", "", "mark", false, nil},
+		{"the report the scenario names", "", "report --coverage-report named.out", false, nil},
+		{"a file under node_modules/", "", "tool", false, nil},
+		{"bytecode beside the sources", "", "bytecode", true, []string{"__pycache__/board.cpython-314.pyc"}},
 		{"nothing", "", "nothing", false, nil},
 	}
 	for _, c := range cases {
