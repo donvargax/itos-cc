@@ -6602,8 +6602,8 @@ items:
   - id: T-238
     title: A function's recorded results pair with it by one key, never by name or position
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: T-239
