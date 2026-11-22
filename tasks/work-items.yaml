@@ -6606,3 +6606,12 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: group-end-orders
+    title: Every order of a process group's end is played on Linux against a fake of the system calls
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Placeholder; the ledger entry holds the why.
