@@ -443,6 +443,13 @@ type world struct {
 	// folders are the folders of their own the scenario's environment
 	// named, removed with the scratch folder.
 	folders []string
+	// tmp is the temporary folder of the scenario's own its runs are given,
+	// tags the scenario's, ran whether it made a run, and added the paths its
+	// runs added to its project tree (stray_files.go).
+	tmp   string
+	tags  []string
+	ran   bool
+	added map[string]bool
 
 	// feature is the name of the scenario's feature file.
 	feature string
@@ -725,16 +732,19 @@ func (w *world) setUp(s *godog.Scenario) error {
 	w.beforeRemove = nil
 	w.last, w.problem, w.without, w.wrote, w.each, w.binary, w.edges, w.signal = nil, nil, nil, "", nil, "", nil, 0
 	w.feature, w.scored, w.noTests, w.with, w.project, w.config, w.runIn = filepath.Base(s.Uri), nil, nil, nil, "", "", ""
-	w.folders = nil
+	w.folders, w.ran, w.added = nil, false, map[string]bool{}
+	w.tags = make([]string, len(s.Tags))
+	for i, tag := range s.Tags {
+		w.tags[i] = tag.Name
+	}
 	if d, ok := w.d.(tagged); ok {
-		tags := make([]string, len(s.Tags))
-		for i, tag := range s.Tags {
-			tags[i] = tag.Name
-		}
-		w.d = d.withTags(tags)
+		w.d = d.withTags(w.tags)
 	}
 	var err error
-	w.dir, err = w.d.Folder()
+	if w.dir, err = w.d.Folder(); err != nil {
+		return err
+	}
+	w.tmp, err = w.d.Folder()
 	return err
 }
 
@@ -753,14 +763,18 @@ func (w *world) cleanUp(ctx context.Context) error {
 			return err
 		}
 	}
-	for _, folder := range w.folders {
+	stray := w.strays(ctx)
+	for _, folder := range append(w.folders, w.tmp) {
 		_ = w.d.Remove(folder)
 	}
 	if w.beforeRemove == nil {
 		_ = w.d.Remove(w.dir)
-		return nil
+		return stray
 	}
-	return w.d.Remove(w.dir)
+	if err := w.d.Remove(w.dir); err != nil {
+		return err
+	}
+	return stray
 }
 
 // env is the variables a scenario's fixture sets in every run's environment.
@@ -890,7 +904,7 @@ func (w *world) capture(dir string, env []string, args ...string) (code int, std
 	if err := w.declareAdjacency(context.Background()); err != nil {
 		return 0, "", "", err
 	}
-	result, err := w.d.Run(Run{Dir: dir, Env: env, Args: args, Without: w.without, Binary: w.binary})
+	result, err := w.run(Run{Dir: dir, Env: env, Args: args, Without: w.without, Binary: w.binary})
 	return result.Exit, result.Stdout, result.Stderr, err
 }
 

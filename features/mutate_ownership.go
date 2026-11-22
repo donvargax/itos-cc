@@ -159,7 +159,7 @@ func (q *mutationExecution) startOwned(ctx context.Context, args ...string) (Run
 	env := append(q.m.w.env(), q.peers.Environment()...)
 	env = append(env, "T80_ORIGINAL="+q.m.w.dir)
 	r := Run{Dir: q.m.w.dir, Env: env, Args: args}
-	p, err := q.m.w.d.Start(ctx, r)
+	p, err := q.m.w.start(ctx, r)
 	if err != nil {
 		return nil, err
 	}
