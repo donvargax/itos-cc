@@ -71,7 +71,7 @@ func pristineWrite(t *testing.T, name, text string) {
 }
 
 func pristineAppend(t *testing.T, name string) {
-	f, err := os.OpenFile(name, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600) //nolint:gosec // a fixture's own file
+	f, err := os.OpenFile(name, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +130,7 @@ func pristineWorker(t *testing.T) *boundWorker {
 
 func lines(t *testing.T, path string) int {
 	t.Helper()
-	data, err := os.ReadFile(path) //nolint:gosec // a fixture's own file
+	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +171,7 @@ func TestEveryRunStartsFromTheCopyAsMade(t *testing.T) {
 		t.Errorf("Ready ran %d times, not once", n)
 	}
 	for name, want := range map[string]string{"source.txt": "original\n", "kept.txt": "kept\n", "mutant.txt": "a\n", filepath.Join("node_modules", "dep.js"): "dep\n"} {
-		if got, err := os.ReadFile(filepath.Join(root, name)); err != nil || string(got) != want { //nolint:gosec // a fixture's own file
+		if got, err := os.ReadFile(filepath.Join(root, name)); err != nil || string(got) != want {
 			t.Errorf("the project's %s holds %q, %v", name, got, err)
 		}
 	}

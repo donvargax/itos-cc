@@ -261,7 +261,7 @@ func (c *workerCopy) discard() {
 	for _, dir := range []string{c.dir, c.kept} {
 		_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 			if err == nil && d.IsDir() {
-				_ = os.Chmod(path, 0o700) //nolint:gosec // a folder of the owner's private scratch, made traversable to be removed
+				_ = os.Chmod(path, 0o700) //nolint:gosec // G302: a folder of the owner's private scratch, made traversable to be removed
 			}
 			return nil
 		})

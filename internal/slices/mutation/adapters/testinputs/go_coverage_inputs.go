@@ -54,7 +54,7 @@ func GoCoverageInputs(ctx context.Context, runtime mutants.RuntimeInputs, source
 	}
 	out := map[string]string{}
 	addFile := func(path string) error {
-		data, readErr := os.ReadFile(path) //nolint:gosec // fingerprint actual files inside the selected module inventory
+		data, readErr := os.ReadFile(path)
 		if readErr != nil {
 			return readErr
 		}
@@ -199,7 +199,7 @@ func goSkipsName(name string) bool {
 // goEnv is the module's Go environment as go env resolves it there, in the
 // run's environment: each of goEnvKeys with its value, NUL-separated.
 func goEnv(ctx context.Context, runtime mutants.RuntimeInputs, module string) (string, error) {
-	cmd := exec.CommandContext(ctx, "go", append([]string{"env", "-json"}, goEnvKeys...)...) //nolint:gosec // only the fixed go program, asked for the fixed variables above
+	cmd := exec.CommandContext(ctx, "go", append([]string{"env", "-json"}, goEnvKeys...)...)
 	cmd.Dir = module
 	cmd.Env = []string{}
 	for _, key := range slices.Sorted(maps.Keys(runtime.Env)) {

@@ -128,7 +128,7 @@ func (a *tsAliases) resolve(spec string) []string {
 // readJSONC reads JSON with comments and trailing commas, which tsconfig
 // files allow.
 func readJSONC(file string, v any) bool {
-	data, err := os.ReadFile(file) //nolint:gosec // a tsconfig file of a repository the person named
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return false
 	}

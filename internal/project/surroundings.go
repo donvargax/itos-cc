@@ -29,7 +29,7 @@ func (Surroundings) Read(ctx context.Context, path string) ([]byte, bool) {
 	if ctx.Err() != nil {
 		return nil, false
 	}
-	text, err := os.ReadFile(path) //nolint:gosec // lang reads the project files above a source it was given
+	text, err := os.ReadFile(path)
 	if err != nil {
 		return nil, false
 	}

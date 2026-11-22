@@ -37,7 +37,7 @@ type pubspec struct {
 // none or it does not parse.
 func readPubspec(dir string) (pubspec, bool) {
 	var p pubspec
-	data, err := os.ReadFile(filepath.Join(dir, "pubspec.yaml")) //nolint:gosec // the manifest of a package the person selected, or of the folders above it
+	data, err := os.ReadFile(filepath.Join(dir, "pubspec.yaml"))
 	if err != nil || yaml.Unmarshal(data, &p) != nil {
 		return pubspec{}, false
 	}

@@ -86,7 +86,7 @@ func (s scopeReader) read(path string) string {
 	if !beneathRoot(s.root, path) {
 		return ""
 	}
-	data, err := os.ReadFile(path) //nolint:gosec // read current root-bounded manifests without opening dependency targets
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return ""
 	}

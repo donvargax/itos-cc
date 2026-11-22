@@ -236,7 +236,7 @@ func (e Environment) gitAtEnv(ctx context.Context, dir string, env []string, arg
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	cmd := exec.CommandContext(ctx, "git", args...) //nolint:gosec // run only the fixed Git program with the admitted metadata/export arguments under the owned executor
+	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir, cmd.Env = dir, env
 	if env == nil {
 		cmd.Env = project.InheritedEnvIn(dir)
@@ -269,7 +269,7 @@ func (e Environment) committedBuildOutput(ctx context.Context, frozen string) (f
 		return nil, nil, err
 	}
 	emptyConfig := filepath.Join(frozen, ".fresh-plan-empty-config")
-	if err := os.WriteFile(emptyConfig, nil, 0600); err != nil { //nolint:gosec // isolate Git configuration in this plan's validated private scratch
+	if err := os.WriteFile(emptyConfig, nil, 0600); err != nil {
 		return nil, nil, err
 	}
 	initEnv := cleanGitEnvironment(emptyConfig)
@@ -277,7 +277,7 @@ func (e Environment) committedBuildOutput(ctx context.Context, frozen string) (f
 		return nil, nil, fmt.Errorf("initialize isolated committed-ignore metadata: %w", err)
 	}
 	emptyExcludes := filepath.Join(frozen, ".fresh-plan-empty-excludes")
-	if err := os.WriteFile(emptyExcludes, nil, 0600); err != nil { //nolint:gosec // supply an empty ignore file only inside this plan's private scratch
+	if err := os.WriteFile(emptyExcludes, nil, 0600); err != nil {
 		return nil, nil, err
 	}
 	env := cleanGitEnvironment(emptyConfig)
@@ -364,7 +364,7 @@ func (e Environment) exportCommit(ctx context.Context, root, commit, destination
 		if entry.mode == "100755" {
 			mode = 0700
 		}
-		if err := os.WriteFile(target, blob, mode); err != nil { //nolint:gosec // materialize an admitted committed blob only inside the validated private export, preserving executable mode
+		if err := os.WriteFile(target, blob, mode); err != nil {
 			return nil, err
 		}
 		names = append(names, clean)

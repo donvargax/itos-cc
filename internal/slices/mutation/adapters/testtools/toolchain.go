@@ -78,7 +78,7 @@ func (t Toolchain) Observe(ctx context.Context, r mutants.CommandRequest) (mutan
 			f.PythonModules = covrun.PythonModules(f.PythonFiles)
 		}
 		f.Interpreter = PythonInterpreter(f.Root)
-		probe := exec.CommandContext(ctx, f.Interpreter, "-c", "import pytest") //nolint:gosec // probe the project's observed interpreter, never a downloaded executable
+		probe := exec.CommandContext(ctx, f.Interpreter, "-c", "import pytest")
 		probe.Dir, probe.Env = t.Dir, t.env(t.Dir)
 		f.Pytest = probe.Run() == nil
 	case "kotlin":
@@ -136,7 +136,7 @@ func packageDeps(dir string) map[string]bool {
 		Dependencies    map[string]string `json:"dependencies"`
 		DevDependencies map[string]string `json:"devDependencies"`
 	}
-	data, _ := os.ReadFile(filepath.Join(dir, "package.json")) //nolint:gosec // observe the selected project's optional manifest
+	data, _ := os.ReadFile(filepath.Join(dir, "package.json"))
 	_ = json.Unmarshal(data, &pkg)
 	deps := map[string]bool{}
 	for k := range pkg.Dependencies {

@@ -88,7 +88,7 @@ func freshPythonCommand(ctx context.Context, path string, all bool, tests []stri
 		}
 	}
 	py := pythonInterpreter(root)
-	probe := exec.CommandContext(ctx, py, "-c", "import pytest") //nolint:gosec // observe the selected installed interpreter through the owned executor
+	probe := exec.CommandContext(ctx, py, "-c", "import pytest")
 	probe.Dir, probe.Stdout, probe.Stderr = root, io.Discard, io.Discard
 	err := execute(ctx, probe)
 	calls := []covrun.CommandExecution{{Args: append([]string{}, probe.Args...), Dir: root, Err: err}}
@@ -127,7 +127,7 @@ func runFreshBaselines(ctx context.Context, baselines []FreshBaseline, log io.Wr
 		if len(c.Args) == 0 {
 			return out, executions, fmt.Errorf("baseline of %s has no command", strings.Join(b.Paths, ", "))
 		}
-		cmd := exec.CommandContext(ctx, c.Args[0], c.Args[1:]...) //nolint:gosec // run the admitted frozen baseline with its unchanged command argv
+		cmd := exec.CommandContext(ctx, c.Args[0], c.Args[1:]...)
 		cmd.Dir = c.Dir
 		cmd.Env = project.NoBytecodeEnv(nil)
 		if c.PathEnv != "" {

@@ -64,7 +64,7 @@ func (Tree) Read(ctx context.Context, path string) ([]byte, port.Failure) {
 	if ctx.Err() != nil {
 		return nil, &port.Cancelled{Cause: context.Cause(ctx)}
 	}
-	text, err := os.ReadFile(path) //nolint:gosec // the person selected the path, reading it is the point
+	text, err := os.ReadFile(path)
 	if err != nil {
 		return nil, &port.Unreadable{Path: path, Reason: err.Error()}
 	}

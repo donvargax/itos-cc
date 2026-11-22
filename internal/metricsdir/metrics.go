@@ -57,7 +57,7 @@ func Write(name string, v any) error {
 // WriteIn is Write of the snapshots in dir, as DirOf names it.
 func WriteIn(dir, name string, v any) error {
 	path := filepath.Join(dir, name)
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil { //nolint:gosec // .metrics/ is committed project output; its folders keep the mode a checkout gives them
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil { //nolint:gosec // G301: .metrics/ is committed project output; its folders keep the mode a checkout gives them
 		return err
 	}
 	var buf bytes.Buffer
@@ -81,7 +81,7 @@ func WriteIn(dir, name string, v any) error {
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	if err := os.Chmod(tmp.Name(), 0o644); err != nil { //nolint:gosec // a snapshot is a committed file every reader of the project opens
+	if err := os.Chmod(tmp.Name(), 0o644); err != nil { //nolint:gosec // G302: a snapshot is a committed file every reader of the project opens
 		return err
 	}
 	l := hold(path)

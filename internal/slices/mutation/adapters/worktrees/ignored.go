@@ -88,7 +88,7 @@ func gitIgnored(ctx context.Context, tree string) ignoredPaths {
 // slash-separated from tree, and whether git could list them: it fails, or
 // names tree itself, when it ignores it whole.
 func gitListed(ctx context.Context, tree string, args ...string) (ignoredPaths, bool) {
-	cmd := exec.CommandContext(ctx, "git", append([]string{"ls-files", "-z", "--others", "--exclude-per-directory=.gitignore"}, args...)...) //nolint:gosec // only the fixed git program, asked about the tree a worker copies
+	cmd := exec.CommandContext(ctx, "git", append([]string{"ls-files", "-z", "--others", "--exclude-per-directory=.gitignore"}, args...)...)
 	cmd.Dir, cmd.Env = tree, project.InheritedEnvIn(tree)
 	out, err := cmd.Output()
 	if err != nil {

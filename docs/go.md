@@ -1304,7 +1304,15 @@ these checks in cost order, the first failure stopping the run:
   revive's context-as-argument, which refuses one passed anywhere but first. revive runs only
   the rules `.golangci.yml` lists, never its defaults. `cmd`, `internal`, the top-level
   libraries, the scenario harness in `features` and `tools` are all linted. A finding that is
-  by design carries a `//nolint:<linter> // <reason>` at its own site, saying why.
+  by design carries a `//nolint:<linter> // <reason>` at its own site, saying why. One exception
+  is a rule of `.golangci.yml`, not a comment (T-233): gosec's G304 (a file opened by a variable
+  path) and G204 (a subprocess started with a variable) are excluded in the adapter packages,
+  every slice's `adapters/` and the adapter-side engines `workdir`, `metricsdir`,
+  `coveragetools`, `project`, `processes` and `imports`, tests included, because opening the
+  selected project's files and running its tools is what an adapter is for. They stay in every
+  other package, `internal/covrun` and the slices outside their adapters among them, and every
+  other gosec rule stays in the adapters too, so a `//nolint:gosec` there names the other rule.
+  `TestGosecPathRule` in `tools/testdata/architecture` proves both halves.
 - `tools/bin/architecture-check`, the self-test above.
 - `go tool govulncheck -test ./...`, covering the dependencies in use, test-only ones and
   the standard library.

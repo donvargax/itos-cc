@@ -13,7 +13,7 @@ import (
 func TestHashes(root string, tests []string) (map[string]string, error) {
 	out := map[string]string{}
 	for _, path := range tests {
-		data, err := os.ReadFile(path) //nolint:gosec // fingerprint the actual selected test file
+		data, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}

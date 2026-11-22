@@ -146,7 +146,7 @@ func exists(path string) bool {
 // ready runs c.Ready in root, the worker's fresh copy of c.Root, from
 // c.Dir's place in it, failing with its output when it fails.
 func (w *worker) ready(ctx context.Context, c Command, root string) error {
-	cmd := exec.CommandContext(ctx, c.Ready[0], c.Ready[1:]...) //nolint:gosec // the selected package's own toolchain readying the worker's private copy
+	cmd := exec.CommandContext(ctx, c.Ready[0], c.Ready[1:]...)
 	w.prepared(cmd, c, root, w.temp())
 	var out bytes.Buffer
 	cmd.Stdout = &out
@@ -171,7 +171,7 @@ func copyPackages(ctx context.Context, plan *copyPlan, members []string, dst str
 	if members == nil {
 		return copyTree(ctx, tree, dst, plan)
 	}
-	if err := os.MkdirAll(dst, 0o755); err != nil { //nolint:gosec // preserve project directory behavior inside the owner's private 0700 scratch
+	if err := os.MkdirAll(dst, 0o755); err != nil { //nolint:gosec // G301: preserve project directory behavior inside the owner's private 0700 scratch
 		return err
 	}
 	for _, name := range []string{"pubspec.yaml", "pubspec.lock"} {
@@ -267,7 +267,7 @@ func copyTree(ctx context.Context, src, dst string, plan *copyPlan) error {
 		}
 		switch {
 		case path == src:
-			return os.MkdirAll(target, 0o755) //nolint:gosec // preserve project directory behavior inside the owner's private 0700 scratch
+			return os.MkdirAll(target, 0o755) //nolint:gosec // G301: preserve project directory behavior inside the owner's private 0700 scratch
 		case never(d):
 			return skipped(d)
 		case d.IsDir() && linkDirs[d.Name()]:
@@ -335,13 +335,13 @@ func skipped(d fs.DirEntry) error {
 // made again, a file copied; with parents, the folders above target first.
 func copyEntry(path, target string, d fs.DirEntry, parents bool) error {
 	if parents {
-		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil { //nolint:gosec // preserve project directory behavior inside the owner's private 0700 scratch
+		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil { //nolint:gosec // G301: preserve project directory behavior inside the owner's private 0700 scratch
 			return err
 		}
 	}
 	switch {
 	case d.IsDir():
-		return os.MkdirAll(target, 0o755) //nolint:gosec // preserve project directory behavior inside the owner's private 0700 scratch
+		return os.MkdirAll(target, 0o755) //nolint:gosec // G301: preserve project directory behavior inside the owner's private 0700 scratch
 	case d.Type()&fs.ModeSymlink != 0:
 		link, err := os.Readlink(path)
 		if err != nil {
@@ -366,12 +366,12 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	in, err := os.Open(src) //nolint:gosec // copying the person's selected project file is this adapter's purpose
+	in, err := os.Open(src)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = in.Close() }()
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode().Perm()) //nolint:gosec // copy into the owned worker tree while preserving the source mode
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode().Perm())
 	if err != nil {
 		return err
 	}
@@ -411,7 +411,7 @@ func (w *worker) runIn(parent context.Context, c Command, root, temp string, lim
 	if c.Shell != "" {
 		cmd = shellCommand(ctx, c.Shell, processes.PlatformAtBoundary(w.runner.Platform))
 	} else {
-		cmd = exec.CommandContext(ctx, c.Args[0], c.Args[1:]...) //nolint:gosec // execute the selected test command with its unchanged argv
+		cmd = exec.CommandContext(ctx, c.Args[0], c.Args[1:]...)
 	}
 	w.prepared(cmd, c, root, temp)
 	var out bytes.Buffer
@@ -457,18 +457,18 @@ func (w *worker) withMutant(ctx context.Context, c Command, path string, origina
 	}
 	rel, _ := filepath.Rel(c.Root, path)
 	target := filepath.Join(copyRoot, rel)
-	if err := os.WriteFile(target, mutated, 0o644); err != nil { //nolint:gosec // preserve the legacy trial mode inside private worker scratch
+	if err := os.WriteFile(target, mutated, 0o644); err != nil { //nolint:gosec // G306: preserve the legacy trial mode inside private worker scratch
 		return result{}, err
 	}
 	defer func() {
-		_ = os.WriteFile(target, original, 0o644) //nolint:gosec // restore the owned copy with the exact legacy file mode
+		_ = os.WriteFile(target, original, 0o644) //nolint:gosec // G306: restore the owned copy with the exact legacy file mode
 	}()
 	return fn(ctx)
 }
 
 func shellCommand(ctx context.Context, line, platform string) *exec.Cmd {
 	if platform == "windows" {
-		return exec.CommandContext(ctx, "cmd", "/C", line) //nolint:gosec // the person explicitly selected a shell test command
+		return exec.CommandContext(ctx, "cmd", "/C", line)
 	}
-	return exec.CommandContext(ctx, "sh", "-c", line) //nolint:gosec // the person explicitly selected a shell test command
+	return exec.CommandContext(ctx, "sh", "-c", line)
 }

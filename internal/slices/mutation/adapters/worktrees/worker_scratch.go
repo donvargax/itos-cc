@@ -77,7 +77,7 @@ func (s *workerScratch) remove() {
 // claimMarker makes the marker at path, locks it and writes the run's
 // process ID in it, and returns it held open, or nil when it could not.
 func claimMarker(path, platform string) *os.File {
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o600) //nolint:gosec // exclusive owner marker at the caller's adapter-owned scratch path
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
 		return nil
 	}
@@ -131,7 +131,7 @@ func hasWorkerPrefix(name string) bool {
 // changed for unmarkedAge. A marker it cannot open or lock but for not
 // being there is a live run's, or another user's, and is left alone.
 func abandoned(dir, platform string) bool {
-	f, err := os.Open(filepath.Join(dir, ownerMarker)) //nolint:gosec // inspect only the owner marker beneath the discovered worker scratch directory
+	f, err := os.Open(filepath.Join(dir, ownerMarker))
 	if errors.Is(err, fs.ErrNotExist) {
 		return unchangedFor(dir, unmarkedAge)
 	}

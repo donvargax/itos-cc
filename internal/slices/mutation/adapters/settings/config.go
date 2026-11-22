@@ -131,7 +131,7 @@ func LoadFrom(root string) (*Config, error) {
 // Read is the text of itos-cc.yaml at the project root root, nil when there
 // is no file there.
 func Read(root string) ([]byte, error) {
-	data, err := os.ReadFile(filepath.Join(root, File)) //nolint:gosec // itos-cc.yaml at the project root the caller found
+	data, err := os.ReadFile(filepath.Join(root, File))
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, nil
 	}

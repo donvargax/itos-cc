@@ -20,7 +20,7 @@ func (e Exceptions) Except(ctx context.Context, exception mutants.Exception) (bo
 		return false, mutants.ExceptionCancelled{Cause: context.Cause(ctx)}
 	}
 	path := filepath.Join(e.RootDir, settings.File)
-	data, err := os.ReadFile(path) //nolint:gosec // itos-cc.yaml at the project root this adapter was given
+	data, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
 		data = Created()
 	} else if err != nil {
@@ -55,7 +55,7 @@ func (e Exceptions) rewrite(ctx context.Context, n int, update func([]byte) ([]b
 		return nil
 	}
 	path := filepath.Join(e.RootDir, settings.File)
-	data, err := os.ReadFile(path) //nolint:gosec // itos-cc.yaml at the project root this adapter was given
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return exceptionFailure(err)
 	}
@@ -86,5 +86,5 @@ func writeDocument(path string, data []byte) error {
 	if info, err := os.Stat(path); err == nil {
 		mode = info.Mode().Perm()
 	}
-	return os.WriteFile(path, data, mode) //nolint:gosec // path is itos-cc.yaml at the project root, rewritten keeping its own mode
+	return os.WriteFile(path, data, mode) //nolint:gosec // G703: path is itos-cc.yaml at the project root, rewritten keeping its own mode
 }

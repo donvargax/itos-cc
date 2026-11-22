@@ -441,7 +441,7 @@ func listFreshTests(ctx context.Context, platform, root, line string, log io.Wri
 	if platform == "windows" {
 		name, flag = "cmd", "/C"
 	}
-	cmd := exec.CommandContext(ctx, name, flag, line) //nolint:gosec // the committed configuration explicitly supplies this test-list shell command
+	cmd := exec.CommandContext(ctx, name, flag, line)
 	cmd.Dir = root
 	var output bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &output, log
@@ -472,7 +472,7 @@ func installFrozenRuntimeGit(ctx context.Context, plan *mutants.FreshPlan, execu
 		return "", fmt.Errorf("remove isolated ignore-classification metadata: %w", err)
 	}
 	tempConfig := filepath.Join(plan.FrozenRoot, ".fresh-runtime-gitconfig")
-	if err := os.WriteFile(tempConfig, nil, 0o600); err != nil { //nolint:gosec // isolate runtime Git configuration beneath this plan's owned export
+	if err := os.WriteFile(tempConfig, nil, 0o600); err != nil {
 		return "", fmt.Errorf("create private Git config: %w", err)
 	}
 	configDir := filepath.Join(gitDir, "itos-preparation")
@@ -481,7 +481,7 @@ func installFrozenRuntimeGit(ctx context.Context, plan *mutants.FreshPlan, execu
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		cmd := exec.CommandContext(ctx, "git", args...) //nolint:gosec // initialize only the private frozen Git repository through the owned executor
+		cmd := exec.CommandContext(ctx, "git", args...)
 		cmd.Dir = plan.FrozenRoot
 		cmd.Stdout, cmd.Stderr = io.Discard, io.Discard
 		activeConfig := configPath

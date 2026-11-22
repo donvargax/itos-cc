@@ -69,7 +69,7 @@ func (r *flutterRules) platformDir(dir string) bool {
 	app := filepath.Dir(dir)
 	flutter, ok := r.apps[app]
 	if !ok {
-		text, err := os.ReadFile(filepath.Join(app, "pubspec.yaml")) //nolint:gosec // the manifest beside a folder of the tree the person selected
+		text, err := os.ReadFile(filepath.Join(app, "pubspec.yaml"))
 		flutter = err == nil && dependsOnFlutter(text)
 		r.apps[app] = flutter
 	}
@@ -112,7 +112,7 @@ func (r *flutterRules) generated(path string) bool {
 	if name == pluginRegistrant || hasGeneratedSuffix(name) || r.localization(path) {
 		return true
 	}
-	text, err := os.ReadFile(path) //nolint:gosec // a file of the tree the person selected, walked to
+	text, err := os.ReadFile(path)
 	return err == nil && markedGenerated(string(text))
 }
 
@@ -139,7 +139,7 @@ func (r *flutterRules) localization(path string) bool {
 	for dir := filepath.Dir(path); ; dir = filepath.Dir(dir) {
 		out, ok := r.l10n[dir]
 		if !ok {
-			text, err := os.ReadFile(filepath.Join(dir, "l10n.yaml")) //nolint:gosec // gen-l10n's settings at or above a selected file's folder
+			text, err := os.ReadFile(filepath.Join(dir, "l10n.yaml"))
 			if err == nil {
 				out = l10nOutputOf(text)
 			}

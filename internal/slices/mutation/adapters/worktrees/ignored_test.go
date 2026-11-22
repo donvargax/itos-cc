@@ -35,7 +35,7 @@ func (s copySettings) Read(context.Context) (*mutants.Config, mutants.SettingsFa
 // gitIn runs git with args in dir, failing the test when it fails.
 func gitIn(t *testing.T, dir string, args ...string) {
 	t.Helper()
-	cmd := exec.Command("git", append([]string{"-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false"}, args...)...) //nolint:gosec // git, run on the test's own fixture
+	cmd := exec.Command("git", append([]string{"-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false"}, args...)...)
 	cmd.Dir = dir
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("git %v: %v\n%s", args, err, out)
@@ -171,7 +171,7 @@ func TestACopyLeavesOutWhatGitIgnores(t *testing.T) {
 	}
 	ignoredRun(t, p, c, root)
 	for name, want := range map[string]string{"dist/types/index.d.ts": "types\n", "gen/table.txt": "table\n", "dist/run.js": "run\n", "coverage/run.txt": "run\n"} {
-		if got, err := os.ReadFile(filepath.Join(copied, filepath.FromSlash(name))); err != nil || string(got) != want { //nolint:gosec // a fixture's own file
+		if got, err := os.ReadFile(filepath.Join(copied, filepath.FromSlash(name))); err != nil || string(got) != want {
 			t.Errorf("after the restore the copy's %s holds %q, %v, not %q", name, got, err, want)
 		}
 	}

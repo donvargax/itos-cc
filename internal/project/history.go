@@ -11,7 +11,7 @@ import (
 // historyCommand always executes in the declared caller directory. An empty
 // directory preserves the legacy direct callers' current-working-directory API.
 func historyCommand(ctx context.Context, dir string, args ...string) *exec.Cmd {
-	cmd := exec.CommandContext(ctx, "git", args...) //nolint:gosec // only the fixed git program, with the history query arguments this package builds
+	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir, cmd.Env = dir, InheritedEnvIn(dir)
 	return cmd
 }

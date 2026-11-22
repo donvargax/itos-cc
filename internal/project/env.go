@@ -67,7 +67,7 @@ func NoBytecodeEnv(env []string) []string {
 // gitCommand is git with args, started in dir, the working directory when
 // empty, in InheritedEnvIn.
 func gitCommand(dir string, args ...string) *exec.Cmd {
-	cmd := exec.Command("git", args...) //nolint:gosec // only the fixed git program, with the arguments this package builds
+	cmd := exec.Command("git", args...)
 	cmd.Dir, cmd.Env = dir, InheritedEnvIn(dir)
 	return cmd
 }

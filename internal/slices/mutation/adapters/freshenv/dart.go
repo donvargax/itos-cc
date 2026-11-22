@@ -47,7 +47,7 @@ func (e Environment) readyDart(ctx context.Context, sources []string, log io.Wri
 		if !slices.Contains(args, "--enforce-lockfile") {
 			args = append(args, "--enforce-lockfile")
 		}
-		cmd := exec.CommandContext(ctx, args[0], args[1:]...) //nolint:gosec // the selected package's own toolchain resolving the frozen export from the pub cache
+		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 		cmd.Dir = c.Dir
 		CommandEnvironment(cmd)
 		var output bytes.Buffer

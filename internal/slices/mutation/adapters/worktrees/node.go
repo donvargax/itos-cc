@@ -44,7 +44,7 @@ func nodeWorkspace(root, bound string) string {
 // and whether dir is one: pnpm-workspace.yaml's packages, else
 // package.json's workspaces, a list or yarn's object with packages.
 func workspaceGlobs(dir string) ([]string, bool) {
-	if data, err := os.ReadFile(filepath.Join(dir, "pnpm-workspace.yaml")); err == nil { //nolint:gosec // a workspace file above the package the person selected, within the project root
+	if data, err := os.ReadFile(filepath.Join(dir, "pnpm-workspace.yaml")); err == nil {
 		var pnpm struct {
 			Packages []string `yaml:"packages"`
 		}
@@ -52,7 +52,7 @@ func workspaceGlobs(dir string) ([]string, bool) {
 			return pnpm.Packages, true
 		}
 	}
-	data, err := os.ReadFile(filepath.Join(dir, "package.json")) //nolint:gosec // a manifest above the package the person selected, within the project root
+	data, err := os.ReadFile(filepath.Join(dir, "package.json"))
 	if err != nil {
 		return nil, false
 	}

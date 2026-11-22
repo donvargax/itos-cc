@@ -45,7 +45,7 @@ func SupportHashes(root string, globs []string) (map[string]string, error) {
 // fileHash is the SHA-256 of the file at path, or "" when it cannot be
 // read.
 func FileHash(path string) string {
-	data, err := os.ReadFile(path) //nolint:gosec // hash caller-selected support files, preserving existing glob and outside-relative behavior
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return ""
 	}

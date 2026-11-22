@@ -747,6 +747,16 @@ linters:
     rules:
       - path: _test\.go$
         linters: [gosec]
+      # The adapter packages open the selected project's files and run its
+      # tools, which is what an adapter is for, so gosec's G304 (file
+      # inclusion by a variable path) and G204 (a subprocess started with a
+      # variable) are no valid checks there (T-233). They are the packages
+      # docs/go.md calls adapters or adapter-side engines: every slice's
+      # adapters and the engines they wrap. Every other gosec rule stays there,
+      # and these two stay in every other package, internal/covrun included.
+      - path: internal/(slices/[^/]+/adapters|workdir|metricsdir|coveragetools|project|processes|imports)/
+        text: G304|G204
+        linters: [gosec]
 formatters:
   enable:
     - gofmt

@@ -26,7 +26,7 @@ func GoCoverageUnsupported(runtime mutants.RuntimeInputs, source string) (string
 	if workspace := activeGoWorkspace(runtime, module); workspace != "" {
 		return workspace, nil
 	}
-	data, err := os.ReadFile(filepath.Join(module, "go.mod")) //nolint:gosec // read the selected module manifest before lexical replacement admission
+	data, err := os.ReadFile(filepath.Join(module, "go.mod"))
 	if err != nil {
 		return "", err
 	}

@@ -258,11 +258,11 @@ func addPnpmCoverageInputs(inputs map[string]string, root, projectRoot string) e
 // package.json's pnpm field.
 func pnpmPatches(dir string) []string {
 	var patches []string
-	if data, err := os.ReadFile(filepath.Join(dir, "pnpm-workspace.yaml")); err == nil { //nolint:gosec // the pnpm settings above the package a strict file belongs to, within the project root
+	if data, err := os.ReadFile(filepath.Join(dir, "pnpm-workspace.yaml")); err == nil {
 		settings, _ := readPnpmSettings(string(data))
 		patches = slices.AppendSeq(patches, maps.Values(settings.PatchedDependencies))
 	}
-	if data, err := os.ReadFile(filepath.Join(dir, "package.json")); err == nil { //nolint:gosec // the package.json beside those pnpm settings
+	if data, err := os.ReadFile(filepath.Join(dir, "package.json")); err == nil {
 		var manifest struct {
 			Pnpm struct {
 				PatchedDependencies map[string]string `json:"patchedDependencies"`
@@ -347,7 +347,7 @@ func KotlinCoverageInputs(ctx context.Context, runtime mutants.RuntimeInputs, so
 		if build == "" {
 			break
 		}
-		if data, err := os.ReadFile(filepath.Join(build, name)); err == nil { //nolint:gosec // fingerprint actual files within the admitted language build inventory
+		if data, err := os.ReadFile(filepath.Join(build, name)); err == nil {
 			settings += string(data)
 		}
 	}
@@ -416,7 +416,7 @@ type pubspecOf struct {
 
 func readPubspec(dir string) pubspecOf {
 	var p pubspecOf
-	data, err := os.ReadFile(filepath.Join(dir, "pubspec.yaml")) //nolint:gosec // a pubspec.yaml of the package a strict file belongs to, or above it
+	data, err := os.ReadFile(filepath.Join(dir, "pubspec.yaml"))
 	if err == nil && yaml.Unmarshal(data, &p) != nil {
 		p = pubspecOf{}
 	}
@@ -534,7 +534,7 @@ func DartCoverageInputs(ctx context.Context, runtime mutants.RuntimeInputs, sour
 // summary comment itos-cc writes, so a run's own summary does not stale
 // its evidence.
 func addCoverageInput(inputs map[string]string, projectRoot, path string) error {
-	data, err := os.ReadFile(path) //nolint:gosec // fingerprint actual files within the admitted language build inventory
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
