@@ -63,7 +63,7 @@ func (runner *Runner) RunLimited(ctx context.Context, cmd *exec.Cmd, output *byt
 	if output != nil && cmd.Stderr == output {
 		cmd.Stderr = kept
 	}
-	s := &supervision{kept: kept, limits: limits, platform: platform}
+	s := &supervision{kept: kept, limits: limits, platform: platform, calls: runner.groupCalls()}
 	var started time.Time
 	var err error
 	waited := false
@@ -75,7 +75,7 @@ func (runner *Runner) RunLimited(ctx context.Context, cmd *exec.Cmd, output *byt
 		started = time.Now()
 		err = runner.Lifecycle.start(ctx, cmd)
 	} else {
-		killGroup(cmd, platform)
+		killGroup(cmd, platform, s.calls)
 		started = time.Now()
 		err = cmd.Start()
 	}
@@ -140,6 +140,7 @@ type supervision struct {
 	kept     *keptOutput
 	limits   Limits
 	platform string
+	calls    groupCalls
 	over     overLimit
 	peak     int64
 	measured bool

@@ -25,10 +25,10 @@ func PlatformAtBoundary(platform string) string {
 	return platform
 }
 
-func killGroup(cmd *exec.Cmd, platform string) {
+func killGroup(cmd *exec.Cmd, platform string, calls groupCalls) {
 	if platform != "windows" {
 		cmd.SysProcAttr = nativeGroupAttributes(true)
-		cmd.Cancel = func() error { return cancelGroup(cmd.Process.Pid) }
+		cmd.Cancel = func() error { return cancelGroup(calls, cmd.Process.Pid) }
 	}
 	cmd.WaitDelay = 2 * time.Second
 }
@@ -37,8 +37,8 @@ func killGroup(cmd *exec.Cmd, platform string) {
 // already gone is os.ErrProcessDone (bug-5): the command exited before the
 // cancel landed, and os/exec then reports its own result, never the kill's
 // ESRCH as Wait's error.
-func cancelGroup(pgid int) error {
-	err := nativeSignalGroup(-pgid, syscall.SIGKILL)
+func cancelGroup(calls groupCalls, pgid int) error {
+	err := calls.signal(-pgid, syscall.SIGKILL)
 	if errors.Is(err, syscall.ESRCH) {
 		return os.ErrProcessDone
 	}

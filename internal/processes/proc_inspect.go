@@ -13,8 +13,8 @@ import (
 // ownedGroupGone reports whether the killed process group pgid has no member
 // left that can run. Linux counts zombies as gone by scanning /proc, since a
 // zombie whose parent does not reap it keeps kill(-pgid, 0) succeeding.
-func ownedGroupGone(platform string, pgid int) (bool, error) {
-	err := nativeSignalGroup(-pgid, 0)
+func ownedGroupGone(calls groupCalls, platform string, pgid int) (bool, error) {
+	err := calls.signal(-pgid, 0)
 	if errors.Is(err, syscall.ESRCH) {
 		return true, nil
 	}
@@ -24,7 +24,7 @@ func ownedGroupGone(platform string, pgid int) (bool, error) {
 	if platform != "linux" {
 		return false, nil
 	}
-	running, err := ownedGroupHasRunnableProcess(pgid)
+	running, err := calls.runnable(pgid)
 	if err != nil {
 		return false, err
 	}

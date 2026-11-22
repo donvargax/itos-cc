@@ -185,7 +185,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 			return err
 		}
 	}
-	killGroup(cmd, platform)
+	killGroup(cmd, platform, s.calls)
 	cmd.WaitDelay = 0
 
 	stopReader := &cleanupSignal{done: make(chan struct{})}
@@ -228,7 +228,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 	overCap := func(name string) func() {
 		return func() {
 			if s.over.hit(name) {
-				_ = killOwnedProcessGroup(platform, pgid)
+				_ = killOwnedProcessGroup(s.calls, platform, pgid)
 			}
 		}
 	}
@@ -239,7 +239,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 	}
 	held := startHold(ctx, hold)
 	defer held.end()
-	waitErr := cmd.Wait()
+	waitErr := s.calls.wait(cmd)
 	s.over.end()
 	if memory != nil {
 		s.peak = memory.stopped()
@@ -250,9 +250,9 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 	if observe != nil {
 		observe(deadline)
 	}
-	cleanupErr := killOwnedProcessGroup(platform, pgid)
+	cleanupErr := killOwnedProcessGroup(s.calls, platform, pgid)
 	stopReader.activate(deadline)
-	if err := waitOwnedProcessGroup(pgid, deadline, platform); err != nil {
+	if err := waitOwnedProcessGroup(s.calls, pgid, deadline, platform); err != nil {
 		cleanupErr = errors.Join(cleanupErr, err)
 	}
 	for i := range captures {
@@ -293,7 +293,7 @@ func runUnownedCommand(cmd *exec.Cmd, s *supervision) error {
 	} else {
 		cmd.Stdout, cmd.Stderr = counted(cmd.Stdout), counted(cmd.Stderr)
 	}
-	killGroup(cmd, s.platform)
+	killGroup(cmd, s.platform, s.calls)
 	if err := cmd.Start(); err != nil {
 		return err
 	}
@@ -307,19 +307,19 @@ func runUnownedCommand(cmd *exec.Cmd, s *supervision) error {
 	return err
 }
 
-func waitOwnedProcessGroup(pgid int, deadline time.Time, platform string) error {
+func waitOwnedProcessGroup(calls groupCalls, pgid int, deadline time.Time, platform string) error {
 	for {
-		gone, err := ownedGroupGone(platform, pgid)
+		gone, err := ownedGroupGone(calls, platform, pgid)
 		if err != nil {
 			return fmt.Errorf("inspect owned process group %d: %w", pgid, err)
 		}
 		if gone {
 			return nil
 		}
-		if !time.Now().Before(deadline) {
+		if !calls.now().Before(deadline) {
 			return fmt.Errorf("owned process group %d remained active at cleanup deadline", pgid)
 		}
-		time.Sleep(5 * time.Millisecond)
+		calls.sleep(5 * time.Millisecond)
 	}
 }
 
@@ -350,8 +350,8 @@ type ownedOutputCapture struct {
 	done   chan error
 }
 
-func killOwnedProcessGroup(platform string, pgid int) error {
-	err := nativeSignalGroup(-pgid, syscall.SIGKILL)
+func killOwnedProcessGroup(calls groupCalls, platform string, pgid int) error {
+	err := calls.signal(-pgid, syscall.SIGKILL)
 	if errors.Is(err, syscall.ESRCH) {
 		return nil
 	}
