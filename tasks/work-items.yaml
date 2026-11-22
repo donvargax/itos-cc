@@ -6646,3 +6646,18 @@ items:
       code copied carries gardener's notice in THIRD_PARTY_NOTICES. Starts after the pstack trial's
       two runs (the pstack copy and the itos arm, F1 to F5) finish, so it touches nothing either run
       is fixing.
+  - id: gardener-hot-untested
+    title: Hotspots per file and per function, joined with crap as a hot-and-untested rank
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [gardener-outcomes]
+    kind: idea
+    why: >
+      Fix commits per file and per function, scored with size as gardener does, and a
+      hot-and-untested rank of fix commits times the crap score, which neither gardener nor crap can
+      give alone. From gardener (subsy/gardener at c58a2ad, MIT; the chief's adoption note,
+      2026-11-22, which the person agreed to). Port the idea to Go on itos-cc's tree-sitter core
+      rather than copying gardener's regex matching; any code copied carries gardener's notice in
+      THIRD_PARTY_NOTICES. Starts after the pstack trial's two runs (the pstack copy and the itos
+      arm, F1 to F5) finish, so it touches nothing either run is fixing.
