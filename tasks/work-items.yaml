@@ -6747,7 +6747,7 @@ items:
   - id: T-240
     title: Re-land the stray-file refusal, with fixture markers moved out, allowances in both drivers and tool folders let by
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
