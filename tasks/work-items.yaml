@@ -6552,3 +6552,12 @@ items:
       T-232's fits: in CI without the tools, a test not marked as needing them fails instead of
       skipping, and the shard selects the marked ones, by a name convention or a registry the
       shard's -run is built from. Not checked which tests, if any, are missing from the list today.
+  - id: gosec-adapter-paths
+    title: gosec's G304 and G204 are excluded in the adapter packages, by one path rule
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Placeholder; the task's ledger entry holds the why.
