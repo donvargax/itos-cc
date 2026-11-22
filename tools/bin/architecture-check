@@ -3,7 +3,7 @@
 set -eu
 
 usage() {
-	echo "usage: tools/bin/architecture-check [--linked <package> | --siblings <package>... | --outside <package>... | --toplevel <package>...]" >&2
+	echo "usage: tools/bin/architecture-check [--linked <package> | --siblings <package>... | --outside <package>... | --toplevel <package>... | --graphreads <dir>]" >&2
 	exit 2
 }
 
@@ -50,6 +50,23 @@ siblings() {
 	[ -z "$refused" ] && return 0
 	printf '%s\n' "$refused" | while IFS= read -r line; do
 		echo "architecture-check: $line; a slice imports no other slice (ADR-0051)" >&2
+	done
+	return 1
+}
+
+# graphreads <dir>: refuse the graph slice's non-test code naming the
+# mutate snapshots' folder, "mutate" or "mutate/...", in a string, which
+# would read a mutation snapshot beside its Mutation port, the copy of
+# mutation check's rule that fell behind three times (T-237). depguard and
+# forbidigo see the packages and functions a file names, never the name a
+# generic store is handed, so this reads the text. The one use that is no
+# read is the watch of the folder in build.go's metricStamps, which stats
+# each file and decodes none.
+graphreads() {
+	found=$(grep -rnE --include='*.go' --exclude='*_test.go' '"mutate["/]' "$1" | grep -vF 'filepath.Join(dir, "mutate")' || true)
+	[ -z "$found" ] && return 0
+	printf '%s\n' "$found" | while IFS= read -r line; do
+		echo "architecture-check: $line; graph reads no mutation snapshot itself, only through its Mutation port, which cmd binds to the mutation slice's judgment (T-237)" >&2
 	done
 	return 1
 }
@@ -186,8 +203,8 @@ toplevel() {
 	return 1
 }
 
-# --linked <package>, --siblings <package>..., --outside <package>... and
-# --toplevel <package>... run that check alone, in the current module: the
+# --linked <package>, --siblings <package>..., --outside <package>...,
+# --toplevel <package>... and --graphreads <dir> run that check alone, in the current module: the
 # fixtures prove each refuses.
 case "${1-}" in
 --linked)
@@ -213,6 +230,11 @@ case "${1-}" in
 	toplevel "$@"
 	exit 0
 	;;
+--graphreads)
+	[ $# -eq 2 ] || usage
+	graphreads "$2"
+	exit 0
+	;;
 -*) usage ;;
 esac
 [ $# -eq 0 ] || usage
@@ -223,6 +245,7 @@ linked ./cmd/itos-cc
 siblings ./...
 outside ./...
 toplevel ./...
+graphreads internal/slices/graph
 ARCHITECTURE_ROOT=$root
 ARCHITECTURE_LINTER=$(tools/bin/pinned --path golangci-lint)
 export ARCHITECTURE_ROOT ARCHITECTURE_LINTER

@@ -58,7 +58,6 @@ func TestGraphJudgesMutationOnlyThroughItsPort(t *testing.T) {
 	write(graph+"readmetricsdir/f.go", "package readmetricsdir\n\nimport \""+module+"/internal/metricsdir\"\n\nfunc Own(top string) bool {\n\tvar s struct{ Hash string }\n\tfound, err := metricsdir.ReadIn(metricsdir.DirOf(top), \"mutate/a.go.json\", &s)\n\treturn found && err == nil\n}\n\nfunc Names(top string) ([]string, error) { return metricsdir.ListIn(metricsdir.DirOf(top), \"mutate\") }\n")
 	refused[graph+"readmetricsdir/f.go"] = refusal{"forbidigo", "Mutation port"}
 	write(graph+"readstore/f.go", "package readstore\n\nimport (\n\t\"context\"\n\n\tport \""+module+"/internal/snapshot/port\"\n)\n\nfunc Own(ctx context.Context, store port.Store) bool {\n\tvar s struct{ Hash string }\n\tfound, err := store.Read(ctx, \"mutate/a.go.json\", &s)\n\treturn found && err == nil\n}\n\nfunc Names(ctx context.Context, store port.Store) ([]string, error) { return store.List(ctx, \"mutate\") }\n")
-	refused[graph+"readstore/f.go"] = refusal{"forbidigo", "Mutation port"}
 	// Passing: a call of graph's own port, and watching the folder.
 	write(graph+"callport/f.go", "package callport\n\nimport \"context\"\n\ntype Mutation interface {\n\tSnapshot(ctx context.Context, top, key string) (any, error)\n\tJudge(ctx context.Context, snapshot any) []bool\n}\n\nfunc Stale(ctx context.Context, m Mutation, top, key string) bool {\n\tsnap, err := m.Snapshot(ctx, top, key)\n\treturn err == nil && len(m.Judge(ctx, snap)) > 0\n}\n")
 	write(graph+"watch/f.go", "package watch\n\nimport (\n\t\"os\"\n\n\t\""+module+"/internal/metricsdir\"\n)\n\nfunc Stamp(top string) bool {\n\t_, err := os.Stat(metricsdir.DirOf(top))\n\treturn err == nil\n}\n")
@@ -122,8 +121,28 @@ func TestGraphJudgesMutationOnlyThroughItsPort(t *testing.T) {
 			}
 		})
 	}
-	// The sibling rule refuses the same import with its own message.
+	// The store is an interface forbidigo does not see, so architecture-check
+	// reads the names graph hands it: the folder of mutation's snapshots in
+	// a string is refused, and the fixtures that call the port or only
+	// watch the folder pass.
 	check := filepath.Join(root, "tools", "bin", "architecture-check")
+	for _, c := range []struct {
+		pkg  string
+		want bool
+	}{{"readstore", true}, {"readmetricsdir", true}, {"callport", false}, {"watch", false}} {
+		reads := exec.Command("sh", check, "--graphreads", "internal/slices/graph/"+c.pkg)
+		reads.Dir = dir
+		reads.Env = env
+		out, err := reads.CombinedOutput()
+		exit, isExit := err.(*exec.ExitError)
+		switch {
+		case c.want && (!isExit || exit.ExitCode() != 1 || !strings.Contains(string(out), "Mutation port")):
+			t.Errorf("missing the refusal of %s reading a mutation snapshot: %v\n%s", c.pkg, err, out)
+		case !c.want && err != nil:
+			t.Errorf("refused %s, which reads none: %v\n%s", c.pkg, err, out)
+		}
+	}
+	// The sibling rule refuses the same import with its own message.
 	siblings := exec.Command("sh", check, "--siblings", "./internal/slices/graph/importdomain")
 	siblings.Dir = dir
 	siblings.Env = env

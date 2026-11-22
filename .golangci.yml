@@ -39,6 +39,15 @@ linters:
       forbid:
         - pattern: ^(.*filepath\.Rel|.*cli\.Rel|.*UI.*\.Rel|.*\.Slashed)$
           msg: name a file for people with (*cli.UI).Show
+        # The graph judges mutation only through its Mutation port, which
+        # cmd binds to the mutation slice's own judgment (T-237): a read of
+        # a snapshot of its own, in a rule of its own, is the copy that
+        # fell behind check's three times. graph needs of metricsdir only
+        # DirOf, to watch the folder. Reads through the snapshot store, an
+        # interface forbidigo does not see, are held by
+        # tools/bin/architecture-check's graphreads, which reads the names.
+        - pattern: ^.*metricsdir\.(Read|ReadIn|ListIn)$
+          msg: graph reads no mutation snapshot itself, only through its Mutation port (T-237), which cmd binds to the mutation slice's judgment
     # Layer/production-I/O/mock rules harvested from
     # github.com/donvargax/itos-template/.golangci.yml with owner MIT
     # permission (CONTRIBUTORS.md), adapted to this module and layout.
@@ -761,9 +770,14 @@ linters:
     rules:
       - path: _test\.go$
         linters: [gosec]
-      # forbidigo's rule above is for the mutation slice's own non-test
-      # files, not its adapters, domain or tests.
+      # forbidigo's first rule above is for the mutation slice's own
+      # non-test files, not its adapters, domain or tests; its second is for
+      # the graph slice's, which have a rule of their own.
       - path-except: ^internal/slices/mutation/[^/]+\.go$
+        text: name a file for people
+        linters: [forbidigo]
+      - path-except: internal/slices/graph/
+        text: Mutation port
         linters: [forbidigo]
       - path: _test\.go$
         linters: [forbidigo]
