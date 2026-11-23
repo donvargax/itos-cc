@@ -6789,7 +6789,7 @@ items:
   - id: T-246
     title: Document internal/processes' cancel, exit, reap and cleanup machine and hold it with a rapid state-machine test
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
