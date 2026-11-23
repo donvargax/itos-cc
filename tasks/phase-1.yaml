@@ -7722,3 +7722,41 @@
     commit the tests and the scenario first and see each test fail at its plain line on main. Out of
     scope: the mutation slice and its domain, the replay tool and its CI job, AGENTS.md,
     internal/processes.
+- id: T-246
+  type: test
+  title: Document internal/processes' cancel, exit, reap and cleanup machine and hold it with a rapid state-machine test
+  why: >
+    Step 2 of the person's agreed order for internal/processes (2026-11-22; step 1 was porting
+    pstack's fixes, T-242 and T-243; step 3, an explicit state machine in the code, comes after as
+    its own task). The person's prompt, scoped to this one machine, the cancel, exit, reap and
+    cleanup of an owned command and its process group: find its explicit and implicit states and
+    document its states, invariants and transition table in one file; identify invalid states or
+    transitions the code can actually reach, with evidence, including through retries and
+    concurrency; prioritize confirmed bugs by impact and group related fixes. The coordinator's
+    calls. The document is docs/state-machines.md, for this machine only: its states (a command
+    started, running, exited and not yet reaped, reaped; its group with members running, only
+    zombies, gone; the context live, cancelled, past its deadline; the cleanup budget's phases), its
+    invariants (among them: a command that exited is judged by its own exit status, never as an
+    internal error, T-242; nothing still running in the group passes; the cleanup ends within its
+    deadline, 6ec9027c and f779e4c8; every kill names the group, -pgid; each output reader's bytes
+    are seen only after the reader is done, T-243) and its transition table (each event: start,
+    exit, a member's exit, reap, cancel, the deadline, each kill(2) answer per system, ESRCH, EPERM
+    on darwin with only zombies, each /proc answer). Each invariant becomes a rapid check and each
+    transition a rapid action in one stateful test, rapid.T driving pgregory.net/rapid's state
+    machine through the existing seam, groupCalls (signal, wait, runnable, clock), with the system
+    as a value, so one Linux run plays every system's answers; the document and the test name the
+    same states, actions and invariants, and the document says which test checks each. T-239's and
+    T-242's rows of TestGroupEndsAreJudgedInEveryOrder stay as they are, the named regressions. The
+    run count is bounded in the test itself so ci.yml's time stays flat: record the seconds it adds,
+    measured on CI, in the close. No TLA+, no new CI job, no new dependency beyond rapid, already in
+    go.mod. A reachable invalid state the test finds is not fixed inside this item unless trivial (a
+    line or two, with its regression row): each becomes its own itos idea (itos work add) with the
+    failing rapid seed and the shrunk sequence of actions, grouped by cause, ranked by impact, and
+    listed in the document's findings section. The check is the stateful test; it greps the PASS
+    line (itos#276). A finding the test makes that is not fixed here must not leave the check red:
+    mark that invariant's check skipped with the idea's id, and say so in the document. Out of
+    scope: the refactor into an explicit state machine (step 3), every other package's machine,
+    Windows' unowned path beyond what the seam already models, the output and memory caps.
+  done_when:
+    - run: "go test ./internal/processes -run '^TestOwnedCommandMachine$' -v 2>&1 | grep -q -- '--- PASS: TestOwnedCommandMachine'"
+      timeout: 300
