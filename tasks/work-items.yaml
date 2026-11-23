@@ -6810,3 +6810,17 @@ items:
       list whose parts are each a regular expression, joined as alternatives, or an error that says
       to join tags with | when the expression holds a comma, would save a retry. A selection that
       matches nothing stays an error.
+  - id: cmd-unit-tests-slow
+    title: Find what makes cmd/itos-cc's unit tests take 5 minutes locally
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-251's worker (2026-11-23) ran go test ./cmd/itos-cc -count=1 -run 'Test[^S]', which skips
+      TestScenarios, and it took 310 s on this machine. Agents run that package's unit tests after
+      any change to the command line, so profile which tests take the time (go test -json's per-test
+      elapsed), and see whether they build the binary, start real language tools or repeat setup
+      that could be shared or moved to the CI shards, as language-tests-ci-selection did for Python,
+      Node and Kotlin.
