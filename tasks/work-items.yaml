@@ -6769,7 +6769,7 @@ items:
     title: Hand each owned command's output over from its reader instead of sharing its buffer, held by a race-detector step
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-244

@@ -7662,9 +7662,6 @@
     TestCommandRunnerKeepsPreconfiguredStreams; it greps the ok line. Red first: the check fails on
     main with WARNING: DATA RACE, before the fix; commit the ci.yml step first. Out of scope:
     cancelGroup (the cancel race's item), the other packages' goroutines, every other workflow.
-  done_when:
-    - run: go test -race ./internal/processes -run '^TestCommandRunnerKeepsPreconfiguredStreams$' 2>&1 | grep -q '^ok '
-      timeout: 300
 - id: T-244
   type: fix
   title: Pair same-named functions' results by UnitKey at the seams that still pair by name, for each pairing that fails here
