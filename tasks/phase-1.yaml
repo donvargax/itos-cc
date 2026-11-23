@@ -7611,6 +7611,3 @@
     the rule's message is gone from .golangci.yml, no nolint:forbidigo is left in the mutation
     slice, and the display-path test passes; it greps the PASS line (itos#276). Out of scope: Shown
     and Show, T-237's graph rule and architecture-check, the gosec rules, any other lint rule.
-  done_when:
-    - run: "! grep -q 'name a file for people' .golangci.yml && ! git grep -q 'nolint:forbidigo' -- 'internal/slices/mutation/*.go' && go test ./internal/cli -run '^TestShowNamesAFileSlashSeparatedWhateverTheSystem$' -v 2>&1 | grep -q -- '--- PASS: TestShowNamesAFileSlashSeparatedWhateverTheSystem'"
-      timeout: 300

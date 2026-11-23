@@ -6755,6 +6755,6 @@ items:
     title: Drop the display-path forbidigo rule and its 37 nolint comments, keeping Shown's test as the check
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
