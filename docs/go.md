@@ -1266,7 +1266,8 @@ the diff: the flag rewrites the golden from the same render the test compares, i
 key order, and on an unchanged help leaves it byte for byte (T-183).
 
 Properties use `pgregory.net/rapid` and live in the domain's tests; the `rapid` rule admits it
-in `internal/selection`'s alone. The selection property checks that paths and fragments only
+in `internal/selection`'s and, for the owned command's state machine (`docs/state-machines.md`, T-246),
+`internal/processes`' tests alone. The selection property checks that paths and fragments only
 narrow the working directory: what they select is exactly the files of `.` under a path that
 is there or holding one that is not. `tools/bin/domain-coverage` runs the domains' tests with
 `RAPID_CHECKS=1`, one new random case per property, as fast as an example test; the Go test

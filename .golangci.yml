@@ -712,6 +712,7 @@ linters:
           files:
             - $all
             - "!**/internal/selection/*_test.go"
+            - "!**/internal/processes/*_test.go"
           deny:
             - pkg: pgregory.net/rapid
               desc: "rapid is only for the domains' property tests, in a domain package's own tests; test anything else with ordinary tests and porttest's fakes"
