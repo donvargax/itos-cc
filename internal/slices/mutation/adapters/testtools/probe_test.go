@@ -35,7 +35,7 @@ func TestMain(m *testing.M) {
 		if err != nil {
 			os.Exit(91)
 		}
-		data, err := json.Marshal(map[string]any{"cwd": cwd, "args": os.Args[1:], "pythonpath": os.Getenv("PYTHONPATH")})
+		data, err := json.Marshal(map[string]any{"cwd": cwd, "args": os.Args[1:], "pythonpath": os.Getenv("PYTHONPATH"), "bytecode": os.Getenv("PYTHONDONTWRITEBYTECODE")})
 		if err != nil {
 			os.Exit(92)
 		}
@@ -103,6 +103,7 @@ func TestActualProbeUsesCallerCwdEnvironmentAndLastInterpreter(t *testing.T) {
 			Cwd        string
 			Args       []string
 			Pythonpath string
+			Bytecode   string
 		}
 		if err := json.Unmarshal(data, &observed); err != nil {
 			t.Fatal(err)
@@ -116,7 +117,7 @@ func TestActualProbeUsesCallerCwdEnvironmentAndLastInterpreter(t *testing.T) {
 			t.Fatal(err)
 		}
 		// Native short/long path spellings can differ for the same directory.
-		if !os.SameFile(actualDir, callerDir) || !reflect.DeepEqual(observed.Args, []string{"-c", "import pytest"}) || observed.Pythonpath != "independent-import-path" {
+		if !os.SameFile(actualDir, callerDir) || !reflect.DeepEqual(observed.Args, []string{"-c", "import pytest"}) || observed.Pythonpath != "independent-import-path" || observed.Bytecode != "1" {
 			t.Fatalf("actual probe request: %+v", observed)
 		}
 	}

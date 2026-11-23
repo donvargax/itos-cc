@@ -86,3 +86,24 @@ func TestAFreshPythonBaselineProbesPytestThroughItsExecutor(t *testing.T) {
 		})
 	}
 }
+
+// The pytest probe of a fresh baseline runs in the project's root with Python
+// told to write no bytecode (T-240), so a project's own pytest.py leaves no
+// __pycache__ behind.
+func TestTheFreshPytestProbeWritesNoBytecode(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "pyproject.toml"), []byte("[project]\nname = \"fixture\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var probe *exec.Cmd
+	execute := func(_ context.Context, cmd *exec.Cmd) error {
+		probe = cmd
+		return nil
+	}
+	if _, _, err := freshPythonCommand(t.Context(), filepath.Join(root, "mod.py"), true, nil, execute); err != nil {
+		t.Fatal(err)
+	}
+	if probe == nil || !slices.Contains(probe.Env, "PYTHONDONTWRITEBYTECODE=1") {
+		t.Errorf("the probe %v lets Python write bytecode", probe)
+	}
+}
