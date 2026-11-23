@@ -6668,11 +6668,11 @@ items:
       no fix counting from commit titles. Fix weighting comes later, from the work record's bug
       items, when that record exists.
   - id: gardener-compare
-    title: "compare <commit or range>: fixes and rework on the touched files, before against after"
+    title: "compare <commit or range>: itos-cc's code measures on the touched files, before against after"
     phase: 1
     owner: null
     status: todo
-    depends_on: [gardener-outcomes]
+    depends_on: [gardener-history-objects]
     kind: idea
     why: >
       For a commit or range: fixes and rework on the files it touched, in the window before against
@@ -6683,6 +6683,10 @@ items:
       rather than copying gardener's regex matching; any code copied carries gardener's notice in
       THIRD_PARTY_NOTICES. Starts after the pstack trial's two runs (the pstack copy and the itos
       arm, F1 to F5) finish, so it touches nothing either run is fixing.
+
+      Reworded by the person's call, 2026-11-23, which replaces the fixes and rework above: compare
+      gives before and after on the files a change touched using itos-cc's own code measures (crap,
+      dry, the mutation score where it is available, change frequency), not fix or rework shares.
   - id: gardener-weeds-ratchet
     title: Banned patterns counted through tree-sitter, and a ratchet gate when a count rises
     phase: 1
