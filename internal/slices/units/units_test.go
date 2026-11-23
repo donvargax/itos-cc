@@ -187,3 +187,24 @@ func TestTheContractGivesTheUnitsKeysAndExitCodes(t *testing.T) {
 		t.Errorf("JSON %q, exit codes %v", c.JSON, codes)
 	}
 }
+
+// A plain line names its file slash-separated on every system (bug-9), and
+// --json in the system's form. The UI is given Windows' separator as a
+// value, and the tree a file Windows names src\cart.ts, so Linux holds the
+// lines to it too.
+func TestRunsPlainLinesNameAWindowsFileWithSlashes(t *testing.T) {
+	windows := porttest.TreeOf(work, map[string]string{`src\cart.ts`: "export function total(p: number[]): number {\n  return p.length;\n}\n"}, nil)
+	for _, c := range []struct {
+		json bool
+		want string
+	}{
+		{false, "src/cart.ts:1-3"},
+		{true, `"file": "src\\cart.ts"`},
+	} {
+		var stdout, stderr strings.Builder
+		ui := &cli.UI{Stdout: &stdout, Stderr: &stderr, Dir: work, Separator: '\\'}
+		if code := (CLI{JSON: c.json}).Run(t.Context(), ui, Handler{Tree: windows, Surroundings: around}); code != 0 || !strings.Contains(stdout.String(), c.want) {
+			t.Errorf("--json %v: exit %d, stdout %q; want it to hold %s\n%s", c.json, code, stdout.String(), c.want, stderr.String())
+		}
+	}
+}

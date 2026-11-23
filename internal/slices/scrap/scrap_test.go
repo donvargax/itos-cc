@@ -236,3 +236,37 @@ func TestRunReportsAFailure(t *testing.T) {
 		t.Errorf("exit %d, stdout\n%s", code, stdout)
 	}
 }
+
+// A plain line names its file slash-separated on every system (bug-9), and
+// --json in the system's form. The UI is given Windows' separator as a
+// value, and the tree a file Windows names src\cart.test.ts, so Linux
+// holds the lines to it too.
+func TestRunsPlainLinesNameAWindowsFileWithSlashes(t *testing.T) {
+	windows := porttest.TreeOf(at(""), map[string]string{`src\cart.test.ts`: cartTest}, nil)
+	for _, c := range []struct {
+		command CLI
+		want    string
+	}{
+		{CLI{Verbose: true}, "src/cart.test.ts  "},
+		{CLI{Verbose: true}, ` src/cart.test.ts:2-2 "adds" `},
+		{CLI{JSON: true}, `"file": "src\\cart.test.ts"`},
+	} {
+		var stdout, stderr bytes.Buffer
+		ui := &cli.UI{Stdout: &stdout, Stderr: &stderr, Dir: at(""), Separator: '\\'}
+		h := handler(windows, store(""))
+		h.Name = fromWork
+		if code := c.command.Run(t.Context(), ui, h); code != 0 || !strings.Contains(stdout.String(), c.want) {
+			t.Errorf("%+v: exit %d, stdout %q; want it to hold %s\n%s", c.command, code, stdout.String(), c.want, stderr.String())
+		}
+	}
+}
+
+// fromWork names a file as the adapters did before the slices named it by
+// its path: from the working directory, /work, in the system's form.
+func fromWork(path string) string {
+	rel, err := filepath.Rel(at(""), path)
+	if err != nil {
+		return path
+	}
+	return rel
+}

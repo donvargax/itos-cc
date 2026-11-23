@@ -247,13 +247,14 @@ func TestAFailureStopsTheRun(t *testing.T) {
 // failed: build roots whose coverage command failed after writing it.
 type failedMeasurer struct {
 	covporttest.Measurer
-	failed []coverage.Unmeasured
+	failed, missing []coverage.Unmeasured
 }
 
 func (m failedMeasurer) Measure(ctx context.Context, req covport.Request) (*coverage.Report, covport.Failure) {
 	r, failure := m.Measurer.Measure(ctx, req)
 	if failure == nil {
 		r.SetFailed(m.failed...)
+		r.SetMissing(m.missing...)
 	}
 	return r, failure
 }
@@ -276,4 +277,41 @@ func TestWithoutAThresholdAGoTimeoutIsWarnedOf(t *testing.T) {
 	if strings.Contains(stderr, "timed out") {
 		t.Errorf("with a threshold, stderr %q warns of the timeout", stderr)
 	}
+}
+
+// A plain line names its file slash-separated on every system (bug-9), and
+// --json in the system's form. The UI is given Windows' separator as a
+// value, and the tree and coverage a file and a folder Windows names
+// src\board.go and src\slow, so Linux holds the lines to it too.
+func TestRunsPlainLinesNameAWindowsFileWithSlashes(t *testing.T) {
+	slow := coverage.Unmeasured{Dir: at(`src\slow`), Language: "go", Cause: covport.MeasuredNothing{}, Reason: "its coverage command failed"}.
+		WithTimeouts([]coverage.GoTimeout{{Package: "example.com/slow", Limit: "1s"}})
+	gone := coverage.Unmeasured{Dir: at(`src\gone`), Language: "go", Cause: covport.MeasuredNothing{}, Reason: "its coverage command failed"}
+	h := Handler{Tree: porttest.TreeOf(at(""), map[string]string{`src\board.go`: board}, nil),
+		Surroundings: langporttest.Surroundings{Dir: "/work"}, Store: &snapporttest.Store{RootDir: at("")},
+		Name:     fromWork,
+		Coverage: failedMeasurer{Measurer: measurer(), failed: []coverage.Unmeasured{slow}, missing: []coverage.Unmeasured{gone}}}
+	windows := func(c CLI) (stdout, stderr string) {
+		var out, errs bytes.Buffer
+		c.Run(t.Context(), &cli.UI{Stdout: &out, Stderr: &errs, Dir: at(""), Separator: '\\'}, h)
+		return out.String(), errs.String()
+	}
+	stdout, stderr := windows(CLI{CoverageReport: []string{"none.info"}})
+	if !strings.Contains(stdout, "board#place  src/board.go:3\n") || !strings.Contains(stderr, "no coverage for src/slow (go): ") || !strings.Contains(stderr, "no coverage for src/gone (go): ") {
+		t.Errorf("plain output\n%s\nstderr\n%s\nwant src/board.go:3, src/slow and src/gone", stdout, stderr)
+	}
+	stdout, _ = windows(CLI{NoCoverage: true, JSON: true})
+	if o := objectOf(t, stdout); len(o.Entries) != 2 || o.Entries[0].File != `src\board.go` {
+		t.Errorf("--json names %+v, want src\\board.go, the system's form", o.Entries)
+	}
+}
+
+// fromWork names a file as the adapters did before the slices named it by
+// its path: from the working directory, /work, in the system's form.
+func fromWork(path string) string {
+	rel, err := filepath.Rel(at(""), path)
+	if err != nil {
+		return path
+	}
+	return rel
 }

@@ -260,6 +260,27 @@ Feature: Command line
       And the exit code is 82
       # the first of 130, 80 and 81, 100, 82, 75, and 1, not the highest
 
+    # After mutation's plain lines named their file slash-separated (bug-9,
+    # bug-12, slice-68), units, crap, dry and scrap still named it in the
+    # system's form, src\board.go on Windows. Every plain line names a file
+    # through the UI's one constructor of a name for people, which prints it
+    # slash-separated; --json and the problems keep the system's form. Each
+    # slice's unit tests give the UI Windows' separator, so they hold its
+    # lines on any system. On Linux and macOS the scenario holds already, a
+    # guardrail; on Windows (cd.yml) it fails before the change at its Then.
+    @ID-CLI-31
+    Scenario Outline: Every command's plain lines name their file slash-separated
+      Given <given>
+      When I run "<command>"
+      Then a line of its standard output names "<file>" as written here, slash-separated
+
+      Examples:
+        | given                                                         | command                        | file              |
+        | src/board.go is in package board, tested by src/board_test.go | itos-cc units src              | src/board.go      |
+        | src/board.go is in package board, tested by src/board_test.go | itos-cc crap --no-coverage src | src/board.go      |
+        | src/board.go is in package board, tested by src/board_test.go | itos-cc scrap src              | src/board_test.go |
+        | src/new.ts duplicates a function in src/old.ts                | itos-cc dry src                | src/new.ts        |
+
   # Decision 38 (q-51, q-54): every command, serve and mutation run --count
   # included, stops on SIGINT and on SIGTERM, says once that it was
   # interrupted, reports the rule interrupted, exit 130 in --json, and exits
