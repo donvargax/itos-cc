@@ -157,16 +157,13 @@ func (p ownedPattern) holds(state ownedState) bool {
 }
 
 // String writes a pattern as a table cell does: component=value, in the
-// components' order, with a dash for none.
+// components' order.
 func (p ownedPattern) String() string {
 	var parts []string
 	for _, component := range ownedComponents {
 		if value, ok := p[component]; ok {
 			parts = append(parts, component+"="+value)
 		}
-	}
-	if len(parts) == 0 {
-		return "-"
 	}
 	return strings.Join(parts, ", ")
 }
