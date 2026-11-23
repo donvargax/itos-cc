@@ -160,7 +160,7 @@ func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 	found, err := h.Handle(ctx, Query{Paths: c.Paths, Changed: c.Changed, Tests: c.Tests})
 	result := listing{Units: []lang.Unit{}}
 	for _, u := range found.Units {
-		u.File = ui.Rel(u.File)
+		u.File = ui.Show(u.File).System()
 		result.Units = append(result.Units, u)
 	}
 	if err != nil {
@@ -170,8 +170,8 @@ func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		ui.Line(fmt.Sprintf("%d sources left out by exclude in itos-cc.yaml", found.Excluded))
 	}
 	if !c.JSON {
-		for _, u := range result.Units {
-			_, _ = fmt.Fprintf(ui.Stdout, "%s:%d-%d  %s#%s  %s\n", u.File, u.StartLine, u.EndLine, u.Namespace, u.Name, u.Kind)
+		for _, u := range found.Units {
+			_, _ = fmt.Fprintf(ui.Stdout, "%s:%d-%d  %s#%s  %s\n", ui.Show(u.File), u.StartLine, u.EndLine, u.Namespace, u.Name, u.Kind)
 		}
 	}
 	return ui.Emit(c.JSON, result, nil)

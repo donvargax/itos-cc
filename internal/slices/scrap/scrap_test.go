@@ -40,19 +40,9 @@ func tree() porttest.Tree {
 	return porttest.TreeOf(at(""), map[string]string{"src/cart.ts": "", "src/cart.test.ts": cartTest}, nil)
 }
 
-// fromSrc names a file as a person in /work/src reads it, so names and
-// scrap.json's keys, from /work, differ.
-func fromSrc(path string) string {
-	rel, err := filepath.Rel(at("src"), path)
-	if err != nil {
-		return path
-	}
-	return filepath.ToSlash(rel)
-}
-
 // handler is a handler over t, its snapshots kept in store.
 func handler(t porttest.Tree, store *snapporttest.Store) Handler {
-	return Handler{Tree: t, Surroundings: langporttest.Surroundings{Dir: "/work/src"}, Store: store, Name: fromSrc}
+	return Handler{Tree: t, Surroundings: langporttest.Surroundings{Dir: "/work/src"}, Store: store}
 }
 
 // store is a store at /work holding scrap.json as given, none when "".
@@ -78,16 +68,16 @@ func recordedFiles(t *testing.T, s *snapporttest.Store) []string {
 	return files
 }
 
-// Handle names each report by Name, compares it with the last snapshot's
-// report of its file, and records it from the project root beside the
-// files this run did not measure.
+// Handle names each report by its path as selected, compares it with the
+// last snapshot's report of its file, and records it from the project root
+// beside the files this run did not measure.
 func TestHandleMeasuresComparesAndRecords(t *testing.T) {
 	s := store(`{"version": 1, "files": [{"file": "src/cart.test.ts", "pressure": 99}, {"file": "lib/old.test.ts", "pressure": 1}]}`)
 	found, err := handler(tree(), s).Handle(t.Context(), Query{})
 	if err != nil || found.NoTests || found.Ignored != nil || len(found.Reports) != 1 {
 		t.Fatalf("Handle() = %+v, %v; want one report", found, err)
 	}
-	if r := found.Reports[0]; r.File != "cart.test.ts" || r.Examples != 2 || r.Compare == nil || r.Compare.Verdict != "improved" {
+	if r := found.Reports[0]; r.File != at("src/cart.test.ts") || r.Examples != 2 || r.Compare == nil || r.Compare.Verdict != "improved" {
 		t.Errorf("report %+v, compare %+v; want cart.test.ts's two examples, improved", r, r.Compare)
 	}
 	if got := recordedFiles(t, s); !slices.Equal(got, []string{"lib/old.test.ts", "src/cart.test.ts"}) {
@@ -157,7 +147,7 @@ func TestHandleStopsAtAFailure(t *testing.T) {
 }
 
 // ports are the Ports cmd's adapters give the handler, held in memory: the
-// tree, the store and files named from /work/src.
+// tree and the store.
 type ports struct {
 	tree  porttest.Tree
 	store *snapporttest.Store
@@ -168,11 +158,9 @@ func (p ports) LangSurroundings() langport.Surroundings {
 	return langporttest.Surroundings{Dir: "/work/src"}
 }
 func (p ports) SnapshotStore() snapport.Store { return p.store }
-func (p ports) Rel(path string) string        { return fromSrc(path) }
 
 // NewHandler builds the handler over its Ports: the test files their tree
-// holds, named by their Rel, recorded in their store. It reads nothing, so
-// it never fails.
+// holds, recorded in their store. It reads nothing, so it never fails.
 func TestNewHandlerIsBuiltOverItsPorts(t *testing.T) {
 	s := store("")
 	h, err := NewHandler(t.Context(), ports{tree: tree(), store: s})
@@ -180,19 +168,21 @@ func TestNewHandlerIsBuiltOverItsPorts(t *testing.T) {
 		t.Fatal(err)
 	}
 	found, err := h.Handle(t.Context(), Query{})
-	if err != nil || len(found.Reports) != 1 || found.Reports[0].File != "cart.test.ts" {
-		t.Errorf("Handle() = %+v, %v; want cart.test.ts's report, named by Rel", found, err)
+	if err != nil || len(found.Reports) != 1 || found.Reports[0].File != at("src/cart.test.ts") {
+		t.Errorf("Handle() = %+v, %v; want cart.test.ts's report, by its path", found, err)
 	}
 	if got := recordedFiles(t, s); !slices.Equal(got, []string{"src/cart.test.ts"}) {
 		t.Errorf("scrap.json records %q, want the file measured, in the Ports' store", got)
 	}
 }
 
-// run is c run over h, and what it printed on stdout and stderr.
+// run is c run over h from /work/src, below the project root /work, so
+// the names it prints differ from scrap.json's keys, and what it printed on
+// stdout and stderr.
 func run(t *testing.T, c CLI, h Handler) (code int, stdout, stderr string) {
 	t.Helper()
 	var out, errs bytes.Buffer
-	code = c.Run(t.Context(), &cli.UI{Stdout: &out, Stderr: &errs}, h)
+	code = c.Run(t.Context(), &cli.UI{Stdout: &out, Stderr: &errs, Dir: at("src")}, h)
 	return code, out.String(), errs.String()
 }
 
@@ -254,19 +244,8 @@ func TestRunsPlainLinesNameAWindowsFileWithSlashes(t *testing.T) {
 		var stdout, stderr bytes.Buffer
 		ui := &cli.UI{Stdout: &stdout, Stderr: &stderr, Dir: at(""), Separator: '\\'}
 		h := handler(windows, store(""))
-		h.Name = fromWork
 		if code := c.command.Run(t.Context(), ui, h); code != 0 || !strings.Contains(stdout.String(), c.want) {
 			t.Errorf("%+v: exit %d, stdout %q; want it to hold %s\n%s", c.command, code, stdout.String(), c.want, stderr.String())
 		}
 	}
-}
-
-// fromWork names a file as the adapters did before the slices named it by
-// its path: from the working directory, /work, in the system's form.
-func fromWork(path string) string {
-	rel, err := filepath.Rel(at(""), path)
-	if err != nil {
-		return path
-	}
-	return rel
 }

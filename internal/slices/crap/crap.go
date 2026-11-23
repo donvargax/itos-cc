@@ -10,11 +10,12 @@
 // Surroundings port what surrounds it, the slice's own domain, its domain
 // subpackage, scores each function, and the snapshot domain names each
 // file from the project root for its Store port to record (Handle). Run
-// writes the worst first, each file named from the working directory, and
-// judges the threshold. The slice reads and runs nothing itself. A failure
-// is the selection, snapshot or coverage domain's, which cmd's classifiers
-// turn into problems, or lang's, an internal one; Run reports it through
-// the UI. It has no classifier of its own.
+// writes the worst first, each file named from the working directory as
+// the UI shows it, and judges the threshold. The slice reads and runs
+// nothing itself. A failure is the selection, snapshot or coverage
+// domain's, which cmd's classifiers turn into problems, or lang's, an
+// internal one; Run reports it through the UI. It has no classifier of its
+// own.
 //
 // Command declares the command to cmd, which assembles it into its one
 // model (ADR-0051), and Ports are the ports its handler is built over,
@@ -24,7 +25,7 @@ package crap
 import (
 	"context"
 	"fmt"
-	"io"
+	"slices"
 	"text/tabwriter"
 
 	"github.com/donvargax/itos-cc/internal/cli"
@@ -125,17 +126,15 @@ type Query struct {
 // Handler is the crap command's application: the working tree it selects
 // and reads files through, what surrounds those files, which lang asks
 // about to parse them, the store its snapshot is recorded in, the coverage
-// port it measures through, Name, the name a person reads a file by, from
-// the working directory, and Exclude, the sources the project's settings
-// leave out. cmd gives each through Ports (NewHandler), choosing the
-// adapters behind them and reading the settings. No value of a command
+// port it measures through, and Exclude, the sources the project's
+// settings leave out. cmd gives each through Ports (NewHandler), choosing
+// the adapters behind them and reading the settings. No value of a command
 // line is read here.
 type Handler struct {
 	Tree         port.Tree
 	Surroundings langport.Surroundings
 	Store        snapport.Store
 	Coverage     coverage.Measurer
-	Name         func(path string) string
 	Exclude      selection.Exclusion
 }
 
@@ -143,30 +142,28 @@ type Handler struct {
 // adapters give it: the working tree it selects and reads files through,
 // what surrounds those files, the store its snapshot is recorded in, the
 // coverage domain's Measurer, which runs each language's tests or reads
-// the reports the coverage flags name, Rel, a path named from the working
-// directory as a person reads it, and the sources the project's settings
-// exclude, which cmd reads under the context of the Run that asks for the
-// handler and whose failure it words as a person reads it.
+// the reports the coverage flags name, and the sources the project's
+// settings exclude, which cmd reads under the context of the Run that asks
+// for the handler and whose failure it words as a person reads it.
 type Ports interface {
 	SelectionTree() port.Tree
 	LangSurroundings() langport.Surroundings
 	SnapshotStore() snapport.Store
 	CoverageMeasurer() coverage.Measurer
-	Rel(path string) string
 	SelectionExclusion(ctx context.Context) (selection.Exclusion, error)
 }
 
 // NewHandler is the handler over p's tree, surroundings, store and coverage
-// Measurer, naming each file by p's Rel and leaving out the sources p's
-// settings exclude, read under ctx; their failure is returned as p gave it,
-// never wrapped, so the problem cmd worded is the one the person reads.
+// Measurer, leaving out the sources p's settings exclude, read under ctx;
+// their failure is returned as p gave it, never wrapped, so the problem cmd
+// worded is the one the person reads.
 func NewHandler(ctx context.Context, p Ports) (Handler, error) {
 	exclude, err := p.SelectionExclusion(ctx)
 	if err != nil {
 		return Handler{}, err
 	}
 	return Handler{Tree: p.SelectionTree(), Surroundings: p.LangSurroundings(), Store: p.SnapshotStore(),
-		Coverage: p.CoverageMeasurer(), Name: p.Rel, Exclude: exclude}, nil
+		Coverage: p.CoverageMeasurer(), Exclude: exclude}, nil
 }
 
 // Select is the sources and tests q's paths and changed select, less the
@@ -176,9 +173,10 @@ func (h Handler) Select(ctx context.Context, q Query) (selection.Files, error) {
 }
 
 // Found is what Handle found: every function of the sources scored, each
-// file by Name, each build root or report coverage did not measure, and
-// each build root whose coverage command failed after writing its report
-// as a Go package's tests timed out, which crap reads as measured.
+// file by its path as selected, each build root or report coverage did not
+// measure, and each build root whose coverage command failed after writing
+// its report as a Go package's tests timed out, which crap reads as
+// measured.
 type Found struct {
 	Entries    []domain.Entry
 	Unmeasured []coverage.Unmeasured
@@ -212,7 +210,7 @@ func (h Handler) Handle(ctx context.Context, q Query, sources []string) (Found, 
 		if err != nil {
 			return Found{}, err
 		}
-		scored := domain.Analyze(f, h.Name(path), report, measured)
+		scored := domain.Analyze(f, path, report, measured)
 		f.Close()
 		entries = append(entries, scored...)
 		for _, e := range scored {
@@ -278,32 +276,31 @@ func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 	if c.Top > 0 && c.Top < len(worst) {
 		worst = worst[:c.Top]
 	}
-	out.Entries = worst
+	out.Entries = slices.Clone(worst)
+	for i := range out.Entries {
+		out.Entries[i].File = ui.Show(out.Entries[i].File).System()
+	}
 	for _, m := range found.Unmeasured {
-		if m.Dir != "" {
-			m.Dir = ui.Rel(m.Dir)
-		}
-		out.Unmeasured = append(out.Unmeasured, m)
+		out.Unmeasured = append(out.Unmeasured, systemForm(ui, m))
 	}
 	if !c.JSON {
-		printTable(ui.Stdout, worst)
+		printTable(ui, worst)
 	}
 	if c.Threshold == nil {
 		// A coverage command whose owned group did not end is a problem
 		// with or without one (ADR-0021).
 		var problems []*cli.Problem
-		for _, m := range out.Unmeasured {
+		for _, m := range found.Unmeasured {
 			if _, failed := m.Cause.(covport.CleanupFailed); failed {
-				problems = append(problems, ui.Problems(m)...)
+				problems = append(problems, ui.Problems(systemForm(ui, m))...)
 				continue
 			}
-			ui.Line("no coverage for " + m.String())
+			ui.Line(noCoverage(ui, m))
 		}
 		// Its scores stand on what the run measured before a package's
 		// tests timed out, so it is warned of too (slice-47).
 		for _, m := range found.TimedOut {
-			m.Dir = ui.Rel(m.Dir)
-			ui.Line("no coverage for " + m.String())
+			ui.Line(noCoverage(ui, m))
 		}
 		return ui.Emit(c.JSON, out, problems)
 	}
@@ -320,7 +317,7 @@ func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		problems = append(problems, cli.NewProblem(cli.CodeNo, "crap.threshold",
 			fmt.Sprintf("%s#%s scores %.1f, above the threshold %.1f", e.Namespace, e.Name, *e.CRAP, threshold),
 			"Cover it with tests or split it.").
-			With("file", e.File).With("line", e.StartLine).With("function", e.Namespace+"#"+e.Name).
+			With("file", ui.Show(e.File).System()).With("line", e.StartLine).With("function", e.Namespace+"#"+e.Name).
 			With("crap", *e.CRAP).With("threshold", threshold))
 	}
 	return ui.Emit(c.JSON, out, problems)
@@ -339,10 +336,24 @@ func (c CLI) query() Query {
 	}}
 }
 
-// printTable writes entries to w as crap's table: the CRAP, CC and COV%
-// columns aligned right, then the function and where it starts.
-func printTable(w io.Writer, entries []domain.Entry) {
-	t := tabwriter.NewWriter(w, 0, 0, 2, ' ', tabwriter.AlignRight)
+// systemForm is m as --json and the problems name it, its folder from the
+// working directory in the system's form.
+func systemForm(ui *cli.UI, m coverage.Unmeasured) coverage.Unmeasured {
+	m.Dir = ui.Show(m.Dir).System()
+	return m
+}
+
+// noCoverage is the line that warns of m, its folder from the working
+// directory, slash-separated.
+func noCoverage(ui *cli.UI, m coverage.Unmeasured) string {
+	m.Dir = ui.Show(m.Dir).String()
+	return "no coverage for " + m.String()
+}
+
+// printTable writes entries on ui's stdout as crap's table: the CRAP, CC
+// and COV% columns aligned right, then the function and where it starts.
+func printTable(ui *cli.UI, entries []domain.Entry) {
+	t := tabwriter.NewWriter(ui.Stdout, 0, 0, 2, ' ', tabwriter.AlignRight)
 	_, _ = fmt.Fprintln(t, "CRAP\tCC\tCOV%\t \t")
 	for _, e := range entries {
 		score, pct := "N/A", "N/A"
@@ -350,7 +361,7 @@ func printTable(w io.Writer, entries []domain.Entry) {
 			score = fmt.Sprintf("%.1f", *e.CRAP)
 			pct = fmt.Sprintf("%.1f", *e.Coverage)
 		}
-		_, _ = fmt.Fprintf(t, "%s\t%d\t%s\t \t%s#%s  %s:%d\n", score, e.Complexity, pct, e.Namespace, e.Name, e.File, e.StartLine)
+		_, _ = fmt.Fprintf(t, "%s\t%d\t%s\t \t%s#%s  %s:%d\n", score, e.Complexity, pct, e.Namespace, e.Name, ui.Show(e.File), e.StartLine)
 	}
 	_ = t.Flush()
 }

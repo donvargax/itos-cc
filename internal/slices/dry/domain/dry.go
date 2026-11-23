@@ -124,10 +124,10 @@ type Form struct {
 }
 
 // Forms fingerprints every unit of f, a parsed file, that is large enough to
-// compare, each Side naming the file name. The caller gives the name a
-// person reads, since it is the key Groups, Compare and the pairs sort and
-// pair by, and keeps f open until Forms returns; the forms hold nothing of
-// its tree.
+// compare, each Side naming the file name. The caller gives the file's
+// path as it selected it, the key Groups, Compare and the pairs sort and
+// pair by, and names it for people itself; it keeps f open until Forms
+// returns, and the forms hold nothing of its tree.
 func Forms(f *lang.File, name string, opt Options) []Form {
 	var forms []Form
 	for _, u := range f.Units {

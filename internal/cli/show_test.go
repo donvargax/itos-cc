@@ -22,3 +22,12 @@ func TestShowNamesAFileSlashSeparatedWhateverTheSystem(t *testing.T) {
 		}
 	}
 }
+
+func TestShowKeepsTheSystemsFormForJSONAndTheProblems(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	ui := &UI{Dir: dir}
+	if got, want := ui.Show(filepath.Join(dir, "src", "board.go")).System(), filepath.Join("src", "board.go"); got != want {
+		t.Errorf("System() = %q, want %q", got, want)
+	}
+}

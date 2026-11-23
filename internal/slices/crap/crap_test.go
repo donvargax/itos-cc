@@ -43,21 +43,11 @@ var files = map[string]string{
 	"none.info":         "SF:src/board.go\nDA:4,0\nDA:5,0\nDA:7,0\nDA:11,0\nend_of_record\n",
 }
 
-// fromSrc names a file as a person in /work/src reads it, so names and
-// crap.json's keys, from /work, differ.
-func fromSrc(path string) string {
-	rel, err := filepath.Rel(at("src"), path)
-	if err != nil {
-		return path
-	}
-	return filepath.ToSlash(rel)
-}
-
 // handler is a handler over the project, its coverage measured by m, its
 // snapshots kept in store.
 func handler(m coverage.Measurer, store *snapporttest.Store) Handler {
 	return Handler{Tree: porttest.TreeOf(at(""), files, nil), Surroundings: langporttest.Surroundings{Dir: "/work/src"},
-		Store: store, Coverage: m, Name: fromSrc}
+		Store: store, Coverage: m}
 }
 
 // measurer reads the project's reports from /work.
@@ -70,9 +60,8 @@ func measurer() covporttest.Measurer {
 }
 
 // ports are the Ports cmd's adapters give the handler, held in memory: the
-// project's tree, the store, the coverage measured by measurer, files named
-// from /work/src, and the exclusion the settings give or the failure
-// reading them meets.
+// project's tree, the store, the coverage measured by measurer, and the
+// exclusion the settings give or the failure reading them meets.
 type ports struct {
 	store   *snapporttest.Store
 	exclude selection.Exclusion
@@ -85,16 +74,15 @@ func (p ports) LangSurroundings() langport.Surroundings {
 }
 func (p ports) SnapshotStore() snapport.Store       { return p.store }
 func (p ports) CoverageMeasurer() coverage.Measurer { return measurer() }
-func (p ports) Rel(path string) string              { return fromSrc(path) }
 func (p ports) SelectionExclusion(context.Context) (selection.Exclusion, error) {
 	return p.exclude, p.failure
 }
 
 // NewHandler builds the handler over its Ports: the sources their tree
 // holds, less those their settings exclude, measured by their Measurer,
-// named by their Rel and recorded in their store. A failure reading the
-// settings is returned as the Ports gave it, never wrapped, so cmd's
-// config.invalid is the problem the person reads.
+// each by its path as selected, and recorded in their store. A failure
+// reading the settings is returned as the Ports gave it, never wrapped, so
+// cmd's config.invalid is the problem the person reads.
 func TestNewHandlerIsBuiltOverItsPorts(t *testing.T) {
 	store := &snapporttest.Store{RootDir: at("")}
 	h, err := NewHandler(t.Context(), ports{store: store})
@@ -107,8 +95,8 @@ func TestNewHandlerIsBuiltOverItsPorts(t *testing.T) {
 		t.Fatal(err)
 	}
 	found, err := h.Handle(t.Context(), q, chosen.Sources)
-	if err != nil || len(found.Entries) != 2 || found.Entries[0].File != "board.go" || found.Entries[0].CRAP == nil || store.Snapshots["crap.json"] == "" {
-		t.Errorf("Handle() = %+v, %v, recorded %v; want board.go's functions scored, named by Rel, in the store", found, err, store.Snapshots)
+	if err != nil || len(found.Entries) != 2 || found.Entries[0].File != at("src/board.go") || found.Entries[0].CRAP == nil || store.Snapshots["crap.json"] == "" {
+		t.Errorf("Handle() = %+v, %v, recorded %v; want board.go's functions scored, by its path, in the store", found, err, store.Snapshots)
 	}
 	h, err = NewHandler(t.Context(), ports{store: store, exclude: selection.Exclusion{Root: at(""), Exclude: []string{"**/board.go"}}})
 	if err != nil {
@@ -123,7 +111,9 @@ func TestNewHandlerIsBuiltOverItsPorts(t *testing.T) {
 	}
 }
 
-// run is c run over h, and what it printed on stdout and stderr.
+// run is c run over h from /work/src, below the project root /work, so
+// the names it prints differ from crap.json's keys, and what it printed on
+// stdout and stderr.
 func run(t *testing.T, c CLI, h Handler) (code int, stdout, stderr string) {
 	t.Helper()
 	var out, errs bytes.Buffer
@@ -149,8 +139,9 @@ func objectOf(t *testing.T, stdout string) object {
 
 func ptr(f float64) *float64 { return &f }
 
-// Each function is named by Name and scored by the report named, worst
-// first, and crap.json records every one from the project root.
+// Each function is named from the working directory and scored by the
+// report named, worst first, and crap.json records every one from the
+// project root.
 func TestRunScoresAndRecordsEveryFunction(t *testing.T) {
 	store := &snapporttest.Store{RootDir: at("")}
 	code, stdout, stderr := run(t, CLI{CoverageReport: []string{"none.info"}}, handler(measurer(), store))
@@ -236,7 +227,7 @@ func TestAFailureStopsTheRun(t *testing.T) {
 	if !errors.Is(err, full) {
 		t.Errorf("an unwritable snapshot: %v", err)
 	}
-	code, stdout, _ := run(t, CLI{JSON: true}, Handler{Tree: porttest.Tree{Dir: at("")}, Coverage: measurer(), Name: fromSrc,
+	code, stdout, _ := run(t, CLI{JSON: true}, Handler{Tree: porttest.Tree{Dir: at("")}, Coverage: measurer(),
 		Store: &snapporttest.Store{RootDir: at("")}, Surroundings: langporttest.Surroundings{}})
 	if o := objectOf(t, stdout); code != 0 || len(o.Entries) != 0 {
 		t.Errorf("an empty tree: exit %d, %+v", code, o)
@@ -289,7 +280,6 @@ func TestRunsPlainLinesNameAWindowsFileWithSlashes(t *testing.T) {
 	gone := coverage.Unmeasured{Dir: at(`src\gone`), Language: "go", Cause: covport.MeasuredNothing{}, Reason: "its coverage command failed"}
 	h := Handler{Tree: porttest.TreeOf(at(""), map[string]string{`src\board.go`: board}, nil),
 		Surroundings: langporttest.Surroundings{Dir: "/work"}, Store: &snapporttest.Store{RootDir: at("")},
-		Name:     fromWork,
 		Coverage: failedMeasurer{Measurer: measurer(), failed: []coverage.Unmeasured{slow}, missing: []coverage.Unmeasured{gone}}}
 	windows := func(c CLI) (stdout, stderr string) {
 		var out, errs bytes.Buffer
@@ -304,14 +294,4 @@ func TestRunsPlainLinesNameAWindowsFileWithSlashes(t *testing.T) {
 	if o := objectOf(t, stdout); len(o.Entries) != 2 || o.Entries[0].File != `src\board.go` {
 		t.Errorf("--json names %+v, want src\\board.go, the system's form", o.Entries)
 	}
-}
-
-// fromWork names a file as the adapters did before the slices named it by
-// its path: from the working directory, /work, in the system's form.
-func fromWork(path string) string {
-	rel, err := filepath.Rel(at(""), path)
-	if err != nil {
-		return path
-	}
-	return rel
 }

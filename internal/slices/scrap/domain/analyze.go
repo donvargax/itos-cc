@@ -124,10 +124,11 @@ func smells(m Metrics) []string {
 	return out
 }
 
-// Analyze measures one parsed test file. rel names it in the report.
-func Analyze(f *lang.File, rel string) FileReport {
+// Analyze measures one parsed test file. name names it in the report, as
+// the caller selected it.
+func Analyze(f *lang.File, name string) FileReport {
 	examples, setup := Extract(f)
-	r := FileReport{File: rel, Language: f.Spec.Name, Examples: len(examples), SetupLines: setup,
+	r := FileReport{File: name, Language: f.Spec.Name, Examples: len(examples), SetupLines: setup,
 		Recommendations: []Recommendation{}, Clusters: []Cluster{}, Details: []ExampleReport{}}
 	var total float64
 	measurer := newMeasurer(f)

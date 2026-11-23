@@ -171,18 +171,3 @@ func Changed() ([]string, error) {
 	}
 	return paths, nil
 }
-
-// Rel returns path relative to the working directory when it is inside it,
-// and path unchanged otherwise. Reports use it so output reads like the
-// command line that produced it.
-func Rel(path string) string {
-	wd, err := os.Getwd()
-	if err != nil {
-		return path
-	}
-	rel, err := filepath.Rel(wd, path)
-	if err != nil || strings.HasPrefix(rel, "..") {
-		return path
-	}
-	return rel
-}

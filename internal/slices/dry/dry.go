@@ -97,8 +97,7 @@ type Query struct {
 
 // Handler is the dry command's application: the working tree it selects
 // and reads files through, what surrounds those files, which lang asks
-// about to parse them, the store its snapshot is recorded in, Name, the
-// name a person reads a file by, from the working directory, and Exclude,
+// about to parse them, the store its snapshot is recorded in, and Exclude,
 // the sources the project's settings leave out. cmd gives each through
 // Ports (NewHandler), choosing the adapters behind them and reading the
 // settings. No value of a command line is read here.
@@ -106,35 +105,32 @@ type Handler struct {
 	Tree         port.Tree
 	Surroundings langport.Surroundings
 	Store        snapport.Store
-	Name         func(path string) string
 	Exclude      selection.Exclusion
 }
 
 // Ports are what the dry command reaches the world through, which cmd's
 // adapters give it: the working tree it selects and reads files through,
-// what surrounds those files, the store its snapshot is recorded in, Rel,
-// a path named from the working directory as a person reads it, and the
-// sources the project's settings exclude, which cmd reads under the context
-// of the Run that asks for the handler and whose failure it words as a
-// person reads it.
+// what surrounds those files, the store its snapshot is recorded in, and
+// the sources the project's settings exclude, which cmd reads under the
+// context of the Run that asks for the handler and whose failure it words
+// as a person reads it.
 type Ports interface {
 	SelectionTree() port.Tree
 	LangSurroundings() langport.Surroundings
 	SnapshotStore() snapport.Store
-	Rel(path string) string
 	SelectionExclusion(ctx context.Context) (selection.Exclusion, error)
 }
 
-// NewHandler is the handler over p's tree, surroundings and store, naming
-// each file by p's Rel and leaving out the sources p's settings exclude,
-// read under ctx; their failure is returned as p gave it, never wrapped, so
-// the problem cmd worded is the one the person reads.
+// NewHandler is the handler over p's tree, surroundings and store, leaving
+// out the sources p's settings exclude, read under ctx; their failure is
+// returned as p gave it, never wrapped, so the problem cmd worded is the
+// one the person reads.
 func NewHandler(ctx context.Context, p Ports) (Handler, error) {
 	exclude, err := p.SelectionExclusion(ctx)
 	if err != nil {
 		return Handler{}, err
 	}
-	return Handler{Tree: p.SelectionTree(), Surroundings: p.LangSurroundings(), Store: p.SnapshotStore(), Name: p.Rel, Exclude: exclude}, nil
+	return Handler{Tree: p.SelectionTree(), Surroundings: p.LangSurroundings(), Store: p.SnapshotStore(), Exclude: exclude}, nil
 }
 
 // Found is what Handle found: the pairs at or above the threshold, best
@@ -152,10 +148,10 @@ type Found struct {
 // Handle finds the duplicates q asks for and records them in dry.json,
 // passing ctx on to the domains, lang and the ports, the sources the
 // handler's Exclude names left out of the files checked and of the whole
-// project they are checked against alike. Each side names its file by
-// Name, and dry.json by its path from the project root (snapshot.Key). A
-// failure to select or read stops it with nothing found; a failure to
-// record what was found returns it beside the failure.
+// project they are checked against alike. Each side names its file by its
+// path as selected, and dry.json by its path from the project root
+// (snapshot.Key). A failure to select or read stops it with nothing found;
+// a failure to record what was found returns it beside the failure.
 func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 	chosen, err := selection.Select(ctx, h.Tree, q.Paths, q.Changed, h.Exclude)
 	if err != nil {
@@ -187,9 +183,8 @@ func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 		if err != nil {
 			return Found{}, err
 		}
-		name := h.Name(path)
-		keys[name] = snapshot.Key(root, path)
-		forms = append(forms, domain.Forms(f, name, q.Options)...)
+		keys[path] = snapshot.Key(root, path)
+		forms = append(forms, domain.Forms(f, path, q.Options)...)
 		f.Close()
 	}
 	found := Found{Candidates: []domain.Candidate{}, Excluded: chosen.Excluded}
@@ -197,7 +192,7 @@ func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 		found.Candidates = c
 	}
 	found.Groups = domain.Groups(found.Candidates)
-	candidates, groups := fromRoot(found.Candidates, found.Groups, keys)
+	candidates, groups := renamed(found.Candidates, found.Groups, func(path string) string { return keys[path] })
 	if failure := h.Store.Write(ctx, "dry.json", recorded{Version: snapshot.Version, Threshold: q.Options.Threshold,
 		Candidates: candidates, Groups: groups}); failure != nil {
 		return found, failure
@@ -230,12 +225,12 @@ func union(a, b []string) []string {
 	return out
 }
 
-// fromRoot is candidates and groups as dry.json records them: each file by
-// its key, from the project root, while output names it from the working
-// directory.
-func fromRoot(candidates []domain.Candidate, groups []domain.Group, keys map[string]string) ([]domain.Candidate, []domain.Group) {
+// renamed is candidates and groups with each side's file named by name,
+// from its path as selected: dry.json's key, from the project root, or the
+// system's form --json prints, from the working directory.
+func renamed(candidates []domain.Candidate, groups []domain.Group, name func(path string) string) ([]domain.Candidate, []domain.Group) {
 	side := func(s domain.Side) domain.Side {
-		s.File = keys[s.File]
+		s.File = name(s.File)
 		return s
 	}
 	var cs []domain.Candidate
@@ -277,11 +272,12 @@ func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 	opt := domain.Options{Threshold: c.Threshold, MinLines: c.MinLines, MinNodes: c.MinNodes}
 	found, err := h.Handle(ctx, Query{Paths: c.Paths, Changed: c.Changed, Options: opt})
 	out := result{Threshold: opt.Threshold, Candidates: []domain.Candidate{}, Groups: []domain.Group{}}
-	if found.Candidates != nil {
-		out.Candidates = found.Candidates
+	candidates, groups := renamed(found.Candidates, found.Groups, func(path string) string { return ui.Show(path).System() })
+	if candidates != nil {
+		out.Candidates = candidates
 	}
-	if found.Groups != nil {
-		out.Groups = found.Groups
+	if groups != nil {
+		out.Groups = groups
 	}
 	if err != nil {
 		return ui.Emit(c.JSON, out, ui.Problems(err))
@@ -294,14 +290,14 @@ func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		return ui.Emit(c.JSON, out, nil)
 	}
 	if !c.JSON {
-		for _, g := range out.Groups {
+		for _, g := range found.Groups {
 			score := fmt.Sprintf("%.2f", g.MaxScore)
 			if g.MinScore != g.MaxScore {
 				score = fmt.Sprintf("%.2f–%.2f", g.MinScore, g.MaxScore)
 			}
 			_, _ = fmt.Fprintf(ui.Stdout, "DUPLICATE score=%s %s\n", score, g.Language)
 			for _, s := range g.Members {
-				_, _ = fmt.Fprintf(ui.Stdout, "  %s:%d-%d  %s#%s\n", s.File, s.StartLine, s.EndLine, s.Namespace, s.Name)
+				_, _ = fmt.Fprintf(ui.Stdout, "  %s:%d-%d  %s#%s\n", ui.Show(s.File), s.StartLine, s.EndLine, s.Namespace, s.Name)
 			}
 		}
 	}

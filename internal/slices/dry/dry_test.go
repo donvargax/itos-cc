@@ -65,19 +65,9 @@ func tree() porttest.Tree {
 	}, nil)
 }
 
-// fromSrc names a file as a person in /work/src reads it, so names and
-// dry.json's keys, from /work, differ.
-func fromSrc(path string) string {
-	rel, err := filepath.Rel(at("src"), path)
-	if err != nil {
-		return path
-	}
-	return filepath.ToSlash(rel)
-}
-
 // handler is a handler over t, its snapshots kept in store.
 func handler(t porttest.Tree, store *snapporttest.Store) Handler {
-	return Handler{Tree: t, Surroundings: langporttest.Surroundings{Dir: "/work/src"}, Store: store, Name: fromSrc}
+	return Handler{Tree: t, Surroundings: langporttest.Surroundings{Dir: "/work/src"}, Store: store}
 }
 
 func query(paths ...string) Query { return Query{Paths: paths, Options: domain.Defaults} }
@@ -97,15 +87,15 @@ func TestTheDefaultsAreTheDomains(t *testing.T) {
 	}
 }
 
-// What Handle finds names each file as Name gives it, and what it records
-// names it from the project root.
+// What Handle finds names each file by its path as selected, and what it
+// records names it from the project root.
 func TestHandleFindsThePairAndRecordsIt(t *testing.T) {
 	store := &snapporttest.Store{RootDir: at("")}
 	found, err := handler(tree(), store).Handle(t.Context(), query())
 	if err != nil || found.NoSources || len(found.Candidates) != 1 || len(found.Groups) != 1 {
 		t.Fatalf("Handle() = %+v, %v; want the one pair", found, err)
 	}
-	if c := found.Candidates[0]; c.Left.File != "invoice.py" || c.Right.File != "receipt.py" {
+	if c := found.Candidates[0]; c.Left.File != at("src/invoice.py") || c.Right.File != at("src/receipt.py") {
 		t.Errorf("pair %s / %s, want invoice.py / receipt.py", c.Left.File, c.Right.File)
 	}
 	var recorded struct {
@@ -195,16 +185,14 @@ func (p ports) LangSurroundings() langport.Surroundings {
 	return langporttest.Surroundings{Dir: "/work/src"}
 }
 func (p ports) SnapshotStore() snapport.Store { return p.store }
-func (p ports) Rel(path string) string        { return fromSrc(path) }
 func (p ports) SelectionExclusion(context.Context) (selection.Exclusion, error) {
 	return p.exclude, p.failure
 }
 
 // NewHandler builds the handler over its Ports: the files their tree holds,
-// named by their Rel, recorded in their store, the sources their settings
-// exclude left out. A failure reading the settings is returned as the Ports
-// gave it, never wrapped, so cmd's config.invalid is the problem the person
-// reads.
+// recorded in their store, the sources their settings exclude left out. A
+// failure reading the settings is returned as the Ports gave it, never
+// wrapped, so cmd's config.invalid is the problem the person reads.
 func TestNewHandlerIsBuiltOverItsPorts(t *testing.T) {
 	store := &snapporttest.Store{RootDir: at("")}
 	h, err := NewHandler(t.Context(), ports{tree: tree(), store: store})
@@ -212,8 +200,8 @@ func TestNewHandlerIsBuiltOverItsPorts(t *testing.T) {
 		t.Fatal(err)
 	}
 	found, err := h.Handle(t.Context(), query())
-	if err != nil || len(found.Candidates) != 1 || found.Candidates[0].Left.File != "invoice.py" || store.Snapshots["dry.json"] == "" {
-		t.Errorf("Handle() = %+v, %v, recorded %v; want invoice.py's pair, named by Rel, in the store", found, err, store.Snapshots)
+	if err != nil || len(found.Candidates) != 1 || found.Candidates[0].Left.File != at("src/invoice.py") || store.Snapshots["dry.json"] == "" {
+		t.Errorf("Handle() = %+v, %v, recorded %v; want invoice.py's pair in the store", found, err, store.Snapshots)
 	}
 	h, err = NewHandler(t.Context(), ports{tree: tree(), store: &snapporttest.Store{RootDir: at("")}, exclude: selection.Exclusion{Root: at(""), Exclude: []string{"**/receipt.py"}}})
 	if err != nil {
@@ -228,11 +216,13 @@ func TestNewHandlerIsBuiltOverItsPorts(t *testing.T) {
 	}
 }
 
-// run is c run over h, and what it printed on stdout and stderr.
+// run is c run over h from /work/src, below the project root /work, so
+// the names it prints differ from dry.json's keys, and what it printed on
+// stdout and stderr.
 func run(t *testing.T, c CLI, h Handler) (code int, stdout, stderr string) {
 	t.Helper()
 	var out, errs bytes.Buffer
-	code = c.Run(t.Context(), &cli.UI{Stdout: &out, Stderr: &errs}, h)
+	code = c.Run(t.Context(), &cli.UI{Stdout: &out, Stderr: &errs, Dir: at("src")}, h)
 	return code, out.String(), errs.String()
 }
 
@@ -288,19 +278,8 @@ func TestRunsPlainLinesNameAWindowsFileWithSlashes(t *testing.T) {
 		command.JSON = c.json
 		ui := &cli.UI{Stdout: &stdout, Stderr: &stderr, Dir: at(""), Separator: '\\'}
 		h := handler(windows, &snapporttest.Store{RootDir: at("")})
-		h.Name = fromWork
 		if code := command.Run(t.Context(), ui, h); code != 0 || !strings.Contains(stdout.String(), c.want) {
 			t.Errorf("--json %v: exit %d, stdout %q; want it to hold %s\n%s", c.json, code, stdout.String(), c.want, stderr.String())
 		}
 	}
-}
-
-// fromWork names a file as the adapters did before the slices named it by
-// its path: from the working directory, /work, in the system's form.
-func fromWork(path string) string {
-	rel, err := filepath.Rel(at(""), path)
-	if err != nil {
-		return path
-	}
-	return rel
 }

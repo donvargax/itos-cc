@@ -58,24 +58,29 @@ type UI struct {
 	Separator rune
 }
 
-// Shown is a file as a person reads it in a plain line: from the working
-// directory when it is in it, slash-separated on every system, src/board.go
-// where Windows names src\board.go. Only (*UI).Show makes one, so a plain
-// line that takes a Shown cannot name a file in the system's form.
-type Shown struct{ name string }
+// Shown is a file as a person reads it, named from the working directory
+// as Rel names it. In a plain line it is slash-separated on every system,
+// src/board.go where Windows names src\board.go, and only (*UI).Show makes
+// one, so a plain line that takes a Shown cannot name a file in the
+// system's form. System is that form, which --json and the problems keep.
+type Shown struct{ system, plain string }
 
-// String is the file as a person reads it.
-func (s Shown) String() string { return s.name }
+// String is the file as a plain line names it, slash-separated.
+func (s Shown) String() string { return s.plain }
 
-// Show is path as a plain line names it: Rel, written with slashes
-// (bug-9). --json and the problems name a file in the system's form, as
-// Rel gives it.
+// System is the file in the system's form, which --json and the problems
+// keep.
+func (s Shown) System() string { return s.system }
+
+// Show is path as a person reads it, the one way to make a Shown: Rel,
+// written with slashes in a plain line (bug-9).
 func (u *UI) Show(path string) Shown {
+	name := u.Rel(path)
 	separator := u.Separator
 	if separator == 0 {
 		separator = filepath.Separator
 	}
-	return Shown{strings.ReplaceAll(u.Rel(path), string(separator), "/")}
+	return Shown{name, strings.ReplaceAll(name, string(separator), "/")}
 }
 
 // Rel is path as a person reads it: from the working directory when it is

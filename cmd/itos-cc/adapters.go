@@ -109,10 +109,6 @@ func (a adapters) SnapshotStore() snapport.Store { return a.Store }
 // through a mutation adapter.
 func (a adapters) CoverageMeasurer() coverage.Measurer { return a.Coverage }
 
-// Rel is path as a person reads it, from the working directory, Dir, the
-// one the UI names paths from (cli.Rel), a slice's Ports method.
-func (a adapters) Rel(path string) string { return cli.Rel(a.Dir, path) }
-
 // BuildVersion is the version this binary says it is, internal/version's,
 // the one source a release's stamp and Go's module version reach, a slice's
 // Ports method.

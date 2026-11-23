@@ -24,7 +24,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"sort"
 
 	"github.com/donvargax/itos-cc/internal/cli"
@@ -97,35 +96,31 @@ type Query struct {
 
 // Handler is the scrap command's application: the working tree it selects
 // and reads files through, what surrounds those files, which lang asks
-// about to parse them, the store its snapshot is read from and recorded
-// in, and Name, the name a person reads a file by, from the working
-// directory. cmd gives each through Ports (NewHandler), choosing the
+// about to parse them, and the store its snapshot is read from and
+// recorded in. cmd gives each through Ports (NewHandler), choosing the
 // adapters behind them. No value of a command line is read here.
 type Handler struct {
 	Tree         port.Tree
 	Surroundings langport.Surroundings
 	Store        snapport.Store
-	Name         func(path string) string
 }
 
 // Ports are what the scrap command reaches the world through, which cmd's
 // adapters give it: the working tree it selects and reads test files
-// through, what surrounds those files, the store its snapshot is read from
-// and recorded in, and Rel, a path named from the working directory as a
-// person reads it. It selects only tests, which itos-cc.yaml's exclude
-// never leaves out, so it reads no settings.
+// through, what surrounds those files, and the store its snapshot is read
+// from and recorded in. It selects only tests, which itos-cc.yaml's
+// exclude never leaves out, so it reads no settings.
 type Ports interface {
 	SelectionTree() port.Tree
 	LangSurroundings() langport.Surroundings
 	SnapshotStore() snapport.Store
-	Rel(path string) string
 }
 
-// NewHandler is the handler over p's tree, surroundings and store, naming
-// each file by p's Rel. It reads nothing, so it never fails; its error is
-// there for the one shape every slice's constructor has.
+// NewHandler is the handler over p's tree, surroundings and store. It
+// reads nothing, so it never fails; its error is there for the one shape
+// every slice's constructor has.
 func NewHandler(_ context.Context, p Ports) (Handler, error) {
-	return Handler{Tree: p.SelectionTree(), Surroundings: p.LangSurroundings(), Store: p.SnapshotStore(), Name: p.Rel}, nil
+	return Handler{Tree: p.SelectionTree(), Surroundings: p.LangSurroundings(), Store: p.SnapshotStore()}, nil
 }
 
 // Found is what Handle found: each measured file's report, the most
@@ -142,9 +137,10 @@ type Found struct {
 // Handle measures the test files q selects and records them in scrap.json,
 // beside the files the last snapshot holds that this run did not measure,
 // passing ctx on to the domains, lang and the ports. Each report names its
-// file by Name, and scrap.json by its path from the project root
-// (snapshot.Key). A last snapshot that cannot be read is Ignored; any other
-// failure stops Handle with no report, and Ignored still set.
+// file by its path as selected, and scrap.json by its path from the
+// project root (snapshot.Key). A last snapshot that cannot be read is
+// Ignored; any other failure stops Handle with no report, and Ignored
+// still set.
 func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 	chosen, err := selection.Select(ctx, h.Tree, q.Paths, q.Changed, selection.Exclusion{})
 	if err != nil {
@@ -171,7 +167,7 @@ func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 		if err != nil {
 			return Found{Ignored: found.Ignored}, err
 		}
-		r := domain.Analyze(f, h.Name(path))
+		r := domain.Analyze(f, path)
 		f.Close()
 		if r.Examples == 0 {
 			continue
@@ -217,25 +213,28 @@ func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		ui.Line("no test files to measure")
 		return ui.Emit(c.JSON, out, nil)
 	}
-	out.Files = found.Reports
-	if !c.JSON {
-		for _, r := range found.Reports {
-			printReport(ui.Stdout, r, c.Verbose)
+	for _, r := range found.Reports {
+		if !c.JSON {
+			printReport(ui, r, c.Verbose)
 		}
+		r.File = ui.Show(r.File).System()
+		out.Files = append(out.Files, r)
 	}
 	return ui.Emit(c.JSON, out, nil)
 }
 
-// printReport writes r's lines for people on w: its summary, a warning
-// when the last change made it worse, its recommendations unless it is to
-// be left alone, and with verbose every example's measurements.
-func printReport(w io.Writer, r domain.FileReport, verbose bool) {
+// printReport writes r's lines for people on ui's stdout, its file from
+// the working directory, slash-separated: its summary, a warning when the
+// last change made it worse, its recommendations unless it is to be left
+// alone, and with verbose every example's measurements.
+func printReport(ui *cli.UI, r domain.FileReport, verbose bool) {
+	w, name := ui.Stdout, ui.Show(r.File)
 	change := ""
 	if c := r.Compare; c != nil && c.Verdict != "unchanged" {
 		change = fmt.Sprintf("  %s from %.1f", c.Verdict, c.PreviousPressure)
 	}
 	_, _ = fmt.Fprintf(w, "%s  %s  pressure=%.1f  examples=%d  avg=%.1f  max=%.1f%s\n",
-		r.File, r.Action, r.Pressure, r.Examples, r.AverageScore, r.MaxScore, change)
+		name, r.Action, r.Pressure, r.Examples, r.AverageScore, r.MaxScore, change)
 	if c := r.Compare; c != nil && c.Verdict == "worse" {
 		_, _ = fmt.Fprintln(w, "  the last change made this file worse: check new helpers and duplication before keeping it")
 	}
@@ -248,7 +247,7 @@ func printReport(w io.Writer, r domain.FileReport, verbose bool) {
 	if verbose {
 		for _, e := range r.Details {
 			_, _ = fmt.Fprintf(w, "    %5.1f  %s:%d-%d %q lines=%d assertions=%d decisions=%d mocks=%d %v\n",
-				e.Score, r.File, e.StartLine, e.EndLine, e.Name, e.Lines, e.Assertions, e.Decisions, e.Mocks, e.Smells)
+				e.Score, name, e.StartLine, e.EndLine, e.Name, e.Lines, e.Assertions, e.Decisions, e.Mocks, e.Smells)
 		}
 	}
 }
