@@ -16,6 +16,7 @@ var stepped = []featureFile{
 	dryFeature,
 	fileSelectionFeature,
 	graphFeature,
+	historyFeature,
 	metricsSnapshotsFeature,
 	mutateFeature,
 	scrapFeature,
