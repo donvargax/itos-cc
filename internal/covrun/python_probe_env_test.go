@@ -1,7 +1,10 @@
 package covrun
 
 import (
+	"context"
+	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -41,5 +44,25 @@ func TestTheImportProbeOfTheUnsupervisedPlanWritesNoBytecode(t *testing.T) {
 	}
 	if got, _ := os.ReadFile(seen); string(got) != "1" {
 		t.Errorf("the probe saw PYTHONDONTWRITEBYTECODE=%q, not 1", got)
+	}
+}
+
+// A project without pytest is measured with unittest, and only a run
+// cancelled during the probe ends the plan with the cancellation.
+func TestAPlanWithoutPytestRunsUnittestAndACancelledOneStops(t *testing.T) {
+	missing := func(_ context.Context, cmd *exec.Cmd) error {
+		if slices.Contains(cmd.Args, "import pytest") {
+			return errors.New("no module named pytest")
+		}
+		return nil
+	}
+	plan, _, err := pythonPlanSupervised(t.Context(), t.TempDir(), t.TempDir(), nil, missing)
+	if err != nil || len(plan.Commands) == 0 || !slices.Contains(plan.Commands[0], "unittest") {
+		t.Fatalf("a project without pytest: plan %+v, error %v, want unittest's commands", plan, err)
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if _, _, err := pythonPlanSupervised(ctx, t.TempDir(), t.TempDir(), nil, missing); !errors.Is(err, context.Canceled) {
+		t.Errorf("a cancelled plan ended with %v, not the cancellation", err)
 	}
 }
