@@ -7856,3 +7856,17 @@
     runs this task's scenarios in process and greps the PASS line (itos#276). Out of scope: change
     frequency, compare and hot-untested (their own ideas), crap or mutation at a past commit, the
     viewer, any new CI job.
+- id: T-251
+  type: build
+  title: Move to the kong fork v1.17.1-itos.1
+  why: >
+    The chief's task kong-117, 2026-11-23: move go.mod from github.com/donvargax/kong v1.16.2-itos.2
+    to v1.17.1-itos.1, the fork rebased onto upstream kong v1.17.0 plus later upstream fixes, still
+    carrying its 3 fork commits (typed parse errors, decision 35; exported Suggest, decision 62). go
+    get and go mod tidy, then fix whatever upstream's changes break in cmd/itos-cc, internal/cli,
+    the settings adapter's Suggest and tools/bin/assemble, keeping the command line's contract
+    (docs/CLI.md) and its parse problems as they are. A change in what a user sees is a finding to
+    report, not to absorb. No other dependency moves.
+  done_when:
+    - run: grep -q 'github.com/donvargax/kong v1.17.1-itos.1' go.mod && go test ./internal/cli ./tools/bin/assemble -count=1
+      timeout: 600
