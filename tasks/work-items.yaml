@@ -6751,12 +6751,10 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: drop-display-path-lint
+  - id: T-241
     title: Drop the display-path forbidigo rule and its 37 nolint comments, keeping Shown's test as the check
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Placeholder; the ledger entry holds the why.
+    kind: task

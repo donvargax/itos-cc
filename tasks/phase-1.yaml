@@ -7592,3 +7592,25 @@
     T-236's again: in a throwaway worktree, take -p no:cacheprovider out of
     internal/covrun/python.go's pytestRunner and see ID-MUT-214 refused at the hook; quote it in the
     close. Out of scope: findings F1 to F4, cd.yml and the other workflows.
+- id: T-241
+  type: refactor
+  title: Drop the display-path forbidigo rule and its 37 nolint comments, keeping Shown's test as the check
+  why: >
+    The person's call on the itos arm's review (2026-11-22): drop F1's forbidigo rule and its 37
+    nolint comments, because the rule caught neither past mistake (936781b4, 5ff7350d). T-235's
+    display-path type, cli.Shown made by (*cli.UI).Show, and its test
+    TestShowNamesAFileSlashSeparatedWhateverTheSystem are the check. The rule only added
+    suppressions to the mutation slice, at every site that names a file in the system's form on
+    purpose (--json, the problems, lookups). It goes, all of it: in .golangci.yml, forbidigo's first
+    pattern (filepath.Rel, cli.Rel, UI.Rel, Slashed, "name a file for people with (*cli.UI).Show"),
+    its comment, and the exclusion rule that holds it to internal/slices/mutation's non-test files;
+    every //nolint:forbidigo comment in internal/slices/mutation; and docs/go.md's sentence saying
+    forbidigo refuses them. forbidigo itself stays enabled, with T-237's graph rule, its exclusion
+    and the _test.go exclusion, which F2's check needs. Shown, Show, UI.Separator and their test
+    stay unchanged, and no plain line or --json output changes, so no scenario changes. The check:
+    the rule's message is gone from .golangci.yml, no nolint:forbidigo is left in the mutation
+    slice, and the display-path test passes; it greps the PASS line (itos#276). Out of scope: Shown
+    and Show, T-237's graph rule and architecture-check, the gosec rules, any other lint rule.
+  done_when:
+    - run: "! grep -q 'name a file for people' .golangci.yml && ! git grep -q 'nolint:forbidigo' -- 'internal/slices/mutation/*.go' && go test ./internal/cli -run '^TestShowNamesAFileSlashSeparatedWhateverTheSystem$' -v 2>&1 | grep -q -- '--- PASS: TestShowNamesAFileSlashSeparatedWhateverTheSystem'"
+      timeout: 300
