@@ -6772,3 +6772,12 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: port-same-name-pairings
+    title: Pair same-named functions' results by UnitKey at the seams that still pair by name, for each pairing that fails here
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Placeholder; the ledger entry holds the why.
