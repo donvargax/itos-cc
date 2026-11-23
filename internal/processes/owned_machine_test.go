@@ -3,7 +3,9 @@ package processes
 import (
 	"os"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 )
 
 // TestOwnedCommandTransitionsMatchTheDocument holds the code's transition
@@ -96,4 +98,63 @@ func TestOwnedCommandNextIsATable(t *testing.T) {
 func allOwnedEvents() []ownedEvent {
 	return []ownedEvent{eventContextEndsByParent, eventContextEndsByTimeout, eventWaitReturns, eventGroupFoundLive,
 		eventGroupFoundGone, eventDeadlinePasses, eventCleanupSucceeds, eventCleanupFails}
+}
+
+// cleaningLife is a run whose leader was reaped, as a cleanup meets it.
+func cleaningLife() *ownedLife {
+	life := newOwnedLife()
+	life.apply(eventWaitReturns)
+	return life
+}
+
+// TestOwnedLifeRefusesAnUnlistedTransition holds a run to its table: an
+// event the table has no row for panics, naming the event and the state,
+// and leaves the state where it was.
+func TestOwnedLifeRefusesAnUnlistedTransition(t *testing.T) {
+	life := newOwnedLife()
+	defer func() {
+		got := recover()
+		message, _ := got.(string)
+		if want := `no transition for "the cleanup succeeds" from`; !strings.Contains(message, want) {
+			t.Errorf("recovered %v; want a panic holding %q", got, want)
+		}
+		if life.current() != ownedStart {
+			t.Errorf("the state moved to %v", life.current())
+		}
+	}()
+	life.apply(eventCleanupSucceeds)
+	t.Error("a cleanup succeeded before its leader was reaped")
+}
+
+// TestWaitOwnedProcessGroupMovesTheRunByWhatTheProbeFinds holds the
+// cleanup's wait to its events: a group the probe finds gone leaves the run
+// with it gone, and one that stays live to its deadline leaves it live, with
+// its deadline past, and fails.
+func TestWaitOwnedProcessGroupMovesTheRunByWhatTheProbeFinds(t *testing.T) {
+	now := time.Now()
+	for _, c := range []struct {
+		name      string
+		probe     error
+		wantError bool
+		want      ownedState
+	}{
+		{"gone", syscall.ESRCH, false, ownedState{runCleaning, contextLive, deadlineBefore, groupGone}},
+		{"live to its deadline", syscall.EPERM, true, ownedState{runCleaning, contextLive, deadlinePast, groupLive}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			calls := systemGroupCalls()
+			calls.signal = func(int, syscall.Signal) error { return c.probe }
+			calls.runnable = func(int) (bool, error) { return true, nil }
+			calls.now = func() time.Time { return now }
+			calls.sleep = func(d time.Duration) { now = now.Add(d) }
+			life := cleaningLife()
+			err := waitOwnedProcessGroup(calls, life, 4242, now.Add(20*time.Millisecond), "linux")
+			if (err != nil) != c.wantError {
+				t.Fatalf("error = %v; want one: %v", err, c.wantError)
+			}
+			if life.current() != c.want {
+				t.Errorf("the run is %v; want %v", life.current(), c.want)
+			}
+		})
+	}
 }

@@ -187,6 +187,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 	}
 	killGroup(cmd, platform, s.calls)
 	cmd.WaitDelay = 0
+	life := newOwnedLife()
 
 	stopReader := &cleanupSignal{done: make(chan struct{})}
 	for i := range captures {
@@ -247,21 +248,24 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 	}
 	held.begin()
 
+	life.apply(eventWaitReturns)
 	deadline := cleanupBudgetForScope(ctx, budget).until()
 	if observe != nil {
 		observe(deadline)
 	}
 	cleanupErr := killOwnedProcessGroup(s.calls, platform, pgid)
 	stopReader.activate(deadline)
-	if err := waitOwnedProcessGroup(s.calls, pgid, deadline, platform); err != nil {
+	if err := waitOwnedProcessGroup(s.calls, life, pgid, deadline, platform); err != nil {
 		cleanupErr = errors.Join(cleanupErr, err)
 	}
 	for _, capture := range captures {
 		cleanupErr = errors.Join(cleanupErr, joinOwnedOutput(capture, s.kept))
 	}
 	if cleanupErr != nil {
+		life.apply(eventCleanupFails)
 		return errors.Join(waitErr, &CleanupFailed{ProcessGroup: pgid, Command: strings.Join(cmd.Args, " "), Cause: cleanupErr})
 	}
+	life.apply(eventCleanupSucceeds)
 	return waitErr
 }
 
@@ -298,16 +302,19 @@ func runUnownedCommand(cmd *exec.Cmd, s *supervision) error {
 	return err
 }
 
-func waitOwnedProcessGroup(calls groupCalls, pgid int, deadline time.Time, platform string) error {
+func waitOwnedProcessGroup(calls groupCalls, life *ownedLife, pgid int, deadline time.Time, platform string) error {
 	for {
 		gone, err := ownedGroupGone(calls, platform, pgid)
 		if err != nil {
 			return fmt.Errorf("inspect owned process group %d: %w", pgid, err)
 		}
 		if gone {
+			life.apply(eventGroupFoundGone)
 			return nil
 		}
+		life.apply(eventGroupFoundLive)
 		if !calls.now().Before(deadline) {
+			life.apply(eventDeadlinePasses)
 			return fmt.Errorf("owned process group %d remained active at cleanup deadline", pgid)
 		}
 		calls.sleep(5 * time.Millisecond)

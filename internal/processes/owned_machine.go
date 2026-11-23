@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 )
 
 // The owned command's cancel, exit, reap and cleanup machine, as
@@ -101,7 +102,7 @@ var ownedTransitions = []ownedRow{
 	{eventGroupFoundGone, ownedPattern{"run": string(runCleaning)}, ownedPattern{"group": string(groupGone)}},
 	{eventDeadlinePasses, ownedPattern{"run": string(runCleaning), "deadline": string(deadlineBefore)}, ownedPattern{"deadline": string(deadlinePast)}},
 	{eventCleanupSucceeds, ownedPattern{"run": string(runCleaning), "group": string(groupGone)}, ownedPattern{"run": string(runReturned)}},
-	{eventCleanupFails, ownedPattern{"run": string(runCleaning), "group": string(groupLive), "deadline": string(deadlinePast)}, ownedPattern{"run": string(runReturned)}},
+	{eventCleanupFails, ownedPattern{"run": string(runCleaning)}, ownedPattern{"run": string(runReturned)}},
 }
 
 func (s ownedState) get(component string) string {
@@ -177,4 +178,33 @@ func ownedTable() []string {
 	}
 	sort.Strings(lines)
 	return lines
+}
+
+// ownedLife is one run's state, which only events change. The context's end
+// reaches it from os/exec's goroutine, so it is held under a lock.
+type ownedLife struct {
+	mu    sync.Mutex
+	state ownedState
+}
+
+func newOwnedLife() *ownedLife { return &ownedLife{state: ownedStart} }
+
+// apply takes the run through an event. An event the table has no row for
+// is a mistake in the code that sent it, never a condition of the system,
+// so it panics.
+func (l *ownedLife) apply(event ownedEvent) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	to, ok := next(l.state, event)
+	if !ok {
+		panic(fmt.Sprintf("processes: no transition for %q from %v", string(event), l.state))
+	}
+	l.state = to
+}
+
+// current is the state the run is in.
+func (l *ownedLife) current() ownedState {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.state
 }

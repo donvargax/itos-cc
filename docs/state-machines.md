@@ -67,7 +67,7 @@ group=unknown`. A row's `when` names what it needs of the state, its `then` what
 | event | when | then |
 |---|---|---|
 | Wait reaps the leader | run=waiting | run=cleaning |
-| the cleanup fails | run=cleaning, deadline=past, group=live | run=returned |
+| the cleanup fails | run=cleaning | run=returned |
 | the cleanup succeeds | run=cleaning, group=gone | run=returned |
 | the context ends by its parent | context=live | context=ended by its parent |
 | the context ends by its timeout | context=live | context=ended by its timeout |
