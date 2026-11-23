@@ -134,7 +134,7 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 	written := Written(given)
 	linesOnly := c.FailUncovered != nil && *c.FailUncovered == "lines"
 	if linesOnly && !written.given("since") {
-		return ui.Emit(c.JSON, nil, ui.Problems(failureError(LinesWithoutSince{}, ui.Rel))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		return ui.Emit(c.JSON, nil, ui.Problems(failureError(LinesWithoutSince{}, ui.Rel)))
 	}
 	if written.given("own-tests") && !written.given("site") {
 		return ui.Emit(c.JSON, nil, []*cli.Problem{flagConflict("--own-tests", "--own-tests narrows the judgment of the mutants --site names, and is given without it")})
@@ -178,7 +178,7 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 		MemoryFactor:        c.MemoryFactor,
 		MutateAll:           c.MutateAll,
 		Annotate:            !c.NoAnnotate,
-		Progress:            selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui}, //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		Progress:            selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui},
 	})
 	p := &Presentation{UI: ui, JSON: c.JSON, Root: found.Root, Tree: h.Tree}
 	result.NotBuilt = p.sayNotBuilt(found.NotBuilt)
@@ -208,10 +208,10 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 		}
 	}
 	if err != nil {
-		return ui.Emit(c.JSON, result, append(p.Problems, ui.Problems(runError(err, ui.Rel))...)) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		return ui.Emit(c.JSON, result, append(p.Problems, ui.Problems(runError(err, ui.Rel))...))
 	}
 	for _, orphan := range found.Orphans {
-		result.Orphans = append(result.Orphans, Orphan{File: ui.Rel(orphan.Path), Snapshot: orphan.Snapshot, Why: orphan.Why}) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		result.Orphans = append(result.Orphans, Orphan{File: ui.Rel(orphan.Path), Snapshot: orphan.Snapshot, Why: orphan.Why})
 	}
 	p.Orphans(result.Orphans, "was an orphan, and is removed")
 	p.stopped(found.Stop, &result)
@@ -265,7 +265,7 @@ func GapProblems(ui *cli.UI, ms []coverage.Unmeasured) []*cli.Problem {
 	var out []*cli.Problem
 	for _, m := range ms {
 		if m.Dir != "" {
-			m.Dir = ui.Rel(m.Dir) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+			m.Dir = ui.Rel(m.Dir)
 		}
 		out = append(out, ui.Problems(m)...)
 	}

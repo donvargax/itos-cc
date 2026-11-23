@@ -171,7 +171,7 @@ func (h Handler) listing(root string, cfg *mutants.Config) *mutants.ListOnce {
 	return mutants.NewListOnce(h.TestLister, root, cfg.Tests.List)
 }
 func beneath(dir, path string) bool {
-	rel, err := filepath.Rel(dir, path) //nolint:forbidigo // a lookup or a containment test, no line names it
+	rel, err := filepath.Rel(dir, path)
 	return err == nil && rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !filepath.IsAbs(rel)
 }
 

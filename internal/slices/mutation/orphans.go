@@ -44,7 +44,7 @@ func (h Handler) orphans(ctx context.Context, q SelectionQuery) ([]mutants.Orpha
 		if !beneath(wd, path) {
 			return false
 		}
-		rel, err := filepath.Rel(wd, path) //nolint:forbidigo // a lookup or a containment test, no line names it
+		rel, err := filepath.Rel(wd, path)
 		if err != nil {
 			return false
 		}

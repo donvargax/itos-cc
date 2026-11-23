@@ -44,13 +44,13 @@ func (c Check) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 	found, err := h.Check(ctx, CheckQuery{SelectionQuery: SelectionQuery{Paths: c.Paths, Changed: c.Changed, Since: c.Since}, FailUncovered: c.FailUncovered != nil, LinesOnly: c.FailUncovered != nil && *c.FailUncovered == "lines"})
 	result := checkResult{Files: []checkFile{}}
 	for _, orphan := range found.Orphans {
-		result.Orphans = append(result.Orphans, Orphan{File: ui.Rel(orphan.Path), Snapshot: orphan.Snapshot, Why: orphan.Why}) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		result.Orphans = append(result.Orphans, Orphan{File: ui.Rel(orphan.Path), Snapshot: orphan.Snapshot, Why: orphan.Why})
 	}
 	sayExcluded(ui, found.Excluded)
 	p := &Presentation{UI: ui, JSON: c.JSON, Root: found.Root, Tree: h.Tree}
 	result.NotBuilt = p.sayNotBuilt(found.NotBuilt)
 	if err != nil {
-		return ui.Emit(c.JSON, result, ui.Problems(readError(err, ui.Rel))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		return ui.Emit(c.JSON, result, ui.Problems(readError(err, ui.Rel)))
 	}
 	if found.NoSources {
 		ui.Line("no source files to check")
@@ -153,7 +153,7 @@ func (p *Presentation) Function(rel string, fn mutants.FunctionCheck, rule, verd
 
 func (p *Presentation) Elsewhere(ctx context.Context, stale []mutants.StaleException) {
 	for _, e := range stale {
-		p.StaleExceptions(ctx, p.UI.Rel(sourcePath(p.Root, e.File)), []mutants.StaleException{e}) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		p.StaleExceptions(ctx, p.UI.Rel(sourcePath(p.Root, e.File)), []mutants.StaleException{e})
 	}
 }
 func (p *Presentation) Orphans(orphans []Orphan, what string) {

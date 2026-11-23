@@ -56,7 +56,7 @@ func (c List) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 			_, _ = fmt.Fprintf(ui.Stdout, "%s:%d:%d %s → %s in %s\n", ui.Show(site.File), site.Line, site.Column, Quote(site.Original), Quote(site.Replacement), site.Function)
 		}
 	}
-	return ui.Emit(c.JSON, result, ui.Problems(readError(err, ui.Rel))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+	return ui.Emit(c.JSON, result, ui.Problems(readError(err, ui.Rel)))
 }
 func sayExcluded(ui *cli.UI, n int) {
 	if n > 0 {

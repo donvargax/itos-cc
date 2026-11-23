@@ -217,12 +217,12 @@ func (c Run) counted(ctx context.Context, ui *cli.UI, h Handler, written Written
 			fmt.Sprintf("mutation run %s supports Linux and macOS, where every command's process tree is owned; this is %s", mode, h.Platform),
 			fmt.Sprintf("Run it on Linux or macOS, or run mutation run without %s; native Windows support is #29.", mode)).With("platform", h.Platform)})
 	}
-	progress := &countedProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, p: &Presentation{UI: ui, JSON: c.JSON, Tree: h.Tree}} //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+	progress := &countedProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, p: &Presentation{UI: ui, JSON: c.JSON, Tree: h.Tree}}
 	err := h.Counted(ctx, CountedQuery{Paths: c.Paths, Since: c.Since, Seed: c.Seed, Count: c.Count, Sites: sites, OwnTestsOnly: c.OwnTests, NoCoverageCache: c.NoCoverageCache, Repeat: c.Repeat, AllTests: c.AllTests,
 		FailUncovered: c.FailUncovered != nil, LinesOnly: c.FailUncovered != nil && *c.FailUncovered == "lines",
 		Workers: c.Workers, TimeoutFactor: c.TimeoutFactor, OutputFactor: c.OutputFactor, MemoryFactor: c.MemoryFactor, Progress: progress})
 	if err != nil {
-		return ui.Emit(c.JSON, nil, ui.Problems(countedError(err, ui.Rel))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		return ui.Emit(c.JSON, nil, ui.Problems(countedError(err, ui.Rel)))
 	}
 	progress.report.Proof = countedProof(progress.report.Selected, progress.p.Problems)
 	return ui.Emit(c.JSON, progress.report, progress.p.Problems)

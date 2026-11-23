@@ -121,7 +121,7 @@ func (c Except) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 	}
 	found, err := h.Except(ctx, q)
 	if err != nil {
-		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then except the site again."))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then except the site again.")))
 	}
 	return ui.Emit(c.JSON, c.excepted(&Presentation{UI: ui, JSON: c.JSON}, found), nil)
 }
@@ -135,7 +135,7 @@ func (c Except) excepted(p *Presentation, found ExceptFound) exceptResult {
 		if found.Replaced {
 			what = "excepted again"
 		}
-		_, _ = fmt.Fprintf(p.UI.Stdout, "%s %s:%d:%d %s → %s in %s in %s\n", what, p.UI.Show(named(found.File, found.Path, p.UI.Rel)), found.Line, found.Column, //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		_, _ = fmt.Fprintf(p.UI.Stdout, "%s %s:%d:%d %s → %s in %s in %s\n", what, p.UI.Show(named(found.File, found.Path, p.UI.Rel)), found.Line, found.Column,
 			Quote(e.Original), Quote(e.Replacement), e.Function, "itos-cc.yaml")
 	}
 	return exceptResult{Exception: &e, Replaced: found.Replaced}
@@ -187,7 +187,7 @@ func (c Except) renew(ctx context.Context, ui *cli.UI, h Handler) int {
 	}
 	found, err := h.Renew(ctx)
 	if err != nil {
-		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then renew again."))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then renew again.")))
 	}
 	result, problems := c.renewed(&Presentation{UI: ui, JSON: c.JSON}, found)
 	return ui.Emit(c.JSON, result, problems)
@@ -199,7 +199,7 @@ func (c Except) renewed(p *Presentation, found RenewFound) (renewResult, []*cli.
 	ui := p.UI
 	result := renewResult{Renewed: []renewedJSON{}, NotRenewed: []notRenewedJSON{}}
 	for _, r := range found.Renewed {
-		rel := ui.Rel(sourcePath(found.Root, r.New.File)) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		rel := ui.Rel(sourcePath(found.Root, r.New.File))
 		result.Renewed = append(result.Renewed, renewedJSON{File: rel, Function: r.New.Function, Line: r.Line, Column: r.New.Column,
 			LineInFunction: r.New.LineInFunction, Original: r.New.Original, Replacement: r.New.Replacement, Reason: r.New.Reason,
 			NewHash: r.New.Hash, OldHash: r.Old.Hash, OldFile: r.Old.File, OldFunction: r.Old.Function,
@@ -211,7 +211,7 @@ func (c Except) renewed(p *Presentation, found RenewFound) (renewResult, []*cli.
 	}
 	var problems []*cli.Problem
 	for _, u := range found.Left {
-		rel := ui.Rel(sourcePath(found.Root, u.File)) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		rel := ui.Rel(sourcePath(found.Root, u.File))
 		result.NotRenewed = append(result.NotRenewed, notRenewedJSON{Exception: u.Exception, Why: u.Why, Line: u.Line})
 		at := rel
 		if u.Line != 0 {
@@ -259,7 +259,7 @@ func (c Except) prune(ctx context.Context, ui *cli.UI, h Handler) int {
 	}
 	found, err := h.Prune(ctx)
 	if err != nil {
-		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then prune again."))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then prune again.")))
 	}
 	return ui.Emit(c.JSON, c.pruned(&Presentation{UI: ui, JSON: c.JSON}, found), nil)
 }
@@ -271,7 +271,7 @@ func (c Except) pruned(p *Presentation, found PruneFound) pruneResult {
 	for _, s := range found.Pruned {
 		result.Pruned = append(result.Pruned, notRenewedJSON{Exception: s.Exception, Why: s.Why, Line: s.Line})
 		if !c.JSON {
-			at := p.UI.Rel(sourcePath(found.Root, s.File)) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+			at := p.UI.Rel(sourcePath(found.Root, s.File))
 			if s.Line != 0 {
 				at = fmt.Sprintf("%s:%d:%d", at, s.Line, s.Column)
 			}
@@ -307,7 +307,7 @@ func (c Except) rehash(ctx context.Context, ui *cli.UI, h Handler) int {
 	}
 	found, err := h.Rehash(ctx)
 	if err != nil {
-		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then rehash again."))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then rehash again.")))
 	}
 	result, problems := c.rehashed(&Presentation{UI: ui, JSON: c.JSON}, found)
 	return ui.Emit(c.JSON, result, problems)
@@ -320,7 +320,7 @@ func (c Except) rehashed(p *Presentation, found RehashFound) (rehashResult, []*c
 	ui := p.UI
 	result := rehashResult{Rehashed: []rehashedJSON{}, NotRehashed: []notRenewedJSON{}}
 	for _, r := range found.Rehashed {
-		rel := ui.Rel(sourcePath(found.Root, r.Old.File)) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		rel := ui.Rel(sourcePath(found.Root, r.Old.File))
 		result.Rehashed = append(result.Rehashed, rehashedJSON{File: rel, Function: r.Old.Function, Line: r.Line, Column: r.Old.Column,
 			LineInFunction: r.Old.LineInFunction, Original: r.Old.Original, Replacement: r.Old.Replacement, Reason: r.Old.Reason,
 			OldHash: r.Old.Hash, NewHash: r.New.Hash})
@@ -331,7 +331,7 @@ func (c Except) rehashed(p *Presentation, found RehashFound) (rehashResult, []*c
 	}
 	var problems []*cli.Problem
 	for _, s := range found.Left {
-		rel := ui.Rel(sourcePath(found.Root, s.File)) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		rel := ui.Rel(sourcePath(found.Root, s.File))
 		result.NotRehashed = append(result.NotRehashed, notRenewedJSON{Exception: s.Exception, Why: s.Why, Line: s.Line})
 		at := rel
 		if s.Line != 0 {

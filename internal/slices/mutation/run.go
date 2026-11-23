@@ -372,7 +372,7 @@ func (h Handler) strict(ctx context.Context, q RunQuery, opt *mutants.Options, s
 	if len(kept) > 0 {
 		dir := h.Dir
 		opt.CachedCoverage = func(path, function, _ string) *mutants.CoverageEvidence {
-			return kept[cli.Rel(dir, path)+"\x00"+function] //nolint:forbidigo // a lookup or a containment test, no line names it
+			return kept[cli.Rel(dir, path)+"\x00"+function]
 		}
 	}
 	report, measuredProducer, listedFiles, err := h.strictCoverage(ctx, q, s, measured, opt.Listing)
@@ -434,7 +434,7 @@ func (h Handler) reuseCoverage(opt *mutants.Options, s strictCoverage, cached []
 	}
 	dir := h.Dir
 	opt.CachedCoverage = func(path, function, _ string) *mutants.CoverageEvidence {
-		return byFunction[cli.Rel(dir, path)+"\x00"+function] //nolint:forbidigo // a lookup or a containment test, no line names it
+		return byFunction[cli.Rel(dir, path)+"\x00"+function]
 	}
 	var report *coverage.Report
 	if s.strictGo {
@@ -496,5 +496,5 @@ func (h Handler) knownStop(root string, stale []mutants.StaleException) *mutants
 	if !filepath.IsAbs(at) {
 		at = filepath.Join(root, at)
 	}
-	return &mutants.Stop{Rule: "mutation.exception-stale", File: cli.Rel(h.Dir, at), Exception: &e} //nolint:forbidigo // a lookup or a containment test, no line names it
+	return &mutants.Stop{Rule: "mutation.exception-stale", File: cli.Rel(h.Dir, at), Exception: &e}
 }

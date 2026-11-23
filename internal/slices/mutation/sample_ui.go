@@ -96,7 +96,7 @@ func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Writte
 		Count:          c.Count, Seed: c.Seed, Workers: c.Workers, TimeoutFactor: c.TimeoutFactor,
 		OutputFactor: c.OutputFactor, MemoryFactor: c.MemoryFactor,
 		TestCommand: c.TestCommand, AllTests: c.AllTests, Repeat: c.Repeat,
-		Progress: selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui}, //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		Progress: selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui},
 	})
 	result.Seed = found.Seed
 	p := &Presentation{UI: ui, JSON: c.JSON}
@@ -105,7 +105,7 @@ func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Writte
 		return ui.Emit(c.JSON, nil, ui.Problems(err))
 	}
 	if err != nil {
-		return ui.Emit(c.JSON, result, ui.Problems(sampleError(err, ui.Rel))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		return ui.Emit(c.JSON, result, ui.Problems(sampleError(err, ui.Rel)))
 	}
 	if found.NoSources {
 		ui.Line("no source files to sample")

@@ -38,7 +38,7 @@ func (p *Presentation) baselineFailed(rel, copied string, leftOut []string, done
 		return cli.NewProblem(cli.CodeNo, "mutation.baseline-failed", rel+": its tests fail before any mutant, so none was "+done,
 			"Make its tests pass, then run "+command+" again.").With("file", rel)
 	}
-	name := p.UI.Rel(copied) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+	name := p.UI.Rel(copied)
 	if name == "." {
 		name = filepath.Base(copied)
 	}
@@ -144,7 +144,7 @@ func (p *Presentation) StaleExceptions(ctx context.Context, rel string, stale []
 		change := fmt.Sprintf("%s → %s in %s", Quote(e.Original), Quote(e.Replacement), e.Function)
 		var newFile string
 		if e.Why == mutants.ExceptionMoved {
-			newFile = p.UI.Rel(sourcePath(p.Root, e.NewFile)) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+			newFile = p.UI.Rel(sourcePath(p.Root, e.NewFile))
 		}
 		if !p.JSON {
 			why := e.Why
@@ -209,7 +209,7 @@ func (p *Presentation) StaleSubject(rel string, e mutants.StaleException) map[st
 		subject["line"] = e.Line
 	}
 	if e.Why == mutants.ExceptionMoved {
-		subject["new_file"] = p.UI.Rel(sourcePath(p.Root, e.NewFile)) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		subject["new_file"] = p.UI.Rel(sourcePath(p.Root, e.NewFile))
 	}
 	if e.Identity != "" {
 		subject["identity"] = e.Identity

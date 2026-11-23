@@ -34,7 +34,7 @@ func (p *Presentation) sayNotBuilt(files []mutants.NotBuilt) []notBuiltFile {
 	var out []notBuiltFile
 	for _, f := range files {
 		p.UI.Line(fmt.Sprintf("not built on %s, so %s is not judged here", f.Platform.String(), p.UI.Show(f.Path)))
-		out = append(out, notBuiltFile{File: p.UI.Rel(f.Path), Platform: f.Platform.String()}) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		out = append(out, notBuiltFile{File: p.UI.Rel(f.Path), Platform: f.Platform.String()})
 	}
 	return out
 }

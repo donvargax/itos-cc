@@ -72,7 +72,7 @@ func (c Show) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 	}
 	found, err := h.Show(ctx, argument, id)
 	if err != nil {
-		return ui.Emit(c.JSON, showResult{}, ui.Problems(readError(err, ui.Rel))) //nolint:forbidigo // the system's form, for --json and the problems; a plain line takes Show
+		return ui.Emit(c.JSON, showResult{}, ui.Problems(readError(err, ui.Rel)))
 	}
 	s := found.Site
 	if !c.JSON {
