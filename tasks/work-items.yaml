@@ -6724,6 +6724,10 @@ items:
       carries gardener's notice in THIRD_PARTY_NOTICES. Starts after the pstack trial's two runs
       (the pstack copy and the itos arm, F1 to F5) finish, so it touches nothing either run is
       fixing.
+
+      The person's call, 2026-11-23: the counts are unchanged, and each says 'unmeasured' rather
+      than zero when its data is too thin, with --json (folded in from gardener-unmeasured-json,
+      dropped).
   - id: gardener-history-viewer
     title: History week by week as a page of itos-cc serve's viewer
     phase: 1
