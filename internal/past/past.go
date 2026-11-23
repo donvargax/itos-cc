@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang/port"
-	"github.com/donvargax/itos-cc/internal/selection"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
@@ -79,8 +78,9 @@ type Commit struct {
 	Dir          string
 	Tree         selport.Tree
 	Surroundings port.Surroundings
-	// Exclude is the sources the commit's own itos-cc.yaml leaves out.
-	Exclude selection.Exclusion
+	// Settings are the selection settings of the commit's own
+	// itos-cc.yaml, whose exclude leaves sources out.
+	Settings selport.Settings
 	// Store keeps nothing: the working tree is never changed.
 	Store snapport.Store
 	// Results are the commit's kept results.

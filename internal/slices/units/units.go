@@ -178,7 +178,7 @@ func (h Handler) handleAt(ctx context.Context, q Query) (Found, error) {
 	if err != nil {
 		return Found{}, err
 	}
-	at := Handler{Tree: commit.Tree, Surroundings: commit.Surroundings, Exclude: commit.Exclude}
+	at := Handler{Tree: commit.Tree, Surroundings: commit.Surroundings, Exclude: selection.Exclusion(commit.Settings)}
 	q.At = ""
 	return past.Kept(ctx, commit, Command.Name, commit.Key(q, h.Version),
 		func() (Found, error) { return at.Handle(ctx, q) },

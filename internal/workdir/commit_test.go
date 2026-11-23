@@ -92,8 +92,8 @@ func TestCommitsOpenAReadsTheTreeGitRecorded(t *testing.T) {
 	if failure != nil || string(text) != alpha {
 		t.Errorf("Read(src/a.ts) = %q, %v; want the commit's text, not the disk's", text, failure)
 	}
-	if !commit.Exclude.Excludes(filepath.Join(dir, "src", "skip.ts")) || commit.Exclude.Excludes(filepath.Join(dir, "src", "a.ts")) {
-		t.Errorf("the commit's own itos-cc.yaml should exclude skip.ts alone: %+v", commit.Exclude)
+	if !slices.Equal(commit.Settings.Exclude, []string{"src/skip.ts"}) || commit.Settings.Root != dir {
+		t.Errorf("the commit's own itos-cc.yaml should exclude skip.ts alone: %+v", commit.Settings)
 	}
 	if !commit.Tree.Exists(t.Context(), "src") || commit.Tree.Exists(t.Context(), "src/none.ts") {
 		t.Errorf("Exists holds the commit's folders and files only")

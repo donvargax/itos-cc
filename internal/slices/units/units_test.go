@@ -226,7 +226,7 @@ func windowsName(rel string) string {
 func pastSource(tree porttest.Tree, exclude selection.Exclusion) *pasttest.Source {
 	return &pasttest.Source{
 		Results: &pasttest.Results{},
-		Commits: map[string]past.Commit{"old": {ID: "abc123", Root: work, Dir: work, Tree: tree, Surroundings: around, Exclude: exclude}},
+		Commits: map[string]past.Commit{"old": {ID: "abc123", Root: work, Dir: work, Tree: tree, Surroundings: around, Settings: port.Settings(exclude)}},
 	}
 }
 

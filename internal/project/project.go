@@ -184,6 +184,9 @@ func Changed() ([]string, error) {
 	return paths, nil
 }
 
+// Supported is whether path is a file of a language itos-cc measures.
+func Supported(path string) bool { return lang.Detect(path) != nil }
+
 // BuildOutputIn is the build-output classifier of the files of fsys, which
 // have no ignore rules to ask: a build directory beside a manifest of a tool
 // that writes there.

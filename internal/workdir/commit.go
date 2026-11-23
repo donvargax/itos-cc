@@ -11,11 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/donvargax/itos-cc/internal/lang"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/past"
 	"github.com/donvargax/itos-cc/internal/project"
-	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 )
 
@@ -107,9 +105,9 @@ func (c Commits) Open(ctx context.Context, rev string) (past.Commit, error) {
 	return past.Commit{
 		ID: id, Root: top, Dir: c.Dir,
 		Tree: tree, Surroundings: commitSurroundings{tree},
-		Exclude: selection.Exclusion(settings),
-		Store:   past.Nothing{RootDir: top},
-		Results: kept{dir: filepath.Join(common, "itos-cc", "history"), keeper: c.Keeper},
+		Settings: settings,
+		Store:    past.Nothing{RootDir: top},
+		Results:  kept{dir: filepath.Join(common, "itos-cc", "history"), keeper: c.Keeper},
 	}, nil
 }
 
@@ -265,7 +263,7 @@ func newCommitFS(top, commit string, entries []Entry, objects Objects) *commitFS
 // asked for it by name: a file of a language itos-cc measures, or one the
 // names around such files are looked up in.
 func readSet(path string) bool {
-	if lang.Detect(path) != nil {
+	if project.Supported(path) {
 		return true
 	}
 	switch strings.ToLower(filepath.Base(path)) {

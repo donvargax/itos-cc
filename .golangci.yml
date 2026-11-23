@@ -307,6 +307,8 @@ linters:
               desc: "a slice's code links no fake (T-88): only tests may import mutation's Workers fake"
             - pkg: github.com/donvargax/itos-cc/internal/coverage/porttest
               desc: "a slice's code links no fake (T-90): only tests may import coverage's model-bearing fake"
+            - pkg: github.com/donvargax/itos-cc/internal/past/porttest
+              desc: "a slice's code links no fake (T-250): a port's fake enters only through _test.go files; never loosen this one"
         # graph, the architecture graph's slice (ADR-0051, q-95), its code and
         # tests: the graph command, its UI on internal/cli as every slice's
         # is, reads whole projects through selection's tree, lang's
@@ -388,14 +390,13 @@ linters:
         # slice-adapters and slice-fakes. Each port's adapters have a rule of
         # their own, so no adapter is allowed another's port or library.
         # internal/past is the port of a past commit, --at (T-250): it holds
-        # the ports a command measures a commit through, so it imports the
-        # selection domain and the ports it hands out, and no adapter.
+        # the ports a command measures a commit through, so it imports
+        # the ports it hands out, and no adapter.
         past:
           list-mode: lax
           files:
             - "**/internal/past/**"
           allow:
-            - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/selection/port$
             - github.com/donvargax/itos-cc/internal/lang/port$
             - github.com/donvargax/itos-cc/internal/snapshot/port$
@@ -403,7 +404,7 @@ linters:
             - github.com/donvargax/itos-cc/internal/past/porttest$
           deny:
             - pkg: github.com/donvargax/itos-cc
-              desc: "past imports only the selection domain and the selection, lang and snapshot ports it hands out (T-250); extend the rules as docs/go.md's Adding a package says, never loosen this one"
+              desc: "past imports only the selection, lang and snapshot ports it hands out (T-250); extend the rules as docs/go.md's Adding a package says, never loosen this one"
         # internal/workdir implements the selection port over internal/project,
         # the engine that walks a tree and asks git, and lang's port
         # over project's answers from the disk (T-35): both ports and project
@@ -418,8 +419,6 @@ linters:
           allow:
             - github.com/donvargax/itos-cc/internal/selection/port$
             - github.com/donvargax/itos-cc/internal/lang/port$
-            - github.com/donvargax/itos-cc/internal/lang$
-            - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/past$
             - github.com/donvargax/itos-cc/internal/project$
           deny:
