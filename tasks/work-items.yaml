@@ -6793,6 +6793,6 @@ items:
     title: Move to the kong fork v1.17.1-itos.1
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
