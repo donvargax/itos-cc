@@ -159,14 +159,7 @@ func (t *commitTree) Discover(ctx context.Context, roots []string) (sources, tes
 	if ctx.Err() != nil {
 		return nil, nil, &port.Cancelled{Cause: context.Cause(ctx)}
 	}
-	if err := t.files.load(ctx); err != nil {
-		return nil, nil, failed(ctx, err)
-	}
-	absolute := make([]string, 0, len(roots))
-	for _, r := range roots {
-		absolute = append(absolute, t.abs(r))
-	}
-	found, err := project.DiscoverIn(ctx, t.files, absolute, project.BuildOutputIn(t.files))
+	found, err := t.discover(ctx, roots)
 	if err != nil && ctx.Err() != nil {
 		return nil, nil, &port.Cancelled{Cause: context.Cause(ctx)}
 	}
@@ -176,13 +169,16 @@ func (t *commitTree) Discover(ctx context.Context, roots []string) (sources, tes
 	return found.Sources, found.Tests, nil
 }
 
-// failed is err as the port's failure: a cancellation is one, anything else
-// an unwalkable tree.
-func failed(ctx context.Context, err error) port.Failure {
-	if ctx.Err() != nil {
-		return &port.Cancelled{Cause: context.Cause(ctx)}
+// discover is the files under roots, once the commit's contents are loaded.
+func (t *commitTree) discover(ctx context.Context, roots []string) (project.Files, error) {
+	if err := t.files.load(ctx); err != nil {
+		return project.Files{}, err
 	}
-	return &port.Unwalkable{Reason: err.Error()}
+	absolute := make([]string, 0, len(roots))
+	for _, r := range roots {
+		absolute = append(absolute, t.abs(r))
+	}
+	return project.DiscoverIn(ctx, t.files, absolute, project.BuildOutputIn(t.files))
 }
 
 // Changed is never asked: a commit has no changes of the working tree's.
@@ -351,13 +347,8 @@ func (f *commitFS) ReadDir(p string) ([]fs.DirEntry, error) {
 	}
 	out := make([]fs.DirEntry, 0, len(names))
 	for _, name := range names {
-		if name == "" {
-			continue
-		}
-		child, err := f.Stat(filepath.Join(p, name))
-		if err != nil {
-			return nil, err
-		}
+		// A name listed is a name the commit holds.
+		child, _ := f.Stat(filepath.Join(p, name))
 		out = append(out, fs.FileInfoToDirEntry(child))
 	}
 	return out, nil

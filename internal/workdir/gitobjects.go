@@ -32,7 +32,7 @@ func (g Git) Top(context.Context) (string, error) { return project.RootOf(g.Dir)
 func (g Git) CommonDir(ctx context.Context) (string, error) {
 	out, err := project.GitIn(ctx, g.Dir, "rev-parse", "--git-common-dir").Output()
 	if err != nil {
-		return "", g.failure(ctx, err, "")
+		return "", &past.NoRepository{Reason: err.Error()}
 	}
 	dir := strings.TrimSpace(string(out))
 	if !filepath.IsAbs(dir) {
@@ -44,29 +44,15 @@ func (g Git) CommonDir(ctx context.Context) (string, error) {
 // Resolve is the id of the commit rev names.
 func (g Git) Resolve(ctx context.Context, rev string) (string, error) {
 	id, err := project.ResolveAt(ctx, g.Dir, rev)
-	if err == nil {
-		return id, nil
-	}
-	if ctx.Err() != nil {
-		return "", context.Cause(ctx)
-	}
-	var noGit *project.NoGitError
 	switch {
-	case errors.As(err, &noGit):
-		return "", &past.NoRepository{Reason: noGit.Reason}
+	case err == nil:
+		return id, nil
+	case ctx.Err() != nil:
+		return "", context.Cause(ctx)
 	case errors.Is(err, project.ErrBadRef):
 		return "", &past.BadRev{Rev: rev}
 	}
-	return "", err
-}
-
-// failure is err, of a git command that failed, as the failure it is: a
-// cancellation, else no repository to ask.
-func (g Git) failure(ctx context.Context, err error, _ string) error {
-	if ctx.Err() != nil {
-		return context.Cause(ctx)
-	}
-	return &past.NoRepository{Reason: err.Error()}
+	return "", &past.NoRepository{Reason: err.Error()}
 }
 
 // Entries are the regular files of the commit's tree, as git ls-tree lists
@@ -77,9 +63,6 @@ func (g Git) Entries(ctx context.Context, commit string) ([]Entry, error) {
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
 	if err != nil {
-		if ctx.Err() != nil {
-			return nil, context.Cause(ctx)
-		}
 		return nil, fmt.Errorf("git ls-tree %s: %s", commit, strings.TrimSpace(stderr.String()+" "+err.Error()))
 	}
 	var entries []Entry
@@ -92,10 +75,8 @@ func (g Git) Entries(ctx context.Context, commit string) ([]Entry, error) {
 		if len(fields) != 4 || fields[1] != "blob" || (fields[0] != "100644" && fields[0] != "100755") {
 			continue
 		}
-		size, err := strconv.ParseInt(fields[3], 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("git ls-tree %s: a size %q is no number", commit, fields[3])
-		}
+		// -l gives a blob's size as a number.
+		size, _ := strconv.ParseInt(fields[3], 10, 64)
 		entries = append(entries, Entry{Path: name, ID: fields[2], Size: size})
 	}
 	return entries, nil
@@ -112,32 +93,18 @@ func (g Git) Blobs(ctx context.Context, ids []string) (map[string][]byte, error)
 	cmd.Stdin = strings.NewReader(strings.Join(ids, "\n") + "\n")
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
-	pipe, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-	if err := cmd.Start(); err != nil {
-		return nil, err
-	}
-	reader := bufio.NewReader(pipe)
-	var readErr error
-	for _, id := range ids {
-		if readErr = readBlob(reader, id, out); readErr != nil {
-			break
-		}
-	}
-	if readErr != nil {
-		_ = cmd.Process.Kill()
-	}
-	waitErr := cmd.Wait()
+	raw, err := cmd.Output()
 	if ctx.Err() != nil {
 		return nil, context.Cause(ctx)
 	}
-	if readErr != nil {
-		return nil, fmt.Errorf("git cat-file: %v %s", readErr, strings.TrimSpace(stderr.String()))
+	if err != nil {
+		return nil, fmt.Errorf("git cat-file: %v %s", err, strings.TrimSpace(stderr.String()))
 	}
-	if waitErr != nil {
-		return nil, fmt.Errorf("git cat-file: %v %s", waitErr, strings.TrimSpace(stderr.String()))
+	reader := bufio.NewReader(bytes.NewReader(raw))
+	for _, id := range ids {
+		if err := readBlob(reader, id, out); err != nil {
+			return nil, fmt.Errorf("git cat-file: %v", err)
+		}
 	}
 	return out, nil
 }
@@ -145,10 +112,7 @@ func (g Git) Blobs(ctx context.Context, ids []string) (map[string][]byte, error)
 // readBlob reads the answer to one id of cat-file --batch: a line
 // "<id> blob <size>", the content and a newline.
 func readBlob(r *bufio.Reader, id string, into map[string][]byte) error {
-	header, err := r.ReadString('\n')
-	if err != nil {
-		return err
-	}
+	header, _ := r.ReadString('\n')
 	fields := strings.Fields(header)
 	if len(fields) != 3 || fields[1] != "blob" {
 		return fmt.Errorf("%s is no blob: %q", id, strings.TrimSpace(header))
@@ -159,7 +123,7 @@ func readBlob(r *bufio.Reader, id string, into map[string][]byte) error {
 	}
 	text := make([]byte, size+1)
 	if _, err := io.ReadFull(r, text); err != nil {
-		return err
+		return fmt.Errorf("%s is cut short: %w", id, err)
 	}
 	into[id] = text[:size]
 	return nil
@@ -185,22 +149,15 @@ func (Disk) Write(ctx context.Context, path string, data []byte) error {
 	if ctx.Err() != nil {
 		return context.Cause(ctx)
 	}
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o750); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 		return err
 	}
-	staging, err := os.CreateTemp(dir, ".staging-*")
-	if err != nil {
+	staging := fmt.Sprintf("%s.staging-%d", path, os.Getpid())
+	if err := os.WriteFile(staging, data, 0o600); err != nil {
 		return err
 	}
-	_, werr := staging.Write(data)
-	cerr := staging.Close()
-	if err := errors.Join(werr, cerr); err != nil {
-		_ = os.Remove(staging.Name())
-		return err
-	}
-	if err := os.Rename(staging.Name(), path); err != nil {
-		_ = os.Remove(staging.Name())
+	if err := os.Rename(staging, path); err != nil {
+		_ = os.Remove(staging)
 		return err
 	}
 	return nil

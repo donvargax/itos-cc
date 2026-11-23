@@ -1,8 +1,11 @@
 package workdir
 
 import (
+	"bufio"
 	"context"
 	"errors"
+	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -235,7 +238,8 @@ func TestGitBlobs(t *testing.T) {
 }
 
 // Disk writes a file whole, making its folders, and replaces one there; a
-// done context writes nothing.
+// done context writes nothing, and a write that cannot be made leaves no
+// staging file behind.
 func TestDiskWritesWholeFiles(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "a", "b", "x.json")
@@ -259,6 +263,25 @@ func TestDiskWritesWholeFiles(t *testing.T) {
 	if err := disk.Write(t.Context(), filepath.Join(path, "under-a-file"), []byte("x")); err == nil {
 		t.Errorf("a folder that cannot be made should fail the write")
 	}
+	// A folder where the file belongs cannot be replaced by it.
+	folder := filepath.Join(dir, "folder")
+	if err := os.MkdirAll(folder, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := disk.Write(t.Context(), folder, []byte("x")); err == nil {
+		t.Errorf("a file cannot replace a folder")
+	}
+	if _, err := os.Stat(fmt.Sprintf("%s.staging-%d", folder, os.Getpid())); err == nil {
+		t.Errorf("a failed write left its staging file")
+	}
+	// A folder where the staging file belongs cannot be written to.
+	blocked := filepath.Join(dir, "blocked")
+	if err := os.MkdirAll(fmt.Sprintf("%s.staging-%d", blocked, os.Getpid()), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := disk.Write(t.Context(), blocked, []byte("x")); err == nil {
+		t.Errorf("a staging file that cannot be written should fail the write")
+	}
 	done, cancel := context.WithCancelCause(t.Context())
 	cancel(errors.New("stop"))
 	if err := disk.Write(done, filepath.Join(dir, "late"), []byte("x")); err == nil {
@@ -266,5 +289,239 @@ func TestDiskWritesWholeFiles(t *testing.T) {
 	}
 	if _, ok := disk.Read(done, path); ok {
 		t.Errorf("a done context should read nothing")
+	}
+}
+
+// What cat-file --batch says is read as it says it: a blob, whole; anything
+// else, a size that is none, or a content cut short, is an error naming the id.
+func TestReadBlobTakesWhatBatchSays(t *testing.T) {
+	into := map[string][]byte{}
+	r := bufio.NewReader(strings.NewReader("a1 blob 3\nabc\nb2 missing\nc3 blob x\nd4 blob 9\nshort"))
+	if err := readBlob(r, "a1", into); err != nil || string(into["a1"]) != "abc" {
+		t.Errorf("a blob: %q, %v", into["a1"], err)
+	}
+	for _, id := range []string{"b2", "c3", "d4"} {
+		if err := readBlob(r, id, into); err == nil || !strings.Contains(err.Error(), id) {
+			t.Errorf("%s: %v, want an error naming it", id, err)
+		}
+	}
+}
+
+// fake is the objects of a commit held in memory, each call able to fail.
+type fake struct {
+	top   string
+	files map[string]string
+	fail  map[string]error
+	// cancel is called when Blobs is, to end the run it is asked in.
+	cancel func()
+	asked  [][]string
+}
+
+func (f *fake) Top(context.Context) (string, error)       { return f.top, f.fail["top"] }
+func (f *fake) CommonDir(context.Context) (string, error) { return f.top + "/.git", f.fail["common"] }
+func (f *fake) Resolve(context.Context, string) (string, error) {
+	return "c0ffee", f.fail["resolve"]
+}
+
+func (f *fake) Entries(context.Context, string) ([]Entry, error) {
+	var out []Entry
+	for _, name := range slices.Sorted(maps.Keys(f.files)) {
+		out = append(out, Entry{Path: name, ID: "id-" + name, Size: int64(len(f.files[name]))})
+	}
+	return out, f.fail["entries"]
+}
+
+func (f *fake) Blobs(_ context.Context, ids []string) (map[string][]byte, error) {
+	f.asked = append(f.asked, ids)
+	if f.cancel != nil {
+		f.cancel()
+	}
+	if err := f.fail["blobs"]; err != nil {
+		return nil, err
+	}
+	out := map[string][]byte{}
+	for _, id := range ids {
+		if text, ok := f.files[strings.TrimPrefix(id, "id-")]; ok && !strings.HasPrefix(text, "<missing>") {
+			out[id] = []byte(text)
+		}
+	}
+	return out, nil
+}
+
+func opened(t *testing.T, f *fake) (past.Commit, error) {
+	t.Helper()
+	return Commits{Dir: f.top, Objects: f, Keeper: &memoryKeeper{}, Settings: config}.Open(t.Context(), "HEAD")
+}
+
+// Each failure of the objects ends Open as the objects gave it, except the
+// contents of itos-cc.yaml, which are read apart: a commit whose files cannot
+// be loaded is opened, and fails where they are read.
+func TestOpenEndsWhereTheObjectsFail(t *testing.T) {
+	base := map[string]string{"a.ts": alpha}
+	for _, call := range []string{"resolve", "top", "common", "entries"} {
+		boom := errors.New(call + " failed")
+		if _, err := opened(t, &fake{top: "/p", files: base, fail: map[string]error{call: boom}}); !errors.Is(err, boom) {
+			t.Errorf("%s failing: %v, want it returned", call, err)
+		}
+	}
+	commit, err := opened(t, &fake{top: "/p", files: base, fail: map[string]error{"blobs": errors.New("no objects")}})
+	if err != nil {
+		t.Fatalf("a commit whose contents cannot be loaded still opens: %v", err)
+	}
+	if _, _, failure := commit.Tree.Discover(t.Context(), []string{"."}); failure == nil {
+		t.Errorf("Discover should fail where the contents cannot be loaded")
+	}
+}
+
+// A cancellation that ends the loading is a cancellation, not an unwalkable
+// tree; a file outside the loaded set is asked for alone and kept; a file git
+// holds nothing for is unreadable, as is one whose objects fail.
+func TestTreeReadsWhatTheObjectsGive(t *testing.T) {
+	files := map[string]string{"a.ts": alpha, "notes.txt": "hello", "gone.txt": "<missing>"}
+	f := &fake{top: filepath.FromSlash("/p"), files: files}
+	commit, err := opened(t, f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(f.top, "notes.txt")
+	for range 2 {
+		if text, failure := commit.Tree.Read(t.Context(), path); failure != nil || string(text) != "hello" {
+			t.Errorf("Read(notes.txt) = %q, %v", text, failure)
+		}
+	}
+	asked := 0
+	for _, ids := range f.asked {
+		if slices.Contains(ids, "id-notes.txt") {
+			asked++
+		}
+	}
+	if asked != 1 {
+		t.Errorf("notes.txt was asked of git %d times, want once", asked)
+	}
+	if _, failure := commit.Tree.Read(t.Context(), path+".none"); failure == nil {
+		t.Errorf("a file the commit lacks is unreadable")
+	}
+	if _, failure := commit.Tree.Read(t.Context(), filepath.Join(f.top, "gone.txt")); failure == nil {
+		t.Errorf("a file git holds no content for is unreadable")
+	}
+	f2 := &fake{top: f.top, files: files, fail: map[string]error{}}
+	commit2, _ := opened(t, f2)
+	if _, failure := commit2.Tree.Read(t.Context(), filepath.Join(f.top, "a.ts")); failure != nil {
+		t.Fatalf("Read(a.ts) = %v", failure)
+	}
+	f2.fail["blobs"] = errors.New("no objects")
+	if _, failure := commit2.Tree.Read(t.Context(), filepath.Join(f.top, "notes.txt")); failure == nil {
+		t.Errorf("a file asked of objects that fail is unreadable")
+	}
+	ctx, cancel := context.WithCancelCause(t.Context())
+	f3 := &fake{top: f.top, files: files, fail: map[string]error{}}
+	commit3, _ := opened(t, f3)
+	f3.cancel, f3.fail["blobs"] = func() { cancel(errors.New("stop")) }, errors.New("cut off")
+	f3.files["late.txt"] = "x"
+	if _, failure := commit3.Tree.Read(ctx, filepath.Join(f.top, "notes.txt")); failure == nil {
+		t.Errorf("a read cut off by a cancellation fails")
+	}
+	ctx2, cancel2 := context.WithCancelCause(t.Context())
+	f4 := &fake{top: f.top, files: files, fail: map[string]error{}}
+	commit4 := Commits{Dir: f.top, Objects: f4, Keeper: &memoryKeeper{}, Settings: config}
+	opened4, err := commit4.Open(t.Context(), "HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Loading happens at the first read of the read set: end it there.
+	fresh := newCommitTree(f.top, f.top, "c0ffee", mustEntries(t, f4), f4)
+	f4.cancel, f4.fail["blobs"] = func() { cancel2(errors.New("stop")) }, errors.New("cut off")
+	if _, _, failure := fresh.Discover(ctx2, []string{"."}); failure == nil || !strings.Contains(failure.Error(), "cancelled") {
+		t.Errorf("a discovery cut off by a cancellation = %v, want Cancelled", failure)
+	}
+	if _, _, failure := opened4.Tree.Discover(ctx2, []string{"."}); failure == nil {
+		t.Errorf("a done context discovers nothing")
+	}
+	if _, failure := opened4.Tree.Read(ctx2, path); failure == nil {
+		t.Errorf("a done context reads nothing")
+	}
+}
+
+func mustEntries(t *testing.T, o Objects) []Entry {
+	t.Helper()
+	entries, err := o.Entries(t.Context(), "c0ffee")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return entries
+}
+
+// The commit's folders and files answer as a disk's do: names in order, a
+// file's size and kind, a folder's, what is not there not found, and a
+// file's content only where it is loaded.
+func TestCommitFilesAnswerAsADiskDoes(t *testing.T) {
+	top := filepath.FromSlash("/p")
+	f := newCommitFS(top, "c0ffee", []Entry{{Path: "src/a.ts", ID: "1", Size: 4}, {Path: "src/b.ts", ID: "2", Size: 5}, {Path: "z.txt", ID: "3", Size: 1}}, &fake{})
+	entries, err := f.ReadDir(top)
+	if err != nil || len(entries) != 2 || entries[0].Name() != "src" || !entries[0].IsDir() || entries[1].Name() != "z.txt" {
+		t.Errorf("ReadDir(top) = %v, %v", entries, err)
+	}
+	if _, err := f.ReadDir(filepath.Join(top, "none")); err == nil {
+		t.Errorf("ReadDir of a missing folder should fail")
+	}
+	info, err := f.Lstat(filepath.Join(top, "src", "a.ts"))
+	if err != nil || info.Size() != 4 || info.IsDir() || info.Mode().IsDir() || !info.ModTime().IsZero() || info.Sys() != nil || info.Name() != "a.ts" {
+		t.Errorf("Lstat(a.ts) = %+v, %v", info, err)
+	}
+	if dir, err := f.Stat(filepath.Join(top, "src")); err != nil || !dir.IsDir() || !dir.Mode().IsDir() {
+		t.Errorf("Stat(src) = %+v, %v", dir, err)
+	}
+	if _, err := f.Stat(filepath.Join(top, "none")); err == nil {
+		t.Errorf("Stat of a missing file should fail")
+	}
+	if _, err := f.ReadFile(filepath.Join(top, "none")); err == nil {
+		t.Errorf("ReadFile of a missing file should fail")
+	}
+	if _, err := f.ReadFile(filepath.Join(top, "z.txt")); err == nil {
+		t.Errorf("ReadFile of a file not loaded should fail")
+	}
+	f.content["3"] = []byte("z")
+	if text, err := f.ReadFile(filepath.Join(top, "z.txt")); err != nil || string(text) != "z" {
+		t.Errorf("ReadFile of a loaded file = %q, %v", text, err)
+	}
+}
+
+// git ls-tree lists links and submodules, which are no files of the commit,
+// beside its files.
+func TestEntriesLeaveOutLinksAndSubmodules(t *testing.T) {
+	dir, _ := committed(t, map[string]string{"a.ts": alpha})
+	blob := gitOutput(t, dir, "hash-object", "-w", "--stdin")
+	_ = blob
+	git(t, "update-index", "--add", "--cacheinfo", "120000,"+gitOutput(t, dir, "rev-parse", "HEAD:a.ts")+",link")
+	git(t, "update-index", "--add", "--cacheinfo", "160000,"+gitOutput(t, dir, "rev-parse", "HEAD")+",sub")
+	git(t, "commit", "-q", "-m", "links")
+	entries, err := Git{Dir: dir}.Entries(t.Context(), "HEAD")
+	if err != nil || len(entries) != 1 || entries[0].Path != "a.ts" {
+		t.Errorf("Entries = %+v, %v; want a.ts alone", entries, err)
+	}
+}
+
+// The git failures are told apart: a done context is its cause, a revision
+// git cannot name BadRev, and no repository NoRepository.
+func TestGitFailuresAreTold(t *testing.T) {
+	dir, _ := committed(t, map[string]string{"a.ts": alpha})
+	done, cancel := context.WithCancelCause(t.Context())
+	cancel(errors.New("stop"))
+	g := Git{Dir: dir}
+	if _, err := g.Resolve(done, "HEAD"); err == nil || err.Error() != "stop" {
+		t.Errorf("Resolve with a done context: %v", err)
+	}
+	if _, err := g.Blobs(done, []string{"x"}); err == nil || err.Error() != "stop" {
+		t.Errorf("Blobs with a done context: %v", err)
+	}
+	if _, err := (Git{Dir: filepath.Join(dir, "none")}).Blobs(t.Context(), []string{"x"}); err == nil {
+		t.Errorf("Blobs outside a folder should fail")
+	}
+	if _, err := g.Blobs(t.Context(), []string{"0000000000000000000000000000000000000000"}); err == nil {
+		t.Errorf("Blobs of an id git lacks should fail")
+	}
+	top, err := g.Top(t.Context())
+	if err != nil || top != dir {
+		t.Errorf("Top = %q, %v; want %q", top, err, dir)
 	}
 }
