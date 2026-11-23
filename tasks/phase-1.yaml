@@ -7592,6 +7592,3 @@
     T-236's again: in a throwaway worktree, take -p no:cacheprovider out of
     internal/covrun/python.go's pytestRunner and see ID-MUT-214 refused at the hook; quote it in the
     close. Out of scope: findings F1 to F4, cd.yml and the other workflows.
-  done_when:
-    - run: "go test ./features -run '^TestScenarioLeavesNoStrayFiles$' -v 2>&1 | grep -q -- '--- PASS: TestScenarioLeavesNoStrayFiles'"
-      timeout: 300

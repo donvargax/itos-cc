@@ -6748,6 +6748,6 @@ items:
     title: Re-land the stray-file refusal, with fixture markers moved out, allowances in both drivers and tool folders let by
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
