@@ -51,7 +51,8 @@ func TestKeyFollowsTheQuestion(t *testing.T) {
 	}
 	// A working directory the root cannot be related to keys by its own name.
 	apart := past.Commit{Root: root, Dir: "relative"}
-	if apart.Key(q{[]string{"a"}}, "1") == here.Key(q{[]string{"a"}}, "1") || apart.Key(q{[]string{"a"}}, "1") != apart.Key(q{[]string{"a"}}, "1") {
+	again := past.Commit{Root: root, Dir: "relative"}
+	if apart.Key(q{[]string{"a"}}, "1") == here.Key(q{[]string{"a"}}, "1") || apart.Key(q{[]string{"a"}}, "1") != again.Key(q{[]string{"a"}}, "1") {
 		t.Errorf("a directory apart from the root should have a key of its own, the same each time")
 	}
 	if (past.Commit{Root: root, Dir: root}).Key(func() {}, "1") == "" {
