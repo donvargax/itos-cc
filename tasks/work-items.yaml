@@ -6804,6 +6804,6 @@ items:
     title: Make the owned command's cancel, exit, reap and cleanup machine explicit in code, its table held to docs/state-machines.md
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task

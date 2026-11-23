@@ -7802,6 +7802,3 @@
     each PASS line (itos#276). Out of scope: every other package's machine, the output and memory
     caps beyond where the machine meets them, the nightly's longer run (its own item), new
     dependencies.
-  done_when:
-    - run: "test \"$(go test ./internal/processes -run '^(TestOwnedCommandMachine|TestGroupEndsAreJudgedInEveryOrder|TestOwnedCommandTransitionsMatchTheDocument)$' -v 2>&1 | grep -c -E -- '^--- PASS: (TestOwnedCommandMachine|TestGroupEndsAreJudgedInEveryOrder|TestOwnedCommandTransitionsMatchTheDocument) ')\" = 3"
-      timeout: 300
