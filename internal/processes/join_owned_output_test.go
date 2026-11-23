@@ -34,7 +34,7 @@ func TestJoinOwnedOutputReportsWhatItCouldNotKeep(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer writer.Close()
+			defer func() { _ = writer.Close() }()
 			done := make(chan capturedOutput, 1)
 			done <- capturedOutput{held: bytes.NewBufferString("held"), err: c.readErr}
 			err = joinOwnedOutput(ownedOutputCapture{reader: reader, writer: writer, target: c.target, done: done}, kept)
