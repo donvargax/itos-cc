@@ -357,3 +357,18 @@ func TestRunRefusesAtWithChanged(t *testing.T) {
 		t.Errorf("--at --changed: exit %d, %s; want %d and flags.conflict", code, stdout, cli.CodeUsage)
 	}
 }
+
+// With no path and no --changed the whole project is checked: a project with
+// no source has nothing to check, which is no "no source files" selection,
+// and its empty result is still recorded.
+func TestHandleOfAnEmptyProjectChecksTheWholeAndFindsNothing(t *testing.T) {
+	store := &snapporttest.Store{RootDir: at("")}
+	h := handler(porttest.TreeOf(at(""), map[string]string{}, nil), store)
+	found, err := h.Handle(t.Context(), query())
+	if err != nil || found.NoSources || found.Candidates == nil || len(found.Candidates) != 0 || store.Snapshots["dry.json"] == "" {
+		t.Errorf("Handle() = %+v, %v, recorded %v; want no pair, NoSources unset, dry.json recorded", found, err, store.Snapshots)
+	}
+	if found, err := h.Handle(t.Context(), query("nosuch.py")); err == nil {
+		t.Errorf("a path of an empty project: %+v, want it unmatched", found)
+	}
+}
