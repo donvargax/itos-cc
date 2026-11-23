@@ -6768,8 +6768,8 @@ items:
   - id: T-243
     title: Hand each owned command's output over from its reader instead of sharing its buffer, held by a race-detector step
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: T-244
