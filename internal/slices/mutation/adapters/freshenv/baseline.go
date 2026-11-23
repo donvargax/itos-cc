@@ -89,7 +89,7 @@ func freshPythonCommand(ctx context.Context, path string, all bool, tests []stri
 	}
 	py := pythonInterpreter(root)
 	probe := exec.CommandContext(ctx, py, "-c", "import pytest")
-	probe.Dir, probe.Stdout, probe.Stderr = root, io.Discard, io.Discard
+	probe.Dir, probe.Env, probe.Stdout, probe.Stderr = root, project.NoBytecodeEnv(nil), io.Discard, io.Discard
 	err := execute(ctx, probe)
 	calls := []covrun.CommandExecution{{Args: append([]string{}, probe.Args...), Dir: root, Err: err}}
 	if err != nil && ctx.Err() != nil {

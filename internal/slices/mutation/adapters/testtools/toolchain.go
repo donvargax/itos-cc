@@ -79,7 +79,7 @@ func (t Toolchain) Observe(ctx context.Context, r mutants.CommandRequest) (mutan
 		}
 		f.Interpreter = PythonInterpreter(f.Root)
 		probe := exec.CommandContext(ctx, f.Interpreter, "-c", "import pytest")
-		probe.Dir, probe.Env = t.Dir, t.env(t.Dir)
+		probe.Dir, probe.Env = t.Dir, project.NoBytecodeEnv(t.env(t.Dir))
 		f.Pytest = probe.Run() == nil
 	case "kotlin":
 		f.Module = Base(ctx, r.Path, "build.gradle.kts", "build.gradle", "pom.xml")
