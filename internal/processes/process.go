@@ -8,7 +8,6 @@
 package processes
 
 import (
-	"errors"
 	"os"
 	"os/exec"
 	"runtime"
@@ -33,14 +32,13 @@ func killGroup(cmd *exec.Cmd, platform string, calls groupCalls) {
 	cmd.WaitDelay = 2 * time.Second
 }
 
-// cancelGroup kills the command's group when its context ends. A group
-// already gone is os.ErrProcessDone (bug-5): the command exited before the
-// cancel landed, and os/exec then reports its own result, never the kill's
-// ESRCH as Wait's error.
+// cancelGroup kills the command's group when its context ends. os/exec's Wait
+// reports the command's own exit only when Cancel returns os.ErrProcessDone:
+// nil becomes ctx.Err() and any other error wraps as "exec: canceling Cmd",
+// even for a command that exited 0 before the kill landed (bug-5). No process
+// survives SIGKILL, so the exit status alone tells whether the kill landed
+// first; the cleanup's own kill and probe still see to what is left.
 func cancelGroup(calls groupCalls, pgid int) error {
-	err := calls.signal(-pgid, syscall.SIGKILL)
-	if errors.Is(err, syscall.ESRCH) {
-		return os.ErrProcessDone
-	}
-	return err
+	_ = calls.signal(-pgid, syscall.SIGKILL)
+	return os.ErrProcessDone
 }
