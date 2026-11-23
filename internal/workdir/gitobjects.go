@@ -186,7 +186,7 @@ func (Disk) Write(ctx context.Context, path string, data []byte) error {
 		return context.Cause(ctx)
 	}
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return err
 	}
 	staging, err := os.CreateTemp(dir, ".staging-*")

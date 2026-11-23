@@ -169,6 +169,7 @@ linters:
             - "!**/internal/snapshot/**" # a domain and its ports
             - "!**/internal/coverage/**" # a domain and its ports
             - "!**/internal/workdir/**" # an adapter, held by workdir
+            - "!**/internal/past/**" # the past-commit port, held by past
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/processes/**" # the process-ownership engine, held by processes
@@ -191,6 +192,8 @@ linters:
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/internal/lang/port$
             - github.com/donvargax/itos-cc/internal/lang/port/
+            - github.com/donvargax/itos-cc/internal/past$
+            - github.com/donvargax/itos-cc/internal/past/porttest$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "a slice imports only the domain, its ports, internal/cli and internal/lang with its port (decision 29); if this package is a domain package or an adapter, not a command, extend the rules as docs/go.md's Adding a package says, never loosen this one"
@@ -233,6 +236,8 @@ linters:
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/internal/lang/port$
             - github.com/donvargax/itos-cc/internal/lang/port/
+            - github.com/donvargax/itos-cc/internal/past$
+            - github.com/donvargax/itos-cc/internal/past/porttest$
             - github.com/donvargax/itos-cc/internal/slices/
           deny:
             - pkg: github.com/donvargax/itos-cc
@@ -382,6 +387,23 @@ linters:
         # internal/slices/<name>/adapters/<adapter>, from slice-packages,
         # slice-adapters and slice-fakes. Each port's adapters have a rule of
         # their own, so no adapter is allowed another's port or library.
+        # internal/past is the port of a past commit, --at (T-250): it holds
+        # the ports a command measures a commit through, so it imports the
+        # selection domain and the ports it hands out, and no adapter.
+        past:
+          list-mode: lax
+          files:
+            - "**/internal/past/**"
+          allow:
+            - github.com/donvargax/itos-cc/internal/selection$
+            - github.com/donvargax/itos-cc/internal/selection/port$
+            - github.com/donvargax/itos-cc/internal/lang/port$
+            - github.com/donvargax/itos-cc/internal/snapshot/port$
+            - github.com/donvargax/itos-cc/internal/past$
+            - github.com/donvargax/itos-cc/internal/past/porttest$
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "past imports only the selection domain and the selection, lang and snapshot ports it hands out (T-250); extend the rules as docs/go.md's Adding a package says, never loosen this one"
         # internal/workdir implements the selection port over internal/project,
         # the engine that walks a tree and asks git, and lang's port
         # over project's answers from the disk (T-35): both ports and project
@@ -396,10 +418,13 @@ linters:
           allow:
             - github.com/donvargax/itos-cc/internal/selection/port$
             - github.com/donvargax/itos-cc/internal/lang/port$
+            - github.com/donvargax/itos-cc/internal/lang$
+            - github.com/donvargax/itos-cc/internal/selection$
+            - github.com/donvargax/itos-cc/internal/past$
             - github.com/donvargax/itos-cc/internal/project$
           deny:
             - pkg: github.com/donvargax/itos-cc
-              desc: "the workdir adapter imports only the selection/lang ports and project, which it wraps (T-92, T-161); extend the rules as docs/go.md's Adding a package says, never loosen this one"
+              desc: "the workdir adapter imports only the selection/lang ports and project, which it wraps, and the past-commit port it implements (T-92, T-161, T-250); extend the rules as docs/go.md's Adding a package says, never loosen this one"
         # internal/metricsdir implements the snapshot port over its own
         # library, metrics.go, the top-level metrics until it folded in here
         # (ADR-0061, T-195), which writes .metrics/ as indented JSON renamed

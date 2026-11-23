@@ -52,6 +52,8 @@ func (o pastObjects) Resolve(ctx context.Context, rev string) (string, error) {
 		return "", &past.BadRev{Rev: rev}
 	case mutation.HistoryCancelled:
 		return "", f.Cause
+	case mutation.HistoryFailed:
+		return "", f.Cause
 	}
 	return "", failure
 }
