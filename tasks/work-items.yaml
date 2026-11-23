@@ -6807,12 +6807,10 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: processes-machine-no-panic
+  - id: T-249
     title: Return an internal error, not a panic, when the owned command's machine gets an event it has no row for
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Placeholder; the ledger entry holds the why.
+    kind: task

@@ -7802,3 +7802,27 @@
     each PASS line (itos#276). Out of scope: every other package's machine, the output and memory
     caps beyond where the machine meets them, the nightly's longer run (its own item), new
     dependencies.
+- id: T-249
+  type: refactor
+  title: Return an internal error, not a panic, when the owned command's machine gets an event it has no row for
+  why: >
+    The person's review of processes-machine (2026-11-23): T-248's ownedLife.apply panics on an
+    event the transition table has no row for, and the person's Go practice is no panic in
+    production code (go-template-itos #5). The coordinator's calls: apply returns an error instead,
+    a named error of internal/processes whose message names the state and the event ("no transition
+    for <event> from <state>"), and every caller (runOwnedCommand's Wait and cleanup,
+    waitOwnedProcessGroup's probe and deadline) returns it up unchanged, so it reaches the CLI as an
+    error no domain classifier names, which internal/cli makes the internal problem, exit 100, "This
+    is a bug in itos-cc" (cli.go's Internal); no new exit code, no classifier change unless one
+    would otherwise swallow it as a command's failure, in which case it is named there as internal.
+    observeContext keeps ignoring next's ok only where the table holds a row for every state it can
+    be in, and says so in a comment; otherwise it returns the same error. Behaviour is identical on
+    every path the table lists. A test feeds an unlisted event through next and apply and asserts
+    the error, its message's state and event, and that the state did not change; it is
+    TestOwnedLifeRefusesAnUnlistedEvent. The check runs it, greps its PASS line (itos#276), and
+    finds no panic( in internal/processes' non-test Go files. Out of scope: every other package's
+    panics, the table's rows, the document's table (docs/state-machines.md changes only its sentence
+    saying apply panics).
+  done_when:
+    - run: "! git grep -q 'panic(' -- 'internal/processes/*.go' ':!*_test.go' && go test ./internal/processes -run '^TestOwnedLifeRefusesAnUnlistedEvent$' -v 2>&1 | grep -q -- '--- PASS: TestOwnedLifeRefusesAnUnlistedEvent'"
+      timeout: 120
