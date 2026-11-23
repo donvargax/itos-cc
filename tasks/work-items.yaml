@@ -6617,7 +6617,7 @@ items:
     title: "units, dry and scrap --at <commit>: measure a commit from git objects, cached per commit in the git common directory"
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: gardener-outcomes

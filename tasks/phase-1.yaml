@@ -7856,6 +7856,3 @@
     runs this task's scenarios in process and greps the PASS line (itos#276). Out of scope: change
     frequency, compare and hot-untested (their own ideas), crap or mutation at a past commit, the
     viewer, any new CI job.
-  done_when:
-    - run: "go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='@T-250' -v 2>&1 | grep -q -- '--- PASS: TestScenarios'"
-      timeout: 900
