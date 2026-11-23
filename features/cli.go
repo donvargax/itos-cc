@@ -672,8 +672,8 @@ func (c *cliState) listsSites(file string) error {
 // noTestRuns is whether the project's test script left nothing behind,
 // and nothing was written under .metrics or said of a baseline.
 func (c *cliState) noTestRuns() error {
-	for _, name := range []string{"test-ran", ".metrics"} {
-		if c.w.d.Exists(filepath.Join(c.w.dir, name)) {
+	for _, name := range []string{c.w.mark("test-ran"), filepath.Join(c.w.dir, ".metrics")} {
+		if c.w.d.Exists(name) {
 			return fmt.Errorf("%s is there: a test or coverage command ran\n%s", name, c.w.report())
 		}
 	}

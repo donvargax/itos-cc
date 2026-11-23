@@ -2,6 +2,7 @@ package features
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -268,7 +269,11 @@ func (c *cliState) mutationSample() error {
 // listSample is x.ts, of two mutation sites, in a project whose test
 // script leaves test-ran behind if it runs.
 func (c *cliState) listSample() error {
-	if err := c.w.write("package.json", `{"scripts": {"test": "echo ran > test-ran"}}`+"\n"); err != nil {
+	script := `echo ran > "$` + marksEnv + `/test-ran"`
+	if c.w.d.Platform() == "windows" {
+		script = `echo ran > "%` + marksEnv + `%\test-ran"`
+	}
+	if err := c.w.write("package.json", `{"scripts": {"test": `+strconv.Quote(script)+`}}`+"\n"); err != nil {
 		return err
 	}
 	return c.w.write("x.ts", "export function place(a: number): boolean {\n  return a > 0;\n}\n")

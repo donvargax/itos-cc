@@ -284,7 +284,7 @@ var (
 	pythonSample = map[string]string{
 		"pyproject.toml":      "[project]\nname = \"board\"\nversion = \"0\"\n",
 		"src/board.py":        "def place(row, col):\n    return row > 0 and col < 9\n",
-		"tests/test_board.py": "open(\"test-ran\", \"w\").write(\"ran\")\n\nfrom src.board import place\n\n\ndef test_place():\n    assert place(1, 2)\n",
+		"tests/test_board.py": "import os\nopen(os.path.join(os.environ[\"FIXTURE_MARKS\"], \"python-test-ran\"), \"w\").write(\"ran\")\n\nfrom src.board import place\n\n\ndef test_place():\n    assert place(1, 2)\n",
 	}
 	// pythonSites are src/board.py's sites as mutation list prints them.
 	pythonSites = []listedSite{

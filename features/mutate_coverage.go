@@ -200,10 +200,13 @@ func (m *mutateState) everyMutantRuns() error {
 	return nil
 }
 
+// srcMark is the mark the board module's tests leave in the marks folder.
+const srcMark = "src-test-ran"
+
 // markedTest is the board module's test of both functions, which leaves
 // test-ran in its folder when it runs.
-const markedTest = "package board\n\nimport (\n\t\"os\"\n\t\"testing\"\n)\n\nfunc TestPlace(t *testing.T) {\n" +
-	"\t_ = os.WriteFile(\"test-ran\", nil, 0o644)\n\tvar b Board\n\tif b.place(5) || !b.place(6) || !b.clear(2) || b.clear(3) {\n" +
+var markedTest = "package board\n\nimport (\n\t\"os\"\n\t\"path/filepath\"\n\t\"testing\"\n)\n\nfunc TestPlace(t *testing.T) {\n" +
+	markWrite(srcMark) + "\tvar b Board\n\tif b.place(5) || !b.place(6) || !b.clear(2) || b.clear(3) {\n" +
 	"\t\tt.Fatal(\"board\")\n\t}\n}\n"
 
 // everyReusable writes the board module, its tests killing every mutant,
@@ -225,7 +228,7 @@ func (m *mutateState) everyReusable() error {
 	}
 	m.snapshot = ".metrics/mutate/" + m.file + ".json"
 	m.recorded = m.read(m.snapshot)
-	return m.w.d.Remove(filepath.Join(m.w.dir, "src", "test-ran"))
+	return m.w.d.Remove(m.w.mark(srcMark))
 }
 
 // nothingRuns is whether the last run announced no coverage command,
@@ -237,8 +240,8 @@ func (m *mutateState) nothingRuns() error {
 			return fmt.Errorf("stderr says %q\n%s", line, m.w.report())
 		}
 	}
-	if m.w.d.Exists(filepath.Join(m.w.dir, "src", "test-ran")) {
-		return fmt.Errorf("the tests ran: they left src/test-ran\n%s", m.w.report())
+	if m.w.d.Exists(m.w.mark(srcMark)) {
+		return fmt.Errorf("the tests ran: they left %s in the marks folder\n%s", srcMark, m.w.report())
 	}
 	if m.recorded == "" && m.w.d.Exists(filepath.Join(m.w.dir, ".metrics")) {
 		return fmt.Errorf("the run left .metrics: a coverage or test command ran\n%s", m.w.report())

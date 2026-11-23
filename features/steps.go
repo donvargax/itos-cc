@@ -446,10 +446,12 @@ type world struct {
 	// tmp is the temporary folder of the scenario's own its runs are given,
 	// tags the scenario's, ran whether it made a run, and added the paths its
 	// runs added to its project tree (stray_files.go).
-	tmp   string
-	tags  []string
-	ran   bool
-	added map[string]bool
+	tmp     string
+	marks   string
+	reports map[string]bool
+	tags    []string
+	ran     bool
+	added   map[string]bool
 
 	// feature is the name of the scenario's feature file.
 	feature string
@@ -732,7 +734,7 @@ func (w *world) setUp(s *godog.Scenario) error {
 	w.beforeRemove = nil
 	w.last, w.problem, w.without, w.wrote, w.each, w.binary, w.edges, w.signal = nil, nil, nil, "", nil, "", nil, 0
 	w.feature, w.scored, w.noTests, w.with, w.project, w.config, w.runIn = filepath.Base(s.Uri), nil, nil, nil, "", "", ""
-	w.folders, w.ran, w.added = nil, false, map[string]bool{}
+	w.folders, w.ran, w.added, w.reports = nil, false, map[string]bool{}, map[string]bool{}
 	w.tags = make([]string, len(s.Tags))
 	for i, tag := range s.Tags {
 		w.tags[i] = tag.Name
@@ -744,7 +746,10 @@ func (w *world) setUp(s *godog.Scenario) error {
 	if w.dir, err = w.d.Folder(); err != nil {
 		return err
 	}
-	w.tmp, err = w.d.Folder()
+	if w.tmp, err = w.d.Folder(); err != nil {
+		return err
+	}
+	w.marks, err = w.d.Folder()
 	return err
 }
 
@@ -764,7 +769,7 @@ func (w *world) cleanUp(ctx context.Context) error {
 		}
 	}
 	stray := w.strays(ctx)
-	for _, folder := range append(w.folders, w.tmp) {
+	for _, folder := range append(w.folders, w.tmp, w.marks) {
 		_ = w.d.Remove(folder)
 	}
 	if w.beforeRemove == nil {

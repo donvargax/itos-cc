@@ -139,7 +139,7 @@ func (c *checkMutation) project() error {
 		s.tsTests = strings.Replace(s.tsTests, " expect(b.place(6)).toBe(true);", " expect(b.place(6)).toBe(true);\n expect(b.place(9)).toBe(false);", 1)
 	}
 	if c.id == "57" {
-		s.m.w.variables = append(s.m.w.variables, "CHECK_MARKER="+filepath.ToSlash(filepath.Join(s.m.w.dir, "src/test-ran")))
+		s.m.w.variables = append(s.m.w.variables, "CHECK_MARKER="+filepath.ToSlash(s.m.w.mark(srcMark)))
 	}
 	if err := s.project(true); err != nil {
 		return err
@@ -171,8 +171,8 @@ func (c *checkMutation) fresh() error {
 		m := s.m
 		m.snapshot = ".metrics/mutate/" + s.file + ".json"
 		m.recorded = m.read(m.snapshot)
-		for _, name := range []string{"src/test-ran", ".metrics/coverage"} {
-			if err := m.w.d.Remove(filepath.Join(m.w.dir, name)); err != nil {
+		for _, name := range []string{m.w.mark(srcMark), filepath.Join(m.w.dir, ".metrics/coverage")} {
+			if err := m.w.d.Remove(name); err != nil {
 				return err
 			}
 		}

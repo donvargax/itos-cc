@@ -536,7 +536,7 @@ func (c *coverageState) noTestsRun() error {
 		return errors.New("the project has no tests that would leave a mark")
 	}
 	for _, m := range c.markers {
-		if c.w.d.Exists(c.abs(m)) {
+		if c.w.d.Exists(c.w.mark(m)) {
 			return fmt.Errorf("a test ran: %s is there\n%s", m, c.w.report())
 		}
 	}

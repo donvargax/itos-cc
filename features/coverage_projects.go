@@ -37,18 +37,24 @@ func (c *coverageState) declare(dir string, cov Coverage) error {
 	return c.w.d.Coverage(c.abs(dir), cov)
 }
 
-// markerTest is a Go test of package pkg that writes test-ran in its
-// package's folder when it runs, then calls Place with a.
-func markerTest(pkg string, a int) string {
-	return "package " + pkg + "\n\nimport (\n\t\"os\"\n\t\"testing\"\n)\n\nfunc TestPlace(t *testing.T) {\n" +
-		"\t_ = os.WriteFile(\"test-ran\", nil, 0o644)\n" + fmt.Sprintf("\tif Place(%d) < 0 {\n\t\tt.Fatal(\"Place\")\n\t}\n}\n", a)
+// markWrite is the Go statement that leaves the mark name in the scenario's
+// marks folder, which marksEnv gives the project's tests.
+func markWrite(name string) string {
+	return "\t_ = os.WriteFile(filepath.Join(os.Getenv(" + strconv.Quote(marksEnv) + "), " + strconv.Quote(name) + "), nil, 0o644)\n"
 }
 
-// sampleTest is the sample's test of package a: it writes test-ran in a/
-// when it runs, then expects A(1) to be want.
+// markerTest is a Go test of package pkg that leaves its mark, pkg-test-ran,
+// in the marks folder when it runs, then calls Place with a.
+func markerTest(pkg string, a int) string {
+	return "package " + pkg + "\n\nimport (\n\t\"os\"\n\t\"path/filepath\"\n\t\"testing\"\n)\n\nfunc TestPlace(t *testing.T) {\n" +
+		markWrite(pkg+"-test-ran") + fmt.Sprintf("\tif Place(%d) < 0 {\n\t\tt.Fatal(\"Place\")\n\t}\n}\n", a)
+}
+
+// sampleTest is the sample's test of package a: it leaves a-test-ran in the
+// marks folder when it runs, then expects A(1) to be want.
 func sampleTest(want int) string {
-	return "package a\n\nimport (\n\t\"os\"\n\t\"testing\"\n)\n\nfunc TestA(t *testing.T) {\n" +
-		"\t_ = os.WriteFile(\"test-ran\", nil, 0o644)\n" + fmt.Sprintf("\tif A(1) != %d {\n\t\tt.Fatal(\"A\")\n\t}\n}\n", want)
+	return "package a\n\nimport (\n\t\"os\"\n\t\"path/filepath\"\n\t\"testing\"\n)\n\nfunc TestA(t *testing.T) {\n" +
+		markWrite("a-test-ran") + fmt.Sprintf("\tif A(1) != %d {\n\t\tt.Fatal(\"A\")\n\t}\n}\n", want)
 }
 
 // sampleA is the sample's a/a.go: A runs from line 3 to 8, an if on line 4.
@@ -80,7 +86,7 @@ func (c *coverageState) sample(args string) error {
 	}); err != nil {
 		return err
 	}
-	c.markers = []string{"a/test-ran", "other/test-ran"}
+	c.markers = []string{"a-test-ran", "other-test-ran"}
 	c.want[covFunction{"a/a.go", "A"}] = 100 * 2.0 / 3
 	c.want[covFunction{"b/b.go", "B"}] = 100
 	words, err := commandWords(args)
@@ -588,7 +594,7 @@ func (c *coverageState) earlierRun() error {
 			return err
 		}
 		c.want[covFunction{m.dir + "/" + m.dir + ".go", "Place"}], _ = share(goBlocks(m.reports[m.first]...), byUnit)
-		c.markers = append(c.markers, m.dir+"/test-ran")
+		c.markers = append(c.markers, m.dir+"-test-ran")
 		if err := c.declare(m.dir, Coverage{Language: "go"}); err != nil {
 			return err
 		}

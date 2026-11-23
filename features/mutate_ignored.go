@@ -49,10 +49,10 @@ func ignoredSteps(sc *godog.ScenarioContext, m *mutateState) {
 	sc.Step(`^sub/ is a git submodule of the module, holding data\.txt$`, s.ignoredSubmodule)
 }
 
-// ignoredObserved is where the TypeScript package's test appends a line
-// for each of its runs, in a folder git ignores, so the project's commit
-// never holds it.
-const ignoredObserved = "tmp/copies.txt"
+// ignoredObserved is the mark where the TypeScript package's test appends a
+// line for each of its runs, in the scenario's marks folder, so the
+// project's tree never holds it.
+const ignoredObserved = "copies.txt"
 
 // ignoredTypeScript writes the package shapes at the scratch folder, its
 // test killing every mutant of area and appending, on each run, its folder,
@@ -64,8 +64,8 @@ const ignoredObserved = "tmp/copies.txt"
 func (s *ignoredState) ignoredTypeScript() error {
 	s.m.file = "src/area.ts"
 	s.m.language = "TypeScript"
-	s.observed = ignoredObserved
-	observed := filepath.Join(s.m.w.dir, filepath.FromSlash(ignoredObserved))
+	observed := s.m.w.mark(ignoredObserved)
+	s.observed = observed
 	test := "import { appendFileSync, existsSync, lstatSync, readlinkSync } from \"node:fs\";\n" +
 		"import { expect, test } from \"vitest\";\nimport { area } from \"./area\";\n\n" +
 		"test(\"area\", () => {\n  expect(area(2, 3)).toBe(6);\n});\n\n" +
@@ -110,7 +110,7 @@ func (s *ignoredState) ignoredCopyHeld() error {
 	if s.observed == "" {
 		return fmt.Errorf("no Given wrote a test that says where it runs")
 	}
-	text, err := s.m.w.readIn(s.m.w.dir, s.observed)
+	text, err := s.m.w.d.Read(s.observed)
 	if err != nil {
 		return fmt.Errorf("%v\n%s", err, s.m.w.report())
 	}
