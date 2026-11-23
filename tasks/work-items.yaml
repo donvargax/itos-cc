@@ -6613,35 +6613,26 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: gardener-history-objects
-    title: Measure any commit from git objects, without a checkout, cached per commit in the git directory
+  - id: T-250
+    title: "units, dry and scrap --at <commit>: measure a commit from git objects, cached per commit in the git common directory"
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      The base for the other gardener pieces: history is read from git objects, so any commit can be
-      measured without checking it out, and each commit's numbers are cached in the git common
-      directory, shared by every worktree, since a commit's numbers never change under the same
-      settings. From gardener (subsy/gardener at c58a2ad, MIT; the chief's adoption note,
-      2026-11-22, which the person agreed to). Port the idea to Go on itos-cc's tree-sitter core
-      rather than copying gardener's regex matching; any code copied carries gardener's notice in
-      THIRD_PARTY_NOTICES. Starts after the pstack trial's two runs (the pstack copy and the itos
-      arm, F1 to F5) finish, so it touches nothing either run is fixing.
+    kind: task
   - id: gardener-outcomes
     title: "Outcomes per window: fix, cleanup and revert share, and rework by blame"
     phase: 1
     owner: null
     status: dropped
-    depends_on: [gardener-history-objects]
+    depends_on: [T-250]
     kind: idea
   - id: gardener-hot-untested
     title: "Hot and untested: change frequency times crap score, per file and per function"
     phase: 1
     owner: null
     status: todo
-    depends_on: [gardener-history-objects]
+    depends_on: [T-250]
     kind: idea
     why: >
       Fix commits per file and per function, scored with size as gardener does, and a
@@ -6662,7 +6653,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [gardener-history-objects]
+    depends_on: [T-250]
     kind: idea
     why: >
       For a commit or range: fixes and rework on the files it touched, in the window before against
@@ -6682,14 +6673,14 @@ items:
     phase: 1
     owner: null
     status: dropped
-    depends_on: [gardener-history-objects]
+    depends_on: [T-250]
     kind: idea
   - id: gardener-snapshot-counts
     title: "Snapshot counts: big files, suppressions, type escapes, instructions against lint rules, tests by kind"
     phase: 1
     owner: null
     status: todo
-    depends_on: [gardener-history-objects]
+    depends_on: [T-250]
     kind: idea
     why: >
       One snapshot of where the code stands: files over a size limit; lint suppressions per language

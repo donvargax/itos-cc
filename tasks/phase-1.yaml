@@ -7823,3 +7823,39 @@
     finds no panic( in internal/processes' non-test Go files. Out of scope: every other package's
     panics, the table's rows, the document's table (docs/state-machines.md changes only its sentence
     saying apply panics).
+- id: T-250
+  type: feat
+  title: "units, dry and scrap --at <commit>: measure a commit from git objects, cached per commit in the git common directory"
+  why: >
+    gardener-history-objects, the base for the kept gardener ideas (the person's trim, 2026-11-23:
+    hot and untested by change frequency times crap, compare before and after with itos-cc's own
+    measures, snapshot counts): measure any commit from git objects, without a checkout, its numbers
+    cached per commit in the git common directory and shared by every worktree. From gardener
+    (subsy/gardener at c58a2ad, MIT), ported as an idea to Go on itos-cc's tree-sitter core, not
+    copying gardener's code; any code copied carries gardener's notice in THIRD_PARTY_NOTICES. The
+    coordinator's calls. The user-facing surface is --at <commit> on units, dry and scrap, the
+    commands that read sources alone: given a commit (any revision git rev-parse names), the command
+    measures that commit's tree as if it were checked out, the working tree untouched and never
+    read, and prints what it would print there, plain lines and --json alike; crap and mutation
+    refuse --at as a usage problem naming why (they need a run of the tests), as does an --at a
+    revision git cannot name. The tree is read from git objects through the git CLI (ls-tree and
+    cat-file --batch, through internal/processes like the mutation slice's githistory adapter; no
+    new dependency), as a source of files behind the same port the commands read the disk through,
+    so the slices do not know where files come from. The commit's own itos-cc.yaml is the settings,
+    so a commit's numbers never change, and the cache key is the commit, the command and a hash of
+    whatever else changes the result (the command's flags, itos-cc's version): <git common
+    dir>/itos-cc/history/<commit>/<command>-<key>.json, written once and atomically, read back by
+    any worktree of the repository, and outside .metrics/ (which is committed) and outside the tree.
+    A cached result is served without reading the commit's objects; a corrupt or unreadable cache
+    entry is recomputed, never a failure. --at composes with the commands' existing flags except
+    those that name the working tree's changes (--changed and the like), which it refuses. Specify
+    first in features/ with scenarios tagged @T-NNN of this task: each command's --at on a past
+    commit prints that commit's numbers while the working tree holds others; the cache entry is
+    written under the git common directory and a linked worktree's run reuses it; crap --at and
+    mutation --at are refused; an unknown revision is refused. docs/CLI.md documents --at. The check
+    runs this task's scenarios in process and greps the PASS line (itos#276). Out of scope: change
+    frequency, compare and hot-untested (their own ideas), crap or mutation at a past commit, the
+    viewer, any new CI job.
+  done_when:
+    - run: "go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='@T-250' -v 2>&1 | grep -q -- '--- PASS: TestScenarios'"
+      timeout: 900
