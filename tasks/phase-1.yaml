@@ -7643,3 +7643,28 @@
   done_when:
     - run: "go test ./internal/processes -run '^TestGroupEndsAreJudgedInEveryOrder$' -v 2>&1 | grep -q -- '--- PASS: TestGroupEndsAreJudgedInEveryOrder'"
       timeout: 180
+- id: T-243
+  type: fix
+  title: Hand each owned command's output over from its reader instead of sharing its buffer, held by a race-detector step
+  why: >
+    Port 2 of pstack-port (2026-11-22): the data race the private copy's PR #4
+    (pstack/processes-race) found in runOwnedCommand, which main also has. Its reader goroutine
+    writes a caller's own output into a bytes.Buffer that lives in the captures slice, while the run
+    goroutine copies each element, buffer included, in for _, capture := range captures after Start;
+    go test -race flags it in TestCommandRunnerKeepsPreconfiguredStreams (two WARNING: DATA RACE
+    reports, readOwnedCommandOutput's Write against runOwnedCommand's read). It came in with
+    1f5d0df6 and landed because CI never ran -race. pstack's fix, which this ports: each reader
+    holds its bytes in a buffer of its own and hands them over on done, with its error, as a
+    capturedOutput, so the run goroutine sees the bytes only after the reader is done and no reader
+    writes into the slice (a shared *bytes.Buffer pointer would also silence the race and is
+    rejected: the buffer would still be shared, the ordering implicit). The coordinator's calls: the
+    guard is a "Race detector" step in ci.yml's test (others) part, go test -race over
+    ./internal/processes/... only (pstack ran covrun and the worktrees adapter too, with no race
+    found there; they stay out to keep the step short), with its time measured in the close; no
+    replay tool, no replays job. The check is go test -race of
+    TestCommandRunnerKeepsPreconfiguredStreams; it greps the ok line. Red first: the check fails on
+    main with WARNING: DATA RACE, before the fix; commit the ci.yml step first. Out of scope:
+    cancelGroup (the cancel race's item), the other packages' goroutines, every other workflow.
+  done_when:
+    - run: go test -race ./internal/processes -run '^TestCommandRunnerKeepsPreconfiguredStreams$' 2>&1 | grep -q '^ok '
+      timeout: 300
