@@ -55,6 +55,27 @@ ignores it. Linux's probe also asks `/proc` (`runnable`) whether a member still 
 `Reap` ends the run, so it ends the machine; a leader still running exits on its own with code 0
 first. An action that does not apply to the state is skipped.
 
+## The code's transitions
+
+`owned_machine.go` holds this table as `ownedTransitions` and one function, `next`, from a state
+and an event to the next state; an event with no row for the state it meets is no transition.
+`TestOwnedCommandTransitionsMatchTheDocument` fails when this table and the code's differ in an
+event, a state or a target. A run starts at `run=waiting, context=live, deadline=before,
+group=unknown`. A row's `when` names what it needs of the state, its `then` what it sets.
+
+<!-- transitions -->
+| event | when | then |
+|---|---|---|
+| Wait reaps the leader | run=waiting | run=cleaning |
+| the cleanup fails | run=cleaning, deadline=past, group=live | run=returned |
+| the cleanup succeeds | run=cleaning, group=gone | run=returned |
+| the context ends by its parent | context=live | context=ended by its parent |
+| the context ends by its timeout | context=live | context=ended by its timeout |
+| the deadline passes | run=cleaning, deadline=before | deadline=past |
+| the probe finds the group gone | run=cleaning | group=gone |
+| the probe finds the group live | run=cleaning | group=live |
+<!-- /transitions -->
+
 ## Invariants
 
 10 invariants. The first 2 hold between any two actions, the other 8 when the run returned; each
