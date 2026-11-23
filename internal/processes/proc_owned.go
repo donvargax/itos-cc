@@ -215,11 +215,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 		}
 		stopReader.activate((&CleanupBudget{}).until())
 		for _, capture := range captures {
-			read := <-capture.done
-			_ = capture.reader.Close()
-			if read.err != nil {
-				err = errors.Join(err, fmt.Errorf("join command output reader: %w", read.err))
-			}
+			err = errors.Join(err, joinOwnedOutput(capture, s.kept))
 		}
 		return err
 	}
@@ -261,16 +257,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 		cleanupErr = errors.Join(cleanupErr, err)
 	}
 	for _, capture := range captures {
-		read := <-capture.done
-		_ = capture.reader.Close()
-		if capture.target != io.Writer(s.kept) {
-			if _, err := io.Copy(capture.target, read.held); err != nil {
-				cleanupErr = errors.Join(cleanupErr, fmt.Errorf("preserve command output: %w", err))
-			}
-		}
-		if read.err != nil {
-			cleanupErr = errors.Join(cleanupErr, fmt.Errorf("join command output reader: %w", read.err))
-		}
+		cleanupErr = errors.Join(cleanupErr, joinOwnedOutput(capture, s.kept))
 	}
 	if cleanupErr != nil {
 		return errors.Join(waitErr, &CleanupFailed{ProcessGroup: pgid, Command: strings.Join(cmd.Args, " "), Cause: cleanupErr})
@@ -358,6 +345,23 @@ type ownedOutputCapture struct {
 type capturedOutput struct {
 	held *bytes.Buffer
 	err  error
+}
+
+// joinOwnedOutput waits for a capture's reader to hand its output over,
+// closes the pipe and gives a caller's own target the bytes the reader held.
+func joinOwnedOutput(capture ownedOutputCapture, kept io.Writer) error {
+	read := <-capture.done
+	_ = capture.reader.Close()
+	var err error
+	if capture.target != kept {
+		if _, copyErr := io.Copy(capture.target, read.held); copyErr != nil {
+			err = fmt.Errorf("preserve command output: %w", copyErr)
+		}
+	}
+	if read.err != nil {
+		err = errors.Join(err, fmt.Errorf("join command output reader: %w", read.err))
+	}
+	return err
 }
 
 func killOwnedProcessGroup(calls groupCalls, platform string, pgid int) error {
