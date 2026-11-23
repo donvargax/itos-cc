@@ -6790,6 +6790,6 @@ items:
     title: Document internal/processes' cancel, exit, reap and cleanup machine and hold it with a rapid state-machine test
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task

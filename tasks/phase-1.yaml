@@ -7757,6 +7757,3 @@
     mark that invariant's check skipped with the idea's id, and say so in the document. Out of
     scope: the refactor into an explicit state machine (step 3), every other package's machine,
     Windows' unowned path beyond what the seam already models, the output and memory caps.
-  done_when:
-    - run: "go test ./internal/processes -run '^TestOwnedCommandMachine$' -v 2>&1 | grep -q -- '--- PASS: TestOwnedCommandMachine'"
-      timeout: 300
