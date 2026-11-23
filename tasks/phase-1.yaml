@@ -7777,3 +7777,34 @@
   done_when:
     - run: grep -q "TestOwnedCommandMachine.*-rapid.checks=5000" .github/workflows/nightly.yml
       timeout: 30
+- id: T-248
+  type: refactor
+  title: Make the owned command's cancel, exit, reap and cleanup machine explicit in code, its table held to docs/state-machines.md
+  why: >
+    Step 3 of the person's agreed order for internal/processes (2026-11-22; step 2 was T-246's
+    docs/state-machines.md and TestOwnedCommandMachine). The person's prompt, scoped to this one
+    machine, the owned command's cancel, exit, reap and cleanup: make the best decision that
+    elevates the user experience, the developer experience and the agent experience, without
+    breaking anything, and make the state machine explicit. The coordinator's calls. The machine's
+    states and its transition table are in code, in internal/processes, as plain Go (no library;
+    weir's lib/machine is private): a state type per component the document names (the leader, a
+    member, the context, the deadline, and the run's phases) and one transition function from a
+    state and an event to the next state, so a transition the document does not list cannot be
+    written, the code that runs a command (runOwnedCommand, cancelGroup, killGroup, the cleanup's
+    kill and probe, the judgment) moving through it instead of through flags and the order of its
+    statements. The document and the code stay in step: docs/state-machines.md's transition table is
+    the code's, and a test reads the document's table and fails when it and the code's table differ
+    in a state, an event or a target, TestOwnedCommandTransitionsMatchTheDocument.
+    TestOwnedCommandMachine's rapid actions are driven from the code's table where that makes the
+    test simpler, and its invariants stay as they are; it and T-239's and T-242's rows of
+    TestGroupEndsAreJudgedInEveryOrder stay green at every commit. Behaviour is identical: no
+    result, error, exit status, timing bound or output changes on any system, no scenario changes,
+    and cd.yml green on Linux, macOS and Windows is the proof; the Windows path (proc_windows.go,
+    the unowned path) moves only as far as it shares the machine. Commit in small refactor steps,
+    each green, the transition-table test with the first. The check runs the three tests and greps
+    each PASS line (itos#276). Out of scope: every other package's machine, the output and memory
+    caps beyond where the machine meets them, the nightly's longer run (its own item), new
+    dependencies.
+  done_when:
+    - run: "test \"$(go test ./internal/processes -run '^(TestOwnedCommandMachine|TestGroupEndsAreJudgedInEveryOrder|TestOwnedCommandTransitionsMatchTheDocument)$' -v 2>&1 | grep -c -E -- '^--- PASS: (TestOwnedCommandMachine|TestGroupEndsAreJudgedInEveryOrder|TestOwnedCommandTransitionsMatchTheDocument) ')\" = 3"
+      timeout: 300
