@@ -6779,3 +6779,12 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: port-show-every-slice
+    title: Name every slice's files on its plain lines through Show, slash-separated on every system
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Placeholder; the ledger entry holds the why.
