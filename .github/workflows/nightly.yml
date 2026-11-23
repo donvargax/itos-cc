@@ -16,9 +16,11 @@ name: Nightly
 # says it is partial (T-46), so the job's colour never has to say how far the
 # run got.
 #
-# Beside it, on a runner of its own, the snapshots job runs itos-cc crap, dry
-# and scrap over the whole repository and commits .metrics/crap.json,
-# .metrics/dry.json and .metrics/scrap.json (T-190), so every clone has them.
+# Beside it, on runners of their own: the processes-machine job runs the
+# owned command's machine test with 5,000 cases (T-247), and the snapshots job
+# runs itos-cc crap, dry and scrap over the whole repository and commits
+# .metrics/crap.json, .metrics/dry.json and .metrics/scrap.json (T-190), so
+# every clone has them.
 on:
   schedule:
     - cron: "0 9 * * *" # 09:00 UTC, 2am Pacific
@@ -177,6 +179,23 @@ jobs:
           done
           echo "::error::Could not push the results after 3 attempts."
           exit 1
+
+  # The owned command's machine test (T-246) with 5,000 cases a night, where
+  # a push runs 40 (T-247). A job of its own on its own runner, so neither
+  # mutate nor snapshots is delayed or cancelled by it. A failure is a
+  # reachable invalid state of internal/processes: rapid prints the seed and
+  # the shrunk actions, which a person makes an itos idea of.
+  processes-machine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: TestOwnedCommandMachine, 5,000 cases
+        run: go test -count=1 -timeout 50m ./internal/processes -run '^TestOwnedCommandMachine$' -rapid.checks=5000 -rapid.nofailfile
 
   # crap, dry and scrap over the whole repository, committing their snapshots
   # so that serve's CRAP bands and duplicates, and scrap's comparison with the
