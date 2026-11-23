@@ -7757,3 +7757,23 @@
     mark that invariant's check skipped with the idea's id, and say so in the document. Out of
     scope: the refactor into an explicit state machine (step 3), every other package's machine,
     Windows' unowned path beyond what the seam already models, the output and memory caps.
+- id: T-247
+  type: ci
+  title: Run the owned command's machine test with 5,000 cases in the nightly
+  why: >
+    processes-machine (2026-11-22), the small part: TestOwnedCommandMachine (T-246) runs 40 cases a
+    push, and at 40 it caught 713506df's kind of mistake (cancelGroup returning the kill's error)
+    only by chance: one fresh run passed, another failed I6 (the coordinator's check on T-246). The
+    coordinator's calls, from the person's brief: the nightly workflow runs it with many more cases,
+    go test ./internal/processes -run '^TestOwnedCommandMachine$' -rapid.checks=5000, in a job of
+    its own on ubuntu-latest beside mutate and snapshots, never cancelling or delaying them;
+    per-push stays at 40. A failure there is red: it is a reachable invalid state, and the job
+    prints rapid's seed and shrunk actions so a person can make it an idea. Measure the job's time
+    on a manual run (gh workflow run nightly.yml, or the job's own workflow_dispatch if nightly.yml
+    has one; if dispatching would run the whole mutation nightly, measure the command locally
+    instead and say so) and say it in the close. The check: nightly.yml names the test with
+    -rapid.checks=5000. Out of scope: macOS (the test runs on linux||darwin, but the nightly is
+    Linux), the per-push bound, the test itself.
+  done_when:
+    - run: grep -q "TestOwnedCommandMachine.*-rapid.checks=5000" .github/workflows/nightly.yml
+      timeout: 30

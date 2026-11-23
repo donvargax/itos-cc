@@ -6793,12 +6793,10 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: processes-machine-nightly
+  - id: T-247
     title: Run the owned command's machine test with 5,000 cases in the nightly
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Placeholder; the ledger entry holds the why.
+    kind: task
