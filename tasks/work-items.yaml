@@ -6647,11 +6647,11 @@ items:
       two runs (the pstack copy and the itos arm, F1 to F5) finish, so it touches nothing either run
       is fixing.
   - id: gardener-hot-untested
-    title: Hotspots per file and per function, joined with crap as a hot-and-untested rank
+    title: "Hot and untested: change frequency times crap score, per file and per function"
     phase: 1
     owner: null
     status: todo
-    depends_on: [gardener-outcomes]
+    depends_on: [gardener-history-objects]
     kind: idea
     why: >
       Fix commits per file and per function, scored with size as gardener does, and a
@@ -6661,6 +6661,12 @@ items:
       rather than copying gardener's regex matching; any code copied carries gardener's notice in
       THIRD_PARTY_NOTICES. Starts after the pstack trial's two runs (the pstack copy and the itos
       arm, F1 to F5) finish, so it touches nothing either run is fixing.
+
+      Reworded by the person's call, 2026-11-23, which replaces the fix counting above: hot and
+      untested is change frequency times crap score, per file and per function. Change frequency is
+      a pure git fact, how often a path changes in a window, read through gardener-history-objects;
+      no fix counting from commit titles. Fix weighting comes later, from the work record's bug
+      items, when that record exists.
   - id: gardener-compare
     title: "compare <commit or range>: fixes and rework on the touched files, before against after"
     phase: 1
