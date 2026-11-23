@@ -6800,3 +6800,12 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: processes-machine-explicit
+    title: Make the owned command's cancel, exit, reap and cleanup machine explicit in code, its table held to docs/state-machines.md
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Placeholder; the ledger entry holds the why.
