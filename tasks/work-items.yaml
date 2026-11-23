@@ -6782,7 +6782,7 @@ items:
   - id: T-245
     title: Name every slice's files on its plain lines through Show, slash-separated on every system
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
