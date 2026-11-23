@@ -7700,3 +7700,37 @@
   done_when:
     - run: "go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='@T-244' -v 2>&1 | grep -q -- '--- PASS: TestScenarios'"
       timeout: 900
+- id: T-245
+  type: fix
+  title: Name every slice's files on its plain lines through Show, slash-separated on every system
+  why: >
+    Port 4 of pstack-port (2026-11-22): F1 widened to every slice, from the private copy's PRs #3
+    and #6 (pstack/f1-shown, pstack/f1-shown-everywhere). T-235 gave the mutation slice cli.Shown
+    and (*cli.UI).Show, and T-241 dropped its forbidigo rule. units, crap, dry and scrap still name
+    a plain line's file through ui.Rel or their Ports' Rel, so Windows prints src\board.go there
+    (pstack measured each slice's new test failing at its plain line). The coordinator's calls, from
+    PR #6: units, crap, dry and scrap carry each file by its path as selected and name it on a plain
+    line with ui.Show; --json and the problems keep the system's form; Name leaves each Handler and
+    Rel each Ports, and adapters.Rel leaves cmd; once no caller of cli.Rel or UI.Rel is left but
+    Show, Show takes their logic and both are deleted, so a slice calling them no longer compiles;
+    internal/project.Rel, with no caller and the bug that takes a file named ..x for one outside the
+    working directory, is deleted too; docs/go.md stops telling a slice to declare Rel or name a
+    path with ui.Rel. Each of the four slices gets a test whose UI has '\' as its separator,
+    TestRunsPlainLinesNameAWindowsFileWithSlashes, and a black-box scenario holds the four commands'
+    plain lines in the slash form, which cd.yml's Windows job proves (pstack's ID-CLI-36 in
+    features/cli.feature is the start, with this repository's next free ID-CLI number). A lint ban
+    comes back only if it needs no more than two nolint comments: pstack's forbidigo rule on
+    filepath.Rel over every slice's and cmd's code, mutation's domain and adapters left out with the
+    reason in .golangci.yml, needed two; if this repository's needs more, leave the ban out and say
+    how many it would need in the close. forbidigo's T-237 graph rule stays as it is. The mutation
+    slice's plain lines are T-235's and stay unless a slash-separator test of this task shows one
+    still in the system's form, in which case report it rather than editing the mutation slice,
+    which port 3 is changing. dry sorting and pairing sides by the path as selected rather than the
+    name shown is accepted (same order inside the working directory). The check is the four slices'
+    TestRunsPlainLinesNameAWindowsFileWithSlashes; it greps each PASS line (itos#276). Red first:
+    commit the tests and the scenario first and see each test fail at its plain line on main. Out of
+    scope: the mutation slice and its domain, the replay tool and its CI job, AGENTS.md,
+    internal/processes.
+  done_when:
+    - run: "test \"$(go test ./internal/slices/units ./internal/slices/crap ./internal/slices/dry ./internal/slices/scrap -run '^TestRunsPlainLinesNameAWindowsFileWithSlashes$' -v 2>&1 | grep -c -- '--- PASS: TestRunsPlainLinesNameAWindowsFileWithSlashes')\" = 4"
+      timeout: 300
