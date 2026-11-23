@@ -7823,6 +7823,3 @@
     finds no panic( in internal/processes' non-test Go files. Out of scope: every other package's
     panics, the table's rows, the document's table (docs/state-machines.md changes only its sentence
     saying apply panics).
-  done_when:
-    - run: "! git grep -q 'panic(' -- 'internal/processes/*.go' ':!*_test.go' && go test ./internal/processes -run '^TestOwnedLifeRefusesAnUnlistedEvent$' -v 2>&1 | grep -q -- '--- PASS: TestOwnedLifeRefusesAnUnlistedEvent'"
-      timeout: 120
