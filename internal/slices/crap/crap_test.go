@@ -295,3 +295,17 @@ func TestRunsPlainLinesNameAWindowsFileWithSlashes(t *testing.T) {
 		t.Errorf("--json names %+v, want src\\board.go, the system's form", o.Entries)
 	}
 }
+
+// A coverage command whose owned group did not end is a problem without a
+// threshold too (ADR-0021).
+func TestWithoutAThresholdACleanupFailureIsAProblem(t *testing.T) {
+	stuck := coverage.Unmeasured{Dir: at("src/stuck"), Language: "go", Cause: covport.CleanupFailed{Command: "go test"}, Reason: "its process group did not end"}
+	h := handler(failedMeasurer{Measurer: measurer(), missing: []coverage.Unmeasured{stuck}}, &snapporttest.Store{RootDir: at("")})
+	code, stdout, stderr := run(t, CLI{CoverageReport: []string{"none.info"}}, h)
+	if code == 0 || strings.Contains(stderr, "no coverage for") {
+		t.Errorf("exit %d, stderr %q; want the cleanup failure a problem, not a warning", code, stderr)
+	}
+	if !strings.Contains(stdout, "board#place") {
+		t.Errorf("stdout %q, want the table kept", stdout)
+	}
+}
