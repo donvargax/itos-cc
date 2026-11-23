@@ -378,7 +378,7 @@ func TestOpenEndsWhereTheObjectsFail(t *testing.T) {
 // holds nothing for is unreadable, as is one whose objects fail.
 func TestTreeReadsWhatTheObjectsGive(t *testing.T) {
 	files := map[string]string{"a.ts": alpha, "notes.txt": "hello", "gone.txt": "<missing>"}
-	f := &fake{top: filepath.FromSlash("/p"), files: files}
+	f := &fake{top: t.TempDir(), files: files}
 	commit, err := opened(t, f)
 	if err != nil {
 		t.Fatal(err)

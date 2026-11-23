@@ -16,7 +16,8 @@ import (
 type held struct{ fs fstest.MapFS }
 
 func (h held) inside(path string) string {
-	return strings.TrimPrefix(filepath.ToSlash(filepath.Clean(path)), "/")
+	clean := filepath.Clean(path)
+	return strings.TrimPrefix(filepath.ToSlash(strings.TrimPrefix(clean, filepath.VolumeName(clean))), "/")
 }
 
 func (h held) Lstat(path string) (fs.FileInfo, error) { return h.Stat(path) }

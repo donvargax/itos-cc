@@ -21,8 +21,8 @@ func TestRelAndAbsNameFilesFromTheRoot(t *testing.T) {
 	if got := c.Abs("sub/a.go"); got != filepath.Join(root, "sub", "a.go") {
 		t.Errorf("Abs = %q", got)
 	}
-	outside := filepath.FromSlash("/elsewhere/a.go")
-	if got := c.Rel(outside); got != "/elsewhere/a.go" {
+	outside := filepath.Join(t.TempDir(), "a.go")
+	if got := c.Rel(outside); got != filepath.ToSlash(outside) {
 		t.Errorf("Rel of a path outside = %q, want it as it is", got)
 	}
 	if got := c.Abs(outside); got != outside {
