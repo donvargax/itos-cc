@@ -7728,6 +7728,3 @@
     commit the tests and the scenario first and see each test fail at its plain line on main. Out of
     scope: the mutation slice and its domain, the replay tool and its CI job, AGENTS.md,
     internal/processes.
-  done_when:
-    - run: "test \"$(go test ./internal/slices/units ./internal/slices/crap ./internal/slices/dry ./internal/slices/scrap -run '^TestRunsPlainLinesNameAWindowsFileWithSlashes$' -v 2>&1 | grep -c -- '--- PASS: TestRunsPlainLinesNameAWindowsFileWithSlashes')\" = 4"
-      timeout: 300
