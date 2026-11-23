@@ -1,9 +1,10 @@
 # State machines
 
 The owned command's cancel, exit, reap and cleanup machine in `internal/processes`
-(`runOwnedCommand`, `cancelGroup`, `ownedGroupGone`, `waitOwnedProcessGroup`). It has no
-explicit state in the code (T-246 documents it as it is; an explicit one is a later task), so the
-states below are the ones its values and its order of calls imply. `TestOwnedCommandMachine`
+(`runOwnedCommand`, `cancelGroup`, `ownedGroupGone`, `waitOwnedProcessGroup`). The states
+below are the ones the model of `TestOwnedCommandMachine` plays; the part the code can see,
+the run, the context, the deadline and what the probe found of the group, is explicit in
+`owned_machine.go` (T-248), as the transition table below. `TestOwnedCommandMachine`
 (`owned_command_machine_unix_test.go`, rapid) names the same states, actions and invariants and
 checks every one of them. `TestGroupEndsAreJudgedInEveryOrder` (T-239, T-242) keeps its rows as
 the named regressions of the orders that failed on a real system.
@@ -59,6 +60,13 @@ first. An action that does not apply to the state is skipped.
 
 `owned_machine.go` holds this table as `ownedTransitions` and one function, `next`, from a state
 and an event to the next state; an event with no row for the state it meets is no transition.
+A run holds its state in an `ownedLife`, whose `apply` panics on such an event. Through it move
+`runOwnedCommand` (Wait reaping the leader, the cleanup succeeding or failing),
+`waitOwnedProcessGroup` (the probe's answer, the deadline), `killGroup`'s Cancel and
+`RunLimited`'s judgment (the context's end, by `observeContext`). The leader's and the members'
+own states are the kernel's, which the code reads only through the probe, so only the model
+holds them. A cleanup fails on a live group at its deadline, and also on a kill the system
+refuses, an inspection that failed or a reader that did not finish.
 `TestOwnedCommandTransitionsMatchTheDocument` fails when this table and the code's differ in an
 event, a state or a target. A run starts at `run=waiting, context=live, deadline=before,
 group=unknown`. A row's `when` names what it needs of the state, its `then` what it sets.
