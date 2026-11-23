@@ -21,6 +21,7 @@ type groupEnd struct {
 	platform string
 	shell    string // the command, run for real in its own group
 	cancel   bool   // the context ends while the command runs
+	timeout  bool   // it ends by the command's own timeout, not its parent's cancel
 	// kill is the answer to a SIGKILL of the group, given after the group
 	// really got it when realKill is set.
 	kill     error
@@ -63,6 +64,14 @@ func TestGroupEndsAreJudgedInEveryOrder(t *testing.T) {
 				}
 				return syscall.ESRCH
 			}},
+		{name: "exits 0, then its timeout lands on its zombie on linux", platform: "linux", shell: "sleep 0.2",
+			cancel: true, timeout: true, probe: gone, wantPassed: true},
+		{name: "exits 0, then its timeout lands on its zombie on darwin", platform: "darwin", shell: "sleep 0.2",
+			cancel: true, timeout: true, kill: syscall.EPERM, probe: gone, wantPassed: true},
+		{name: "exits 0, then its parent's cancel lands while its member runs on linux", platform: "linux", shell: "sleep 0.2",
+			cancel: true, probe: gone, wantPassed: true},
+		{name: "exits 0, then its parent's cancel lands while its member runs on darwin", platform: "darwin", shell: "sleep 0.2",
+			cancel: true, probe: gone, wantPassed: true},
 		{name: "darwin member refusing the signal fails at the deadline", platform: "darwin", shell: "exit 0",
 			kill: syscall.EPERM, probe: always(syscall.EPERM), wantCleanup: true},
 		{name: "linux treats EPERM from the kill as a failure", platform: "linux", shell: "exit 0",
@@ -78,8 +87,12 @@ func TestGroupEndsAreJudgedInEveryOrder(t *testing.T) {
 
 func playGroupEnd(t *testing.T, c groupEnd) {
 	t.Helper()
-	ctx, cancel := context.WithCancel(t.Context())
-	defer cancel()
+	ctx, stop := context.WithCancelCause(t.Context())
+	defer stop(nil)
+	cancel := func() { stop(nil) }
+	if c.timeout {
+		cancel = func() { stop(ErrCommandTimeout) }
+	}
 	var mu sync.Mutex
 	probes, inspections := 0, 0
 	clock := time.Now()
