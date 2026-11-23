@@ -107,6 +107,11 @@ var ownedTransitions = []ownedRow{
 	{eventCleanupFails, ownedPattern{"run": string(runCleaning)}, ownedPattern{"run": string(runReturned)}},
 }
 
+// String writes a state as its pattern would: every component and its value.
+func (s ownedState) String() string {
+	return ownedPattern{"run": string(s.run), "context": string(s.context), "deadline": string(s.deadline), "group": string(s.group)}.String()
+}
+
 func (s ownedState) get(component string) string {
 	switch component {
 	case "run":
@@ -136,7 +141,13 @@ func (s *ownedState) set(component, value string) {
 // next is the state an event takes a state to, and whether the table has
 // the transition at all.
 func next(state ownedState, event ownedEvent) (ownedState, bool) {
-	for _, row := range ownedTransitions {
+	return nextIn(ownedTransitions, state, event)
+}
+
+// nextIn is next over a table of its own, which a test prunes to play a
+// transition the real table has.
+func nextIn(table []ownedRow, state ownedState, event ownedEvent) (ownedState, bool) {
+	for _, row := range table {
 		if row.event == event && row.when.holds(state) {
 			for component, value := range row.then {
 				state.set(component, value)
@@ -179,26 +190,62 @@ func ownedTable() []string {
 	return lines
 }
 
+// TransitionError is a bug of ours, not a condition of the system: an event
+// the transition table has no row for, met in the state it names. A run that
+// meets one ends with it as its error, whole, so the command line reports it
+// as the internal problem it is.
+type TransitionError struct {
+	Event string
+	State string
+}
+
+func (e *TransitionError) Error() string {
+	return fmt.Sprintf("no transition for %q from %s", e.Event, e.State)
+}
+
 // ownedLife is one run's state, which only events change. The context's end
-// reaches it from os/exec's goroutine, so it is held under a lock.
+// reaches it from os/exec's goroutine, so it is held under a lock. The
+// first event the table has no row for is held as the run's failure, and
+// every later one answers it, so a run that broke its table still ends its
+// cleanup before it returns the error.
 type ownedLife struct {
 	mu    sync.Mutex
 	state ownedState
+	table []ownedRow // nil: ownedTransitions
+	err   error
 }
 
 func newOwnedLife() *ownedLife { return &ownedLife{state: ownedStart} }
 
-// apply takes the run through an event. An event the table has no row for
-// is a mistake in the code that sent it, never a condition of the system,
-// so it panics.
-func (l *ownedLife) apply(event ownedEvent) {
+func (l *ownedLife) rows() []ownedRow {
+	if l.table != nil {
+		return l.table
+	}
+	return ownedTransitions
+}
+
+// apply takes the run through an event, or says it has no such transition,
+// leaving the state where it was.
+func (l *ownedLife) apply(event ownedEvent) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	to, ok := next(l.state, event)
+	if l.err != nil {
+		return l.err
+	}
+	to, ok := nextIn(l.rows(), l.state, event)
 	if !ok {
-		panic(fmt.Sprintf("processes: no transition for %q from %v", string(event), l.state))
+		l.err = &TransitionError{Event: string(event), State: l.state.String()}
+		return l.err
 	}
 	l.state = to
+	return nil
+}
+
+// failure is the first event the run met that its table has no row for.
+func (l *ownedLife) failure() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.err
 }
 
 // current is the state the run is in.
@@ -211,7 +258,9 @@ func (l *ownedLife) current() ownedState {
 // observeContext takes the run through the context's end, if it ended and
 // the run has not seen it, by its timeout (ErrCommandTimeout as its cause)
 // or its parent, and says how the context stands. Whoever reads the context
-// first, os/exec's Cancel or the judgment, takes the step.
+// first, os/exec's Cancel or the judgment, takes the step. Both events'
+// rows need only context=live, which the step is taken in, so the table
+// always has the row and the answer is not asked.
 func (l *ownedLife) observeContext(ctx context.Context) ownedContext {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -220,7 +269,7 @@ func (l *ownedLife) observeContext(ctx context.Context) ownedContext {
 		if errors.Is(context.Cause(ctx), ErrCommandTimeout) {
 			event = eventContextEndsByTimeout
 		}
-		l.state, _ = next(l.state, event)
+		l.state, _ = nextIn(l.rows(), l.state, event)
 	}
 	return l.state.context
 }

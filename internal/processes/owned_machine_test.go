@@ -105,27 +105,8 @@ func allOwnedEvents() []ownedEvent {
 // cleaningLife is a run whose leader was reaped, as a cleanup meets it.
 func cleaningLife() *ownedLife {
 	life := newOwnedLife()
-	life.apply(eventWaitReturns)
+	_ = life.apply(eventWaitReturns)
 	return life
-}
-
-// TestOwnedLifeRefusesAnUnlistedTransition holds a run to its table: an
-// event the table has no row for panics, naming the event and the state,
-// and leaves the state where it was.
-func TestOwnedLifeRefusesAnUnlistedTransition(t *testing.T) {
-	life := newOwnedLife()
-	defer func() {
-		got := recover()
-		message, _ := got.(string)
-		if want := `no transition for "the cleanup succeeds" from`; !strings.Contains(message, want) {
-			t.Errorf("recovered %v; want a panic holding %q", got, want)
-		}
-		if life.current() != ownedStart {
-			t.Errorf("the state moved to %v", life.current())
-		}
-	}()
-	life.apply(eventCleanupSucceeds)
-	t.Error("a cleanup succeeded before its leader was reaped")
 }
 
 // TestWaitOwnedProcessGroupMovesTheRunByWhatTheProbeFinds holds the
@@ -192,5 +173,32 @@ func TestObserveContextTakesTheRunThroughTheContextsEnd(t *testing.T) {
 				t.Errorf("the run holds %q; want %q", life.current().context, c.want)
 			}
 		})
+	}
+}
+
+// TestOwnedLifeRefusesAnUnlistedEvent holds a run to its table without a
+// panic: next says an unlisted event is none, and apply answers a
+// TransitionError naming the event and the state, leaves the state where it
+// was, and answers the same error to whatever comes after.
+func TestOwnedLifeRefusesAnUnlistedEvent(t *testing.T) {
+	if got, ok := next(ownedStart, eventCleanupSucceeds); ok || got != ownedStart {
+		t.Errorf("next(start, the cleanup succeeds) = %v, %v; want no transition and the state as it was", got, ok)
+	}
+	life := newOwnedLife()
+	err := life.apply(eventCleanupSucceeds)
+	var bad *TransitionError
+	if !errors.As(err, &bad) {
+		t.Fatalf("apply = %v; want a TransitionError", err)
+	}
+	for _, want := range []string{`"the cleanup succeeds"`, "run=waiting", "context=live", "deadline=before", "group=unknown"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("the error %q does not name %s", err, want)
+		}
+	}
+	if life.current() != ownedStart {
+		t.Errorf("the state moved to %v", life.current())
+	}
+	if again := life.apply(eventWaitReturns); again != err || life.current() != ownedStart || life.failure() != err {
+		t.Errorf("after its first failure a run answered %v, in %v; want the first error and no move", again, life.current())
 	}
 }

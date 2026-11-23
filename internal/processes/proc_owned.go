@@ -248,7 +248,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 	}
 	held.begin()
 
-	life.apply(eventWaitReturns)
+	_ = life.apply(eventWaitReturns) // a missing row is held in life, and returned below
 	deadline := cleanupBudgetForScope(life.observeContext(ctx), budget).until()
 	if observe != nil {
 		observe(deadline)
@@ -261,11 +261,17 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 	for _, capture := range captures {
 		cleanupErr = errors.Join(cleanupErr, joinOwnedOutput(capture, s.kept))
 	}
+	end := eventCleanupSucceeds
 	if cleanupErr != nil {
-		life.apply(eventCleanupFails)
+		end = eventCleanupFails
+	}
+	_ = life.apply(end)
+	if err := life.failure(); err != nil {
+		return err
+	}
+	if cleanupErr != nil {
 		return errors.Join(waitErr, &CleanupFailed{ProcessGroup: pgid, Command: strings.Join(cmd.Args, " "), Cause: cleanupErr})
 	}
-	life.apply(eventCleanupSucceeds)
 	return waitErr
 }
 
@@ -309,12 +315,12 @@ func waitOwnedProcessGroup(calls groupCalls, life *ownedLife, pgid int, deadline
 			return fmt.Errorf("inspect owned process group %d: %w", pgid, err)
 		}
 		if gone {
-			life.apply(eventGroupFoundGone)
+			_ = life.apply(eventGroupFoundGone)
 			return nil
 		}
-		life.apply(eventGroupFoundLive)
+		_ = life.apply(eventGroupFoundLive)
 		if !calls.now().Before(deadline) {
-			life.apply(eventDeadlinePasses)
+			_ = life.apply(eventDeadlinePasses)
 			return fmt.Errorf("owned process group %d remained active at cleanup deadline", pgid)
 		}
 		calls.sleep(5 * time.Millisecond)

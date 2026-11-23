@@ -60,7 +60,10 @@ first. An action that does not apply to the state is skipped.
 
 `owned_machine.go` holds this table as `ownedTransitions` and one function, `next`, from a state
 and an event to the next state; an event with no row for the state it meets is no transition.
-A run holds its state in an `ownedLife`, whose `apply` panics on such an event. Through it move
+A run holds its state in an `ownedLife`, whose `apply` answers such an event with a
+`TransitionError` naming the event and the state (a bug of ours: the command line makes it the
+internal problem, exit 100), holds the first one as the run's failure, and still ends the
+cleanup before the run returns it, whole, as its error. Through it move
 `runOwnedCommand` (Wait reaping the leader, the cleanup succeeding or failing),
 `waitOwnedProcessGroup` (the probe's answer, the deadline), `killGroup`'s Cancel and
 `RunLimited`'s judgment (the context's end, by `observeContext`). The leader's and the members'
