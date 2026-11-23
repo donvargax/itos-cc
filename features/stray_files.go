@@ -62,29 +62,37 @@ type toolFolder struct {
 	// and temp whether it is in the temporary folder, not the project's tree.
 	folder string
 	temp   bool
-	reason string
+	// prefix says folder is the start of the name, for folders go makes
+	// with a random suffix, and windows that the folder is let by only
+	// where the system is Windows.
+	prefix, windows bool
+	reason          string
 }
 
 var toolFolders = []toolFolder{
-	{"node_modules", false, "npm's own folder, which node tools (vitest's .vite results, c8) write their caches into"},
-	{"build", false, "the output folder of Gradle and Flutter builds, which they write when the project's own tests run"},
-	{".gradle", false, "Gradle's cache of the project, which it makes when the project's tests run"},
-	{"target", false, "Maven's output folder, which it writes when the project's tests run"},
-	{"coverage", false, "the report folder of vitest's coverage provider, where it writes by default"},
-	{"node-compile-cache", true, "Node's compile cache, which it writes into the temporary folder it is given"},
-	{"ssr", true, "vite's server-side transform cache, which vitest writes in a random folder of the temporary folder"},
+	{"node_modules", false, false, false, "npm's own folder, which node tools (vitest's .vite results, c8) write their caches into"},
+	{"build", false, false, false, "the output folder of Gradle and Flutter builds, which they write when the project's own tests run"},
+	{".gradle", false, false, false, "Gradle's cache of the project, which it makes when the project's tests run"},
+	{"target", false, false, false, "Maven's output folder, which it writes when the project's tests run"},
+	{"coverage", false, false, false, "the report folder of vitest's coverage provider, where it writes by default"},
+	{"node-compile-cache", true, false, false, "Node's compile cache, which it writes into the temporary folder it is given"},
+	{"ssr", true, false, false, "vite's server-side transform cache, which vitest writes in a random folder of the temporary folder"},
+	{"go-build", true, true, true, "go test's build folder, whose test binary Windows keeps locked while go test exits, so it cannot delete it"},
+	{"TestFeatures", true, true, true, "a Go test's own temporary folder, holding binaries it built, locked the same way"},
 }
 
 // inToolFolder is whether file, a slash path, is below a folder of toolFolders
-// of the kind temp says.
-func inToolFolder(file string, temp bool) bool {
+// of the kind temp says, on the system platform names.
+func inToolFolder(file string, temp bool, platform string) bool {
 	segments := strings.Split(file, "/")
-	for _, tool := range toolFolders {
-		if tool.temp == temp && slices.Contains(segments[:len(segments)-1], tool.folder) {
-			return true
+	return slices.ContainsFunc(toolFolders, func(tool toolFolder) bool {
+		if tool.temp != temp || tool.windows && platform != "windows" {
+			return false
 		}
-	}
-	return false
+		return slices.ContainsFunc(segments[:len(segments)-1], func(segment string) bool {
+			return segment == tool.folder || tool.prefix && strings.HasPrefix(segment, tool.folder)
+		})
+	})
 }
 
 // tempAllowances are the paths scenarios may leave in their temporary folder.
@@ -198,7 +206,7 @@ func (w *world) strays(ctx context.Context) error {
 	}
 	var in, temp []string
 	for _, file := range sortedKeys(w.added) {
-		if now[file] && !underMetrics(file) && !w.reports[file] && !inToolFolder(file, false) && !permitted(projectAllowances, w.tags, file) {
+		if now[file] && !underMetrics(file) && !w.reports[file] && !inToolFolder(file, false, w.d.Platform()) && !permitted(projectAllowances, w.tags, file) {
 			in = append(in, file)
 		}
 	}
@@ -207,7 +215,7 @@ func (w *world) strays(ctx context.Context) error {
 		return err
 	}
 	for _, file := range sortedKeys(left) {
-		if !inToolFolder(file, true) && !permitted(tempAllowances, w.tags, file) {
+		if !inToolFolder(file, true, w.d.Platform()) && !permitted(tempAllowances, w.tags, file) {
 			temp = append(temp, file)
 		}
 	}
