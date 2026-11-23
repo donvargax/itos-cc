@@ -6765,3 +6765,12 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: port-output-race
+    title: Hand each owned command's output over from its reader instead of sharing its buffer, held by a race-detector step
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Placeholder; the ledger entry holds the why.
