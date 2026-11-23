@@ -7668,3 +7668,35 @@
   done_when:
     - run: go test -race ./internal/processes -run '^TestCommandRunnerKeepsPreconfiguredStreams$' 2>&1 | grep -q '^ok '
       timeout: 300
+- id: T-244
+  type: fix
+  title: Pair same-named functions' results by UnitKey at the seams that still pair by name, for each pairing that fails here
+  why: >
+    Port 3 of pstack-port (2026-11-22): the five same-name pairings the private copy's PR #9
+    (pstack/f3-key-everywhere, on PR #5's FunctionKey) found, where a function's results were still
+    matched by namespace#name alone, so two Go init functions in one file took each other's results.
+    This repository's T-238 added UnitKey, PairResults and Results.For and paired MarkExcepted by
+    key; some of the five may already hold here. pstack's five, each with its own scenario there:
+    (1) an exception of one init excepts the survivor at the same place in the other, and the run
+    exits 0 (its ID-MUT-440); (2) a --since run fails on an unjudged init's survivor (ID-MUT-441);
+    (3) the listed kill kept for an unjudged init beside a judged one is never marked stale
+    (ID-MUT-442, an outline with a whole-suite example); (4) a strict run reusing cached coverage
+    gives both inits the second's evidence (ID-MUT-443); (5) a --since strict run fails on an
+    unjudged init's coverage (ID-MUT-444). The coordinator's calls: first confirm each is a real bug
+    here, by writing its black-box scenario (pstack's features/mutate.feature,
+    mutate_same_name_run.go and mutate_strict_same_name.go are the start; give each this
+    repository's next free ID-MUT number, never pstack's, and tag each @T-NNN of this task on its
+    tag line) and running it on main: one that fails at its behaviour assertion is real and is fixed
+    here, in pstack's way where it fits this repository's UnitKey (the pairing goes through UnitKey,
+    never a name string); one that passes on main is not a bug here and is dropped, scenario and
+    all, and named in the close with its passing run. pstack's PR #5 refactor (Entries, FunctionKey
+    replacing this repository's UnitKey) is not ported: the fixes use UnitKey. Snapshot bytes and
+    --json stay unchanged. docs/CLI.md changes only where a fixed behaviour is documented there. The
+    check runs this task's scenarios in process and greps the PASS line (itos#276). Red first:
+    commit the scenarios with their steps first, as AGENTS.md says, and see each fail or pass on
+    main before any product change. Left open on purpose, as pstack left them: the graph's coverage
+    pairing (crap.json records no hash), Locate and repointingSite taking the first function of a
+    name. Out of scope: the replay tool, the plain lines' display (port 4), internal/processes.
+  done_when:
+    - run: "go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='@T-244' -v 2>&1 | grep -q -- '--- PASS: TestScenarios'"
+      timeout: 900
