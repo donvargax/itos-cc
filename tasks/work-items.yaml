@@ -6758,12 +6758,10 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: port-cancel-race
+  - id: T-242
     title: Judge a command that exited before its late cancel by its own exit status, on every system
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Placeholder; the ledger entry holds the why.
+    kind: task

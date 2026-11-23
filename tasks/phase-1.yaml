@@ -7611,3 +7611,35 @@
     the rule's message is gone from .golangci.yml, no nolint:forbidigo is left in the mutation
     slice, and the display-path test passes; it greps the PASS line (itos#276). Out of scope: Shown
     and Show, T-237's graph rule and architecture-check, the gosec rules, any other lint rule.
+- id: T-242
+  type: fix
+  title: Judge a command that exited before its late cancel by its own exit status, on every system
+  why: >
+    Port 1 of pstack-port (2026-11-22): the cancel race the pstack trial's F4 model found, from the
+    private copy's PR #2 (pstack/f4-cancel-model, local
+    /home/yorch/src/os/github/donvargaxdev/itos-cc-pstack, same code and licence as this
+    repository). A command that exits 0 while its zombie or a member is still in its group, and
+    whose context ends before Wait reaps it, comes back as an error: ctx.Err() on Linux, "exec:
+    canceling Cmd: operation not permitted" on macOS (bug-5 again, after 713506df and 891f0567).
+    pstack's fix: cancelGroup answers os.ErrProcessDone whatever the kill returned, so os/exec
+    reports the command's own exit status; no process survives SIGKILL, so that status already says
+    whether the kill landed first; the cleanup's kill and probe are unchanged, so nothing still
+    running passes. The coordinator's calls: port the fix and the four orders of pstack's
+    TestCancelExitAndReapOrders that fail on the old code (its evidence comment on PR #2 lists them:
+    on darwin, the command exits 0 and then its timeout lands on its zombie, and it exits 0 and then
+    its parent's cancel lands while its member runs; and their Linux forms) as rows of this
+    repository's own T-239 table, TestGroupEndsAreJudgedInEveryOrder over groupCalls, not as
+    pstack's second table or its real-command harness, unless a row cannot be played through
+    groupCalls, in which case say why in the close. pstack's
+    TestKillGroupCancelOfAGoneGroupIsProcessDone-style tests that pin cancelGroup's answer rather
+    than the run's judgment go if they contradict the fix. Left out, per the person: the TLA+ model,
+    tools/models, its CI job, the pinned TLC and the .claude skill; a later item replaces the model
+    with stateful property tests. The check is TestGroupEndsAreJudgedInEveryOrder; it greps the PASS
+    line (itos#276). Red first: commit the new rows alone and see each fail at its judgment. No
+    black-box scenario can order a kernel's answers, so if itos commit refuses the fix commit for
+    want of a Scenarios footer, stop and report rather than naming a scenario the fix does not turn
+    green. Out of scope: the output-buffer data race (its own item), internal/processes beyond
+    cancelGroup and what its rows need, every other workflow.
+  done_when:
+    - run: "go test ./internal/processes -run '^TestGroupEndsAreJudgedInEveryOrder$' -v 2>&1 | grep -q -- '--- PASS: TestGroupEndsAreJudgedInEveryOrder'"
+      timeout: 180
