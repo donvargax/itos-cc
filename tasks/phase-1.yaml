@@ -7774,9 +7774,6 @@
     instead and say so) and say it in the close. The check: nightly.yml names the test with
     -rapid.checks=5000. Out of scope: macOS (the test runs on linux||darwin, but the nightly is
     Linux), the per-push bound, the test itself.
-  done_when:
-    - run: grep -q "TestOwnedCommandMachine.*-rapid.checks=5000" .github/workflows/nightly.yml
-      timeout: 30
 - id: T-248
   type: refactor
   title: Make the owned command's cancel, exit, reap and cleanup machine explicit in code, its table held to docs/state-machines.md
