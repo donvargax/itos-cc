@@ -6145,6 +6145,12 @@ items:
       command, or a --site/--count mode that stops after preparation, reporting the uncovered
       changed lines as the proof measures them (own tests plus listed scenarios), would let an agent
       see them before pushing.
+
+      T-250 (2026-11-23) met it again: its code proof failed on 8 pushes in a row, each run naming
+      one or two uncovered blocks (ci 45147543106 named cmd/itos-cc/selection.go:61 and 63;
+      45148728135 then named selection.go:80 and internal/past/past.go:116) while more stayed
+      uncovered. Reporting every uncovered changed line in one run, in CI as well as locally, would
+      have needed one repair push.
   - id: T-221
     title: Upgrade the repository pin to itos 8.25.1
     phase: 1
