@@ -105,6 +105,7 @@ func identityExceptionSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^Count was renamed Below$`, func() error {
 		return i.edit(func(text string) string { return strings.ReplaceAll(text, "Count", "Below") })
 	})
+	i.sameNameSteps(sc)
 	sc.Step(`^nothing changed$`, func() error { return nil })
 	sc.Step(`^its "why" is "(changed|gone)", its "identity" the argument, and its fix names a report of the code as it is now$`, i.staleWhy)
 	sc.Step(`^itos-cc\.yaml was not written$`, i.notWritten)

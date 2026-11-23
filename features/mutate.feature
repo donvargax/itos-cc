@@ -1925,6 +1925,67 @@ Feature: Mutation testing
       Then the exit code is 0
       And "itos-cc mutation run src/setup.go" reuses every mutant
 
+    # mutation run --since counted and failed the entries of the functions it
+    # judged by their namespace#name, so the entry it kept for a function it
+    # did not judge counted too when one it judged shared its name. Before:
+    # "2 survived", and the first init function's survivor failed the run.
+    @wip @T-244 @same-name-units @ID-MUT-428
+    Scenario: A run since a commit counts and fails only the one it judged of two functions sharing a name
+      Given a committed Go module whose two init functions of board/setup.go each survive `<` → `<=` at the same place in the function
+      And "itos-cc mutation run board/setup.go" recorded both surviving
+      And a commit after "base" changed only the second init function of board/setup.go
+      When I run "itos-cc mutation run --since base board/setup.go"
+      Then the exit code is 1
+      And stdout says "… 1 survived, 0 uncovered in board/setup.go … (judged 1 of 2 functions)"
+      And the only survivor it fails on is the second init function's, at board/setup.go line 11 column 10
+
+    # mutation run --since marks stale each entry it keeps for a function it
+    # did not judge whose outcomes rest on an input that changed: a file a
+    # listed outcome rests on, which the snapshot it writes records as it is
+    # now, or a whole-suite test. It told the functions it judged for listed
+    # outcomes by namespace#name, so it marked no entry of a name it judged
+    # one function of. Before: mutation check called the first init function
+    # fresh in the listed example. The whole-suite example held already. A
+    # kept entry keeps its own whole-suite evidence, so check calls it stale
+    # either way; told by name, the run leaves it unmarked, and check gives
+    # that evidence as the reason instead of the run that kept it.
+    @wip @T-244 @same-name-units @ID-MUT-429
+    Scenario Outline: A run since a commit marks stale what it keeps for a function sharing a name with one it judged, once <input> changed
+      Given a committed Go module whose two init functions of board/setup.go each survive `<` → `<=` at the same place in the function
+      And "itos-cc <run>" recorded both surviving
+      And <change>
+      And a commit after "base" changed only the second init function of board/setup.go
+      When I run "itos-cc <since>"
+      Then "itos-cc mutation check board/setup.go" reports the first init function "mutation.stale", kept by a mutation run that did not judge it
+
+      Examples:
+        | input                | run                                     | change                                                                                                                                                | since                                                |
+        | a listed test's file | mutation run board/setup.go             | the snapshot records the first init function's mutant at board/setup.go:7:10 killed by the listed test ID-A-01, of a.feature, which has changed since | mutation run --since base board/setup.go             |
+        | a whole-suite test   | mutation run --all-tests board/setup.go | e2e/support_test.go, a test of another package that the whole suite runs, has changed since                                                           | mutation run --since base --all-tests board/setup.go |
+
+    # A strict run reuses each judged function's fresh coverage evidence when
+    # every one has it and every mutant holds. It looked that evidence up by
+    # the function's namespace#name, and no hash, so both init functions took
+    # the second's. Before: mutation check --fail-uncovered called the first
+    # init function's coverage missing.
+    @wip @T-244 @same-name-units @strict-go-coverage @ID-MUT-430
+    Scenario: A strict run that reuses coverage evidence keeps each of two init functions' own
+      Given a Go module whose two init functions a strict run recorded with fresh coverage evidence, every mutant killed
+      When I repeat "itos-cc mutation run --fail-uncovered main.go" with nothing changed
+      Then it measures no coverage, and exits 0
+      And "itos-cc mutation check --fail-uncovered main.go" exits 0, each init function holding its own evidence
+
+    # mutation run --fail-uncovered holds the functions it judged to their
+    # coverage, and told them by namespace#name, so a function it did not
+    # judge was held to its coverage too when one it judged shared its name.
+    # Before: "mutation.coverage-missing" for the first init function, exit 1.
+    @wip @T-244 @same-name-units @strict-go-coverage @ID-MUT-431
+    Scenario: A strict run since a commit holds only the one it judged of two functions sharing a name to its coverage
+      Given a Go module whose two init functions a run without coverage recorded, every mutant killed
+      And a commit after "base" changed only the second init function of main.go
+      When I run "itos-cc mutation run --since base --fail-uncovered main.go"
+      Then it judges only the second init function, reports no coverage problem, and exits 0
+
   # Issue #9, part 1: a gate judges a task's commits, not the working tree,
   # so --since <ref> picks the functions the commits since <ref> changed.
   # The range is git diff <ref>...HEAD: the branch's own commits whatever its

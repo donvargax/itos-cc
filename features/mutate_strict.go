@@ -46,7 +46,7 @@ func strictMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMuta
 				q.id = strings.TrimPrefix(tag.Name, "@ID-MUT-")
 			}
 		}
-		if !slices.Contains([]string{"156", "157", "158", "159", "160", "161", "162", "163", "164", "221", "222", "223", "224", "225", "226", "228", "229", "230", "254", "255", "259", "271", "272", "273"}, q.id) {
+		if !slices.Contains([]string{"156", "157", "158", "159", "160", "161", "162", "163", "164", "221", "222", "223", "224", "225", "226", "228", "229", "230", "254", "255", "259", "271", "272", "273", "430", "431"}, q.id) {
 			return ctx, nil
 		}
 		m.w.prepare = func(args []string) []string {
@@ -319,6 +319,7 @@ example.com/strict/main.go:3.88,3.100 1 1
 	q.zeroSteps(sc)
 	q.reuseSteps(sc)
 	q.partialSteps(sc)
+	q.sameNameSteps(sc)
 	q.scopeSteps(sc)
 	q.modeSteps(sc)
 }
