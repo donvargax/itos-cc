@@ -6810,7 +6810,7 @@ items:
   - id: T-249
     title: Return an internal error, not a panic, when the owned command's machine gets an event it has no row for
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
