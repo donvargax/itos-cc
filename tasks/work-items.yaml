@@ -6796,3 +6796,17 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: scenarios-flag-list
+    title: TestScenarios' -scenarios takes a comma list of tags
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-251's worker (2026-11-23) wrote -scenarios as a comma list and met features.TagFilter's
+      error, since the flag takes one regular expression (cmd/itos-cc/scenarios_test.go:50) and a
+      comma list matches no tag. Item checks and briefs name several tags at once, so either a comma
+      list whose parts are each a regular expression, joined as alternatives, or an error that says
+      to join tags with | when the expression holds a comma, would save a retry. A selection that
+      matches nothing stays an error.
