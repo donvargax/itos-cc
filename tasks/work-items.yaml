@@ -6616,8 +6616,8 @@ items:
   - id: T-250
     title: "units, dry and scrap --at <commit>: measure a commit from git objects, cached per commit in the git common directory"
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: gardener-outcomes
