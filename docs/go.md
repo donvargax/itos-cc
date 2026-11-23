@@ -396,43 +396,41 @@ a `context.Context` first (decision 30); pure logic takes none.
   selection domain, parses each with the domain's `Parse`, read through the same `Tree` port
   and named by `internal/lang` through the `Surroundings` port its handler is given, its
   `Exclude` the sources the selection leaves out. `Run` prints them, their paths from the
-  working directory (`UI.Rel`). It has no classifier: its failures are the
+  working directory (`ui.Show`). It has no classifier: its failures are the
   selection domain's, whose classifier is cmd's, or `internal/lang`'s, internal ones.
 - `internal/slices/dry` is the `dry` command's slice (T-40), laid out as `units`'s, the first
   moved command with number flags, and the second under `internal/slices` (T-148), the first
   the generator assembled. Its `Handler` holds the selection `Tree`, lang's `Surroundings`, the
-  snapshot `Store`, `Name`, the name a person reads a file by, and `Exclude`, the sources both
-  selections leave out. `Command` declares it and `Ports` names what `NewHandler(ctx, p)` builds
-  the handler over: `SelectionTree`, `LangSurroundings`, `SelectionExclusion`, as `units`
-  declares them, `SnapshotStore`, the snapshot port, and `Rel(path)`, a path named from the
-  working directory, which `adapters` answers with `cli.Rel` from its `Dir`, the one copy of
-  `UI.Rel`'s logic, from the directory the UI is given, so the UI stays out of the slice's
-  ports. `Handle` selects the sources, and with paths or `--changed` checks them against every
-  source the selection finds under the working directory; it parses each with the selection
-  domain's `Parse`, hands it to its domain under its `Name`, and records `dry.json` through the
-  `Store`, each file named from the root (`snapshot.Key`). It has no classifier: its failures
+  snapshot `Store` and `Exclude`, the sources both selections leave out. `Command` declares it
+  and `Ports` names what `NewHandler(ctx, p)` builds the handler over: `SelectionTree`,
+  `LangSurroundings`, `SelectionExclusion`, as `units` declares them, and `SnapshotStore`, the
+  snapshot port. `Handle` selects the sources, and with paths or `--changed` checks them
+  against every source the selection finds under the working directory; it parses each with
+  the selection domain's `Parse`, hands it to its domain under its path as selected, and
+  records `dry.json` through the `Store`, each file named from the root (`snapshot.Key`).
+  `Run` names each file for people with `ui.Show`. It has no classifier: its failures
   are the selection and snapshot domains', whose classifiers are cmd's, or `internal/lang`'s,
   internal ones.
 - `internal/slices/dry/domain` is the `dry` slice's own domain (decision 37, ADR-0051), the
   subpackage that keeps it apart from the slice's CLI and application code; it was
   `internal/duplication`. It finds functions similar enough to be duplicates in files
   `internal/lang` parsed, `Forms(f, name, opt)` a file's functions large enough to compare,
-  with the name its caller gives the file, since a side's file is the key its pairs and groups
-  are sorted and paired by, compared by lang's `Fingerprint` and `Jaccard`. It reads nothing
+  with the path its caller selected the file by, since a side's file is the key its pairs and
+  groups are sorted and paired by, compared by lang's `Fingerprint` and `Jaccard`. It reads nothing
   and imports neither `internal/project` nor any disk code, so it has no port; its tests parse in
   memory through lang's fake. The `domain` and `domain-io` rules hold it as they hold the
   shared domains, and `tools/bin/domain-coverage` measures it.
 - `internal/slices/scrap` is the `scrap` command's slice (T-43), laid out as `dry`'s, and the
   third under `internal/slices` (T-150). Its `Handler` holds the selection `Tree`, lang's
-  `Surroundings`, the snapshot `Store` and `Name`, with no `Exclude`: it selects only tests,
+  `Surroundings` and the snapshot `Store`, with no `Exclude`: it selects only tests,
   which itos-cc.yaml's `exclude` never leaves out. `Command` declares it and `Ports` names what
   `NewHandler(ctx, p)` builds the handler over, `SelectionTree`, `LangSurroundings`,
-  `SnapshotStore` and `Rel`, as `dry` declares them, with no `SelectionExclusion`, so its
+  `SnapshotStore`, as `dry` declares them, with no `SelectionExclusion`, so its
   provider reads no settings and `scrap`, its `--json` and its help never read the file (CLI
   rule 38). `NewHandler` cannot fail and keeps the `(Handler, error)` shape every slice's
   constructor has. `Handle` selects the test files, reads the last `scrap.json` through the
   `Store`, going on without it when it is `Unreadable`, reads and parses each test file as
-  `dry` does, measures it with its domain under its `Name`, merges the run into the last
+  `dry` does, measures it with its domain under its path as selected, merges the run into the last
   snapshot with the domain's `History` and records it, each file keyed from the root. `Run`
   prints each file's report, and says on stderr, with `--json` too, when the last snapshot
   was ignored or there was no test file to measure. It has no classifier.
@@ -447,7 +445,7 @@ a `context.Context` first (decision 30); pure logic takes none.
 - `internal/slices/crap` is the `crap` command's slice (T-67), laid out as `dry`'s, and the
   fourth under `internal/slices` (T-152). Its `Handler` holds `dry`'s and the coverage domain's
   `Measurer`, `Coverage`. `Command` declares it and `Ports` names what `NewHandler(ctx, p)`
-  builds the handler over: `SelectionTree`, `LangSurroundings`, `SnapshotStore`, `Rel` and
+  builds the handler over: `SelectionTree`, `LangSurroundings`, `SnapshotStore` and
   `SelectionExclusion`, as `dry` declares them, and `CoverageMeasurer`, the coverage domain's
   `Measurer`, which `adapters` answers with `coveragetools`' measurer over the coverage runner,
   its commands run through `internal/processes`' executor (`coverageCommand`), never through a
@@ -459,9 +457,9 @@ a `context.Context` first (decision 30); pure logic takes none.
   itos-cc.yaml left out, and that there is none to score, before anything is measured, and
   refuses `--coverage-command` with no `--coverage-report` only then; `Handle` measures them
   through `Coverage`, whose progress goes to the writer cmd gave its adapter, parses each as
-  `dry` does, scores it with its domain under its `Name` and records `crap.json` through the
+  `dry` does, scores it with its domain under its path as selected and records `crap.json` through the
   `Store`, each file keyed from the root. `Run` prints the worst first, warns of each build
-  root or report coverage did not measure, named from the working directory (`UI.Rel`), and
+  root or report coverage did not measure, named from the working directory (`ui.Show`), and
   with `--threshold` reports each as its gap's problem through the UI's classifiers, beside
   each function above it. It has no classifier: the coverage domain's is cmd's.
 - `internal/slices/crap/domain` is the `crap` slice's own domain (decision 37, ADR-0051),
@@ -780,8 +778,7 @@ each changed in a task of its own, is `docs/ownership.md`'s.
     its name a string literal;
   - `type Ports interface`, the ports its handler is built over, each a method named for the
     engine and the port, such as `SelectionTree()`, `LangSurroundings()`,
-    `SelectionExclusion(ctx)` and `SnapshotStore()`, shared by every slice that needs it, and
-    `Rel(path)`, a path named from the working directory as the UI names it;
+    `SelectionExclusion(ctx)` and `SnapshotStore()`, shared by every slice that needs it;
   - `NewHandler(ctx context.Context, p Ports) (Handler, error)`, the one shape every slice's
     constructor has. What differs between slices goes behind a `Ports` method, never into the
     signature, and its error is returned as the port gave it, unwrapped.
@@ -898,9 +895,11 @@ follows the same steps for a command it wrote before it had the template's desig
    29). When it needs something of the outside that every command of the domain needs too,
    the domain's port grows it, as the selection port's `Tree` grew `Read` for the sources
    `units` parses: one port the adapter already implements, never a port of the slice's own,
-   which an adapter could not implement without importing a slice. A path a person reads is
-   named from the working directory by `ui.Rel`, or in a handler by its `Ports`' `Rel`, which
-   cmd answers with `cli.Rel` from the same directory, not by a library an adapter wraps.
+   which an adapter could not implement without importing a slice. A handler names a file by
+   its path as selected, and `Run` names it for people with `ui.Show`, whose `cli.Shown` a
+   plain line prints slash-separated and whose `System()` is the form `--json` and the
+   problems keep. No lint rule holds this: the mutation slice's own `filepath.Rel` calls would
+   need more than two `nolint` comments.
 3. **Its classifier.** A domain's failures become problems in one classifier, held beside the
    one slice that uses the domain, as `internal/slices/mutation` words its own `Failure`s. A domain
    several commands share keeps its classifier in cmd (`classifySelection`), since no slice may
