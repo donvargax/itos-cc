@@ -1,6 +1,8 @@
 package processes
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -207,4 +209,21 @@ func (l *ownedLife) current() ownedState {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return l.state
+}
+
+// observeContext takes the run through the context's end, if it ended and
+// the run has not seen it, by its timeout (ErrCommandTimeout as its cause)
+// or its parent, and says how the context stands. Whoever reads the context
+// first, os/exec's Cancel or the judgment, takes the step.
+func (l *ownedLife) observeContext(ctx context.Context) ownedContext {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.state.context == contextLive && ctx.Err() != nil {
+		event := eventContextEndsByParent
+		if errors.Is(context.Cause(ctx), ErrCommandTimeout) {
+			event = eventContextEndsByTimeout
+		}
+		l.state, _ = next(l.state, event)
+	}
+	return l.state.context
 }

@@ -63,7 +63,7 @@ func (runner *Runner) RunLimited(ctx context.Context, cmd *exec.Cmd, output *byt
 	if output != nil && cmd.Stderr == output {
 		cmd.Stderr = kept
 	}
-	s := &supervision{kept: kept, limits: limits, platform: platform, calls: runner.groupCalls()}
+	s := &supervision{kept: kept, limits: limits, platform: platform, calls: runner.groupCalls(), life: newOwnedLife()}
 	var started time.Time
 	var err error
 	waited := false
@@ -75,7 +75,7 @@ func (runner *Runner) RunLimited(ctx context.Context, cmd *exec.Cmd, output *byt
 		started = time.Now()
 		err = runner.Lifecycle.start(ctx, cmd)
 	} else {
-		killGroup(cmd, platform, s.calls)
+		killGroup(ctx, cmd, platform, s.calls, s.life)
 		started = time.Now()
 		err = cmd.Start()
 	}
@@ -103,7 +103,8 @@ func (runner *Runner) RunLimited(ctx context.Context, cmd *exec.Cmd, output *byt
 	// A cap the command went over killed it, whatever it then exited
 	// with, unless its parent cancelled it: a judgment cut short is never
 	// a kill.
-	parentCancelled := ctx.Err() != nil && !errors.Is(context.Cause(ctx), ErrCommandTimeout)
+	stopped := s.life.observeContext(ctx)
+	parentCancelled := stopped == contextByParent
 	if over := s.over.which(); over != "" && !parentCancelled {
 		r.OverLimit = over
 		if cmd.ProcessState != nil {
@@ -117,11 +118,11 @@ func (runner *Runner) RunLimited(ctx context.Context, cmd *exec.Cmd, output *byt
 		return r, nil
 	}
 	switch {
-	case ownedOutcomePrecedence(platform) && errors.Is(context.Cause(ctx), ErrCommandTimeout):
+	case ownedOutcomePrecedence(platform) && stopped == contextByTimeout:
 		r.TimedOut = true
 	case !ownedOutcomePrecedence(platform) && ctx.Err() == context.DeadlineExceeded:
 		r.TimedOut = true
-	case ownedOutcomePrecedence(platform) && ctx.Err() != nil:
+	case ownedOutcomePrecedence(platform) && stopped != contextLive:
 		r.Cancelled = true
 	case err == nil:
 		r.Passed, r.ExitCode = true, 0
@@ -141,6 +142,7 @@ type supervision struct {
 	limits   Limits
 	platform string
 	calls    groupCalls
+	life     *ownedLife
 	over     overLimit
 	peak     int64
 	measured bool

@@ -8,6 +8,7 @@
 package processes
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"runtime"
@@ -24,10 +25,13 @@ func PlatformAtBoundary(platform string) string {
 	return platform
 }
 
-func killGroup(cmd *exec.Cmd, platform string, calls groupCalls) {
+func killGroup(ctx context.Context, cmd *exec.Cmd, platform string, calls groupCalls, life *ownedLife) {
 	if platform != "windows" {
 		cmd.SysProcAttr = nativeGroupAttributes(true)
-		cmd.Cancel = func() error { return cancelGroup(calls, cmd.Process.Pid) }
+		cmd.Cancel = func() error {
+			life.observeContext(ctx)
+			return cancelGroup(calls, cmd.Process.Pid)
+		}
 	}
 	cmd.WaitDelay = 2 * time.Second
 }

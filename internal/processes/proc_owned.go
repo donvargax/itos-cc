@@ -41,8 +41,8 @@ func NewCleanupBudget(localUntilAbort bool) *CleanupBudget {
 	return &CleanupBudget{localUntilAbort: localUntilAbort}
 }
 
-func cleanupBudgetForScope(ctx context.Context, shared *CleanupBudget) *CleanupBudget {
-	if shared != nil && ctx.Err() != nil && !errors.Is(context.Cause(ctx), ErrCommandTimeout) {
+func cleanupBudgetForScope(stopped ownedContext, shared *CleanupBudget) *CleanupBudget {
+	if shared != nil && stopped == contextByParent {
 		shared.mu.Lock()
 		useShared := !shared.localUntilAbort || shared.armed
 		shared.mu.Unlock()
@@ -185,9 +185,9 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 			return err
 		}
 	}
-	killGroup(cmd, platform, s.calls)
+	life := s.life
+	killGroup(ctx, cmd, platform, s.calls, life)
 	cmd.WaitDelay = 0
-	life := newOwnedLife()
 
 	stopReader := &cleanupSignal{done: make(chan struct{})}
 	for i := range captures {
@@ -249,7 +249,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 	held.begin()
 
 	life.apply(eventWaitReturns)
-	deadline := cleanupBudgetForScope(ctx, budget).until()
+	deadline := cleanupBudgetForScope(life.observeContext(ctx), budget).until()
 	if observe != nil {
 		observe(deadline)
 	}
@@ -288,7 +288,7 @@ func runUnownedCommand(cmd *exec.Cmd, s *supervision) error {
 	} else {
 		cmd.Stdout, cmd.Stderr = counted(cmd.Stdout), counted(cmd.Stderr)
 	}
-	killGroup(cmd, s.platform, s.calls)
+	killGroup(context.Background(), cmd, s.platform, s.calls, s.life)
 	if err := cmd.Start(); err != nil {
 		return err
 	}

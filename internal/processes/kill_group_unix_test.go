@@ -20,7 +20,7 @@ import (
 // done.
 func TestKillGroupCancelOfAGoneGroupIsProcessDone(t *testing.T) {
 	cmd := exec.CommandContext(t.Context(), "/bin/sh", "-c", "exit 0")
-	killGroup(cmd, PlatformAtBoundary(""), systemGroupCalls())
+	killGroup(t.Context(), cmd, PlatformAtBoundary(""), systemGroupCalls(), newOwnedLife())
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("command run = %v; want its own successful exit", err)
 	}

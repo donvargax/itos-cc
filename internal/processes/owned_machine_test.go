@@ -1,6 +1,8 @@
 package processes
 
 import (
+	"context"
+	"errors"
 	"os"
 	"strings"
 	"syscall"
@@ -154,6 +156,40 @@ func TestWaitOwnedProcessGroupMovesTheRunByWhatTheProbeFinds(t *testing.T) {
 			}
 			if life.current() != c.want {
 				t.Errorf("the run is %v; want %v", life.current(), c.want)
+			}
+		})
+	}
+}
+
+// TestObserveContextTakesTheRunThroughTheContextsEnd holds what the run
+// says of its context: live while it is, ended by its parent or by its
+// timeout (the cause ErrCommandTimeout) once it ended, and ended that way
+// for good.
+func TestObserveContextTakesTheRunThroughTheContextsEnd(t *testing.T) {
+	for _, c := range []struct {
+		name  string
+		cause error
+		want  ownedContext
+	}{
+		{"live", nil, contextLive},
+		{"its parent's cancel", errors.New("stop"), contextByParent},
+		{"its timeout", ErrCommandTimeout, contextByTimeout},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancelCause(context.Background())
+			defer cancel(nil)
+			life := newOwnedLife()
+			if c.cause != nil {
+				cancel(c.cause)
+			}
+			if got := life.observeContext(ctx); got != c.want {
+				t.Errorf("the context stands %q; want %q", got, c.want)
+			}
+			if got := life.observeContext(ctx); got != c.want {
+				t.Errorf("seen again, the context stands %q; want %q", got, c.want)
+			}
+			if life.current().context != c.want {
+				t.Errorf("the run holds %q; want %q", life.current().context, c.want)
 			}
 		})
 	}
