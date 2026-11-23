@@ -223,3 +223,11 @@ jobs:
           echo "list=$packages" >> "$GITHUB_OUTPUT"
       - if: matrix.part == 'others'
         run: go test -timeout 30m -skip '^TestFeatures$' ${{ steps.packages.outputs.list }}
+      # The race detector over the process engine alone (T-243): its reader
+      # goroutines share state with the run goroutine, and -race over every
+      # package would cost far more than the one that owns them.
+      - name: Race detector
+        if: matrix.part == 'others'
+        env:
+          GORACE: atexit_sleep_ms=0
+        run: go test -race -timeout 30m ./internal/processes/...
