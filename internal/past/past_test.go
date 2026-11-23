@@ -49,6 +49,11 @@ func TestKeyFollowsTheQuestion(t *testing.T) {
 			t.Errorf("a different %s has the same key", name)
 		}
 	}
+	// A working directory the root cannot be related to keys by its own name.
+	apart := past.Commit{Root: root, Dir: "relative"}
+	if apart.Key(q{[]string{"a"}}, "1") == here.Key(q{[]string{"a"}}, "1") || apart.Key(q{[]string{"a"}}, "1") != apart.Key(q{[]string{"a"}}, "1") {
+		t.Errorf("a directory apart from the root should have a key of its own, the same each time")
+	}
 	if (past.Commit{Root: root, Dir: root}).Key(func() {}, "1") == "" {
 		t.Errorf("a query that cannot be encoded still has a key")
 	}
