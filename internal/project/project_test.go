@@ -159,3 +159,13 @@ func TestPackageManagerIsTheOneTheProjectDeclares(t *testing.T) {
 		t.Errorf("packageManager yarn@4.5.0 beside package-lock.json: %s, want yarn", got)
 	}
 }
+
+// GitIn runs git in the directory it is given, not the process's.
+func TestGitInRunsInTheDirectoryGiven(t *testing.T) {
+	dir := t.TempDir()
+	git(t, dir, "init", "-q")
+	out, err := GitIn(t.Context(), dir, "rev-parse", "--is-inside-work-tree").Output()
+	if err != nil || string(out) != "true\n" {
+		t.Errorf("git in %s: %q, %v; want it inside a work tree", dir, out, err)
+	}
+}
