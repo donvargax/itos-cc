@@ -18,7 +18,7 @@ type CheckOptions struct {
 	Toolchain    Toolchain
 	Fingerprints Fingerprints
 	Root, Dir    string
-	Judge        func(path, function, hash string) bool
+	Judge        func(path string, key UnitKey) bool
 	Tests        func(path string) []string
 	Support      map[string]string
 	Exceptions   []Exception
@@ -127,10 +127,10 @@ func CheckCoverage(ctx context.Context, files []string, opt CheckOptions, langua
 		keys := KeysOfFile(f)
 		results := PairResults(keys, entries)
 		for i, unit := range f.Units {
-			if opt.Judge != nil && !opt.Judge(path, keys[i].ID(), keys[i].Hash()) {
+			if opt.Judge != nil && !opt.Judge(path, keys[i]) {
 				continue
 			}
-			check := CoverageCheck{File: relativeName(opt.Dir, path), Function: keys[i].ID(), Language: language, Line: unit.StartLine, EndLine: unit.EndLine, State: "missing"}
+			check := CoverageCheck{File: relativeName(opt.Dir, path), Function: keys[i].ID(), Key: keys[i], Language: language, Line: unit.StartLine, EndLine: unit.EndLine, State: "missing"}
 			if unsupported != "" {
 				check.State = "unsupported"
 				check.Changed = []string{unsupported}

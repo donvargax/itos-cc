@@ -65,7 +65,7 @@ func TestMutationHistoryConsumersRequireActualBindings(t *testing.T) {
 	same := func(s string) string { return s }
 	main := filepath.Join(root, "main.go")
 	sources, judge, renamed, _, _, err := h.selectSources(t.Context(), q)
-	if err != nil || len(sources) != 2 || !judge(main, "example/binding#Value", "") || renamed(filepath.Join(root, "new.go")) != filepath.Join(root, "old.go") {
+	if err != nil || len(sources) != 2 || !judge(main, mutants.KeysOfEntries([]mutants.UnitResult{{Namespace: "example/binding", Name: "Value"}})[0]) || renamed(filepath.Join(root, "new.go")) != filepath.Join(root, "old.go") {
 		t.Fatalf("actual bound since: %v %v", sources, err)
 	}
 	exceptions := []mutants.Exception{{File: "gone.go", Function: "example/binding#Gone", Hash: "independent obsolete hash"}}

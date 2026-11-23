@@ -170,7 +170,7 @@ func TestAFunctionNotJudgedKeepsItsFlakyMutant(t *testing.T) {
 	f, site := survivingFixture(t)
 	flip(f, site, mutants.Killed, mutants.Survived)
 	f.run(t)
-	f.options.Judge = func(string, string, string) bool { return false }
+	f.options.Judge = func(string, mutants.UnitKey) bool { return false }
 	r := f.run(t)[0]
 	for _, u := range r.Snapshot.Units {
 		for _, m := range u.Mutants {

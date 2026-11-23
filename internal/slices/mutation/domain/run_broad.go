@@ -14,7 +14,7 @@ func (s *Execution) markBroadStale() {
 	}
 	marks := map[UnitKey]bool{}
 	for _, w := range s.written() {
-		marks[w.key] = w.kept != nil && s.broadChanged(*w.kept)
+		marks[w.key] = w.kept != nil && (s.broadChanged(*w.kept) || s.listedChange != nil && s.listedChange.Changed(w.kept.Mutants))
 	}
 	units := s.result.Snapshot.Units
 	for i, key := range KeysOfEntries(units) {

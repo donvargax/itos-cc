@@ -66,7 +66,7 @@ func CheckParsed(ctx context.Context, f *lang.File, path string, opt CheckOption
 	names := map[string]bool{}
 	for i, u := range f.Units {
 		id := keys[i].ID()
-		if opt.Judge != nil && !opt.Judge(path, id, keys[i].Hash()) {
+		if opt.Judge != nil && !opt.Judge(path, keys[i]) {
 			continue
 		}
 		names[id] = true

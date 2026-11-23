@@ -5,26 +5,6 @@ import (
 	"path/filepath"
 )
 
-// markListedStale marks Stale each entry of the snapshot a run writes that
-// it did not judge and whose listed outcomes rest on files that changed:
-// the snapshot records those files as they are now, so the entry must not
-// read as fresh until a run judges it again.
-func (s *Execution) markListedStale() {
-	if s.judged == nil || s.listedChange == nil {
-		return
-	}
-	judged := map[string]bool{}
-	for _, id := range s.result.Judged {
-		judged[id] = true
-	}
-	units := s.result.Snapshot.Units
-	for i := range units {
-		if !judged[UnitID(units[i].Namespace, units[i].Name)] && s.listedChange.Changed(units[i].Mutants) {
-			units[i].Stale = true
-		}
-	}
-}
-
 // listedHash keeps unreadable observations best effort without turning
 // optional freshness observations into newly fatal errors.
 func listedHash(ctx context.Context, root, file string, fp Fingerprints) string {

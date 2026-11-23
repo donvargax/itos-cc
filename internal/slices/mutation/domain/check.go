@@ -15,6 +15,8 @@ const (
 // CoverageCheck is one current function's independent coverage verdict.
 type CoverageCheck struct {
 	File, Function string
+	// Key is the function as it is now: the key its evidence is paired by.
+	Key UnitKey
 	// Language is the function's language.
 	Language string
 	// Line and EndLine are the lines the function starts and ends on now.

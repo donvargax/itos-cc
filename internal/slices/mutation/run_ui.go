@@ -1,7 +1,9 @@
 package mutation
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -24,7 +26,7 @@ type runFile struct {
 	Reused   int    `json:"reused"`
 	Baseline string `json:"baseline"`
 	// Judged is there only with --since, empty when no function changed.
-	Judged []string `json:"judged,omitzero"`
+	Judged judgedNames `json:"judged,omitzero"`
 	// Mutants is every mutant of the functions judged, in site order;
 	// empty, never null, when the baseline or a selection of listed tests
 	// failed, except with --fail-fast, which lists them with their state.
@@ -40,6 +42,21 @@ type runFile struct {
 	// mutant of its functions judged, else "incomplete". A stopped run's
 	// own work, State, can be incomplete while the cache is complete.
 	Cache string `json:"cache,omitempty"`
+}
+
+// judgedNames are the functions a run judged, as the names the JSON gives.
+type judgedNames []mutants.UnitKey
+
+func (j judgedNames) MarshalJSON() ([]byte, error) {
+	names := make([]string, len(j))
+	for i, key := range j {
+		names[i] = key.ID()
+	}
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	err := enc.Encode(names)
+	return bytes.TrimSuffix(buf.Bytes(), []byte("\n")), err
 }
 
 // runWork counts selected mutants by their fail-fast state, disjointly:
@@ -344,13 +361,13 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 			State: state, Work: work, Cache: cache}
 		// Only the functions judged count: the others keep outcomes no
 		// change in the range is to blame for.
-		judged := map[string]bool{}
-		for _, id := range r.Judged {
-			judged[id] = true
+		judged := map[mutants.UnitKey]bool{}
+		for _, key := range r.Judged {
+			judged[key] = true
 		}
 		var units []mutants.UnitResult
-		for _, u := range r.Snapshot.Units {
-			if r.Judged == nil || judged[u.Namespace+"#"+u.Name] {
+		for i, key := range mutants.KeysOfEntries(r.Snapshot.Units) {
+			if u := r.Snapshot.Units[i]; r.Judged == nil || judged[key] {
 				units = append(units, u)
 			}
 		}
@@ -446,13 +463,14 @@ func (p *Presentation) strictCoverage(results []mutants.FileResult, scope mutant
 		if result.BaselineFailed || len(result.FailedSelections) > 0 {
 			continue
 		}
-		judged := map[string]bool{}
-		for _, id := range result.Judged {
-			judged[id] = true
+		judged := map[mutants.UnitKey]bool{}
+		for _, key := range result.Judged {
+			judged[key] = true
 		}
-		for _, unit := range result.Snapshot.Units {
+		for i, key := range mutants.KeysOfEntries(result.Snapshot.Units) {
+			unit := result.Snapshot.Units[i]
 			id := unit.Namespace + "#" + unit.Name
-			if result.Judged != nil && !judged[id] || !scope.Judges(result.Rel, unit.StartLine, unit.EndLine) {
+			if result.Judged != nil && !judged[key] || !scope.Judges(result.Rel, unit.StartLine, unit.EndLine) {
 				continue
 			}
 			if unit.Coverage == nil || !unit.Coverage.Complete {

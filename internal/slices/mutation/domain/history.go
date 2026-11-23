@@ -31,8 +31,8 @@ type ChangedFunctions struct {
 }
 
 func (c ChangedFunctions) Changes(start, end int) bool { return OverlapsRanges(c.Lines, start, end) }
-func (c ChangedFunctions) Judges(function, hash string) bool {
-	return c.Functions[function] && !c.Kept[function][hash]
+func (c ChangedFunctions) Judges(key UnitKey) bool {
+	return c.Functions[key.ID()] && !c.Kept[key.ID()][key.Hash()]
 }
 
 // HistoryFailure is a repository observation failure, not a mutation verdict.

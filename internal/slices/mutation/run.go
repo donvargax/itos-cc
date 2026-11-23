@@ -293,7 +293,7 @@ type strictCoverage struct {
 	languages  []string
 	strictGo   bool
 	sources    []string
-	judge      func(string, string, string) bool
+	judge      func(string, mutants.UnitKey) bool
 	tests      func(string) []string
 	support    map[string]string
 	exceptions []mutants.Exception
@@ -363,16 +363,16 @@ func (h Handler) strict(ctx context.Context, q RunQuery, opt *mutants.Options, s
 			measured = append(measured, source)
 		}
 	}
-	kept := map[string]*mutants.CoverageEvidence{}
+	kept := map[coveredFunction]*mutants.CoverageEvidence{}
 	for _, check := range cached {
 		if !measure[check.Language] {
-			kept[check.File+"\x00"+check.Function] = check.Evidence
+			kept[coveredFunction{check.File, check.Key}] = check.Evidence
 		}
 	}
 	if len(kept) > 0 {
 		dir := h.Dir
-		opt.CachedCoverage = func(path, function, _ string) *mutants.CoverageEvidence {
-			return kept[cli.Rel(dir, path)+"\x00"+function]
+		opt.CachedCoverage = func(path string, key mutants.UnitKey) *mutants.CoverageEvidence {
+			return kept[coveredFunction{cli.Rel(dir, path), key}]
 		}
 	}
 	report, measuredProducer, listedFiles, err := h.strictCoverage(ctx, q, s, measured, opt.Listing)
@@ -410,14 +410,22 @@ func (h Handler) strict(ctx context.Context, q RunQuery, opt *mutants.Options, s
 	return nil, nil
 }
 
+// coveredFunction is a function of a file, as cached coverage evidence is
+// looked up: the file's name and the function's key, so two functions
+// sharing a name each find their own.
+type coveredFunction struct {
+	rel string
+	key mutants.UnitKey
+}
+
 // reuseCoverage sets opt's coverage to the cached strict evidence of each
 // judged function, every one of them fresh.
 func (h Handler) reuseCoverage(opt *mutants.Options, s strictCoverage, cached []mutants.CoverageCheck) {
-	byFunction := map[string]*mutants.CoverageEvidence{}
+	byFunction := map[coveredFunction]*mutants.CoverageEvidence{}
 	byFile := map[string][]coverage.GoBlock{}
 	byLines := map[string]map[string][]coverage.Line{}
 	for _, check := range cached {
-		byFunction[check.File+"\x00"+check.Function] = check.Evidence
+		byFunction[coveredFunction{check.File, check.Key}] = check.Evidence
 		path := filepath.Join(s.root, filepath.FromSlash(check.File))
 		for _, block := range check.Blocks {
 			if check.Language != "go" {
@@ -433,8 +441,8 @@ func (h Handler) reuseCoverage(opt *mutants.Options, s strictCoverage, cached []
 		}
 	}
 	dir := h.Dir
-	opt.CachedCoverage = func(path, function, _ string) *mutants.CoverageEvidence {
-		return byFunction[cli.Rel(dir, path)+"\x00"+function]
+	opt.CachedCoverage = func(path string, key mutants.UnitKey) *mutants.CoverageEvidence {
+		return byFunction[coveredFunction{cli.Rel(dir, path), key}]
 	}
 	var report *coverage.Report
 	if s.strictGo {

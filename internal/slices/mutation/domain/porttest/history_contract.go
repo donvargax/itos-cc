@@ -243,12 +243,14 @@ func HistoryContract(t *testing.T, open func(*testing.T) HistoryFixture) {
 		}
 		defer parsed.Close()
 		var initHashes []string
-		for _, unit := range parsed.Units {
+		var initKeys []mutants.UnitKey
+		for i, unit := range parsed.Units {
 			if unit.Name == "init" {
 				initHashes = append(initHashes, mutants.UnitHash(parsed, unit))
+				initKeys = append(initKeys, mutants.KeysOfFile(parsed)[i])
 			}
 		}
-		if len(initHashes) != 2 || initHashes[0] == initHashes[1] || c.Judges("example/history#init", initHashes[0]) || !c.Judges("example/history#init", initHashes[1]) || !c.Kept["example/history#init"][initHashes[0]] {
+		if len(initHashes) != 2 || initHashes[0] == initHashes[1] || c.Judges(initKeys[0]) || !c.Judges(initKeys[1]) || !c.Kept["example/history#init"][initHashes[0]] {
 			t.Fatalf("same-name hashes mispaired: hashes=%v changes=%+v", initHashes, c)
 		}
 

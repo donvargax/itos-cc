@@ -74,7 +74,7 @@ type FileResult struct {
 	// Judged holds the namespace#name of each function judged, in the
 	// file's order, or is nil when every function was. Functions is how
 	// many the file has.
-	Judged    []string
+	Judged    []UnitKey
 	Functions int
 	// Mutants is every mutant of the functions judged, in site order (line,
 	// then column), with its outcome; empty when the baseline failed.

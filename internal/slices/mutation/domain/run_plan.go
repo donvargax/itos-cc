@@ -63,12 +63,12 @@ func plan(ctx context.Context, files []string, opt Options) ([]*Execution, error
 		s.result.Functions = len(f.Units)
 		var judge func(function string) bool
 		if opt.Judge != nil {
-			s.judged, s.result.Judged = map[int]bool{}, []string{}
+			s.judged, s.result.Judged = map[int]bool{}, []UnitKey{}
 			names := map[string]bool{}
-			for i, u := range f.Units {
-				if id := UnitID(u.Namespace, u.Name); opt.Judge(path, id, UnitHash(f, u)) {
-					s.judged[i], names[id] = true, true
-					s.result.Judged = append(s.result.Judged, id)
+			for i, key := range KeysOfFile(f) {
+				if opt.Judge(path, key) {
+					s.judged[i], names[key.ID()] = true, true
+					s.result.Judged = append(s.result.Judged, key)
 				}
 			}
 			// An exception names its function, so it counts when any
@@ -160,7 +160,7 @@ func (s *Execution) coverageEvidence(ctx context.Context, opt Options) ([]*Cover
 	}
 	if opt.CachedCoverage != nil {
 		for i, key := range KeysOfFile(s.file) {
-			if evidence := opt.CachedCoverage(s.file.Path, key.ID(), key.Hash()); evidence != nil {
+			if evidence := opt.CachedCoverage(s.file.Path, key); evidence != nil {
 				out[i] = evidence
 			}
 		}

@@ -123,20 +123,17 @@ func TestChangedSinceTellsFunctionsSharingANameApartByHash(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer parsed.Close()
-	var hashes []string
-	for _, unit := range parsed.Units {
-		hashes = append(hashes, mutants.UnitHash(parsed, unit))
+	keys := mutants.KeysOfFile(parsed)
+	if len(keys) != 3 {
+		t.Fatalf("units %d, want a, a and b", len(keys))
 	}
-	if len(hashes) != 3 {
-		t.Fatalf("units %d, want a, a and b", len(hashes))
-	}
-	if c.Judges(id, hashes[0]) {
+	if c.Judges(keys[0]) {
 		t.Errorf("the first a, unchanged, is judged")
 	}
-	if !c.Judges(id, hashes[1]) {
+	if !c.Judges(keys[1]) {
 		t.Errorf("the second a, changed, is not judged")
 	}
-	if c.Judges(strings.TrimSuffix(id, "a")+"b", hashes[2]) {
+	if c.Judges(keys[2]) {
 		t.Errorf("b, unchanged, is judged")
 	}
 }

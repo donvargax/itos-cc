@@ -1929,7 +1929,7 @@ Feature: Mutation testing
     # judged by their namespace#name, so the entry it kept for a function it
     # did not judge counted too when one it judged shared its name. Before:
     # "2 survived", and the first init function's survivor failed the run.
-    @wip @T-244 @same-name-units @ID-MUT-428
+    @T-244 @same-name-units @ID-MUT-428
     Scenario: A run since a commit counts and fails only the one it judged of two functions sharing a name
       Given a committed Go module whose two init functions of board/setup.go each survive `<` → `<=` at the same place in the function
       And "itos-cc mutation run board/setup.go" recorded both surviving
@@ -1949,7 +1949,7 @@ Feature: Mutation testing
     # kept entry keeps its own whole-suite evidence, so check calls it stale
     # either way; told by name, the run leaves it unmarked, and check gives
     # that evidence as the reason instead of the run that kept it.
-    @wip @T-244 @same-name-units @ID-MUT-429
+    @T-244 @same-name-units @ID-MUT-429
     Scenario Outline: A run since a commit marks stale what it keeps for a function sharing a name with one it judged, once <input> changed
       Given a committed Go module whose two init functions of board/setup.go each survive `<` → `<=` at the same place in the function
       And "itos-cc <run>" recorded both surviving
@@ -1968,7 +1968,7 @@ Feature: Mutation testing
     # the function's namespace#name, and no hash, so both init functions took
     # the second's. Before: mutation check --fail-uncovered called the first
     # init function's coverage missing.
-    @wip @T-244 @same-name-units @strict-go-coverage @ID-MUT-430
+    @T-244 @same-name-units @strict-go-coverage @ID-MUT-430
     Scenario: A strict run that reuses coverage evidence keeps each of two init functions' own
       Given a Go module whose two init functions a strict run recorded with fresh coverage evidence, every mutant killed
       When I repeat "itos-cc mutation run --fail-uncovered main.go" with nothing changed
@@ -1979,7 +1979,7 @@ Feature: Mutation testing
     # coverage, and told them by namespace#name, so a function it did not
     # judge was held to its coverage too when one it judged shared its name.
     # Before: "mutation.coverage-missing" for the first init function, exit 1.
-    @wip @T-244 @same-name-units @strict-go-coverage @ID-MUT-431
+    @T-244 @same-name-units @strict-go-coverage @ID-MUT-431
     Scenario: A strict run since a commit holds only the one it judged of two functions sharing a name to its coverage
       Given a Go module whose two init functions a run without coverage recorded, every mutant killed
       And a commit after "base" changed only the second init function of main.go

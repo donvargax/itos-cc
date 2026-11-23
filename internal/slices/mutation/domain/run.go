@@ -45,7 +45,7 @@ type Options struct {
 	StatementCoverage    *coverage.Report
 	CoverageProducer     string
 	RecordCoverageInputs bool
-	CachedCoverage       func(path, function, hash string) *CoverageEvidence
+	CachedCoverage       func(path string, key UnitKey) *CoverageEvidence
 	// Support is the hashes of the support files of the listed tests now
 	// (SupportHashes): what a listed outcome records, and holds while they
 	// are unchanged.
@@ -64,7 +64,7 @@ type Options struct {
 	// by namespace#name and, to tell apart functions sharing a name, hash
 	// (UnitHash). The others never run: they keep what their snapshot
 	// records.
-	Judge func(path, function, hash string) bool
+	Judge func(path string, key UnitKey) bool
 	// Renamed, when set, is the path the file at path had before a rename,
 	// or "": its snapshot moves to the new path, and the old one is removed.
 	Renamed func(path string) string
@@ -313,7 +313,6 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 			files = inv.files()
 		}
 		s.result.Snapshot.Listed = ListedOf(s.result.Snapshot.Units, files, s.stored)
-		s.markListedStale()
 		recordListedWithInputs(ctx, &s.result.Snapshot, opt.Root, opt.Support, opt.Fingerprints,
 			ListedFingerprintsOf(s.result.Snapshot.Listed, inv, listed, s.stored))
 		MarkExcepted(s.result.Snapshot.Units, s.written(), s.result.Mutants)

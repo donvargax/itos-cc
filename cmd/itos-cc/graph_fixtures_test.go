@@ -17,7 +17,7 @@ import (
 )
 
 // Retained graph/check parity guards compose the real observations explicitly.
-func checkGraphSnapshot(ctx context.Context, store snapport.Store, files []string, judge func(string, string, string) bool, tests func(string) []string, support map[string]string, exceptions []settings.Exception) ([]mutation.FileCheck, error) {
+func checkGraphSnapshot(ctx context.Context, store snapport.Store, files []string, judge func(string, mutation.UnitKey) bool, tests func(string) []string, support map[string]string, exceptions []settings.Exception) ([]mutation.FileCheck, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return nil, err

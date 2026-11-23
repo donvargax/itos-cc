@@ -7,7 +7,7 @@ import (
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
-func (h Handler) selectSources(ctx context.Context, q SelectionQuery) (sources []string, judge func(string, string, string) bool, renamed func(string) string, lines mutants.LineScope, excluded int, err error) {
+func (h Handler) selectSources(ctx context.Context, q SelectionQuery) (sources []string, judge func(string, mutants.UnitKey) bool, renamed func(string) string, lines mutants.LineScope, excluded int, err error) {
 	var since map[string]mutants.ChangedFunctions
 	var moves map[string]string
 	if q.Since != nil {
@@ -36,7 +36,7 @@ func (h Handler) selectSources(ctx context.Context, q SelectionQuery) (sources [
 		}
 	}
 	dir := h.Dir
-	return sources, func(path, function, hash string) bool { return since[path].Judges(function, hash) }, func(path string) string { return moves[path] }, func(path string, start, end int) bool { return since[sourcePath(dir, path)].Changes(start, end) }, files.Excluded, nil
+	return sources, func(path string, key mutants.UnitKey) bool { return since[path].Judges(key) }, func(path string) string { return moves[path] }, func(path string, start, end int) bool { return since[sourcePath(dir, path)].Changes(start, end) }, files.Excluded, nil
 }
 func (h Handler) importingTests(ctx context.Context, root string) (func(string) []string, error) {
 	if h.Reach == nil {

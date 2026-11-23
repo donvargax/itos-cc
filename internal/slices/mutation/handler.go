@@ -157,7 +157,7 @@ func sourcePath(dir, path string) string {
 	}
 	return filepath.Join(dir, path)
 }
-func (h Handler) options(root string, judge func(string, string, string) bool, tests func(string) []string, support map[string]string, exceptions []mutants.Exception, listing *mutants.ListOnce) mutants.CheckOptions {
+func (h Handler) options(root string, judge func(string, mutants.UnitKey) bool, tests func(string) []string, support map[string]string, exceptions []mutants.Exception, listing *mutants.ListOnce) mutants.CheckOptions {
 	return mutants.CheckOptions{Store: h.Store, Tree: h.Tree, Surroundings: h.Surroundings, Toolchain: h.Toolchain, Fingerprints: h.Fingerprints, Root: root, Dir: h.Dir, Judge: judge, Tests: tests, Support: support, Exceptions: exceptions, Listing: listing}
 }
 
