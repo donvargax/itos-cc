@@ -15,31 +15,11 @@
       },
       "right": {
         "file": "internal/slices/mutation/run_ui.go",
-        "start_line": 429,
-        "end_line": 434,
+        "start_line": 446,
+        "end_line": 451,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "CleanupProblem",
         "nodes": 60
-      }
-    },
-    {
-      "score": 1,
-      "language": "go",
-      "left": {
-        "file": "internal/cli/cli.go",
-        "start_line": 68,
-        "end_line": 77,
-        "namespace": "github.com/donvargax/itos-cc/internal/cli",
-        "name": "Rel",
-        "nodes": 61
-      },
-      "right": {
-        "file": "internal/slices/mutation/handler.go",
-        "start_line": 180,
-        "end_line": 189,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
-        "name": "relTo",
-        "nodes": 61
       }
     },
     {
@@ -366,6 +346,86 @@
       "score": 1,
       "language": "go",
       "left": {
+        "file": "internal/past/past.go",
+        "start_line": 158,
+        "end_line": 162,
+        "namespace": "github.com/donvargax/itos-cc/internal/past",
+        "name": "IsFailure",
+        "nodes": 38
+      },
+      "right": {
+        "file": "internal/slices/mutation/domain/run_fail_fast.go",
+        "start_line": 88,
+        "end_line": 92,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
+        "name": "cleanupFailed",
+        "nodes": 38
+      }
+    },
+    {
+      "score": 1,
+      "language": "go",
+      "left": {
+        "file": "internal/processes/limits.go",
+        "start_line": 174,
+        "end_line": 178,
+        "namespace": "github.com/donvargax/itos-cc/internal/processes.overLimit",
+        "name": "which",
+        "nodes": 36
+      },
+      "right": {
+        "file": "internal/processes/owned_machine.go",
+        "start_line": 245,
+        "end_line": 249,
+        "namespace": "github.com/donvargax/itos-cc/internal/processes.ownedLife",
+        "name": "failure",
+        "nodes": 36
+      }
+    },
+    {
+      "score": 1,
+      "language": "go",
+      "left": {
+        "file": "internal/processes/limits.go",
+        "start_line": 174,
+        "end_line": 178,
+        "namespace": "github.com/donvargax/itos-cc/internal/processes.overLimit",
+        "name": "which",
+        "nodes": 36
+      },
+      "right": {
+        "file": "internal/processes/owned_machine.go",
+        "start_line": 252,
+        "end_line": 256,
+        "namespace": "github.com/donvargax/itos-cc/internal/processes.ownedLife",
+        "name": "current",
+        "nodes": 36
+      }
+    },
+    {
+      "score": 1,
+      "language": "go",
+      "left": {
+        "file": "internal/processes/owned_machine.go",
+        "start_line": 245,
+        "end_line": 249,
+        "namespace": "github.com/donvargax/itos-cc/internal/processes.ownedLife",
+        "name": "failure",
+        "nodes": 36
+      },
+      "right": {
+        "file": "internal/processes/owned_machine.go",
+        "start_line": 252,
+        "end_line": 256,
+        "namespace": "github.com/donvargax/itos-cc/internal/processes.ownedLife",
+        "name": "current",
+        "nodes": 36
+      }
+    },
+    {
+      "score": 1,
+      "language": "go",
+      "left": {
         "file": "internal/project/node.go",
         "start_line": 73,
         "end_line": 76,
@@ -427,19 +487,19 @@
       "language": "go",
       "left": {
         "file": "internal/slices/dry/dry.go",
-        "start_line": 59,
-        "end_line": 87,
+        "start_line": 62,
+        "end_line": 100,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/dry.CLI",
         "name": "Contract",
-        "nodes": 102
+        "nodes": 110
       },
       "right": {
         "file": "internal/slices/units/units.go",
-        "start_line": 51,
-        "end_line": 72,
+        "start_line": 54,
+        "end_line": 85,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/units.CLI",
         "name": "Contract",
-        "nodes": 102
+        "nodes": 110
       }
     },
     {
@@ -635,8 +695,8 @@
       },
       "right": {
         "file": "internal/slices/mutation/wording.go",
-        "start_line": 13,
-        "end_line": 18,
+        "start_line": 14,
+        "end_line": 19,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "Quote",
         "nodes": 32
@@ -647,16 +707,16 @@
       "language": "go",
       "left": {
         "file": "internal/slices/mutation/wording.go",
-        "start_line": 50,
-        "end_line": 55,
+        "start_line": 43,
+        "end_line": 48,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "CoverageInventory",
         "nodes": 32
       },
       "right": {
         "file": "internal/slices/mutation/wording.go",
-        "start_line": 66,
-        "end_line": 71,
+        "start_line": 59,
+        "end_line": 64,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "CoverageEvidenceName",
         "nodes": 32
@@ -667,8 +727,8 @@
       "language": "go",
       "left": {
         "file": "internal/slices/scrap/domain/analyze.go",
-        "start_line": 348,
-        "end_line": 353,
+        "start_line": 349,
+        "end_line": 354,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/scrap/domain",
         "name": "plural",
         "nodes": 40
@@ -680,6 +740,66 @@
         "namespace": "github.com/donvargax/itos-cc/tools/bin/release-notes",
         "name": "plural",
         "nodes": 40
+      }
+    },
+    {
+      "score": 1,
+      "language": "go",
+      "left": {
+        "file": "internal/slices/scrap/scrap.go",
+        "start_line": 215,
+        "end_line": 244,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/scrap.Handler",
+        "name": "handleAt",
+        "nodes": 334
+      },
+      "right": {
+        "file": "internal/slices/units/units.go",
+        "start_line": 176,
+        "end_line": 205,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/units.Handler",
+        "name": "handleAt",
+        "nodes": 334
+      }
+    },
+    {
+      "score": 0.951,
+      "language": "go",
+      "left": {
+        "file": "internal/slices/dry/dry.go",
+        "start_line": 62,
+        "end_line": 100,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/dry.CLI",
+        "name": "Contract",
+        "nodes": 110
+      },
+      "right": {
+        "file": "internal/slices/scrap/scrap.go",
+        "start_line": 62,
+        "end_line": 103,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/scrap.CLI",
+        "name": "Contract",
+        "nodes": 108
+      }
+    },
+    {
+      "score": 0.951,
+      "language": "go",
+      "left": {
+        "file": "internal/slices/scrap/scrap.go",
+        "start_line": 62,
+        "end_line": 103,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/scrap.CLI",
+        "name": "Contract",
+        "nodes": 108
+      },
+      "right": {
+        "file": "internal/slices/units/units.go",
+        "start_line": 54,
+        "end_line": 85,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/units.CLI",
+        "name": "Contract",
+        "nodes": 110
       }
     },
     {
@@ -743,46 +863,6 @@
       }
     },
     {
-      "score": 0.918,
-      "language": "go",
-      "left": {
-        "file": "internal/slices/graph/command.go",
-        "start_line": 34,
-        "end_line": 56,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/graph.CLI",
-        "name": "Contract",
-        "nodes": 78
-      },
-      "right": {
-        "file": "internal/slices/scrap/scrap.go",
-        "start_line": 60,
-        "end_line": 89,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/scrap.CLI",
-        "name": "Contract",
-        "nodes": 92
-      }
-    },
-    {
-      "score": 0.918,
-      "language": "go",
-      "left": {
-        "file": "internal/slices/scrap/scrap.go",
-        "start_line": 60,
-        "end_line": 89,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/scrap.CLI",
-        "name": "Contract",
-        "nodes": 92
-      },
-      "right": {
-        "file": "internal/slices/version/version.go",
-        "start_line": 39,
-        "end_line": 49,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/version.CLI",
-        "name": "Contract",
-        "nodes": 78
-      }
-    },
-    {
       "score": 0.917,
       "language": "go",
       "left": {
@@ -835,8 +915,8 @@
       },
       "right": {
         "file": "internal/slices/mutation/run_ui.go",
-        "start_line": 55,
-        "end_line": 60,
+        "start_line": 72,
+        "end_line": 77,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.runWork",
         "name": "add",
         "nodes": 57
@@ -846,20 +926,20 @@
       "score": 0.893,
       "language": "go",
       "left": {
-        "file": "internal/slices/crap/crap.go",
-        "start_line": 163,
-        "end_line": 170,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/crap",
-        "name": "NewHandler",
-        "nodes": 101
-      },
-      "right": {
         "file": "internal/slices/dry/dry.go",
-        "start_line": 132,
-        "end_line": 138,
+        "start_line": 150,
+        "end_line": 156,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/dry",
         "name": "NewHandler",
-        "nodes": 92
+        "nodes": 103
+      },
+      "right": {
+        "file": "internal/slices/units/units.go",
+        "start_line": 129,
+        "end_line": 135,
+        "namespace": "github.com/donvargax/itos-cc/internal/slices/units",
+        "name": "NewHandler",
+        "nodes": 94
       }
     },
     {
@@ -946,6 +1026,46 @@
       "score": 0.882,
       "language": "go",
       "left": {
+        "file": "internal/cli/interrupt.go",
+        "start_line": 53,
+        "end_line": 57,
+        "namespace": "github.com/donvargax/itos-cc/internal/cli.Interrupts",
+        "name": "Signal",
+        "nodes": 38
+      },
+      "right": {
+        "file": "internal/processes/owned_machine.go",
+        "start_line": 245,
+        "end_line": 249,
+        "namespace": "github.com/donvargax/itos-cc/internal/processes.ownedLife",
+        "name": "failure",
+        "nodes": 36
+      }
+    },
+    {
+      "score": 0.882,
+      "language": "go",
+      "left": {
+        "file": "internal/cli/interrupt.go",
+        "start_line": 53,
+        "end_line": 57,
+        "namespace": "github.com/donvargax/itos-cc/internal/cli.Interrupts",
+        "name": "Signal",
+        "nodes": 38
+      },
+      "right": {
+        "file": "internal/processes/owned_machine.go",
+        "start_line": 252,
+        "end_line": 256,
+        "namespace": "github.com/donvargax/itos-cc/internal/processes.ownedLife",
+        "name": "current",
+        "nodes": 36
+      }
+    },
+    {
+      "score": 0.882,
+      "language": "go",
+      "left": {
         "file": "internal/processes/limits.go",
         "start_line": 174,
         "end_line": 178,
@@ -963,23 +1083,43 @@
       }
     },
     {
-      "score": 0.88,
+      "score": 0.882,
       "language": "go",
       "left": {
-        "file": "internal/slices/dry/dry.go",
-        "start_line": 132,
-        "end_line": 138,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/dry",
-        "name": "NewHandler",
-        "nodes": 92
+        "file": "internal/processes/owned_machine.go",
+        "start_line": 245,
+        "end_line": 249,
+        "namespace": "github.com/donvargax/itos-cc/internal/processes.ownedLife",
+        "name": "failure",
+        "nodes": 36
       },
       "right": {
-        "file": "internal/slices/graph/command.go",
-        "start_line": 86,
-        "end_line": 92,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/graph",
-        "name": "NewHandler",
-        "nodes": 91
+        "file": "internal/processes/proc_owned.go",
+        "start_line": 68,
+        "end_line": 72,
+        "namespace": "github.com/donvargax/itos-cc/internal/processes.CleanupBudget",
+        "name": "Deadline",
+        "nodes": 38
+      }
+    },
+    {
+      "score": 0.882,
+      "language": "go",
+      "left": {
+        "file": "internal/processes/owned_machine.go",
+        "start_line": 252,
+        "end_line": 256,
+        "namespace": "github.com/donvargax/itos-cc/internal/processes.ownedLife",
+        "name": "current",
+        "nodes": 36
+      },
+      "right": {
+        "file": "internal/processes/proc_owned.go",
+        "start_line": 68,
+        "end_line": 72,
+        "namespace": "github.com/donvargax/itos-cc/internal/processes.CleanupBudget",
+        "name": "Deadline",
+        "nodes": 38
       }
     },
     {
@@ -1103,46 +1243,6 @@
       }
     },
     {
-      "score": 0.873,
-      "language": "go",
-      "left": {
-        "file": "internal/slices/dry/dry.go",
-        "start_line": 59,
-        "end_line": 87,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/dry.CLI",
-        "name": "Contract",
-        "nodes": 102
-      },
-      "right": {
-        "file": "internal/slices/mutation/list_contract.go",
-        "start_line": 6,
-        "end_line": 28,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.List",
-        "name": "Contract",
-        "nodes": 108
-      }
-    },
-    {
-      "score": 0.873,
-      "language": "go",
-      "left": {
-        "file": "internal/slices/mutation/list_contract.go",
-        "start_line": 6,
-        "end_line": 28,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.List",
-        "name": "Contract",
-        "nodes": 108
-      },
-      "right": {
-        "file": "internal/slices/units/units.go",
-        "start_line": 51,
-        "end_line": 72,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/units.CLI",
-        "name": "Contract",
-        "nodes": 102
-      }
-    },
-    {
       "score": 0.868,
       "language": "go",
       "left": {
@@ -1160,46 +1260,6 @@
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
         "name": "EvidenceVersion",
         "nodes": 26
-      }
-    },
-    {
-      "score": 0.862,
-      "language": "go",
-      "left": {
-        "file": "internal/slices/dry/dry.go",
-        "start_line": 59,
-        "end_line": 87,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/dry.CLI",
-        "name": "Contract",
-        "nodes": 102
-      },
-      "right": {
-        "file": "internal/slices/scrap/scrap.go",
-        "start_line": 60,
-        "end_line": 89,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/scrap.CLI",
-        "name": "Contract",
-        "nodes": 92
-      }
-    },
-    {
-      "score": 0.862,
-      "language": "go",
-      "left": {
-        "file": "internal/slices/scrap/scrap.go",
-        "start_line": 60,
-        "end_line": 89,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/scrap.CLI",
-        "name": "Contract",
-        "nodes": 92
-      },
-      "right": {
-        "file": "internal/slices/units/units.go",
-        "start_line": 51,
-        "end_line": 72,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/units.CLI",
-        "name": "Contract",
-        "nodes": 102
       }
     },
     {
@@ -1327,16 +1387,16 @@
       "language": "go",
       "left": {
         "file": "internal/slices/mutation/wording.go",
-        "start_line": 74,
-        "end_line": 82,
+        "start_line": 67,
+        "end_line": 75,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "FlakyIn",
         "nodes": 44
       },
       "right": {
         "file": "internal/slices/mutation/wording.go",
-        "start_line": 85,
-        "end_line": 93,
+        "start_line": 78,
+        "end_line": 86,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "ExceptedIn",
         "nodes": 47
@@ -1367,16 +1427,16 @@
       "language": "go",
       "left": {
         "file": "internal/slices/mutation/wording.go",
-        "start_line": 50,
-        "end_line": 55,
+        "start_line": 43,
+        "end_line": 48,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "CoverageInventory",
         "nodes": 32
       },
       "right": {
         "file": "internal/slices/mutation/wording.go",
-        "start_line": 58,
-        "end_line": 63,
+        "start_line": 51,
+        "end_line": 56,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "ExecutableUnit",
         "nodes": 35
@@ -1387,16 +1447,16 @@
       "language": "go",
       "left": {
         "file": "internal/slices/mutation/wording.go",
-        "start_line": 58,
-        "end_line": 63,
+        "start_line": 51,
+        "end_line": 56,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "ExecutableUnit",
         "nodes": 35
       },
       "right": {
         "file": "internal/slices/mutation/wording.go",
-        "start_line": 66,
-        "end_line": 71,
+        "start_line": 59,
+        "end_line": 64,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "CoverageEvidenceName",
         "nodes": 32
@@ -1427,8 +1487,8 @@
       "language": "go",
       "left": {
         "file": "cmd/itos-cc/selection.go",
-        "start_line": 14,
-        "end_line": 20,
+        "start_line": 15,
+        "end_line": 21,
         "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
         "name": "classifySelection",
         "nodes": 63
@@ -1447,8 +1507,8 @@
       "language": "go",
       "left": {
         "file": "internal/cli/cli.go",
-        "start_line": 68,
-        "end_line": 77,
+        "start_line": 97,
+        "end_line": 106,
         "namespace": "github.com/donvargax/itos-cc/internal/cli",
         "name": "Rel",
         "nodes": 61
@@ -1466,20 +1526,20 @@
       "score": 0.838,
       "language": "go",
       "left": {
-        "file": "internal/slices/mutation/domain/run_binding.go",
-        "start_line": 41,
-        "end_line": 47,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
-        "name": "relativeName",
-        "nodes": 49
+        "file": "internal/workdir/commit.go",
+        "start_line": 183,
+        "end_line": 188,
+        "namespace": "github.com/donvargax/itos-cc/internal/workdir",
+        "name": "failed",
+        "nodes": 68
       },
       "right": {
-        "file": "internal/slices/mutation/handler.go",
-        "start_line": 180,
-        "end_line": 189,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
-        "name": "relTo",
-        "nodes": 61
+        "file": "internal/workdir/gitobjects.go",
+        "start_line": 65,
+        "end_line": 70,
+        "namespace": "github.com/donvargax/itos-cc/internal/workdir.Git",
+        "name": "failure",
+        "nodes": 62
       }
     },
     {
@@ -1500,26 +1560,6 @@
         "namespace": "github.com/donvargax/itos-cc/internal/lang.httpScan",
         "name": "call",
         "nodes": 69
-      }
-    },
-    {
-      "score": 0.837,
-      "language": "go",
-      "left": {
-        "file": "internal/slices/dry/dry.go",
-        "start_line": 132,
-        "end_line": 138,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/dry",
-        "name": "NewHandler",
-        "nodes": 92
-      },
-      "right": {
-        "file": "internal/slices/units/units.go",
-        "start_line": 108,
-        "end_line": 114,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/units",
-        "name": "NewHandler",
-        "nodes": 76
       }
     },
     {
@@ -1615,8 +1655,8 @@
       },
       "right": {
         "file": "internal/slices/mutation/presentation.go",
-        "start_line": 240,
-        "end_line": 246,
+        "start_line": 225,
+        "end_line": 231,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
         "name": "repointFirst",
         "nodes": 36
@@ -1627,8 +1667,8 @@
       "language": "go",
       "left": {
         "file": "internal/project/flutter.go",
-        "start_line": 127,
-        "end_line": 134,
+        "start_line": 130,
+        "end_line": 137,
         "namespace": "github.com/donvargax/itos-cc/internal/project",
         "name": "hasGeneratedSuffix",
         "nodes": 40
@@ -1646,20 +1686,20 @@
       "score": 0.824,
       "language": "go",
       "left": {
-        "file": "internal/slices/crap/crap.go",
-        "start_line": 71,
-        "end_line": 112,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/crap.CLI",
-        "name": "Contract",
-        "nodes": 128
+        "file": "internal/past/past.go",
+        "start_line": 92,
+        "end_line": 98,
+        "namespace": "github.com/donvargax/itos-cc/internal/past.Commit",
+        "name": "Rel",
+        "nodes": 78
       },
       "right": {
-        "file": "internal/slices/dry/dry.go",
-        "start_line": 59,
-        "end_line": 87,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/dry.CLI",
-        "name": "Contract",
-        "nodes": 102
+        "file": "internal/snapshot/snapshot.go",
+        "start_line": 25,
+        "end_line": 31,
+        "namespace": "github.com/donvargax/itos-cc/internal/snapshot",
+        "name": "Key",
+        "nodes": 73
       }
     },
     {
@@ -1667,8 +1707,8 @@
       "language": "go",
       "left": {
         "file": "internal/slices/crap/crap.go",
-        "start_line": 71,
-        "end_line": 112,
+        "start_line": 73,
+        "end_line": 114,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/crap.CLI",
         "name": "Contract",
         "nodes": 128
@@ -1680,26 +1720,6 @@
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Run",
         "name": "Contract",
         "nodes": 184
-      }
-    },
-    {
-      "score": 0.824,
-      "language": "go",
-      "left": {
-        "file": "internal/slices/crap/crap.go",
-        "start_line": 71,
-        "end_line": 112,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/crap.CLI",
-        "name": "Contract",
-        "nodes": 128
-      },
-      "right": {
-        "file": "internal/slices/units/units.go",
-        "start_line": 51,
-        "end_line": 72,
-        "namespace": "github.com/donvargax/itos-cc/internal/slices/units.CLI",
-        "name": "Contract",
-        "nodes": 102
       }
     },
     {
@@ -1746,88 +1766,48 @@
   "groups": [
     {
       "language": "go",
-      "min_score": 0.824,
+      "min_score": 0.882,
       "max_score": 1,
       "members": [
         {
-          "file": "internal/slices/crap/crap.go",
-          "start_line": 71,
-          "end_line": 112,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/crap.CLI",
-          "name": "Contract",
-          "nodes": 128
+          "file": "internal/cli/interrupt.go",
+          "start_line": 53,
+          "end_line": 57,
+          "namespace": "github.com/donvargax/itos-cc/internal/cli.Interrupts",
+          "name": "Signal",
+          "nodes": 38
         },
         {
-          "file": "internal/slices/dry/dry.go",
-          "start_line": 59,
-          "end_line": 87,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/dry.CLI",
-          "name": "Contract",
-          "nodes": 102
+          "file": "internal/processes/limits.go",
+          "start_line": 174,
+          "end_line": 178,
+          "namespace": "github.com/donvargax/itos-cc/internal/processes.overLimit",
+          "name": "which",
+          "nodes": 36
         },
         {
-          "file": "internal/slices/graph/command.go",
-          "start_line": 34,
-          "end_line": 56,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/graph.CLI",
-          "name": "Contract",
-          "nodes": 78
+          "file": "internal/processes/owned_machine.go",
+          "start_line": 245,
+          "end_line": 249,
+          "namespace": "github.com/donvargax/itos-cc/internal/processes.ownedLife",
+          "name": "failure",
+          "nodes": 36
         },
         {
-          "file": "internal/slices/mutation/except_contract.go",
-          "start_line": 6,
-          "end_line": 166,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Except",
-          "name": "Contract",
-          "nodes": 164
+          "file": "internal/processes/owned_machine.go",
+          "start_line": 252,
+          "end_line": 256,
+          "namespace": "github.com/donvargax/itos-cc/internal/processes.ownedLife",
+          "name": "current",
+          "nodes": 36
         },
         {
-          "file": "internal/slices/mutation/list_contract.go",
-          "start_line": 6,
-          "end_line": 28,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.List",
-          "name": "Contract",
-          "nodes": 108
-        },
-        {
-          "file": "internal/slices/mutation/run_contract.go",
-          "start_line": 6,
-          "end_line": 609,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Run",
-          "name": "Contract",
-          "nodes": 184
-        },
-        {
-          "file": "internal/slices/mutation/show_contract.go",
-          "start_line": 6,
-          "end_line": 47,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Show",
-          "name": "Contract",
-          "nodes": 102
-        },
-        {
-          "file": "internal/slices/scrap/scrap.go",
-          "start_line": 60,
-          "end_line": 89,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/scrap.CLI",
-          "name": "Contract",
-          "nodes": 92
-        },
-        {
-          "file": "internal/slices/units/units.go",
-          "start_line": 51,
+          "file": "internal/processes/proc_owned.go",
+          "start_line": 68,
           "end_line": 72,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/units.CLI",
-          "name": "Contract",
-          "nodes": 102
-        },
-        {
-          "file": "internal/slices/version/version.go",
-          "start_line": 39,
-          "end_line": 49,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/version.CLI",
-          "name": "Contract",
-          "nodes": 78
+          "namespace": "github.com/donvargax/itos-cc/internal/processes.CleanupBudget",
+          "name": "Deadline",
+          "nodes": 38
         }
       ]
     },
@@ -1911,68 +1891,6 @@
     },
     {
       "language": "go",
-      "min_score": 0.838,
-      "max_score": 1,
-      "members": [
-        {
-          "file": "internal/cli/cli.go",
-          "start_line": 68,
-          "end_line": 77,
-          "namespace": "github.com/donvargax/itos-cc/internal/cli",
-          "name": "Rel",
-          "nodes": 61
-        },
-        {
-          "file": "internal/slices/mutation/domain/run_binding.go",
-          "start_line": 41,
-          "end_line": 47,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
-          "name": "relativeName",
-          "nodes": 49
-        },
-        {
-          "file": "internal/slices/mutation/handler.go",
-          "start_line": 180,
-          "end_line": 189,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
-          "name": "relTo",
-          "nodes": 61
-        }
-      ]
-    },
-    {
-      "language": "go",
-      "min_score": 0.882,
-      "max_score": 1,
-      "members": [
-        {
-          "file": "internal/cli/interrupt.go",
-          "start_line": 53,
-          "end_line": 57,
-          "namespace": "github.com/donvargax/itos-cc/internal/cli.Interrupts",
-          "name": "Signal",
-          "nodes": 38
-        },
-        {
-          "file": "internal/processes/limits.go",
-          "start_line": 174,
-          "end_line": 178,
-          "namespace": "github.com/donvargax/itos-cc/internal/processes.overLimit",
-          "name": "which",
-          "nodes": 36
-        },
-        {
-          "file": "internal/processes/proc_owned.go",
-          "start_line": 68,
-          "end_line": 72,
-          "namespace": "github.com/donvargax/itos-cc/internal/processes.CleanupBudget",
-          "name": "Deadline",
-          "nodes": 38
-        }
-      ]
-    },
-    {
-      "language": "go",
       "min_score": 1,
       "max_score": 1,
       "members": [
@@ -2030,6 +1948,37 @@
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
           "name": "stopped",
           "nodes": 40
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "min_score": 0.951,
+      "max_score": 1,
+      "members": [
+        {
+          "file": "internal/slices/dry/dry.go",
+          "start_line": 62,
+          "end_line": 100,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/dry.CLI",
+          "name": "Contract",
+          "nodes": 110
+        },
+        {
+          "file": "internal/slices/scrap/scrap.go",
+          "start_line": 62,
+          "end_line": 103,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/scrap.CLI",
+          "name": "Contract",
+          "nodes": 108
+        },
+        {
+          "file": "internal/slices/units/units.go",
+          "start_line": 54,
+          "end_line": 85,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/units.CLI",
+          "name": "Contract",
+          "nodes": 110
         }
       ]
     },
@@ -2133,24 +2082,24 @@
       "members": [
         {
           "file": "internal/slices/mutation/wording.go",
-          "start_line": 50,
-          "end_line": 55,
+          "start_line": 43,
+          "end_line": 48,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "CoverageInventory",
           "nodes": 32
         },
         {
           "file": "internal/slices/mutation/wording.go",
-          "start_line": 58,
-          "end_line": 63,
+          "start_line": 51,
+          "end_line": 56,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "ExecutableUnit",
           "nodes": 35
         },
         {
           "file": "internal/slices/mutation/wording.go",
-          "start_line": 66,
-          "end_line": 71,
+          "start_line": 59,
+          "end_line": 64,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "CoverageEvidenceName",
           "nodes": 32
@@ -2172,8 +2121,8 @@
         },
         {
           "file": "internal/slices/mutation/run_ui.go",
-          "start_line": 429,
-          "end_line": 434,
+          "start_line": 446,
+          "end_line": 451,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "CleanupProblem",
           "nodes": 60
@@ -2347,6 +2296,29 @@
       "max_score": 1,
       "members": [
         {
+          "file": "internal/past/past.go",
+          "start_line": 158,
+          "end_line": 162,
+          "namespace": "github.com/donvargax/itos-cc/internal/past",
+          "name": "IsFailure",
+          "nodes": 38
+        },
+        {
+          "file": "internal/slices/mutation/domain/run_fail_fast.go",
+          "start_line": 88,
+          "end_line": 92,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
+          "name": "cleanupFailed",
+          "nodes": 38
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "min_score": 1,
+      "max_score": 1,
+      "members": [
+        {
           "file": "internal/project/surroundings.go",
           "start_line": 21,
           "end_line": 24,
@@ -2393,6 +2365,29 @@
       "max_score": 1,
       "members": [
         {
+          "file": "internal/slices/graph/command.go",
+          "start_line": 34,
+          "end_line": 56,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/graph.CLI",
+          "name": "Contract",
+          "nodes": 78
+        },
+        {
+          "file": "internal/slices/version/version.go",
+          "start_line": 39,
+          "end_line": 49,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/version.CLI",
+          "name": "Contract",
+          "nodes": 78
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "min_score": 1,
+      "max_score": 1,
+      "members": [
+        {
           "file": "internal/slices/mutation/domain/coverage.go",
           "start_line": 46,
           "end_line": 62,
@@ -2425,8 +2420,8 @@
         },
         {
           "file": "internal/slices/mutation/wording.go",
-          "start_line": 13,
-          "end_line": 18,
+          "start_line": 14,
+          "end_line": 19,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "Quote",
           "nodes": 32
@@ -2440,8 +2435,8 @@
       "members": [
         {
           "file": "internal/slices/scrap/domain/analyze.go",
-          "start_line": 348,
-          "end_line": 353,
+          "start_line": 349,
+          "end_line": 354,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/scrap/domain",
           "name": "plural",
           "nodes": 40
@@ -2453,6 +2448,29 @@
           "namespace": "github.com/donvargax/itos-cc/tools/bin/release-notes",
           "name": "plural",
           "nodes": 40
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "min_score": 1,
+      "max_score": 1,
+      "members": [
+        {
+          "file": "internal/slices/scrap/scrap.go",
+          "start_line": 215,
+          "end_line": 244,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/scrap.Handler",
+          "name": "handleAt",
+          "nodes": 334
+        },
+        {
+          "file": "internal/slices/units/units.go",
+          "start_line": 176,
+          "end_line": 205,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/units.Handler",
+          "name": "handleAt",
+          "nodes": 334
         }
       ]
     },
@@ -2602,8 +2620,8 @@
         },
         {
           "file": "internal/slices/mutation/run_ui.go",
-          "start_line": 55,
-          "end_line": 60,
+          "start_line": 72,
+          "end_line": 77,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.runWork",
           "name": "add",
           "nodes": 57
@@ -2612,40 +2630,24 @@
     },
     {
       "language": "go",
-      "min_score": 0.837,
+      "min_score": 0.893,
       "max_score": 0.893,
       "members": [
         {
-          "file": "internal/slices/crap/crap.go",
-          "start_line": 163,
-          "end_line": 170,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/crap",
-          "name": "NewHandler",
-          "nodes": 101
-        },
-        {
           "file": "internal/slices/dry/dry.go",
-          "start_line": 132,
-          "end_line": 138,
+          "start_line": 150,
+          "end_line": 156,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/dry",
           "name": "NewHandler",
-          "nodes": 92
-        },
-        {
-          "file": "internal/slices/graph/command.go",
-          "start_line": 86,
-          "end_line": 92,
-          "namespace": "github.com/donvargax/itos-cc/internal/slices/graph",
-          "name": "NewHandler",
-          "nodes": 91
+          "nodes": 103
         },
         {
           "file": "internal/slices/units/units.go",
-          "start_line": 108,
-          "end_line": 114,
+          "start_line": 129,
+          "end_line": 135,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/units",
           "name": "NewHandler",
-          "nodes": 76
+          "nodes": 94
         }
       ]
     },
@@ -2743,21 +2745,52 @@
     },
     {
       "language": "go",
+      "min_score": 0.833,
+      "max_score": 0.855,
+      "members": [
+        {
+          "file": "internal/slices/mutation/except_contract.go",
+          "start_line": 6,
+          "end_line": 166,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Except",
+          "name": "Contract",
+          "nodes": 164
+        },
+        {
+          "file": "internal/slices/mutation/list_contract.go",
+          "start_line": 6,
+          "end_line": 28,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.List",
+          "name": "Contract",
+          "nodes": 108
+        },
+        {
+          "file": "internal/slices/mutation/show_contract.go",
+          "start_line": 6,
+          "end_line": 47,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Show",
+          "name": "Contract",
+          "nodes": 102
+        }
+      ]
+    },
+    {
+      "language": "go",
       "min_score": 0.846,
       "max_score": 0.846,
       "members": [
         {
           "file": "internal/slices/mutation/wording.go",
-          "start_line": 74,
-          "end_line": 82,
+          "start_line": 67,
+          "end_line": 75,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "FlakyIn",
           "nodes": 44
         },
         {
           "file": "internal/slices/mutation/wording.go",
-          "start_line": 85,
-          "end_line": 93,
+          "start_line": 78,
+          "end_line": 86,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "ExceptedIn",
           "nodes": 47
@@ -2817,8 +2850,8 @@
       "members": [
         {
           "file": "cmd/itos-cc/selection.go",
-          "start_line": 14,
-          "end_line": 20,
+          "start_line": 15,
+          "end_line": 21,
           "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
           "name": "classifySelection",
           "nodes": 63
@@ -2830,6 +2863,52 @@
           "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
           "name": "classifySnapshot",
           "nodes": 64
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "min_score": 0.838,
+      "max_score": 0.838,
+      "members": [
+        {
+          "file": "internal/cli/cli.go",
+          "start_line": 97,
+          "end_line": 106,
+          "namespace": "github.com/donvargax/itos-cc/internal/cli",
+          "name": "Rel",
+          "nodes": 61
+        },
+        {
+          "file": "internal/slices/mutation/domain/run_binding.go",
+          "start_line": 41,
+          "end_line": 47,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
+          "name": "relativeName",
+          "nodes": 49
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "min_score": 0.838,
+      "max_score": 0.838,
+      "members": [
+        {
+          "file": "internal/workdir/commit.go",
+          "start_line": 183,
+          "end_line": 188,
+          "namespace": "github.com/donvargax/itos-cc/internal/workdir",
+          "name": "failed",
+          "nodes": 68
+        },
+        {
+          "file": "internal/workdir/gitobjects.go",
+          "start_line": 65,
+          "end_line": 70,
+          "namespace": "github.com/donvargax/itos-cc/internal/workdir.Git",
+          "name": "failure",
+          "nodes": 62
         }
       ]
     },
@@ -2894,8 +2973,8 @@
         },
         {
           "file": "internal/slices/mutation/presentation.go",
-          "start_line": 240,
-          "end_line": 246,
+          "start_line": 225,
+          "end_line": 231,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation",
           "name": "repointFirst",
           "nodes": 36
@@ -2909,8 +2988,8 @@
       "members": [
         {
           "file": "internal/project/flutter.go",
-          "start_line": 127,
-          "end_line": 134,
+          "start_line": 130,
+          "end_line": 137,
           "namespace": "github.com/donvargax/itos-cc/internal/project",
           "name": "hasGeneratedSuffix",
           "nodes": 40
@@ -2922,6 +3001,52 @@
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/adapters/worktrees",
           "name": "hasWorkerPrefix",
           "nodes": 40
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "min_score": 0.824,
+      "max_score": 0.824,
+      "members": [
+        {
+          "file": "internal/past/past.go",
+          "start_line": 92,
+          "end_line": 98,
+          "namespace": "github.com/donvargax/itos-cc/internal/past.Commit",
+          "name": "Rel",
+          "nodes": 78
+        },
+        {
+          "file": "internal/snapshot/snapshot.go",
+          "start_line": 25,
+          "end_line": 31,
+          "namespace": "github.com/donvargax/itos-cc/internal/snapshot",
+          "name": "Key",
+          "nodes": 73
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "min_score": 0.824,
+      "max_score": 0.824,
+      "members": [
+        {
+          "file": "internal/slices/crap/crap.go",
+          "start_line": 73,
+          "end_line": 114,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/crap.CLI",
+          "name": "Contract",
+          "nodes": 128
+        },
+        {
+          "file": "internal/slices/mutation/run_contract.go",
+          "start_line": 6,
+          "end_line": 609,
+          "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation.Run",
+          "name": "Contract",
+          "nodes": 184
         }
       ]
     },
