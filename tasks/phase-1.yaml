@@ -7640,9 +7640,6 @@
     want of a Scenarios footer, stop and report rather than naming a scenario the fix does not turn
     green. Out of scope: the output-buffer data race (its own item), internal/processes beyond
     cancelGroup and what its rows need, every other workflow.
-  done_when:
-    - run: "go test ./internal/processes -run '^TestGroupEndsAreJudgedInEveryOrder$' -v 2>&1 | grep -q -- '--- PASS: TestGroupEndsAreJudgedInEveryOrder'"
-      timeout: 180
 - id: T-243
   type: fix
   title: Hand each owned command's output over from its reader instead of sharing its buffer, held by a race-detector step

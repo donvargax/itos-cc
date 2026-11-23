@@ -6762,7 +6762,7 @@ items:
     title: Judge a command that exited before its late cancel by its own exit status, on every system
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-243
