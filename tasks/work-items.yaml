@@ -6792,7 +6792,7 @@ items:
   - id: T-251
     title: Move to the kong fork v1.17.1-itos.1
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
