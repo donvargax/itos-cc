@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/past"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 )
 
@@ -48,5 +49,32 @@ func TestEachSelectionFailureKindHasItsProblem(t *testing.T) {
 func TestAnErrorOfNoKindIsNotSelections(t *testing.T) {
 	if problems, ok := classifySelection(errors.New("no space")); ok || problems != nil {
 		t.Errorf("classifySelection claimed %v", problems)
+	}
+}
+
+// The past commit's failures are problems of their own rules: a revision git
+// cannot name is 80, no repository 82, an itos-cc.yaml the commit holds that
+// cannot be read the settings' own config.invalid, 80; any other error is not
+// the classifier's.
+func TestEachPastFailureHasItsProblem(t *testing.T) {
+	for _, c := range []struct {
+		err  error
+		rule string
+		code int
+	}{
+		{&past.BadRev{Rev: "nosuch"}, "at.bad-rev", cli.CodeUsage},
+		{&past.NoRepository{Reason: "none"}, "at.no-git", cli.CodeEnvironment},
+		{&port.SettingsInvalid{Reason: "exclude: not a list", Key: "exclude"}, "config.invalid", cli.CodeUsage},
+	} {
+		problems, ok := classifyPast(c.err)
+		if !ok || len(problems) != 1 || problems[0].Rule != c.rule || problems[0].Code != c.code {
+			t.Errorf("%T: %v, %v; want one problem of %s, exit %d", c.err, problems, ok, c.rule, c.code)
+		}
+	}
+	if problems, ok := classifyPast(errors.New("plain")); ok || problems != nil {
+		t.Errorf("a plain error: %v, %v; want it left alone", problems, ok)
+	}
+	if problems, ok := classifyPast(&port.SettingsFailed{Cause: errors.New("cause")}); ok || problems != nil {
+		t.Errorf("a settings read that failed short: %v, %v; want it left to its cause", problems, ok)
 	}
 }
