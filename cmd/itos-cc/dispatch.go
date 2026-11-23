@@ -149,12 +149,28 @@ func dispatch(ctx context.Context, parser *kong.Kong, ui *cli.UI, a adapters, ar
 func runSelected(ui *cli.UI, parsed *kong.Context) int {
 	node := parsed.Selected()
 	asJSON := jsonOf(parsed, node)
+	if refused := pastRefused(parsed, node); refused != nil {
+		return ui.Emit(asJSON, nil, []*cli.Problem{refused})
+	}
 	run := node.Target.Addr().MethodByName("Run")
 	if !run.IsValid() {
 		// A command kong took that has no Run: a bug.
 		return ui.Fail(fmt.Errorf("no Run runs the command %q", parsed.Command()), asJSON)
 	}
 	return callSafely(ui, parsed, node.Path(), run.Interface(), asJSON)
+}
+
+// pastRefused is the problem of a command that runs the project's tests
+// given --at, which it declares hidden (cli.NoPast), else nil.
+func pastRefused(parsed *kong.Context, node *kong.Node) *cli.Problem {
+	for _, flag := range node.Flags {
+		if flag.Name == "at" && flag.Hidden {
+			if at, _ := parsed.FlagValue(flag).(string); at != "" {
+				return cli.RefusePast(node.Path())
+			}
+		}
+	}
+	return nil
 }
 
 // jsonOf is whether parsed gave node, the command it selected, --json.

@@ -137,7 +137,10 @@ output of the commands it runs passes as it is.
 | `flags.value-invalid`        | 80   | every          | `flag`, `value`                                             |
 | `flags.switch-value`         | 80   | every          | `flag`                                                      |
 | `flags.repeated`             | 80   | every          | `flag`                                                      |
-| `flags.conflict`             | 80   | mutation run, mutation check, mutation sample, mutation except | `flag`                                        |
+| `flags.conflict`             | 80   | mutation run, mutation check, mutation sample, mutation except, dry, scrap, units (`--at` with `--changed`) | `flag`                  |
+| `at.bad-rev`                 | 80   | dry, scrap, units | `rev`                                                      |
+| `at.no-git`                  | 82   | dry, scrap, units | none                                                       |
+| `at.unsupported`             | 80   | crap, mutation run, mutation list, mutation check, mutation sample | none                      |
 | `command.unknown`            | 81   | itos-cc, mutation | `command`                                                |
 | `command.missing`            | 80   | itos-cc --json, mutation --json | none                                       |
 | `args.unexpected`            | 80   | version, graph, help, mutation except, mutation run --site, mutation show | `argument` |
@@ -190,6 +193,43 @@ output of the commands it runs passes as it is.
 ## The rules
 
 Rules 1 to 43 of itos's docs/CLI.md, as they apply to itos-cc.
+
+### `--at <commit>`: measuring a past commit
+
+`units`, `dry` and `scrap`, the commands that read sources alone, take `--at
+<commit>`: any revision `git rev-parse` names. The command measures that
+commit's tree as if it were checked out and prints what it would print there,
+plain lines and `--json` alike, its files named from the working directory as a
+run of the checked-out commit would name them. The tree is read from git's
+objects (`git ls-tree` and `git cat-file --batch`) through the same port the
+working directory is read through, so the working tree is never read and never
+changed: nothing is written to `.metrics/`, and `scrap` compares the commit with
+no earlier snapshot. The commit's own `itos-cc.yaml` is the settings, so a
+commit's numbers never change. What discovery cannot ask a commit it leaves as
+the checkout would have it, but for `.gitignore`: a build directory
+(`build`, `dist`, `out`, `target`, `coverage`) is left out only beside the
+manifest of a tool that writes there, never because git ignores it, and a
+symbolic link or a submodule is no file.
+
+Each result is kept per commit, in `<git common directory>/itos-cc/history/<commit>/<command>-<key>.json`,
+which every worktree of the repository shares, outside `.metrics/` and outside
+the tree. `<commit>` is the full id, and `<key>` the first sixteen hexadecimal
+digits of a SHA-256 over what else changes the answer: the command's flags and
+paths, the working directory's place in the project, and itos-cc's version. A
+result is written once and atomically (a file of its own, renamed into place),
+with its files named from the project root, so one kept in a worktree reads in
+another. A kept result is served without reading the commit's objects; one that
+cannot be read or decoded is measured again and written whole, never a failure.
+The folder is never cleaned by itos-cc: deleting it loses nothing.
+
+`--at` with `--changed`, which names the working tree's changes, is
+`flags.conflict`, exit 80. A revision git cannot name as a commit of the
+repository is `at.bad-rev`, exit 80, its `rev` the argument; outside a git
+repository, `at.no-git`, exit 82. `crap` and `mutation run`, `list`, `check` and
+`sample` need the tests of a working tree run, or the judgments of one, so they
+refuse `--at` as `at.unsupported`, exit 80, naming the command, and their help
+does not list it. A commit's `itos-cc.yaml` that cannot be read is
+`config.invalid`, as the working tree's is.
 
 A snapshot's `tests` are the test files that reach its file. In TypeScript,
 Python, Kotlin and Dart those are the test files whose imports reach its module

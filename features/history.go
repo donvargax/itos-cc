@@ -75,6 +75,11 @@ func historySteps(sc *godog.ScenarioContext, w *world) {
 			return err
 		}
 		w.runIn = dir
+		// A scratch folder inside a repository, as a checkout's temporary
+		// folder can be, is one this scenario cannot make.
+		if _, err := w.d.Head(context.Background(), dir); err == nil {
+			return fmt.Errorf("%s is a repository above the scratch folder: %w", dir, godog.ErrSkip)
+		}
 		return nil
 	})
 }

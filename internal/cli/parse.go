@@ -145,9 +145,12 @@ func takesNext(node *kong.Node, word string) bool {
 	if hasValue || !strings.HasPrefix(word, "--") {
 		return false
 	}
-	for _, f := range flagsOf(node) {
-		if f.Name == name {
-			return !f.IsBool()
+	// A hidden flag, which help does not list, takes its value as any does.
+	for n := node; n != nil; n = n.Parent {
+		for _, f := range n.Flags {
+			if f.Name == name {
+				return !f.IsBool()
+			}
 		}
 	}
 	return false

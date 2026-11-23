@@ -57,11 +57,16 @@ func gitIgnores(ctx context.Context, dir string) bool {
 // is ignored. The callback lets committed-input callers evaluate ignore
 // rules against a frozen tree instead of the live checkout.
 func IsBuildOutputWithIgnore(ctx context.Context, dir string, ignored func(ctx context.Context, dir string) bool) bool {
+	return isBuildOutputIn(ctx, OS{}, dir, ignored)
+}
+
+// isBuildOutputIn is IsBuildOutputWithIgnore over the files of fsys.
+func isBuildOutputIn(ctx context.Context, fsys FS, dir string, ignored func(ctx context.Context, dir string) bool) bool {
 	if !buildDirs[filepath.Base(dir)] {
 		return false
 	}
 	for _, m := range buildManifests {
-		if _, err := os.Stat(filepath.Join(filepath.Dir(dir), m)); err == nil {
+		if _, err := fsys.Stat(filepath.Join(filepath.Dir(dir), m)); err == nil {
 			return true
 		}
 	}
@@ -89,8 +94,15 @@ func DiscoverWithBuildOutput(ctx context.Context, roots []string, isBuildOutput 
 	if isBuildOutput == nil {
 		isBuildOutput = IsBuildOutput
 	}
+	return DiscoverIn(ctx, OS{}, roots, isBuildOutput)
+}
+
+// DiscoverIn is Discover over the files of fsys, whose build output
+// isBuildOutput tells, asked under ctx: the one set of rules that chooses
+// what a command measures, on the disk or in a commit's tree.
+func DiscoverIn(ctx context.Context, fsys FS, roots []string, isBuildOutput func(ctx context.Context, dir string) bool) (Files, error) {
 	seen := map[string]bool{}
-	flutter := newFlutterRules()
+	flutter := newFlutterRulesIn(fsys)
 	var files Files
 	add := func(path string) {
 		spec := lang.Detect(path)
@@ -109,7 +121,7 @@ func DiscoverWithBuildOutput(ctx context.Context, roots []string, isBuildOutput 
 		if err != nil {
 			return files, err
 		}
-		info, err := os.Stat(abs)
+		info, err := fsys.Stat(abs)
 		if err != nil {
 			return files, err
 		}
@@ -117,7 +129,7 @@ func DiscoverWithBuildOutput(ctx context.Context, roots []string, isBuildOutput 
 			add(abs)
 			continue
 		}
-		err = WalkDir(ctx, abs, func(ctx context.Context, path string, d fs.DirEntry, err error) error {
+		err = WalkDirIn(ctx, fsys, abs, func(ctx context.Context, path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -170,4 +182,11 @@ func Changed() ([]string, error) {
 		}
 	}
 	return paths, nil
+}
+
+// BuildOutputIn is the build-output classifier of the files of fsys, which
+// have no ignore rules to ask: a build directory beside a manifest of a tool
+// that writes there.
+func BuildOutputIn(fsys FS) func(ctx context.Context, dir string) bool {
+	return func(ctx context.Context, dir string) bool { return isBuildOutputIn(ctx, fsys, dir, nil) }
 }

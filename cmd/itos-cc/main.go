@@ -54,7 +54,7 @@ func endInterrupted(platform string, sig os.Signal) {
 // and write .metrics/ through, and the coverage domain's, which crap and
 // mutation measure coverage through. A problem itos-cc's commands report is
 // its own and needs none.
-var classifiers = []cli.Classifier{classifySelection, classifySnapshot, classifyCoverage}
+var classifiers = []cli.Classifier{classifySelection, classifyPast, classifySnapshot, classifyCoverage}
 
 // stdUI is the UI of this process, which serve, the one command still on
 // its legacy handler, reports through: its standard streams as they are

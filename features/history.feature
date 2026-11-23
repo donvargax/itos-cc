@@ -69,7 +69,7 @@ Feature: Measuring a past commit
       }
       """
 
-  @T-250 @ID-HIST-01 @wip
+  @T-250 @ID-HIST-01
   Scenario: units at a past commit lists that commit's units, not the working tree's
     When itos-cc runs with "units --at HEAD~1"
     Then it exits with code 0
@@ -79,7 +79,7 @@ Feature: Measuring a past commit
     And its standard output does not say "wip"
     And its standard output does not say "skipped"
 
-  @T-250 @ID-HIST-02 @wip
+  @T-250 @ID-HIST-02
   Scenario: units at a past commit prints the same object --json always does
     When itos-cc runs with "units --at HEAD~1 --json"
     Then it exits with code 0
@@ -87,15 +87,15 @@ Feature: Measuring a past commit
     And its standard output says "alpha"
     And its standard output does not say "gamma"
 
-  @T-250 @ID-HIST-03 @wip
+  @T-250 @ID-HIST-03
   Scenario: dry at a past commit reports that commit's duplicates and records nothing
     When itos-cc runs with "dry --at HEAD~1"
     Then it exits with code 0
-    And its standard output says "DUPLICATE score=1.00 TypeScript"
+    And its standard output says "DUPLICATE score=1.00 typescript"
     And its standard output says "src/a.ts:1-6  a#alpha"
     And the project holds no ".metrics/dry.json"
 
-  @T-250 @ID-HIST-04 @wip
+  @T-250 @ID-HIST-04
   Scenario: scrap at a past commit measures that commit's tests and records nothing
     When itos-cc runs with "scrap --at HEAD~1"
     Then it exits with code 0
@@ -103,7 +103,7 @@ Feature: Measuring a past commit
     And its standard output says "examples=2"
     And the project holds no ".metrics/scrap.json"
 
-  @T-250 @ID-HIST-05 @wip
+  @T-250 @ID-HIST-05
   Scenario: the commit's own itos-cc.yaml is the settings
     When itos-cc runs with "units --at HEAD~1"
     Then its standard output does not say "skipped"
@@ -112,7 +112,7 @@ Feature: Measuring a past commit
     Then its standard output says "skip#skipped"
     And its error output does not say "left out"
 
-  @T-250 @ID-HIST-06 @wip
+  @T-250 @ID-HIST-06
   Scenario: a path selects within the commit's tree
     When itos-cc runs with "units --at HEAD~1 src/a.ts"
     Then it exits with code 0
@@ -120,12 +120,12 @@ Feature: Measuring a past commit
     When itos-cc runs with "units --at HEAD~1 src/wip.ts"
     Then the problem is "paths.unmatched", with argument "src/wip.ts"
 
-  @T-250 @ID-HIST-07 @wip
+  @T-250 @ID-HIST-07
   Scenario: the result is kept under the git common directory
     When itos-cc runs with "units --at HEAD~1"
     Then the git common directory holds one kept result of "units"
 
-  @T-250 @ID-HIST-08 @wip
+  @T-250 @ID-HIST-08
   Scenario: a corrupt kept result is measured again, never a failure
     Given itos-cc runs with "units --at HEAD~1"
     And the kept result of "units" is overwritten with "{not json"
@@ -134,7 +134,7 @@ Feature: Measuring a past commit
     And its standard output says "a#alpha"
     And the kept result of "units" is valid JSON
 
-  @T-250 @ID-HIST-09 @binary-only @wip
+  @T-250 @ID-HIST-09 @binary-only
   Scenario: a linked worktree reuses the result another worktree kept
     Given itos-cc runs with "units --at HEAD~1"
     And a linked worktree of the project
@@ -143,7 +143,7 @@ Feature: Measuring a past commit
     And its standard output says "a#alpha"
     And the git common directory still holds the one kept result of "units", as it was
 
-  @T-250 @ID-HIST-10 @wip
+  @T-250 @ID-HIST-10
   Scenario Outline: commands that run tests refuse --at
     When itos-cc runs with "<command> --at HEAD~1"
     Then it exits with code 80
@@ -158,20 +158,20 @@ Feature: Measuring a past commit
       | mutation check  |
       | mutation sample |
 
-  @T-250 @ID-HIST-11 @wip
+  @T-250 @ID-HIST-11
   Scenario: a revision git cannot name is refused
     When itos-cc runs with "units --at no-such-revision"
     Then it exits with code 80
     And the problem is "at.bad-rev"
     And its message says "no-such-revision"
 
-  @T-250 @ID-HIST-12 @wip
+  @T-250 @ID-HIST-12
   Scenario: --at and --changed cannot be used together
     When itos-cc runs with "units --at HEAD~1 --changed"
     Then it exits with code 80
     And the problem is "flags.conflict", with flag "--at"
 
-  @T-250 @ID-HIST-13 @wip
+  @T-250 @ID-HIST-13
   Scenario: --at needs a git repository
     Given a folder in no git repository holding "src/a.ts"
     When itos-cc runs with "units --at HEAD"

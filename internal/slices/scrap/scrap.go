@@ -22,12 +22,14 @@ package scrap
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
 
 	"github.com/donvargax/itos-cc/internal/cli"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
+	"github.com/donvargax/itos-cc/internal/past"
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 	"github.com/donvargax/itos-cc/internal/slices/scrap/domain"
@@ -49,6 +51,7 @@ var Command = cli.Declaration{
 // script reads.
 type CLI struct {
 	cli.Selection
+	cli.Past
 	Verbose bool `help:"print every example's measurements"`
 	JSON    bool `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 }
@@ -71,16 +74,28 @@ for an assistant:
 
 Recommendations are decision support, not orders: check each against what
 the test is for before changing it. Each run is compared with the previous
-.metrics/scrap.json, so rerun after a refactor to see whether it helped.`,
+.metrics/scrap.json, so rerun after a refactor to see whether it helped.
+
+With --at COMMIT the command measures that commit's tree, read from git's
+objects, as if it were checked out: the working tree is never read, nothing
+is written to .metrics/, and the commit's own itos-cc.yaml is the settings.
+Each result is kept per commit in the git common directory, shared by every
+worktree.`,
 		JSON: `"files": [{"file", "language", "examples", "action", "pressure",
    "average_score", "max_score", "recommendations", "clusters", "details",
    "compare"}]`,
+		Rules: []string{
+			"at.bad-rev      --at names no commit of the repository: rev",
+			"at.no-git       --at outside a git repository",
+			"flags.conflict  --at with --changed: flag",
+		},
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "success, whatever the actions"},
-			{Code: cli.CodeUsage, Meaning: "a usage error: a bad flag or path"},
-			{Code: cli.CodeEnvironment, Meaning: "--changed outside a git repository"},
+			{Code: cli.CodeUsage, Meaning: "a usage error: a bad flag, path or revision"},
+			{Code: cli.CodeEnvironment, Meaning: "--changed or --at outside a git repository"},
 		},
 		Examples: []string{
+			"itos-cc scrap --at HEAD~10",
 			"itos-cc scrap",
 			"itos-cc scrap --changed --verbose",
 		},
@@ -92,6 +107,9 @@ the test is for before changing it. Each run is compared with the previous
 type Query struct {
 	Paths   []string
 	Changed bool
+	// At names the commit whose tests are measured instead of the working
+	// tree's; "" for the working tree.
+	At string
 }
 
 // Handler is the scrap command's application: the working tree it selects
@@ -103,6 +121,10 @@ type Handler struct {
 	Tree         port.Tree
 	Surroundings langport.Surroundings
 	Store        snapport.Store
+	// Past opens the commit a query names with At, and Version is the
+	// itos-cc that measures it, which a kept result is keyed by.
+	Past    past.Source
+	Version string
 }
 
 // Ports are what the scrap command reaches the world through, which cmd's
@@ -114,13 +136,15 @@ type Ports interface {
 	SelectionTree() port.Tree
 	LangSurroundings() langport.Surroundings
 	SnapshotStore() snapport.Store
+	PastCommits() past.Source
+	BuildVersion() string
 }
 
 // NewHandler is the handler over p's tree, surroundings and store. It
 // reads nothing, so it never fails; its error is there for the one shape
 // every slice's constructor has.
 func NewHandler(_ context.Context, p Ports) (Handler, error) {
-	return Handler{Tree: p.SelectionTree(), Surroundings: p.LangSurroundings(), Store: p.SnapshotStore()}, nil
+	return Handler{Tree: p.SelectionTree(), Surroundings: p.LangSurroundings(), Store: p.SnapshotStore(), Past: p.PastCommits(), Version: p.BuildVersion()}, nil
 }
 
 // Found is what Handle found: each measured file's report, the most
@@ -142,6 +166,9 @@ type Found struct {
 // Ignored; any other failure stops Handle with no report, and Ignored
 // still set.
 func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
+	if q.At != "" {
+		return h.handleAt(ctx, q)
+	}
 	chosen, err := selection.Select(ctx, h.Tree, q.Paths, q.Changed, selection.Exclusion{})
 	if err != nil {
 		return Found{}, err
@@ -182,6 +209,47 @@ func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 	return found, nil
 }
 
+// handleAt measures the test files of the commit q.At names, read through
+// the ports the commit gives, compared with no snapshot and recording none,
+// or gives the reports an earlier run kept for the same question.
+func (h Handler) handleAt(ctx context.Context, q Query) (Found, error) {
+	commit, err := h.Past.Open(ctx, q.At)
+	if err != nil {
+		return Found{}, err
+	}
+	at := Handler{Tree: commit.Tree, Surroundings: commit.Surroundings, Store: commit.Store}
+	q.At = ""
+	return past.Kept(ctx, commit, Command.Name, commit.Key(q, h.Version),
+		func() (Found, error) { return at.Handle(ctx, q) },
+		func(f Found) ([]byte, error) {
+			kept := keptFound{NoTests: f.NoTests, Reports: []domain.FileReport{}}
+			for _, r := range f.Reports {
+				r.File = commit.Rel(r.File)
+				kept.Reports = append(kept.Reports, r)
+			}
+			return json.Marshal(kept)
+		},
+		func(data []byte) (Found, error) {
+			var kept keptFound
+			if err := json.Unmarshal(data, &kept); err != nil {
+				return Found{}, err
+			}
+			f := Found{NoTests: kept.NoTests}
+			for _, r := range kept.Reports {
+				r.File = commit.Abs(r.File)
+				f.Reports = append(f.Reports, r)
+			}
+			return f, nil
+		})
+}
+
+// keptFound is what a run keeps of a commit's test files: each file named
+// from the project root, never from where this worktree is.
+type keptFound struct {
+	Reports []domain.FileReport `json:"reports"`
+	NoTests bool                `json:"no_tests"`
+}
+
 // recorded is scrap.json: the format version and each file's last report,
 // named from the project root.
 type recorded struct {
@@ -201,11 +269,14 @@ type result struct {
 // last snapshot it could not read, and a selection with no test file, are
 // said on stderr, with --json too.
 func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
-	found, err := h.Handle(ctx, Query{Paths: c.Paths, Changed: c.Changed})
+	out := result{Files: []domain.FileReport{}}
+	if conflict := c.Conflict(c.Changed); conflict != nil {
+		return ui.Emit(c.JSON, out, []*cli.Problem{conflict})
+	}
+	found, err := h.Handle(ctx, Query{Paths: c.Paths, Changed: c.Changed, At: c.At})
 	if found.Ignored != nil {
 		ui.Line("ignoring unreadable .metrics/scrap.json: " + found.Ignored.Error())
 	}
-	out := result{Files: []domain.FileReport{}}
 	if err != nil {
 		return ui.Emit(c.JSON, out, ui.Problems(err))
 	}

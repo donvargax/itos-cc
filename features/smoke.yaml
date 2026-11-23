@@ -29,6 +29,10 @@
   scenarios:
     - id: "@ID-GRAPH-41"
       why: the graph written as a snapshot, its repository, modules and import edge, the file a viewer reads
+- file: history.feature
+  scenarios:
+    - id: "@ID-HIST-01"
+      why: a past commit's units listed from git's objects while the working tree holds others, the point of --at
 - file: metrics_snapshots.feature
   scenarios:
     - id: "@ID-SNAP-02"

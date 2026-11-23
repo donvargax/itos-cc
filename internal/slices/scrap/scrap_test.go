@@ -19,6 +19,8 @@ import (
 	"github.com/donvargax/itos-cc/internal/cli"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
+	"github.com/donvargax/itos-cc/internal/past"
+	pasttest "github.com/donvargax/itos-cc/internal/past/porttest"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 	"github.com/donvargax/itos-cc/internal/selection/port/porttest"
 	"github.com/donvargax/itos-cc/internal/slices/scrap/domain"
@@ -158,6 +160,8 @@ func (p ports) LangSurroundings() langport.Surroundings {
 	return langporttest.Surroundings{Dir: "/work/src"}
 }
 func (p ports) SnapshotStore() snapport.Store { return p.store }
+func (p ports) PastCommits() past.Source      { return nil }
+func (p ports) BuildVersion() string          { return "test" }
 
 // NewHandler builds the handler over its Ports: the test files their tree
 // holds, recorded in their store. It reads nothing, so it never fails.
@@ -258,4 +262,56 @@ func windowsName(rel string) string {
 		return rel
 	}
 	return strings.ReplaceAll(rel, "/", `\`)
+}
+
+// pastOf is a source of one commit, "old", holding tree, its results kept
+// in memory.
+func pastOf(tree porttest.Tree) *pasttest.Source {
+	return &pasttest.Source{
+		Results: &pasttest.Results{},
+		Commits: map[string]past.Commit{"old": {ID: "abc123", Root: at(""), Dir: at("src"), Tree: tree,
+			Surroundings: langporttest.Surroundings{Dir: "/work/src"}, Store: past.Nothing{RootDir: at("")}}},
+	}
+}
+
+// With At the test files are the commit's, measured through the ports it
+// gives, compared with no snapshot, and nothing is recorded in the
+// handler's own store; the reports are kept, so the same question asked of a
+// commit whose tree is empty gives them back.
+func TestHandleAtMeasuresTheCommitAndKeepsTheReports(t *testing.T) {
+	s := store(`{"version":1,"files":[]}`)
+	source := pastOf(tree())
+	h := handler(porttest.TreeOf(at(""), map[string]string{}, nil), s)
+	h.Past, h.Version = source, "test"
+	found, err := h.Handle(t.Context(), Query{At: "old"})
+	if err != nil || len(found.Reports) != 1 || found.Reports[0].File != at("src/cart.test.ts") || found.Reports[0].Compare != nil || s.Snapshots["scrap.json"] != `{"version":1,"files":[]}` {
+		t.Fatalf("at old: %+v, %v, recorded %v; want cart.test.ts alone, compared with nothing, scrap.json as it was", found, err, s.Snapshots)
+	}
+	again := pastOf(porttest.TreeOf(at(""), map[string]string{}, nil))
+	again.Results = source.Results
+	h.Past = again
+	if kept, err := h.Handle(t.Context(), Query{At: "old"}); err != nil || len(kept.Reports) != 1 || kept.Reports[0].File != at("src/cart.test.ts") {
+		t.Errorf("a kept answer: %+v, %v; want the first run's report", kept, err)
+	}
+	for name := range source.Results.Held {
+		source.Results.Held[name] = []byte("{not json")
+	}
+	h.Past = source
+	if again, err := h.Handle(t.Context(), Query{At: "old"}); err != nil || len(again.Reports) != 1 {
+		t.Errorf("a corrupt kept answer: %+v, %v; want it measured again", again, err)
+	}
+	var bad *past.BadRev
+	if _, err := h.Handle(t.Context(), Query{At: "nosuch"}); !errors.As(err, &bad) {
+		t.Errorf("an unknown revision: %v, want BadRev", err)
+	}
+}
+
+// --at with --changed is refused, as the problem of its own rule.
+func TestRunRefusesAtWithChanged(t *testing.T) {
+	var out, errs bytes.Buffer
+	c := CLI{Selection: cli.Selection{Changed: true}, Past: cli.Past{At: "old"}, JSON: true}
+	code := c.Run(t.Context(), &cli.UI{Stdout: &out, Stderr: &errs, Dir: at("src")}, handler(tree(), store("")))
+	if code != cli.CodeUsage || !strings.Contains(out.String(), "flags.conflict") {
+		t.Errorf("--at --changed: exit %d, %s; want %d and flags.conflict", code, out.String(), cli.CodeUsage)
+	}
 }

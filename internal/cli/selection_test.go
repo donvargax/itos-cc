@@ -54,3 +54,17 @@ func TestAnEmbeddedSelectionIsTheCommandsFirstFlagAndItsArguments(t *testing.T) 
 		t.Errorf("help:\n%s\nwant it to hold %q", out.String(), want)
 	}
 }
+
+// --at with --changed is the one problem of its own rule, and --at alone, or
+// --changed alone, is none.
+func TestPastConflictIsAtWithChanged(t *testing.T) {
+	if p := (Past{At: "HEAD"}).Conflict(true); p == nil || p.Rule != "flags.conflict" {
+		t.Errorf("--at --changed: %v, want flags.conflict", p)
+	}
+	if (Past{At: "HEAD"}).Conflict(false) != nil || (Past{}).Conflict(true) != nil {
+		t.Errorf("--at alone, or --changed alone, is no conflict")
+	}
+	if p := RefusePast("mutation run"); p.Rule != "at.unsupported" || p.Code != CodeUsage || !strings.Contains(p.Message, "mutation run") {
+		t.Errorf("RefusePast = %+v, want at.unsupported naming the command", p)
+	}
+}

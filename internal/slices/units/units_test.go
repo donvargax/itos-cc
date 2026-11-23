@@ -15,6 +15,8 @@ import (
 	"github.com/donvargax/itos-cc/internal/cli"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
+	"github.com/donvargax/itos-cc/internal/past"
+	pasttest "github.com/donvargax/itos-cc/internal/past/porttest"
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 	"github.com/donvargax/itos-cc/internal/selection/port/porttest"
@@ -101,6 +103,8 @@ type ports struct {
 	failure error
 }
 
+func (p ports) PastCommits() past.Source                { return nil }
+func (p ports) BuildVersion() string                    { return "test" }
 func (p ports) SelectionTree() port.Tree                { return p.tree }
 func (p ports) LangSurroundings() langport.Surroundings { return around }
 func (p ports) SelectionExclusion(context.Context) (selection.Exclusion, error) {
@@ -215,4 +219,85 @@ func windowsName(rel string) string {
 		return rel
 	}
 	return strings.ReplaceAll(rel, "/", `\`)
+}
+
+// pastSource is a source of one commit, "old", whose tree is the one given
+// and whose itos-cc.yaml excludes exclude, with its results kept in memory.
+func pastSource(tree porttest.Tree, exclude selection.Exclusion) *pasttest.Source {
+	return &pasttest.Source{
+		Results: &pasttest.Results{},
+		Commits: map[string]past.Commit{"old": {ID: "abc123", Root: work, Dir: work, Tree: tree, Surroundings: around, Exclude: exclude}},
+	}
+}
+
+// With At the units are the commit's, read through the ports the commit
+// gives, never the handler's own tree, and the sources the commit's own
+// settings exclude are left out.
+func TestHandleAtListsTheUnitsOfTheCommit(t *testing.T) {
+	old := porttest.TreeOf(work, map[string]string{
+		"src/old.ts":  "export function before(): number {\n  return 1;\n}\n",
+		"src/skip.ts": "export function skipped(): number {\n  return 2;\n}\n",
+	}, nil)
+	source := pastSource(old, selection.Exclusion{Root: work, Exclude: []string{"**/skip.ts"}})
+	h := Handler{Tree: tree(), Surroundings: around, Past: source, Version: "test"}
+	found, err := h.Handle(t.Context(), Query{At: "old"})
+	if err != nil || len(found.Units) != 1 || found.Units[0].Name != "before" || found.Excluded != 1 {
+		t.Fatalf("at old: %+v, %v; want before alone and 1 left out", found, err)
+	}
+	if got := found.Units[0].File; got != filepath.Join(work, "src/old.ts") {
+		t.Errorf("the unit's file is %q, want it absolute under the working directory", got)
+	}
+	var bad *past.BadRev
+	if _, err := h.Handle(t.Context(), Query{At: "nosuch"}); !errors.As(err, &bad) || bad.Rev != "nosuch" {
+		t.Errorf("an unknown revision: %v, want BadRev", err)
+	}
+}
+
+// The first run keeps its answer and the next gives it back without opening
+// the tree: a handler over a commit whose tree is empty, asked the same
+// question, lists what the first listed; a different question is measured;
+// a kept result that is corrupt is measured again and kept whole.
+func TestHandleAtKeepsItsAnswerPerQuestion(t *testing.T) {
+	old := porttest.TreeOf(work, map[string]string{"src/old.ts": "export function before(): number {\n  return 1;\n}\n"}, nil)
+	source := pastSource(old, selection.Exclusion{})
+	h := Handler{Tree: tree(), Surroundings: around, Past: source, Version: "test"}
+	if got, err := names(t, h, Query{At: "old"}); err != nil || !slices.Equal(got, []string{"old#before"}) {
+		t.Fatalf("first run: %q, %v", got, err)
+	}
+	if source.Results.Puts != 1 {
+		t.Fatalf("the first run kept %d results, want 1", source.Results.Puts)
+	}
+	empty := pastSource(porttest.TreeOf(work, map[string]string{}, nil), selection.Exclusion{})
+	empty.Results = source.Results
+	h.Past = empty
+	if got, err := names(t, h, Query{At: "old"}); err != nil || !slices.Equal(got, []string{"old#before"}) {
+		t.Errorf("a kept answer: %q, %v; want the first run's", got, err)
+	}
+	if got, err := names(t, h, Query{At: "old", Tests: true}); err != nil || len(got) != 0 {
+		t.Errorf("another question: %q, %v; want it measured, none", got, err)
+	}
+	for name := range source.Results.Held {
+		source.Results.Held[name] = []byte("{not json")
+	}
+	h.Past = source
+	if got, err := names(t, h, Query{At: "old"}); err != nil || !slices.Equal(got, []string{"old#before"}) {
+		t.Errorf("a corrupt kept answer: %q, %v; want it measured again", got, err)
+	}
+	if _, err := names(t, h, Query{At: "old", Tests: true}); err != nil {
+		t.Fatal(err)
+	}
+	for name, data := range source.Results.Held {
+		if !strings.HasPrefix(string(data), "{") || strings.Contains(string(data), "not json") {
+			t.Errorf("%s still holds %q", name, data)
+		}
+	}
+}
+
+// --at with --changed is refused, as the problem of its own rule.
+func TestRunRefusesAtWithChanged(t *testing.T) {
+	var e ends
+	code := run(t, &e, CLI{Selection: cli.Selection{Changed: true}, Past: cli.Past{At: "old"}, JSON: true}, Handler{Tree: tree(), Surroundings: around})
+	if code != cli.CodeUsage || !strings.Contains(e.stdout.String(), "flags.conflict") {
+		t.Errorf("--at --changed: exit %d, %s; want %d and flags.conflict", code, e.stdout.String(), cli.CodeUsage)
+	}
 }

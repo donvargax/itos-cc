@@ -148,3 +148,9 @@ func TrackedAt(ctx context.Context, dir string) ([]string, error) {
 	}
 	return paths, nil
 }
+
+// GitIn is the command git with args, in dir, as every history call runs
+// it: the caller's directory named to the command, never the process's.
+func GitIn(ctx context.Context, dir string, args ...string) *exec.Cmd {
+	return historyCommand(ctx, dir, args...)
+}

@@ -56,6 +56,7 @@ var Command = cli.Declaration{
 // separator (sep none).
 type CLI struct {
 	cli.Selection
+	cli.NoPast
 	NoCoverage          bool     `name:"no-coverage" help:"skip coverage; complexity only"`
 	UseExistingCoverage bool     `name:"use-existing-coverage" help:"read reports already on disk instead of running tests"`
 	AllTests            bool     `name:"all-tests" help:"run the whole test suite, integration and end-to-end tests included"`

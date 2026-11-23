@@ -13,6 +13,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/coveragetools"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/past"
 	"github.com/donvargax/itos-cc/internal/processes"
 	"github.com/donvargax/itos-cc/internal/project"
 	"github.com/donvargax/itos-cc/internal/selection"
@@ -70,6 +71,8 @@ type adapters struct {
 	Surroundings langport.Surroundings
 	// Store is the snapshot port, the snapshots under .metrics/.
 	Store snapport.Store
+	// Past is the past commits --at measures, opened from git's objects.
+	Past past.Source
 	// Coverage is coverage's Measurer, which measures coverage for crap.
 	Coverage coverage.Measurer
 	// MutationCoverage supplies listed evidence and executable inventories.
@@ -98,6 +101,9 @@ func (a adapters) SelectionTree() selport.Tree { return a.Tree }
 
 // LangSurroundings is lang's port, a slice's Ports method.
 func (a adapters) LangSurroundings() langport.Surroundings { return a.Surroundings }
+
+// PastCommits is the commits --at measures, a slice's Ports method.
+func (a adapters) PastCommits() past.Source { return a.Past }
 
 // SnapshotStore is the snapshot port, the snapshots under .metrics/, a
 // slice's Ports method.
@@ -246,9 +252,29 @@ func diskAdapters(log io.Writer, hold func() (release func())) adapters {
 	return adapters{Settings: reader, SnapshotReaders: func(root string) mutation.MutationSnapshotReader {
 		return snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}
 	}, Fresh: fresh, FreshWorkers: worktrees.Workers{Platform: runtime.GOOS, Owner: owner, Prepare: freshenv.CommandEnvironment}, Exceptions: func(root string) mutation.Exceptions { return exceptions.Exceptions{RootDir: root} }, SourceStatus: sources.SourceEdits{}, SnapshotReader: snapshots.Mutations{Store: metricsdir.Store{}}, Catalog: snapshots.Mutations{Store: metricsdir.Store{}}, Presence: sources.SourceEdits{}, Snapshots: snapshots.Mutations{Store: metricsdir.Store{}}, SourceEdits: sources.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: project.InheritedEnv()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS, Hold: hold, Dir: dir, Settings: reader}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
+		Past:     pastCommits(dir, workdir.Git{Dir: dir}, workdir.Disk{}),
 		Coverage: measurer, MutationCoverage: measurer, CoverageCache: snapshots.CoverageCache{Store: metricsdir.Store{}}, Selection: reader,
 		Repository: countedRoot, PhysicalDir: physicalDir, Platform: countedPlatform, Origin: project.OriginAt}
 }
+
+// pastCommits are the commits --at opens: those of the repository holding
+// dir, read through objects, their results kept through keeper, and the
+// itos-cc.yaml each holds read as the one on the disk is.
+func pastCommits(dir string, objects workdir.Objects, keeper workdir.Keeper) past.Source {
+	return workdir.Commits{Dir: dir, Objects: objects, Keeper: keeper,
+		Settings: func(root string, text []byte) selport.SettingsReader {
+			return settings.Reader{Source: committedConfig{root: root, text: text}}
+		}}
+}
+
+// committedConfig is the itos-cc.yaml a commit holds, none when text is nil.
+type committedConfig struct {
+	root string
+	text []byte
+}
+
+// Read is the file as the commit holds it.
+func (c committedConfig) Read(context.Context) (string, []byte, error) { return c.root, c.text, nil }
 
 // diskConfig is itos-cc.yaml at the project root of the working directory.
 type diskConfig struct{}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/past"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 )
 
@@ -44,4 +45,37 @@ func selectionProblem(failure port.Failure) *cli.Problem {
 		}
 	}
 	return p
+}
+
+// classifyPast is the past package's classifier: an unknown revision, no
+// repository to read a commit from, and the itos-cc.yaml a commit holds that
+// cannot be read, the selection settings' failure worded as the working
+// tree's is.
+func classifyPast(err error) ([]*cli.Problem, bool) {
+	var failure past.Failure
+	if errors.As(err, &failure) {
+		return []*cli.Problem{pastProblem(failure)}, true
+	}
+	var invalid port.SettingsFailure
+	if errors.As(err, &invalid) {
+		var problem *cli.Problem
+		if errors.As(settingsError(invalid), &problem) {
+			return []*cli.Problem{problem}, true
+		}
+	}
+	return nil, false
+}
+
+// pastProblem is failure's problem: a revision git cannot name is a usage
+// error, 80, no repository the environment's, 82, as --changed's is.
+func pastProblem(failure past.Failure) *cli.Problem {
+	switch e := failure.(type) {
+	case *past.BadRev:
+		return cli.NewProblem(cli.CodeUsage, "at.bad-rev", fmt.Sprintf("--at %s names no commit of this repository", e.Rev),
+			"Name a commit by a branch, a tag, an id or any revision git rev-parse takes, such as HEAD~3.").With("rev", e.Rev)
+	case *past.NoRepository:
+		return cli.NewProblem(cli.CodeEnvironment, "at.no-git", "--at needs a git repository: "+e.Reason,
+			"Run it inside a git repository, or leave --at off.")
+	}
+	return cli.Internal(failure)
 }

@@ -59,6 +59,7 @@ are chosen; a test never is.`, Examples: []string{
 // comes from the process boundary, supplied as a Kong variable.
 type Run struct {
 	cli.Selection
+	cli.NoPast
 	NoCoverage          bool        `name:"no-coverage" help:"skip coverage; complexity only"`
 	NoCoverageCache     bool        `name:"no-coverage-cache" help:"measure coverage, the listed tests' and each file's own tests', never reusing or keeping it in .metrics/coverage/cache"`
 	UseExistingCoverage bool        `help:"read reports already on disk instead of running tests"`
@@ -86,12 +87,14 @@ type Run struct {
 // List lists sites without running tests.
 type List struct {
 	cli.Selection
+	cli.NoPast
 	JSON bool `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 }
 
 // Check reads cached judgments, optionally requiring coverage evidence.
 type Check struct {
 	cli.Selection
+	cli.NoPast
 	Since         *string     `placeholder:"REF" help:"check only the functions the commits since REF changed (git diff REF...HEAD)"`
 	FailUncovered *cli.Choice `enum:"functions,lines" help:"fail on uncovered mutants, executable Go coverage blocks and executable Python, TypeScript, Kotlin and Dart lines; =lines, with --since, only on the lines the range changed"`
 	JSON          bool        `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
@@ -101,6 +104,7 @@ type Check struct {
 // nil when omitted, so an explicit empty one stays distinct.
 type Sample struct {
 	cli.Selection
+	cli.NoPast
 	Since         *string `placeholder:"REF" help:"sample only the functions the commits since REF changed (git diff REF...HEAD)"`
 	Count         int     `placeholder:"N" default:"20" help:"how many mutants to run, at least 1"`
 	Seed          *string `placeholder:"TEXT" help:"seed the draw with TEXT instead of the HEAD commit's id"`

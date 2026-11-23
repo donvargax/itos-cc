@@ -1,7 +1,6 @@
 package project
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -44,6 +43,7 @@ const (
 // app's platform folder and a file generated Dart, remembering each
 // pubspec.yaml and l10n.yaml they read.
 type flutterRules struct {
+	fsys FS
 	apps map[string]bool
 	l10n map[string]*l10nOutput
 }
@@ -55,8 +55,11 @@ type l10nOutput struct {
 	File string `yaml:"output-localization-file"`
 }
 
-func newFlutterRules() *flutterRules {
-	return &flutterRules{apps: map[string]bool{}, l10n: map[string]*l10nOutput{}}
+func newFlutterRules() *flutterRules { return newFlutterRulesIn(OS{}) }
+
+// newFlutterRulesIn is newFlutterRules over the files of fsys.
+func newFlutterRulesIn(fsys FS) *flutterRules {
+	return &flutterRules{fsys: fsys, apps: map[string]bool{}, l10n: map[string]*l10nOutput{}}
 }
 
 // platformDir reports whether dir is a platform folder of a Flutter app:
@@ -69,7 +72,7 @@ func (r *flutterRules) platformDir(dir string) bool {
 	app := filepath.Dir(dir)
 	flutter, ok := r.apps[app]
 	if !ok {
-		text, err := os.ReadFile(filepath.Join(app, "pubspec.yaml"))
+		text, err := r.fsys.ReadFile(filepath.Join(app, "pubspec.yaml"))
 		flutter = err == nil && dependsOnFlutter(text)
 		r.apps[app] = flutter
 	}
@@ -112,7 +115,7 @@ func (r *flutterRules) generated(path string) bool {
 	if name == pluginRegistrant || hasGeneratedSuffix(name) || r.localization(path) {
 		return true
 	}
-	text, err := os.ReadFile(path)
+	text, err := r.fsys.ReadFile(path)
 	return err == nil && markedGenerated(string(text))
 }
 
@@ -139,7 +142,7 @@ func (r *flutterRules) localization(path string) bool {
 	for dir := filepath.Dir(path); ; dir = filepath.Dir(dir) {
 		out, ok := r.l10n[dir]
 		if !ok {
-			text, err := os.ReadFile(filepath.Join(dir, "l10n.yaml"))
+			text, err := r.fsys.ReadFile(filepath.Join(dir, "l10n.yaml"))
 			if err == nil {
 				out = l10nOutputOf(text)
 			}

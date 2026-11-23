@@ -42,6 +42,8 @@ var projectAllowances = []allowance{
 		"@ID-MUT-418", "@ID-MUT-420", "@ID-MUT-422",
 		"@ID-SEL-37"}, "itos-cc.yaml",
 		"their subject is mutation except, which writes the exception it records into itos-cc.yaml, making the file when there is none, or the scenario records one the same way before judging it"},
+	{[]string{"@ID-HIST-01", "@ID-HIST-02", "@ID-HIST-03", "@ID-HIST-04", "@ID-HIST-05", "@ID-HIST-06", "@ID-HIST-07", "@ID-HIST-08", "@ID-HIST-09"}, ".git/itos-cc/",
+		"their subject is --at, which keeps each result it measures of a commit under the git common directory, in itos-cc's own folder there, which is no part of the project's tree"},
 	{[]string{"@ID-MUT-325"}, "testdata/left-behind",
 		"its subject is the file its project's test leaves in the project's own tree while coverage runs, which must never reach a worker's copy"},
 	{[]string{"@ID-MUT-209", "@ID-MUT-210", "@ID-MUT-216"}, ".coverage",

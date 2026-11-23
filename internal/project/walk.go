@@ -11,6 +11,28 @@ import (
 // filepath.WalkDir calls its fs.WalkDirFunc, under the walk's context.
 type WalkFunc func(ctx context.Context, path string, d fs.DirEntry, err error) error
 
+// FS is the files a walk and a discovery see, by absolute path as the system
+// names it: the disk (OS), or a commit's tree read from git's objects. An
+// entry's kind is what Lstat tells, so a link is not followed.
+type FS interface {
+	Lstat(path string) (fs.FileInfo, error)
+	// Stat is Lstat, but follows a link; a tree with no links answers as
+	// Lstat does.
+	Stat(path string) (fs.FileInfo, error)
+	ReadDir(path string) ([]fs.DirEntry, error)
+	ReadFile(path string) ([]byte, error)
+}
+
+// OS is the disk, the FS of every walk but a past commit's.
+type OS struct{}
+
+var _ FS = OS{}
+
+func (OS) Lstat(path string) (fs.FileInfo, error)     { return os.Lstat(path) }
+func (OS) Stat(path string) (fs.FileInfo, error)      { return os.Stat(path) }
+func (OS) ReadDir(path string) ([]fs.DirEntry, error) { return os.ReadDir(path) }
+func (OS) ReadFile(path string) ([]byte, error)       { return os.ReadFile(path) }
+
 // WalkDir walks the tree at root as filepath.WalkDir does, root first, then
 // each directory's entries in lexical order, calling fn under ctx; fn may
 // return filepath.SkipDir or filepath.SkipAll as it may there. It hands fn
@@ -18,11 +40,16 @@ type WalkFunc func(ctx context.Context, path string, d fs.DirEntry, err error) e
 // capturing it. Once ctx is done it visits nothing more and returns its
 // cause.
 func WalkDir(ctx context.Context, root string, fn WalkFunc) error {
-	info, err := os.Lstat(root)
+	return WalkDirIn(ctx, OS{}, root, fn)
+}
+
+// WalkDirIn is WalkDir over the files of fsys.
+func WalkDirIn(ctx context.Context, fsys FS, root string, fn WalkFunc) error {
+	info, err := fsys.Lstat(root)
 	if err != nil {
 		err = fn(ctx, root, nil, err)
 	} else {
-		err = walkDir(ctx, root, fs.FileInfoToDirEntry(info), fn)
+		err = walkDir(ctx, fsys, root, fs.FileInfoToDirEntry(info), fn)
 	}
 	if err == filepath.SkipDir || err == filepath.SkipAll {
 		return nil
@@ -32,7 +59,7 @@ func WalkDir(ctx context.Context, root string, fn WalkFunc) error {
 
 // walkDir visits path, whose entry is d, then what it holds when it is a
 // directory fn did not skip.
-func walkDir(ctx context.Context, path string, d fs.DirEntry, fn WalkFunc) error {
+func walkDir(ctx context.Context, fsys FS, path string, d fs.DirEntry, fn WalkFunc) error {
 	if ctx.Err() != nil {
 		return context.Cause(ctx)
 	}
@@ -42,7 +69,7 @@ func walkDir(ctx context.Context, path string, d fs.DirEntry, fn WalkFunc) error
 		}
 		return err
 	}
-	entries, err := os.ReadDir(path)
+	entries, err := fsys.ReadDir(path)
 	if err != nil {
 		// As filepath.WalkDir does, fn hears of the directory again with
 		// the error, and its answer decides.
@@ -54,7 +81,7 @@ func walkDir(ctx context.Context, path string, d fs.DirEntry, fn WalkFunc) error
 		}
 	}
 	for _, entry := range entries {
-		if err := walkDir(ctx, filepath.Join(path, entry.Name()), entry, fn); err != nil {
+		if err := walkDir(ctx, fsys, filepath.Join(path, entry.Name()), entry, fn); err != nil {
 			if err == filepath.SkipDir {
 				break
 			}

@@ -239,3 +239,24 @@ func TestRelNamesAPathFromTheWorkingDirectory(t *testing.T) {
 		t.Errorf("Rel with no working directory = %q, want %q", got, outside)
 	}
 }
+
+// A hidden flag, which help does not list, takes its value as any flag does:
+// the word after it is its value, never an argument.
+func TestAHiddenFlagTakesItsValue(t *testing.T) {
+	var app struct {
+		Pick struct {
+			Hidden string   `name:"hid" hidden:""`
+			Paths  []string `arg:"" optional:""`
+		} `cmd:""`
+	}
+	parser, err := kong.New(&app, append(Flags(), kong.Name("itos-cc"), kong.Exit(func(int) { t.Fatal("kong exited") }))...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Parse(parser, strings.Fields("pick --hid value path")); err != nil {
+		t.Fatal(err)
+	}
+	if app.Pick.Hidden != "value" || len(app.Pick.Paths) != 1 || app.Pick.Paths[0] != "path" {
+		t.Errorf("parsed %+v, want --hid value and the path", app.Pick)
+	}
+}

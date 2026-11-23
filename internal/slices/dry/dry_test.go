@@ -20,6 +20,8 @@ import (
 	"github.com/donvargax/itos-cc/internal/cli"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
+	"github.com/donvargax/itos-cc/internal/past"
+	pasttest "github.com/donvargax/itos-cc/internal/past/porttest"
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 	"github.com/donvargax/itos-cc/internal/selection/port/porttest"
@@ -180,6 +182,8 @@ type ports struct {
 	failure error
 }
 
+func (p ports) PastCommits() past.Source { return nil }
+func (p ports) BuildVersion() string     { return "test" }
 func (p ports) SelectionTree() port.Tree { return p.tree }
 func (p ports) LangSurroundings() langport.Surroundings {
 	return langporttest.Surroundings{Dir: "/work/src"}
@@ -292,4 +296,64 @@ func windowsName(rel string) string {
 		return rel
 	}
 	return strings.ReplaceAll(rel, "/", `\`)
+}
+
+// pastOf is a source of one commit, "old", holding tree, its results kept
+// in memory.
+func pastOf(tree porttest.Tree) *pasttest.Source {
+	return &pasttest.Source{
+		Results: &pasttest.Results{},
+		Commits: map[string]past.Commit{"old": {ID: "abc123", Root: at(""), Dir: at("src"), Tree: tree,
+			Surroundings: langporttest.Surroundings{Dir: "/work/src"}, Store: past.Nothing{RootDir: at("")}}},
+	}
+}
+
+// With At the duplicates are the commit's, found through the ports it gives,
+// and nothing is recorded in the handler's own store; the answer is kept,
+// so the same question asked of a commit whose tree is empty gives it back,
+// naming its files from the project root where this worktree is.
+func TestHandleAtFindsTheDuplicatesOfTheCommitAndKeepsThem(t *testing.T) {
+	store := &snapporttest.Store{RootDir: at("")}
+	source := pastOf(tree())
+	h := handler(porttest.TreeOf(at(""), map[string]string{}, nil), store)
+	h.Past, h.Version = source, "test"
+	q := query()
+	q.At = "old"
+	found, err := h.Handle(t.Context(), q)
+	if err != nil || len(found.Candidates) != 1 || found.Candidates[0].Left.File != at("src/invoice.py") || len(store.Snapshots) != 0 {
+		t.Fatalf("at old: %+v, %v, recorded %v; want invoice.py's pair and nothing recorded", found, err, store.Snapshots)
+	}
+	for name := range source.Results.Held {
+		if !strings.Contains(string(source.Results.Held[name]), `"src/invoice.py"`) {
+			t.Errorf("%s keeps %s, want its files named from the project root", name, source.Results.Held[name])
+		}
+	}
+	again := pastOf(porttest.TreeOf(at(""), map[string]string{}, nil))
+	again.Results = source.Results
+	h.Past = again
+	if kept, err := h.Handle(t.Context(), q); err != nil || len(kept.Candidates) != 1 || kept.Candidates[0].Right.File != at("src/receipt.py") || len(kept.Groups) != 1 {
+		t.Errorf("a kept answer: %+v, %v; want the first run's pair", kept, err)
+	}
+	for name := range source.Results.Held {
+		source.Results.Held[name] = []byte("{not json")
+	}
+	h.Past = source
+	if again, err := h.Handle(t.Context(), q); err != nil || len(again.Candidates) != 1 {
+		t.Errorf("a corrupt kept answer: %+v, %v; want it found again", again, err)
+	}
+	q.At = "nosuch"
+	var bad *past.BadRev
+	if _, err := h.Handle(t.Context(), q); !errors.As(err, &bad) {
+		t.Errorf("an unknown revision: %v, want BadRev", err)
+	}
+}
+
+// --at with --changed is refused, as the problem of its own rule.
+func TestRunRefusesAtWithChanged(t *testing.T) {
+	c := defaults
+	c.Changed, c.At, c.JSON = true, "old", true
+	code, stdout, _ := run(t, c, handler(tree(), &snapporttest.Store{RootDir: at("")}))
+	if code != cli.CodeUsage || !strings.Contains(stdout, "flags.conflict") {
+		t.Errorf("--at --changed: exit %d, %s; want %d and flags.conflict", code, stdout, cli.CodeUsage)
+	}
 }
