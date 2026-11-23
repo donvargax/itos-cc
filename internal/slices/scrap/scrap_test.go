@@ -232,7 +232,7 @@ func TestRunReportsAFailure(t *testing.T) {
 // value, and the tree a file Windows names src\cart.test.ts, so Linux
 // holds the lines to it too.
 func TestRunsPlainLinesNameAWindowsFileWithSlashes(t *testing.T) {
-	windows := porttest.TreeOf(at(""), map[string]string{`src\cart.test.ts`: cartTest}, nil)
+	windows := porttest.TreeOf(at(""), map[string]string{windowsName("src/cart.test.ts"): cartTest}, nil)
 	for _, c := range []struct {
 		command CLI
 		want    string
@@ -248,4 +248,14 @@ func TestRunsPlainLinesNameAWindowsFileWithSlashes(t *testing.T) {
 			t.Errorf("%+v: exit %d, stdout %q; want it to hold %s\n%s", c.command, code, stdout.String(), c.want, stderr.String())
 		}
 	}
+}
+
+// windowsName is rel as Windows names it, src\cart.ts. The fake tree keys its
+// files by slash, so on a system whose separator is a backslash the name
+// is the slash one already.
+func windowsName(rel string) string {
+	if filepath.Separator == '\\' {
+		return rel
+	}
+	return strings.ReplaceAll(rel, "/", `\`)
 }

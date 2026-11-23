@@ -278,7 +278,7 @@ func TestRunsPlainLinesNameAWindowsFileWithSlashes(t *testing.T) {
 	slow := coverage.Unmeasured{Dir: at(`src\slow`), Language: "go", Cause: covport.MeasuredNothing{}, Reason: "its coverage command failed"}.
 		WithTimeouts([]coverage.GoTimeout{{Package: "example.com/slow", Limit: "1s"}})
 	gone := coverage.Unmeasured{Dir: at(`src\gone`), Language: "go", Cause: covport.MeasuredNothing{}, Reason: "its coverage command failed"}
-	h := Handler{Tree: porttest.TreeOf(at(""), map[string]string{`src\board.go`: board}, nil),
+	h := Handler{Tree: porttest.TreeOf(at(""), map[string]string{windowsName("src/board.go"): board}, nil),
 		Surroundings: langporttest.Surroundings{Dir: "/work"}, Store: &snapporttest.Store{RootDir: at("")},
 		Coverage: failedMeasurer{Measurer: measurer(), failed: []coverage.Unmeasured{slow}, missing: []coverage.Unmeasured{gone}}}
 	windows := func(c CLI) (stdout, stderr string) {
@@ -308,4 +308,14 @@ func TestWithoutAThresholdACleanupFailureIsAProblem(t *testing.T) {
 	if !strings.Contains(stdout, "board#place") {
 		t.Errorf("stdout %q, want the table kept", stdout)
 	}
+}
+
+// windowsName is rel as Windows names it, src\cart.ts. The fake tree keys its
+// files by slash, so on a system whose separator is a backslash the name
+// is the slash one already.
+func windowsName(rel string) string {
+	if filepath.Separator == '\\' {
+		return rel
+	}
+	return strings.ReplaceAll(rel, "/", `\`)
 }

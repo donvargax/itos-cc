@@ -60,12 +60,13 @@ func runFaked(t *testing.T, a adapters, args ...string) (int, string, string) {
 }
 
 // units lists each unit of the fake tree's sources, named from its working
-// directory, as UNIT-01 reads them from the binary.
+// directory and slash-separated on every system (bug-9), as UNIT-01 reads
+// them from the binary.
 func TestRunWithFakesListsUnits(t *testing.T) {
 	code, stdout, stderr := runFaked(t, fakes(nil), "units")
 	want := []string{
-		filepath.FromSlash("src/cart.ts") + ":1-3  cart#total  function",
-		filepath.FromSlash("src/price.py") + ":1-2  price#discount  function",
+		"src/cart.ts:1-3  cart#total  function",
+		"src/price.py:1-2  price#discount  function",
 	}
 	if got := strings.Split(strings.TrimSpace(stdout), "\n"); code != 0 || !slices.Equal(got, want) || stderr != "" {
 		t.Errorf("units: exit %d, stdout %q, stderr %q; want 0, %q and nothing", code, got, stderr, want)
