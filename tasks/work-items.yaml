@@ -6776,7 +6776,7 @@ items:
     title: Pair same-named functions' results by UnitKey at the seams that still pair by name, for each pairing that fails here
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-245

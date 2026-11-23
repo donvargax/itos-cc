@@ -7697,9 +7697,6 @@
     main before any product change. Left open on purpose, as pstack left them: the graph's coverage
     pairing (crap.json records no hash), Locate and repointingSite taking the first function of a
     name. Out of scope: the replay tool, the plain lines' display (port 4), internal/processes.
-  done_when:
-    - run: "go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='@T-244' -v 2>&1 | grep -q -- '--- PASS: TestScenarios'"
-      timeout: 900
 - id: T-245
   type: fix
   title: Name every slice's files on its plain lines through Show, slash-separated on every system
