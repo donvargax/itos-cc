@@ -6691,19 +6691,9 @@ items:
     title: Banned patterns counted through tree-sitter, and a ratchet gate when a count rises
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: [gardener-history-objects]
     kind: idea
-    why: >
-      Weeds: patterns the project has banned, counted through tree-sitter so a match in a comment or
-      a string never counts (gardener matches by regex), so the old copies can be watched shrinking.
-      Plus a ratchet: a gate command that fails when a weed or lint-suppression count rises against
-      the last recorded one; gardener has no gate, and itos-cc with itos does. From gardener
-      (subsy/gardener at c58a2ad, MIT; the chief's adoption note, 2026-11-22, which the person
-      agreed to). Port the idea to Go on itos-cc's tree-sitter core rather than copying gardener's
-      regex matching; any code copied carries gardener's notice in THIRD_PARTY_NOTICES. Starts after
-      the pstack trial's two runs (the pstack copy and the itos arm, F1 to F5) finish, so it touches
-      nothing either run is fixing.
   - id: gardener-snapshot-counts
     title: "Snapshot counts: big files, suppressions, type escapes, instructions against lint rules, tests by kind"
     phase: 1
