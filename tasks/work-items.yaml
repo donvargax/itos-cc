@@ -6789,3 +6789,18 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: kong-117
+    title: Move to the kong fork v1.17.1-itos.1
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The chief's task kong-117, 2026-11-23: move go.mod from github.com/donvargax/kong
+      v1.16.2-itos.2 to v1.17.1-itos.1, the fork rebased onto upstream kong v1.17.0 plus later
+      upstream fixes, still carrying its 3 fork commits (typed parse errors, decision 35; exported
+      Suggest, decision 62). go get and go mod tidy, then fix whatever upstream's changes break in
+      cmd/itos-cc, internal/cli, the settings adapter's Suggest and tools/bin/assemble, keeping the
+      command line's contract (docs/CLI.md) and its parse problems as they are. A change in what a
+      user sees is a finding to report, not to absorb. No other dependency moves.
