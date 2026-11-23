@@ -6633,19 +6633,9 @@ items:
     title: "Outcomes per window: fix, cleanup and revert share, and rework by blame"
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: [gardener-history-objects]
     kind: idea
-    why: >
-      Over a window of days: the share of fix, cleanup and revert commits from their Conventional
-      Commits titles (itos's hook enforces them), and rework (lines rewritten within 14 days) by
-      blame over a sample. Code commits only, with a churn-ignore list: ledger and docs commits are
-      about 68% of this repository's history and would drown the rest. From gardener (subsy/gardener
-      at c58a2ad, MIT; the chief's adoption note, 2026-11-22, which the person agreed to). Port the
-      idea to Go on itos-cc's tree-sitter core rather than copying gardener's regex matching; any
-      code copied carries gardener's notice in THIRD_PARTY_NOTICES. Starts after the pstack trial's
-      two runs (the pstack copy and the itos arm, F1 to F5) finish, so it touches nothing either run
-      is fixing.
   - id: gardener-hot-untested
     title: "Hot and untested: change frequency times crap score, per file and per function"
     phase: 1
