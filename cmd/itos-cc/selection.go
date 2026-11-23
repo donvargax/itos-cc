@@ -69,13 +69,11 @@ func classifyPast(err error) ([]*cli.Problem, bool) {
 // pastProblem is failure's problem: a revision git cannot name is a usage
 // error, 80, no repository the environment's, 82, as --changed's is.
 func pastProblem(failure past.Failure) *cli.Problem {
-	switch e := failure.(type) {
-	case *past.BadRev:
-		return cli.NewProblem(cli.CodeUsage, "at.bad-rev", fmt.Sprintf("--at %s names no commit of this repository", e.Rev),
-			"Name a commit by a branch, a tag, an id or any revision git rev-parse takes, such as HEAD~3.").With("rev", e.Rev)
-	case *past.NoRepository:
-		return cli.NewProblem(cli.CodeEnvironment, "at.no-git", "--at needs a git repository: "+e.Reason,
-			"Run it inside a git repository, or leave --at off.")
+	if bad, ok := failure.(*past.BadRev); ok {
+		return cli.NewProblem(cli.CodeUsage, "at.bad-rev", fmt.Sprintf("--at %s names no commit of this repository", bad.Rev),
+			"Name a commit by a branch, a tag, an id or any revision git rev-parse takes, such as HEAD~3.").With("rev", bad.Rev)
 	}
-	return cli.Internal(failure)
+	// The one other kind: no repository to read a commit from.
+	return cli.NewProblem(cli.CodeEnvironment, "at.no-git", "--at needs a git repository: "+failure.Error(),
+		"Run it inside a git repository, or leave --at off.")
 }
