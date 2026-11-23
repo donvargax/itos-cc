@@ -15,7 +15,14 @@ import (
 // nothing.
 type strayDriver struct {
 	binary
-	elsewhere string
+	elsewhere, platform string
+}
+
+func (d strayDriver) Platform() string {
+	if d.platform != "" {
+		return d.platform
+	}
+	return d.binary.Platform()
 }
 
 func (d strayDriver) withTags([]string) Driver { return d }
@@ -38,6 +45,8 @@ func (d strayDriver) Run(r Run) (Result, error) {
 		path = filepath.Join(r.Dir, r.Args[2])
 	case "tool":
 		path = filepath.Join(r.Dir, "node_modules", ".vite", "vitest", "results.json")
+	case "locked":
+		path = filepath.Join(temp, "itos-cc-mutate-1", "w0", "tmp", "go-build123", "b001", "src.test.exe")
 	case "bytecode":
 		path = filepath.Join(r.Dir, "__pycache__", "board.cpython-314.pyc")
 	case "cache":
@@ -63,16 +72,19 @@ func TestScenarioLeavesNoStrayFiles(t *testing.T) {
 		name, tags, command string
 		fails               bool
 		says                []string
+		platform            string
 	}{
-		{"a pytest cache in the project", "", "cache", true, []string{".pytest_cache/v/cache/lastfailed", "must leave the project as it found it"}},
-		{"a file in the temporary folder", "", "temp", true, []string{"left-by-board-test", "temporary folder"}},
-		{"a file in the temporary folder, under its allowance", "@ID-MUT-354", "temp", false, nil},
-		{"a file under .metrics/", "", "metrics", false, nil},
-		{"a mark a fixture's tests leave in the marks folder", "", "mark", false, nil},
-		{"the report the scenario names", "", "report --coverage-report named.out", false, nil},
-		{"a file under node_modules/", "", "tool", false, nil},
-		{"bytecode beside the sources", "", "bytecode", true, []string{"__pycache__/board.cpython-314.pyc"}},
-		{"nothing", "", "nothing", false, nil},
+		{"a pytest cache in the project", "", "cache", true, []string{".pytest_cache/v/cache/lastfailed", "must leave the project as it found it"}, ""},
+		{"a file in the temporary folder", "", "temp", true, []string{"left-by-board-test", "temporary folder"}, ""},
+		{"a file in the temporary folder, under its allowance", "@ID-MUT-354", "temp", false, nil, ""},
+		{"a file under .metrics/", "", "metrics", false, nil, ""},
+		{"a mark a fixture's tests leave in the marks folder", "", "mark", false, nil, ""},
+		{"the report the scenario names", "", "report --coverage-report named.out", false, nil, ""},
+		{"a file under node_modules/", "", "tool", false, nil, ""},
+		{"bytecode beside the sources", "", "bytecode", true, []string{"__pycache__/board.cpython-314.pyc"}, ""},
+		{"a test binary Windows keeps locked in a worker's temporary folder", "", "locked", false, nil, "windows"},
+		{"the same file on a system that deletes running binaries", "", "locked", true, []string{"src.test.exe"}, "linux"},
+		{"nothing", "", "nothing", false, nil, ""},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -81,7 +93,7 @@ func TestScenarioLeavesNoStrayFiles(t *testing.T) {
 			suite := godog.TestSuite{
 				Name: "stray files",
 				ScenarioInitializer: func(sc *godog.ScenarioContext) {
-					initialize(sc, strayDriver{elsewhere: t.TempDir()})
+					initialize(sc, strayDriver{elsewhere: t.TempDir(), platform: c.platform})
 				},
 				Options: &godog.Options{
 					Format:          "pretty",
