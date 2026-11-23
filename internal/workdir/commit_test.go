@@ -12,7 +12,6 @@ import (
 	"github.com/donvargax/itos-cc/internal/past"
 	"github.com/donvargax/itos-cc/internal/project"
 	"github.com/donvargax/itos-cc/internal/selection/port"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/settings"
 )
 
 // committed lays files out as the working directory of a repository, commits
@@ -47,16 +46,24 @@ func (g Git) run(ctx context.Context, args ...string) (string, error) {
 // GitFor is the Git of dir.
 func GitFor(dir string) Git { return Git{Dir: dir} }
 
+// config is a settings reader of its own: the text "exclude: [x]" excludes x,
+// "exclude: {a: b}" is invalid, and no text excludes nothing.
 func config(root string, text []byte) port.SettingsReader {
-	return settings.Reader{Source: held{root: root, text: text}}
+	return reader{root: root, text: string(text)}
 }
 
-type held struct {
-	root string
-	text []byte
-}
+type reader struct{ root, text string }
 
-func (h held) Read(context.Context) (string, []byte, error) { return h.root, h.text, nil }
+func (r reader) ReadSelection(context.Context) (port.Settings, port.SettingsFailure) {
+	switch {
+	case strings.Contains(r.text, "{a: b}"):
+		return port.Settings{}, &port.SettingsInvalid{Reason: "exclude must be a list", Key: "exclude"}
+	case strings.HasPrefix(r.text, "exclude: ["):
+		glob := strings.TrimSuffix(strings.TrimPrefix(strings.TrimSpace(r.text), "exclude: ["), "]")
+		return port.Settings{Root: r.root, Exclude: []string{glob}}, nil
+	}
+	return port.Settings{Root: r.root}, nil
+}
 
 const alpha = "export function alpha(): number {\n  return 1;\n}\n"
 
