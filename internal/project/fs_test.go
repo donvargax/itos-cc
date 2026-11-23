@@ -52,11 +52,13 @@ func TestDiscoverInChoosesByTheRulesOfTheDisk(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantSources := []string{"/r/app/lib/m.dart", "/r/lib/dist/f.ts", "/r/src/a.ts"}
+	// Windows names a path from its drive: /r is D:\r there.
+	slash := func(path string) string { return filepath.ToSlash(strings.TrimPrefix(path, filepath.VolumeName(path))) }
 	got := make([]string, 0, len(found.Sources))
 	for _, s := range found.Sources {
-		got = append(got, filepath.ToSlash(s))
+		got = append(got, slash(s))
 	}
-	if !slices.Equal(got, wantSources) || len(found.Tests) != 1 || filepath.ToSlash(found.Tests[0]) != "/r/src/a.test.ts" {
+	if !slices.Equal(got, wantSources) || len(found.Tests) != 1 || slash(found.Tests[0]) != "/r/src/a.test.ts" {
 		t.Errorf("discovered %q and %q, want %q and the one test", got, found.Tests, wantSources)
 	}
 	if _, err := DiscoverIn(t.Context(), h, []string{"/r/none"}, BuildOutputIn(h)); err == nil {
