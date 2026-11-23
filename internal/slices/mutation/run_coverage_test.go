@@ -12,6 +12,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/coverage/port"
 	aggregate "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
+	selporttest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
@@ -140,5 +141,42 @@ func TestARunThatFoundNoGapReportsItsFailureAlone(t *testing.T) {
 	code := Run{Repeat: 1, JSON: true}.Run(t.Context(), &cli.UI{Stdout: &out, Stderr: &errOut}, Handler{Platform: "linux"}, cli.Written{})
 	if code == 0 || !strings.Contains(out.String(), `"problems"`) || strings.Contains(out.String(), `"coverage.`) {
 		t.Errorf("exit %d\n%s%s", code, out.String(), errOut.String())
+	}
+}
+
+// producerSpy notes the producer each coverage fingerprint is asked for, and
+// calls every function unsupported so strict stops right after reading it.
+type producerSpy struct {
+	mutants.Fingerprints
+	producers []string
+}
+
+func (s *producerSpy) Unsupported(context.Context, string, string, string) (string, mutants.InputFailure) {
+	return "outside the tree", nil
+}
+
+func (s *producerSpy) Coverage(_ context.Context, _, _, producer string, _ map[string]string) (map[string]string, mutants.InputFailure) {
+	s.producers = append(s.producers, producer)
+	return nil, nil
+}
+
+// The cached evidence a strict run reads is the evidence of the own tests'
+// measurement, not the whole suite's: its producer is the own-tests one, so a
+// run that measured the whole suite is not taken for it. No scenario reads
+// the producer a cached check was made with.
+func TestStrictReadsCachedCoverageOfTheOwnTests(t *testing.T) {
+	root := t.TempDir()
+	src := "package board\n\nfunc Pos(x int) bool {\n\treturn x > 0\n}\n"
+	path := filepath.Join(root, "board.go")
+	inputs := &mutantstest.Inputs{Dir: root, Files: map[string]string{path: src}, Imports: map[string][]string{path: nil}}
+	spy := &producerSpy{Fingerprints: inputs}
+	h := Handler{Tree: selporttest.TreeOf(root, map[string]string{"board.go": src}, nil), Surroundings: inputs, Toolchain: inputs, Fingerprints: spy, Reach: inputs,
+		Store: &mutantstest.Snapshots{RootDir: root}, Dir: root}
+	gaps, err := h.strict(t.Context(), RunQuery{}, &mutants.Options{}, strictCoverage{root: root, languages: []string{"go"}, sources: []string{path}})
+	if err != nil || gaps == nil || len(gaps.Unsupported) != 1 {
+		t.Fatalf("strict: %+v, %v", gaps, err)
+	}
+	if len(spy.producers) != 1 || !strings.HasSuffix(spy.producers[0], "scope=own") {
+		t.Fatalf("producers %q; want the own tests' one", spy.producers)
 	}
 }
