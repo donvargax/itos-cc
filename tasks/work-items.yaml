@@ -6796,8 +6796,8 @@ items:
   - id: T-247
     title: Run the owned command's machine test with 5,000 cases in the nightly
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: T-248
