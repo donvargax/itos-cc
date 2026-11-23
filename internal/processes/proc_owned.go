@@ -190,18 +190,23 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 
 	stopReader := &cleanupSignal{done: make(chan struct{})}
 	for i := range captures {
-		captures[i].done = make(chan error, 1)
+		done := make(chan capturedOutput, 1)
+		captures[i].done = done
 		stopReader.readers = append(stopReader.readers, captures[i].reader)
 		// The kept output takes the command's bytes as they come, bounded;
-		// a caller's own writer gets them once the group is joined, as
-		// before, each counted against the cap as it is read.
-		var into io.Writer = s.kept
-		if captures[i].target != io.Writer(s.kept) {
-			into = &countedWriter{to: &captures[i].buffer, kept: s.kept}
-		}
-		go func(capture *ownedOutputCapture, into io.Writer) {
-			capture.done <- readOwnedCommandOutput(capture.reader, into)
-		}(&captures[i], into)
+		// a caller's own writer gets them once the group is joined, each
+		// counted against the cap as it is read. The reader holds them in a
+		// buffer of its own and hands them over on done, so the run
+		// goroutine never reads what a reader is still writing.
+		go func(reader *os.File, holdForTarget bool) {
+			held := &bytes.Buffer{}
+			var into io.Writer = s.kept
+			if holdForTarget {
+				into = &countedWriter{to: held, kept: s.kept}
+			}
+			err := readOwnedCommandOutput(reader, into)
+			done <- capturedOutput{held: held, err: err}
+		}(captures[i].reader, captures[i].target != io.Writer(s.kept))
 	}
 
 	if err := cmd.Start(); err != nil {
@@ -210,10 +215,10 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 		}
 		stopReader.activate((&CleanupBudget{}).until())
 		for _, capture := range captures {
-			readErr := <-capture.done
+			read := <-capture.done
 			_ = capture.reader.Close()
-			if readErr != nil {
-				err = errors.Join(err, fmt.Errorf("join command output reader: %w", readErr))
+			if read.err != nil {
+				err = errors.Join(err, fmt.Errorf("join command output reader: %w", read.err))
 			}
 		}
 		return err
@@ -255,17 +260,16 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 	if err := waitOwnedProcessGroup(s.calls, pgid, deadline, platform); err != nil {
 		cleanupErr = errors.Join(cleanupErr, err)
 	}
-	for i := range captures {
-		capture := &captures[i]
-		readErr := <-capture.done
+	for _, capture := range captures {
+		read := <-capture.done
 		_ = capture.reader.Close()
 		if capture.target != io.Writer(s.kept) {
-			if _, err := io.Copy(capture.target, &capture.buffer); err != nil {
+			if _, err := io.Copy(capture.target, read.held); err != nil {
 				cleanupErr = errors.Join(cleanupErr, fmt.Errorf("preserve command output: %w", err))
 			}
 		}
-		if readErr != nil {
-			cleanupErr = errors.Join(cleanupErr, fmt.Errorf("join command output reader: %w", readErr))
+		if read.err != nil {
+			cleanupErr = errors.Join(cleanupErr, fmt.Errorf("join command output reader: %w", read.err))
 		}
 	}
 	if cleanupErr != nil {
@@ -341,13 +345,19 @@ func (signal *cleanupSignal) activate(deadline time.Time) {
 }
 
 // ownedOutputCapture is one pipe of a command's output: read into the
-// kept output, or into buffer for a caller's own target.
+// kept output, or into a buffer its reader holds for a caller's own target.
 type ownedOutputCapture struct {
 	reader *os.File
 	writer *os.File
 	target io.Writer
-	buffer bytes.Buffer
-	done   chan error
+	done   chan capturedOutput
+}
+
+// capturedOutput is what a reader hands over once it is done: the bytes it
+// held for the caller's own target, and its error.
+type capturedOutput struct {
+	held *bytes.Buffer
+	err  error
 }
 
 func killOwnedProcessGroup(calls groupCalls, platform string, pgid int) error {
