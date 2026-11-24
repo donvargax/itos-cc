@@ -94,7 +94,7 @@
     "cmd/itos-cc/scenarios_tests_test.go": "75ec66b7dfc0fdf33d535d824d4d190c8e34aeab12c902851f4d3a4fecbfe477",
     "cmd/itos-cc/scenarios_timestamps_test.go": "b732dad25e6e29898df031637f49de6d0ca4d8752c82d3a4a53ef57c6bf691ac",
     "cmd/itos-cc/scenarios_workers_test.go": "47efdebc4b24c4b7dc00e4946083597f425970d753b23c4b48bfbe2264997d70",
-    "cmd/itos-cc/selection_test.go": "e0285d9c245d9fb4340018ed146f1d50b1961d2b39d1395370a22d75f2231a66",
+    "cmd/itos-cc/selection_test.go": "a73cb21352a8cff6b79fdf2e5108350e527854ea3c0d79dd27152c2efa40102f",
     "cmd/itos-cc/snapshot_test.go": "3c42201e9776999effa78402ca5fe919ab356123b4fda3e80d02eba3f099f7da",
     "cmd/itos-cc/strict_changed_lines_counted_test.go": "4d54698197a8ac70e2689087fc1a6b02b29689bf0e542cb06d9e95181ad3adda",
     "cmd/itos-cc/strict_changed_lines_test.go": "106dca2ed4bd8155db1d51de5e08e3d435d076992d30ad50e386f01fb4cb1c06",
@@ -121,7 +121,7 @@
     "internal/cli/selection_test.go": "fb53602786ffb3ccaf3672372b6dc911e317458b8d75185e75bbf61295dd3a1d",
     "internal/cli/show_test.go": "2e28f8d89e1fd49e214124f0ac3328b66d7efc4f7d6bd547da210685194133f4",
     "internal/slices/crap/crap_test.go": "61e64cc582358bea74ebf0424a1c837f631be6df12c370afbf038e4a741faedd",
-    "internal/slices/dry/dry_test.go": "57d4117785cb88680284f69e024b7af52450cc5caad9513a45dbf617bce69560",
+    "internal/slices/dry/dry_test.go": "8cf53e9326d57b72ee682dea01fdaa4bc0cb69f050502f093a0510d167653e8c",
     "internal/slices/graph/command_test.go": "0cd6773e84e30e4740445ddb8f3bb29a98b99aaa937332a38c6cf78cd86c0e94",
     "internal/slices/graph/disk_test.go": "ae71ee2020b4eda1b693ca2240d464d02ec3c0cb85b7b323252d4e21f0a8a402",
     "internal/slices/graph/graph_test.go": "f6b454d09c042e8d4b7d16bff3d0d6f4f50707a1528b9cb08fa59c97cff81412",
@@ -145,7 +145,7 @@
     "internal/slices/mutation/sample_test.go": "6bd60b519e3e7b76ec81c9146057acfc6ccab10ab3356ce5f904be0645de9c4a",
     "internal/slices/mutation/show_test.go": "edf7459a87bb96357a3984b7a1c76f1ea6e54bf5d665c6db343b54df67ffed8e",
     "internal/slices/scrap/scrap_test.go": "ca0396c1b8036cd1b2dcda313bf86c8ea1d000db965a50f54ff158a700b7d237",
-    "internal/slices/units/units_test.go": "fbe4a3fb2fc11fea766be2eeacaaa11bb74a8f7be5732013d6587dcb9c308c77",
+    "internal/slices/units/units_test.go": "ff0e8746dcd446bf898a908d18c2a79b29187c002cc94bbb5c7d311ec60d4b66",
     "internal/slices/version/version_test.go": "19d9b853d689b5f38ab438dd6c98ee1758f01ba2ad88839e6185f7564bb2a258"
   },
   "units": [
@@ -166,7 +166,7 @@
           "offset": 197,
           "original": "==",
           "replacement": "!=",
-          "outcome": "timeout"
+          "outcome": "killed"
         },
         {
           "line": 44,
@@ -174,7 +174,7 @@
           "offset": 200,
           "original": "0",
           "replacement": "1",
-          "outcome": "timeout"
+          "outcome": "killed"
         },
         {
           "line": 44,
@@ -190,7 +190,7 @@
           "offset": 212,
           "original": "!=",
           "replacement": "==",
-          "outcome": "timeout"
+          "outcome": "killed"
         }
       ]
     },
@@ -252,7 +252,7 @@
           "offset": 92,
           "original": "==",
           "replacement": "!=",
-          "outcome": "timeout"
+          "outcome": "killed"
         },
         {
           "line": 94,
@@ -260,7 +260,7 @@
           "offset": 95,
           "original": "0",
           "replacement": "1",
-          "outcome": "timeout"
+          "outcome": "killed"
         },
         {
           "line": 95,
@@ -268,7 +268,7 @@
           "offset": 108,
           "original": "false",
           "replacement": "true",
-          "outcome": "timeout"
+          "outcome": "killed"
         },
         {
           "line": 97,
@@ -284,7 +284,7 @@
           "offset": 187,
           "original": ">",
           "replacement": ">=",
-          "outcome": "timeout"
+          "outcome": "killed"
         },
         {
           "line": 100,
@@ -300,7 +300,7 @@
           "offset": 220,
           "original": "true",
           "replacement": "false",
-          "outcome": "timeout"
+          "outcome": "killed"
         }
       ]
     },

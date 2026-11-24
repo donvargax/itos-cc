@@ -94,7 +94,7 @@
     "cmd/itos-cc/scenarios_tests_test.go": "75ec66b7dfc0fdf33d535d824d4d190c8e34aeab12c902851f4d3a4fecbfe477",
     "cmd/itos-cc/scenarios_timestamps_test.go": "b732dad25e6e29898df031637f49de6d0ca4d8752c82d3a4a53ef57c6bf691ac",
     "cmd/itos-cc/scenarios_workers_test.go": "47efdebc4b24c4b7dc00e4946083597f425970d753b23c4b48bfbe2264997d70",
-    "cmd/itos-cc/selection_test.go": "e0285d9c245d9fb4340018ed146f1d50b1961d2b39d1395370a22d75f2231a66",
+    "cmd/itos-cc/selection_test.go": "a73cb21352a8cff6b79fdf2e5108350e527854ea3c0d79dd27152c2efa40102f",
     "cmd/itos-cc/snapshot_test.go": "3c42201e9776999effa78402ca5fe919ab356123b4fda3e80d02eba3f099f7da",
     "cmd/itos-cc/strict_changed_lines_counted_test.go": "4d54698197a8ac70e2689087fc1a6b02b29689bf0e542cb06d9e95181ad3adda",
     "cmd/itos-cc/strict_changed_lines_test.go": "106dca2ed4bd8155db1d51de5e08e3d435d076992d30ad50e386f01fb4cb1c06",
@@ -108,7 +108,7 @@
     "cmd/itos-cc/subprocess_test.go": "c39ea18d96eb8c463d4e2b537ae6496684ffb66c58b8ec5bf8e600248411abac",
     "cmd/itos-cc/uncovered_fails_closed_test.go": "819bd5831a7fe6fbb3fddcf099906ec21e74cef658c8f2e912b6f700c2771b6c",
     "cmd/itos-cc/whole_suite_freshness_all_test.go": "ace8c02c92f969d969ab9f90230088c1b718d546e724493b1436cff1b82839e9",
-    "internal/slices/dry/dry_test.go": "57d4117785cb88680284f69e024b7af52450cc5caad9513a45dbf617bce69560"
+    "internal/slices/dry/dry_test.go": "8cf53e9326d57b72ee682dea01fdaa4bc0cb69f050502f093a0510d167653e8c"
   },
   "units": [
     {
@@ -163,8 +163,8 @@
       "hash": "12af16157c9eaee3",
       "start_line": 177,
       "end_line": 226,
-      "killed": 14,
-      "survived": 1,
+      "killed": 15,
+      "survived": 0,
       "uncovered": 0,
       "sites": 15,
       "mutants": [
@@ -190,34 +190,7 @@
           "offset": 306,
           "original": ">",
           "replacement": ">=",
-          "outcome": "survived",
-          "scope": "listed",
-          "tests": [
-            "ID-CLI-31",
-            "ID-DRY-01",
-            "ID-DRY-02",
-            "ID-DRY-03",
-            "ID-DRY-04",
-            "ID-DRY-19",
-            "ID-DRY-05",
-            "ID-DRY-06",
-            "ID-DRY-07",
-            "ID-DRY-08",
-            "ID-DRY-09",
-            "ID-DRY-10",
-            "ID-DRY-11",
-            "ID-DRY-12",
-            "ID-DRY-13",
-            "ID-DRY-14",
-            "ID-DRY-15",
-            "ID-DRY-16",
-            "ID-DRY-17",
-            "ID-DRY-18",
-            "ID-HIST-03",
-            "ID-SNAP-01",
-            "ID-SNAP-03",
-            "ID-SNAP-09"
-          ]
+          "outcome": "killed"
         },
         {
           "line": 187,
@@ -320,7 +293,7 @@
     {
       "namespace": "github.com/donvargax/itos-cc/internal/slices/dry.Handler",
       "name": "handleAt",
-      "hash": "b3f39b561099b2c4",
+      "hash": "18add660d5cee1b5",
       "start_line": 232,
       "end_line": 253,
       "killed": 2,
@@ -339,7 +312,7 @@
         {
           "line": 247,
           "column": 47,
-          "offset": 738,
+          "offset": 760,
           "original": "!=",
           "replacement": "==",
           "outcome": "killed"
