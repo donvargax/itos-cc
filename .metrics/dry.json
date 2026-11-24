@@ -743,7 +743,7 @@
       }
     },
     {
-      "score": 1,
+      "score": 0.961,
       "language": "go",
       "left": {
         "file": "internal/slices/scrap/scrap.go",
@@ -759,7 +759,7 @@
         "end_line": 205,
         "namespace": "github.com/donvargax/itos-cc/internal/slices/units.Handler",
         "name": "handleAt",
-        "nodes": 334
+        "nodes": 339
       }
     },
     {
@@ -1520,26 +1520,6 @@
         "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
         "name": "relativeName",
         "nodes": 49
-      }
-    },
-    {
-      "score": 0.838,
-      "language": "go",
-      "left": {
-        "file": "internal/workdir/commit.go",
-        "start_line": 183,
-        "end_line": 188,
-        "namespace": "github.com/donvargax/itos-cc/internal/workdir",
-        "name": "failed",
-        "nodes": 68
-      },
-      "right": {
-        "file": "internal/workdir/gitobjects.go",
-        "start_line": 65,
-        "end_line": 70,
-        "namespace": "github.com/donvargax/itos-cc/internal/workdir.Git",
-        "name": "failure",
-        "nodes": 62
       }
     },
     {
@@ -2453,8 +2433,8 @@
     },
     {
       "language": "go",
-      "min_score": 1,
-      "max_score": 1,
+      "min_score": 0.961,
+      "max_score": 0.961,
       "members": [
         {
           "file": "internal/slices/scrap/scrap.go",
@@ -2470,7 +2450,7 @@
           "end_line": 205,
           "namespace": "github.com/donvargax/itos-cc/internal/slices/units.Handler",
           "name": "handleAt",
-          "nodes": 334
+          "nodes": 339
         }
       ]
     },
@@ -2886,29 +2866,6 @@
           "namespace": "github.com/donvargax/itos-cc/internal/slices/mutation/domain",
           "name": "relativeName",
           "nodes": 49
-        }
-      ]
-    },
-    {
-      "language": "go",
-      "min_score": 0.838,
-      "max_score": 0.838,
-      "members": [
-        {
-          "file": "internal/workdir/commit.go",
-          "start_line": 183,
-          "end_line": 188,
-          "namespace": "github.com/donvargax/itos-cc/internal/workdir",
-          "name": "failed",
-          "nodes": 68
-        },
-        {
-          "file": "internal/workdir/gitobjects.go",
-          "start_line": 65,
-          "end_line": 70,
-          "namespace": "github.com/donvargax/itos-cc/internal/workdir.Git",
-          "name": "failure",
-          "nodes": 62
         }
       ]
     },

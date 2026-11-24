@@ -3759,7 +3759,7 @@
       "language": "go",
       "action": "LEAVE_ALONE",
       "pressure": 0,
-      "examples": 2,
+      "examples": 3,
       "setup_lines": 0,
       "average_score": 1,
       "max_score": 1,
@@ -3768,8 +3768,8 @@
       "details": [
         {
           "name": "TestEachSelectionFailureKindHasItsProblem",
-          "start_line": 16,
-          "end_line": 46,
+          "start_line": 17,
+          "end_line": 47,
           "table": true,
           "score": 1,
           "lines": 12,
@@ -3780,13 +3780,25 @@
         },
         {
           "name": "TestAnErrorOfNoKindIsNotSelections",
-          "start_line": 48,
-          "end_line": 52,
+          "start_line": 49,
+          "end_line": 53,
           "score": 1,
           "lines": 5,
           "raw_lines": 5,
           "decisions": 0,
           "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestEachPastFailureHasItsProblem",
+          "start_line": 59,
+          "end_line": 80,
+          "table": true,
+          "score": 1,
+          "lines": 14,
+          "raw_lines": 22,
+          "decisions": 0,
+          "assertions": 3,
           "mocks": 0
         }
       ]
@@ -12062,19 +12074,19 @@
       "file": "internal/past/past_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 9.9,
+      "pressure": 11.1,
       "examples": 5,
       "setup_lines": 0,
-      "average_score": 3,
+      "average_score": 3.2,
       "max_score": 7.7,
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestKeptMeasuresOnceAndServesTheKeptAnswer\" (lines 59-94) is 36 lines: split it into examples that each check one behavior"
+          "text": "\"TestKeptMeasuresOnceAndServesTheKeptAnswer\" (lines 65-100) is 36 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestKeptMeasuresOnceAndServesTheKeptAnswer\" (lines 59-94) takes 1 branch or loop: a test should not need logic; split the cases"
+          "text": "\"TestKeptMeasuresOnceAndServesTheKeptAnswer\" (lines 65-100) takes 1 branch or loop: a test should not need logic; split the cases"
         }
       ],
       "clusters": null,
@@ -12093,19 +12105,19 @@
         {
           "name": "TestKeyFollowsTheQuestion",
           "start_line": 36,
-          "end_line": 55,
+          "end_line": 61,
           "table": true,
-          "score": 1.2,
-          "lines": 16,
-          "raw_lines": 20,
+          "score": 2.4,
+          "lines": 22,
+          "raw_lines": 26,
           "decisions": 0,
-          "assertions": 3,
+          "assertions": 4,
           "mocks": 0
         },
         {
           "name": "TestKeptMeasuresOnceAndServesTheKeptAnswer",
-          "start_line": 59,
-          "end_line": 94,
+          "start_line": 65,
+          "end_line": 100,
           "table": true,
           "score": 7.7,
           "smells": [
@@ -12120,8 +12132,8 @@
         },
         {
           "name": "TestFailuresAndTheStoreOfNothing",
-          "start_line": 97,
-          "end_line": 125,
+          "start_line": 103,
+          "end_line": 131,
           "score": 3.8,
           "lines": 29,
           "raw_lines": 29,
@@ -12131,8 +12143,8 @@
         },
         {
           "name": "TestTheFakeSourceOpensWhatItHolds",
-          "start_line": 128,
-          "end_line": 137,
+          "start_line": 134,
+          "end_line": 143,
           "score": 1,
           "lines": 10,
           "raw_lines": 10,
@@ -13209,6 +13221,80 @@
       ]
     },
     {
+      "file": "internal/project/fs_test.go",
+      "language": "go",
+      "action": "AUTO_REFACTOR",
+      "pressure": 19.9,
+      "examples": 3,
+      "setup_lines": 0,
+      "average_score": 7.6,
+      "max_score": 11,
+      "recommendations": [
+        {
+          "confidence": "HIGH",
+          "text": "\"TestWalkDirInVisitsEntriesInOrder\" (lines 72-111) is 40 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestTheDiskIsAnFS\" (lines 115-155) is 41 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestDiscoverInChoosesByTheRulesOfTheDisk\" (lines 42-67) takes 1 branch or loop: a test should not need logic; split the cases"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestWalkDirInVisitsEntriesInOrder\" (lines 72-111) takes 2 branches or loops: a test should not need logic; split the cases"
+        }
+      ],
+      "clusters": null,
+      "details": [
+        {
+          "name": "TestDiscoverInChoosesByTheRulesOfTheDisk",
+          "start_line": 42,
+          "end_line": 67,
+          "score": 5.7,
+          "smells": [
+            "logic"
+          ],
+          "lines": 26,
+          "raw_lines": 26,
+          "decisions": 1,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestWalkDirInVisitsEntriesInOrder",
+          "start_line": 72,
+          "end_line": 111,
+          "score": 11,
+          "smells": [
+            "large",
+            "logic"
+          ],
+          "lines": 40,
+          "raw_lines": 40,
+          "decisions": 2,
+          "assertions": 5,
+          "mocks": 0
+        },
+        {
+          "name": "TestTheDiskIsAnFS",
+          "start_line": 115,
+          "end_line": 155,
+          "score": 6.2,
+          "smells": [
+            "large"
+          ],
+          "lines": 41,
+          "raw_lines": 41,
+          "decisions": 0,
+          "assertions": 9,
+          "mocks": 0
+        }
+      ]
+    },
+    {
       "file": "internal/project/origin_test.go",
       "language": "go",
       "action": "LEAVE_ALONE",
@@ -13318,9 +13404,9 @@
       "language": "go",
       "action": "AUTO_REFACTOR",
       "pressure": 28.2,
-      "examples": 5,
+      "examples": 6,
       "setup_lines": 0,
-      "average_score": 6.6,
+      "average_score": 5.7,
       "max_score": 10.5,
       "recommendations": [
         {
@@ -13437,6 +13523,17 @@
           "raw_lines": 24,
           "decisions": 1,
           "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestGitInRunsInTheDirectoryGiven",
+          "start_line": 164,
+          "end_line": 171,
+          "score": 1,
+          "lines": 8,
+          "raw_lines": 8,
+          "decisions": 0,
+          "assertions": 1,
           "mocks": 0
         }
       ]
@@ -14368,9 +14465,9 @@
       "language": "go",
       "action": "AUTO_REFACTOR",
       "pressure": 12.3,
-      "examples": 11,
+      "examples": 12,
       "setup_lines": 0,
-      "average_score": 2.1,
+      "average_score": 2,
       "max_score": 7.5,
       "recommendations": [
         {
@@ -14511,6 +14608,17 @@
           "raw_lines": 8,
           "decisions": 0,
           "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestHandleOfAnEmptyProjectChecksTheWholeAndFindsNothing",
+          "start_line": 364,
+          "end_line": 374,
+          "score": 1,
+          "lines": 11,
+          "raw_lines": 11,
+          "decisions": 0,
+          "assertions": 2,
           "mocks": 0
         }
       ]
@@ -23913,31 +24021,51 @@
       "file": "internal/workdir/commit_test.go",
       "language": "go",
       "action": "AUTO_REFACTOR",
-      "pressure": 18.2,
-      "examples": 6,
+      "pressure": 44.8,
+      "examples": 12,
       "setup_lines": 0,
-      "average_score": 4,
-      "max_score": 13,
+      "average_score": 4.7,
+      "max_score": 17.5,
       "recommendations": [
         {
           "confidence": "HIGH",
-          "text": "\"TestCommitsOpenAReadsTheTreeGitRecorded\" (lines 73-132) is 60 lines: split it into examples that each check one behavior"
+          "text": "\"TestCommitsOpenAReadsTheTreeGitRecorded\" (lines 76-135) is 60 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "HIGH",
-          "text": "\"TestDiskWritesWholeFiles\" (lines 239-270) is 32 lines: split it into examples that each check one behavior"
+          "text": "\"TestDiskWritesWholeFiles\" (lines 243-293) is 51 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestTreeReadsWhatTheObjectsGive\" (lines 379-443) is 65 lines: split it into examples that each check one behavior"
+        },
+        {
+          "confidence": "HIGH",
+          "text": "\"TestCommitFilesAnswerAsADiskDoes\" (lines 457-487) is 31 lines: split it into examples that each check one behavior"
         },
         {
           "confidence": "MEDIUM",
-          "text": "\"TestCommitsOpenAReadsTheTreeGitRecorded\" (lines 73-132) makes 16 assertions: it checks several behaviors; split it"
+          "text": "\"TestCommitsOpenAReadsTheTreeGitRecorded\" (lines 76-135) makes 16 assertions: it checks several behaviors; split it"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestDiskWritesWholeFiles\" (lines 243-293) makes 13 assertions: it checks several behaviors; split it"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestTreeReadsWhatTheObjectsGive\" (lines 379-443) takes 2 branches or loops: a test should not need logic; split the cases"
+        },
+        {
+          "confidence": "MEDIUM",
+          "text": "\"TestTreeReadsWhatTheObjectsGive\" (lines 379-443) makes 13 assertions: it checks several behaviors; split it"
         }
       ],
       "clusters": null,
       "details": [
         {
           "name": "TestCommitsOpenAReadsTheTreeGitRecorded",
-          "start_line": 73,
-          "end_line": 132,
+          "start_line": 76,
+          "end_line": 135,
           "score": 13,
           "smells": [
             "large",
@@ -23951,8 +24079,8 @@
         },
         {
           "name": "TestCommitsOpenFails",
-          "start_line": 159,
-          "end_line": 178,
+          "start_line": 162,
+          "end_line": 181,
           "score": 2,
           "lines": 20,
           "raw_lines": 20,
@@ -23962,8 +24090,8 @@
         },
         {
           "name": "TestCommitsOpenWithoutARepository",
-          "start_line": 181,
-          "end_line": 191,
+          "start_line": 184,
+          "end_line": 194,
           "score": 1,
           "lines": 11,
           "raw_lines": 11,
@@ -23973,8 +24101,8 @@
         },
         {
           "name": "TestGitCommonDirIsSharedByLinkedWorktrees",
-          "start_line": 195,
-          "end_line": 212,
+          "start_line": 198,
+          "end_line": 215,
           "score": 1.6,
           "lines": 18,
           "raw_lines": 18,
@@ -23984,8 +24112,8 @@
         },
         {
           "name": "TestGitBlobs",
-          "start_line": 215,
-          "end_line": 235,
+          "start_line": 218,
+          "end_line": 238,
           "score": 2.2,
           "lines": 21,
           "raw_lines": 21,
@@ -23995,16 +24123,94 @@
         },
         {
           "name": "TestDiskWritesWholeFiles",
-          "start_line": 239,
-          "end_line": 270,
-          "score": 4.4,
+          "start_line": 243,
+          "end_line": 293,
+          "score": 9.7,
+          "smells": [
+            "large",
+            "assertion-heavy"
+          ],
+          "lines": 51,
+          "raw_lines": 51,
+          "decisions": 0,
+          "assertions": 13,
+          "mocks": 0
+        },
+        {
+          "name": "TestReadBlobTakesWhatBatchSays",
+          "start_line": 297,
+          "end_line": 308,
+          "table": true,
+          "score": 1,
+          "lines": 12,
+          "raw_lines": 12,
+          "decisions": 0,
+          "assertions": 2,
+          "mocks": 0
+        },
+        {
+          "name": "TestOpenEndsWhereTheObjectsFail",
+          "start_line": 359,
+          "end_line": 374,
+          "table": true,
+          "score": 1.2,
+          "lines": 16,
+          "raw_lines": 16,
+          "decisions": 0,
+          "assertions": 3,
+          "mocks": 0
+        },
+        {
+          "name": "TestTreeReadsWhatTheObjectsGive",
+          "start_line": 379,
+          "end_line": 443,
+          "table": true,
+          "score": 17.5,
+          "smells": [
+            "large",
+            "logic",
+            "assertion-heavy"
+          ],
+          "lines": 65,
+          "raw_lines": 65,
+          "decisions": 2,
+          "assertions": 13,
+          "mocks": 0
+        },
+        {
+          "name": "TestCommitFilesAnswerAsADiskDoes",
+          "start_line": 457,
+          "end_line": 487,
+          "score": 4.2,
           "smells": [
             "large"
           ],
-          "lines": 32,
-          "raw_lines": 32,
+          "lines": 31,
+          "raw_lines": 31,
           "decisions": 0,
           "assertions": 8,
+          "mocks": 0
+        },
+        {
+          "name": "TestEntriesLeaveOutLinksAndSubmodules",
+          "start_line": 491,
+          "end_line": 502,
+          "score": 1,
+          "lines": 12,
+          "raw_lines": 12,
+          "decisions": 0,
+          "assertions": 1,
+          "mocks": 0
+        },
+        {
+          "name": "TestGitFailuresAreTold",
+          "start_line": 506,
+          "end_line": 527,
+          "score": 2.4,
+          "lines": 22,
+          "raw_lines": 22,
+          "decisions": 0,
+          "assertions": 5,
           "mocks": 0
         }
       ]

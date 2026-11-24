@@ -394,8 +394,8 @@
       "start_line": 308,
       "end_line": 326,
       "complexity": 6,
-      "coverage": 72.7,
-      "crap": 6.7
+      "coverage": 81.8,
+      "crap": 6.2
     },
     {
       "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
@@ -955,8 +955,8 @@
       "start_line": 54,
       "end_line": 67,
       "complexity": 4,
-      "coverage": 66.7,
-      "crap": 4.6
+      "coverage": 100,
+      "crap": 4
     },
     {
       "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
@@ -964,10 +964,10 @@
       "language": "go",
       "file": "cmd/itos-cc/selection.go",
       "start_line": 71,
-      "end_line": 81,
-      "complexity": 3,
-      "coverage": 75,
-      "crap": 3.1
+      "end_line": 79,
+      "complexity": 2,
+      "coverage": 100,
+      "crap": 2
     },
     {
       "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
@@ -6793,8 +6793,8 @@
       "name": "pastFailure",
       "language": "go",
       "file": "internal/past/past.go",
-      "start_line": 39,
-      "end_line": 39,
+      "start_line": 38,
+      "end_line": 38,
       "complexity": 1,
       "coverage": null,
       "crap": null
@@ -6804,8 +6804,8 @@
       "name": "Error",
       "language": "go",
       "file": "internal/past/past.go",
-      "start_line": 40,
-      "end_line": 40,
+      "start_line": 39,
+      "end_line": 39,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -6815,8 +6815,8 @@
       "name": "pastFailure",
       "language": "go",
       "file": "internal/past/past.go",
-      "start_line": 46,
-      "end_line": 46,
+      "start_line": 45,
+      "end_line": 45,
       "complexity": 1,
       "coverage": null,
       "crap": null
@@ -6826,8 +6826,8 @@
       "name": "Error",
       "language": "go",
       "file": "internal/past/past.go",
-      "start_line": 47,
-      "end_line": 47,
+      "start_line": 46,
+      "end_line": 46,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -6862,7 +6862,7 @@
       "start_line": 113,
       "end_line": 129,
       "complexity": 3,
-      "coverage": 87.5,
+      "coverage": 100,
       "crap": 3
     },
     {
@@ -8094,8 +8094,8 @@
       "start_line": 93,
       "end_line": 98,
       "complexity": 2,
-      "coverage": 66.7,
-      "crap": 2.1
+      "coverage": 100,
+      "crap": 2
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/project",
@@ -8121,11 +8121,22 @@
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/project",
+      "name": "Supported",
+      "language": "go",
+      "file": "internal/project/project.go",
+      "start_line": 188,
+      "end_line": 188,
+      "complexity": 1,
+      "coverage": 100,
+      "crap": 1
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/internal/project",
       "name": "BuildOutputIn",
       "language": "go",
       "file": "internal/project/project.go",
-      "start_line": 190,
-      "end_line": 192,
+      "start_line": 193,
+      "end_line": 195,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -8270,8 +8281,8 @@
       "start_line": 23,
       "end_line": 23,
       "complexity": 1,
-      "coverage": 0,
-      "crap": 2
+      "coverage": 100,
+      "crap": 1
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/project",
@@ -8534,8 +8545,8 @@
       "start_line": 47,
       "end_line": 58,
       "complexity": 4,
-      "coverage": 71.4,
-      "crap": 4.4
+      "coverage": 100,
+      "crap": 4
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/project",
@@ -8545,8 +8556,8 @@
       "start_line": 62,
       "end_line": 92,
       "complexity": 13,
-      "coverage": 55.6,
-      "crap": 27.8
+      "coverage": 72.2,
+      "crap": 16.6
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/release",
@@ -8809,8 +8820,8 @@
       "start_line": 53,
       "end_line": 53,
       "complexity": 1,
-      "coverage": 0,
-      "crap": 2
+      "coverage": 100,
+      "crap": 1
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/selection/port.Cancelled",
@@ -20851,19 +20862,19 @@
       "name": "Open",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 81,
-      "end_line": 114,
+      "start_line": 79,
+      "end_line": 112,
       "complexity": 7,
-      "coverage": 85,
-      "crap": 7.2
+      "coverage": 100,
+      "crap": 7
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir.kept",
       "name": "path",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 124,
-      "end_line": 126,
+      "start_line": 122,
+      "end_line": 124,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -20873,8 +20884,8 @@
       "name": "Get",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 128,
-      "end_line": 130,
+      "start_line": 126,
+      "end_line": 128,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -20884,8 +20895,8 @@
       "name": "Put",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 132,
-      "end_line": 134,
+      "start_line": 130,
+      "end_line": 132,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -20895,8 +20906,8 @@
       "name": "newCommitTree",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 148,
-      "end_line": 150,
+      "start_line": 146,
+      "end_line": 148,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -20906,8 +20917,8 @@
       "name": "abs",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 153,
-      "end_line": 158,
+      "start_line": 151,
+      "end_line": 156,
       "complexity": 2,
       "coverage": 100,
       "crap": 2
@@ -20917,30 +20928,30 @@
       "name": "Discover",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 160,
-      "end_line": 179,
-      "complexity": 7,
-      "coverage": 76.9,
-      "crap": 7.6
+      "start_line": 158,
+      "end_line": 170,
+      "complexity": 5,
+      "coverage": 100,
+      "crap": 5
     },
     {
-      "namespace": "github.com/donvargax/itos-cc/internal/workdir",
-      "name": "failed",
+      "namespace": "github.com/donvargax/itos-cc/internal/workdir.commitTree",
+      "name": "discover",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 183,
-      "end_line": 188,
-      "complexity": 2,
-      "coverage": 0,
-      "crap": 6
+      "start_line": 173,
+      "end_line": 182,
+      "complexity": 3,
+      "coverage": 100,
+      "crap": 3
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir.commitTree",
       "name": "Changed",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 191,
-      "end_line": 193,
+      "start_line": 185,
+      "end_line": 187,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -20950,8 +20961,8 @@
       "name": "Exists",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 195,
-      "end_line": 198,
+      "start_line": 189,
+      "end_line": 192,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -20961,10 +20972,10 @@
       "name": "Read",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 200,
-      "end_line": 209,
+      "start_line": 194,
+      "end_line": 203,
       "complexity": 3,
-      "coverage": 83.3,
+      "coverage": 100,
       "crap": 3
     },
     {
@@ -20972,8 +20983,8 @@
       "name": "Exists",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 215,
-      "end_line": 217,
+      "start_line": 209,
+      "end_line": 211,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -20983,8 +20994,8 @@
       "name": "Read",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 219,
-      "end_line": 222,
+      "start_line": 213,
+      "end_line": 216,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -20994,8 +21005,8 @@
       "name": "WorkingDir",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 224,
-      "end_line": 224,
+      "start_line": 218,
+      "end_line": 218,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -21005,8 +21016,8 @@
       "name": "Abs",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 226,
-      "end_line": 228,
+      "start_line": 220,
+      "end_line": 222,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -21016,8 +21027,8 @@
       "name": "newCommitFS",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 246,
-      "end_line": 262,
+      "start_line": 240,
+      "end_line": 256,
       "complexity": 5,
       "coverage": 100,
       "crap": 5
@@ -21027,21 +21038,21 @@
       "name": "readSet",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 267,
-      "end_line": 278,
+      "start_line": 261,
+      "end_line": 272,
       "complexity": 3,
-      "coverage": 80,
-      "crap": 3.1
+      "coverage": 100,
+      "crap": 3
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir.commitFS",
       "name": "load",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 282,
-      "end_line": 304,
+      "start_line": 276,
+      "end_line": 298,
       "complexity": 6,
-      "coverage": 93.8,
+      "coverage": 100,
       "crap": 6
     },
     {
@@ -21049,19 +21060,19 @@
       "name": "fileContent",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 307,
-      "end_line": 333,
+      "start_line": 301,
+      "end_line": 327,
       "complexity": 6,
-      "coverage": 45,
-      "crap": 12
+      "coverage": 100,
+      "crap": 6
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir.commitFS",
       "name": "Lstat",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 335,
-      "end_line": 335,
+      "start_line": 329,
+      "end_line": 329,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -21071,8 +21082,8 @@
       "name": "Stat",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 337,
-      "end_line": 346,
+      "start_line": 331,
+      "end_line": 340,
       "complexity": 3,
       "coverage": 100,
       "crap": 3
@@ -21082,30 +21093,30 @@
       "name": "ReadDir",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 348,
-      "end_line": 366,
-      "complexity": 5,
-      "coverage": 76.9,
-      "crap": 5.3
+      "start_line": 342,
+      "end_line": 355,
+      "complexity": 3,
+      "coverage": 100,
+      "crap": 3
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir.commitFS",
       "name": "ReadFile",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 371,
-      "end_line": 383,
+      "start_line": 360,
+      "end_line": 372,
       "complexity": 3,
-      "coverage": 0,
-      "crap": 12
+      "coverage": 100,
+      "crap": 3
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir.info",
       "name": "Name",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 392,
-      "end_line": 392,
+      "start_line": 381,
+      "end_line": 381,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -21115,41 +21126,41 @@
       "name": "Size",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 393,
-      "end_line": 393,
+      "start_line": 382,
+      "end_line": 382,
       "complexity": 1,
-      "coverage": 0,
-      "crap": 2
+      "coverage": 100,
+      "crap": 1
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir.info",
       "name": "Mode",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 394,
-      "end_line": 399,
+      "start_line": 383,
+      "end_line": 388,
       "complexity": 2,
-      "coverage": 0,
-      "crap": 6
+      "coverage": 100,
+      "crap": 2
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir.info",
       "name": "ModTime",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 400,
-      "end_line": 400,
+      "start_line": 389,
+      "end_line": 389,
       "complexity": 1,
-      "coverage": 0,
-      "crap": 2
+      "coverage": 100,
+      "crap": 1
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir.info",
       "name": "IsDir",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 401,
-      "end_line": 401,
+      "start_line": 390,
+      "end_line": 390,
       "complexity": 1,
       "coverage": 100,
       "crap": 1
@@ -21159,11 +21170,11 @@
       "name": "Sys",
       "language": "go",
       "file": "internal/workdir/commit.go",
-      "start_line": 402,
-      "end_line": 402,
+      "start_line": 391,
+      "end_line": 391,
       "complexity": 1,
-      "coverage": 0,
-      "crap": 2
+      "coverage": 100,
+      "crap": 1
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir.Git",
@@ -21193,62 +21204,51 @@
       "language": "go",
       "file": "internal/workdir/gitobjects.go",
       "start_line": 45,
-      "end_line": 61,
-      "complexity": 5,
-      "coverage": 80,
-      "crap": 5.2
-    },
-    {
-      "namespace": "github.com/donvargax/itos-cc/internal/workdir.Git",
-      "name": "failure",
-      "language": "go",
-      "file": "internal/workdir/gitobjects.go",
-      "start_line": 65,
-      "end_line": 70,
-      "complexity": 2,
-      "coverage": 66.7,
-      "crap": 2.1
+      "end_line": 56,
+      "complexity": 4,
+      "coverage": 100,
+      "crap": 4
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir.Git",
       "name": "Entries",
       "language": "go",
       "file": "internal/workdir/gitobjects.go",
-      "start_line": 74,
-      "end_line": 102,
-      "complexity": 10,
-      "coverage": 85.7,
-      "crap": 10.3
+      "start_line": 60,
+      "end_line": 83,
+      "complexity": 8,
+      "coverage": 100,
+      "crap": 8
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir.Git",
       "name": "Blobs",
       "language": "go",
       "file": "internal/workdir/gitobjects.go",
-      "start_line": 106,
-      "end_line": 143,
-      "complexity": 10,
-      "coverage": 85.2,
-      "crap": 10.3
+      "start_line": 87,
+      "end_line": 110,
+      "complexity": 6,
+      "coverage": 100,
+      "crap": 6
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir",
       "name": "readBlob",
       "language": "go",
       "file": "internal/workdir/gitobjects.go",
-      "start_line": 147,
-      "end_line": 166,
-      "complexity": 6,
-      "coverage": 78.6,
-      "crap": 6.4
+      "start_line": 114,
+      "end_line": 130,
+      "complexity": 5,
+      "coverage": 100,
+      "crap": 5
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir.Disk",
       "name": "Read",
       "language": "go",
       "file": "internal/workdir/gitobjects.go",
-      "start_line": 174,
-      "end_line": 180,
+      "start_line": 138,
+      "end_line": 144,
       "complexity": 2,
       "coverage": 100,
       "crap": 2
@@ -21258,11 +21258,11 @@
       "name": "Write",
       "language": "go",
       "file": "internal/workdir/gitobjects.go",
-      "start_line": 184,
-      "end_line": 207,
-      "complexity": 6,
-      "coverage": 70.6,
-      "crap": 6.9
+      "start_line": 148,
+      "end_line": 164,
+      "complexity": 5,
+      "coverage": 100,
+      "crap": 5
     },
     {
       "namespace": "github.com/donvargax/itos-cc/internal/workdir.Surroundings",
