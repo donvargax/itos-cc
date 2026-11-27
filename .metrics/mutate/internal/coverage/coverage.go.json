@@ -1854,7 +1854,6 @@
           "flaky": true,
           "outcomes": [
             "killed",
-            "killed",
             "survived"
           ]
         },
