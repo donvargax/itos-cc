@@ -256,8 +256,8 @@
       "start_line": 34,
       "end_line": 67,
       "killed": 9,
-      "survived": 10,
-      "uncovered": 5,
+      "survived": 9,
+      "uncovered": 6,
       "sites": 24,
       "mutants": [
         {
@@ -442,7 +442,7 @@
           "offset": 986,
           "original": "true",
           "replacement": "false",
-          "outcome": "survived"
+          "outcome": "uncovered"
         },
         {
           "line": 66,
